@@ -8514,10 +8514,10 @@ Status: VERIFIED
 - `/리셋` 호출마다 이벤트 상태의 `resetCycle`을 증가시킨다. `refreshHalloweenAccount`가 다음 이용 때 기본 사용 횟수·진행 탐험을 초기화하므로 전체 계정 파일을 일괄 로드하지 않는다. 기존 날짜 변경 초기화도 유지하고, 유료/무료 사탕·추가 입장·구매 기록은 리셋으로 변경하지 않는다.
 - Main·Info는 새 회차 필드를 선택적 안전 정수로 검증한다. 구 파일의 누락 값은 회차 0으로 간주하며 업그레이드 자체로 같은 날 횟수를 재초기화하지 않는다. 새 회차는 재조회·재시작 후에도 유지한다.
 
-## 2026-11-02 귀신의 집 45곳·5방 및 입장 당시 보상 호환
-- 기준 노션: https://app.notion.com/p/115393bdd7aa8215a7e381f164f47664, https://app.notion.com/p/c12393bdd7aa82f9a4e1012949f692be. 기존1~35의 대본·번호·확률은 보존하고 신규36~45의10곳·30행동·80결과를 추가한다. 총45곳·135행동·360결과, 신규 입장마다 중복 없이5곳이다.
-- 신규 `rewardVersion:3` 탐험은 안전10/0·탐색24/6/0·도박72/14/0, 완주30, 황금방50/100/250/500이다. 행동 확률·황금방 등장10%·분포60/30/9/1%·칭호·입장권/일일 한도는 유지한다. 황금방은45곳 후보와 별개다.
-- `getHalloweenRunPolicy`는 표시 없는 구5방/12곳(v1)의 결과별 원래 보상과 구3방/35곳(v2)의14/33/100 계열을 보존한다. 두 과거 정책은 완주20 및 황금20/50/150/300도 유지한다. 신규5방과 구5방은 길이만으로 혼동하지 않는다. Main·Info `requireHalloweenAccount`가 같은 정책별 방 수·후보 범위·중복·진행을 검증한다. 기존 기록을 일괄 변환하거나 회원/추가 파일을 만들지 않는다.
+## 2026-11-02 귀신의 집 45곳·3방 및 입장 당시 보상 호환
+- 기준 노션: https://app.notion.com/p/115393bdd7aa8215a7e381f164f47664, https://app.notion.com/p/c12393bdd7aa82f9a4e1012949f692be. 기존1~35의 대본·번호·확률은 보존하고 신규36~45의10곳·30행동·80결과를 추가한다. 총45곳·135행동·360결과, 사용자 후속 요청에 따라 신규v4 입장마다 중복 없이3곳이다. v3로 시작한45곳 중5방 탐험은 그대로 이어간다.
+- 신규 `rewardVersion:4`의3방과 진행 중v3의5방은 안전10/0·탐색24/6/0·도박72/14/0, 완주30, 황금방50/100/250/500이다. 행동 확률·황금방 등장10%·분포60/30/9/1%·칭호·입장권/일일 한도는 유지한다. 황금방은45곳 후보와 별개다.
+- `getHalloweenRunPolicy`는 표시 없는 구5방/12곳(v1)의 결과별 원래 보상과 구3방/35곳(v2)의14/33/100 계열을 보존한다. 두 과거 정책은 완주20 및 황금20/50/150/300도 유지한다. v1구5방/12곳·v2구3방/35곳·v3의5방/45곳·v4신규3방/45곳은 버전과 경로로 구분한다. Main·Info `requireHalloweenAccount`가 같은 정책별 방 수·후보 범위·중복·진행을 검증한다. 기존 기록을 일괄 변환하거나 회원/추가 파일을 만들지 않는다.
 - 마지막 방의 일반/완주/비밀/칭호는 같은 계정 저장에 확정하고 기존 journal·중복 영수증·저장 실패 롤백·재시작 복구를 유지한다. 안내/총합도 시작 당시 정책을 따른다. 아래10월30일 항목은 해당 시점의 이력이며 현재 신규 입장 정책은 이 항목을 따른다.
 
 ## 2026-10-30 귀신의 집 35곳·3방 확장 (ver_2.736, 변경 이력)
@@ -8540,8 +8540,8 @@ Status: VERIFIED
 
 ## Related Helpers / Policy
 - getHalloweenRequest, applyHalloweenCommand, refreshHalloweenAccount, creditHalloweenCandy, pickHalloweenOutcome, getHalloweenBalance, buildHalloweenRoomMessage, buildHalloweenShopMessage, buildHalloweenCompletionMessage. `getHalloweenRunPolicy`와 고정 대본45장소·135행동·360결과의 정책은 GLOBAL_CONFIG.halloween에 둔다.
-- 새 탐험은45장소 중 서로 다른5곳이며 구5방/12곳·구3방/35곳은 일반/완주/비밀방까지 시작 당시 기준을 보존한다. 선택 즉시 지급, resolved 재선택 차단, /귀신의집으로 다음 방 확인. 신규 완주30개, 비밀방10% → 50/100/250/500개(60/30/9/1%). 완주 칭호60/25/10/4.5/0.5% 1회, 중복 대체 보상 없음, 최고 칭호 최초 noticeMsg는 유지한다.
-- 기본 입장 일반1·프리미엄총2 → 충전 추가입장 순서. 일반 기본1회 사용·진행없음·추가0일 때만 프리미엄 안내 링크. KST 날짜 변경 또는 /리셋 회차 변경 때 기본횟수0·이전 미완료 탐험 종료. 충전 추가입장·사탕·구매 한도는 일일/개인 초기화 후 보존한다.
+- 새v4 탐험은45장소 중 서로 다른3곳이며 v1구5방/12곳·v2구3방/35곳·v3진행5방/45곳은 일반/완주/비밀방까지 시작 당시 기준을 보존한다. 선택 즉시 지급, resolved 재선택 차단, /귀신의집으로 다음 방 확인. 신규 완주30개, 비밀방10% → 50/100/250/500개(60/30/9/1%). 완주 칭호60/25/10/4.5/0.5% 1회, 중복 대체 보상 없음, 최고 칭호 최초 noticeMsg는 유지한다.
+- 기본 입장 일반1·프리미엄총2 → 충전 추가입장 순서. 일반 기본1회 사용·진행없음·추가0일 때만 프리미엄 안내 링크. 실제 /리셋 회차 변경 때만 기본횟수0·이전 미완료 탐험 종료. 날짜만 바뀌면 횟수·탐험을 유지하며 처음 이용하는 계정의 기준일만 설정한다. 충전 추가입장·사탕·구매 한도는 일일/개인 초기화 후 보존한다.
 - 상점은 사용자 확정 후속 표: 다이아25/100/50묶음, 금고5/50/무제한, 열쇠5/75/무제한, 큐브400/200/7묶음, 황제상품1/37500/2묶음, 도파민1/3500/11묶음. 단일 사탕 잔액에서 차감하고 쿠폰·스킬 할인은 적용하지 않는다. 부족·한도 초과는 부분 구매 없이 거부한다.
 
 ## Data / Entry Save Flow
@@ -8582,7 +8582,7 @@ Status: VERIFIED
 Status: VERIFIED
 
 ## Files and helpers
-- `main.js`: `getDailyRankingPayoutRequest`, `isDailyRankingPayoutOperator`, `runDailyRankingPayoutEntry`, `applyDailyRankingReward`, `createDailyRankingStore`, `requireDailyRankingStore`, `buildDailyRankingPublication`, `recoverDailyRankingPending`.
+- `main.js`: `getDailyRankingPayoutRequest`, `isDailyRankingPayoutOperator`, `runDailyRankingPayoutEntry`, `applyDailyRankingReward`, `createDailyRankingStore`, `requireDailyRankingStore`, `buildDailyRankingPublication`, `recoverDailyRankingPending`, `getDailyRankingPayoutCycle`, `advanceDailyRankingPayoutCycle`, `getGuildTerritoryRewardPaidDay`.
 - 기존 종합·미니펫 인라인을 `payOverallRankingReward`, `payMiniPetRankingReward`로 이동해 개별·통합이 같은 계산을 호출한다. `runGuildRankReward`, `payTierRankingReward`, `runGuildTerritoryRankReward`의 보상표·순위·길드창고 정책을 재사용한다. 채팅 명령 재전송·response 재귀 호출은 하지 않는다.
 
 ## Commands and permissions
@@ -8591,9 +8591,12 @@ Status: VERIFIED
 - `/패스목록`은 기존 5개 시각·완료 표시에 통합 안내를 더하고 실패 시 ⚠️, 전체 완료 안내를 제공한다. `/스케줄`은 일일·영지 순위보상 두 구획만 통합 안내로 변경한다. 두 조회는 보상을 지급하지 않는다.
 
 ## Persistence and recovery
-- `dailyRankingPayout.json`: KST 날짜와 종류별 DONE/FAILED 원본. 기존 실제 완료 표시는 중복 지급 없이 가져오며 `/리셋`·회원 완료 표시 정리가 이 파일을 지우지 않는다. 과거 날짜도 보존한다.
+- `dailyRankingPayout.json`: /리셋 기준일:연속회차 키와 종류별 DONE/FAILED 원본이다. 구8자리 날짜 키도 그대로 보존한다. 회원 `rewardPayoutReset`은 기존 권한의 /리셋에서 증가하며, 회원/원장의 확정 reset 메타데이터를 대조해 누락·역행·불일치를 거부한다. 최초 진입은 구 날짜 완료 기록을 한 번 호환하고 기준일을 고정한 뒤 기존 최종 원문 journal로 회원·길드·원장을 함께 게시한다. 자정만으로 완료를 지우지 않는다. 같은 날짜의 /리셋도 다음 회차이며 옛 완료 이력을 삭제하지 않는다.
 - 각 종류는 전 대상의 보상을 메모리에서 계산한 뒤 회원/분리 슬롯·길드·일일 완료 원문을 `dailyRankingPayoutPending.json`에 먼저 확정한다. 계산 중 실패한 대상의 변경은 공개하지 않는다. 중단되면 새로 추첨·재계산하지 않고 같은 최종 원문을 적용하므로 일부 파일 게시 뒤에도 재지급하지 않는다.
 - 최초 회원 로드 전과 응답 진입에 복구하며 복구 대기 중 회원·길드 저장은 막는다. 손상 원본이나 백업이 남은 누락 파일을 빈 값으로 바꾸지 않는다. 2세대 백업과 DEV 경로 분리를 유지한다.
 - 미니게임 자동 작업도 패키지·순위 지급 원문을 먼저 복구하며, 미복구 원본이 남아 있으면 별도 자동 게시를 진행하지 않는다. 순위 산정에 필요한 미니펫·펫홈·펫스킬 원본이 없으면 해당 종류는 계산·지급하지 않고 실패로 남긴다.
-- 항목별 계산 실패는 실패 상태로 보존한 뒤 나머지를 처리한다. 저장 복구가 지속 실패하면 후속 항목은 대기로 표시하고 새 지급을 중단한다. 알림 실패는 완료 지급을 취소하지 않는다. 계산 중 KST 날짜가 바뀌면 공개 전에 취소하며 새 날짜에 재실행한다.
-- 영지는 기존 동일 순위표 재지급 금지 조건도 유지하므로 그 조건에 걸리면 실제 미완료 사유를 반환한다. 영지 순위 확정 이후 통합 실행을 권장한다.
+- 항목별 계산 실패는 실패 상태로 보존한 뒤 나머지를 처리한다. 저장 복구가 지속 실패하면 후속 항목은 대기로 표시하고 새 지급을 중단한다. 알림 실패는 완료 지급을 취소하지 않는다. 달력 날짜가 넘어가도 같은 회차 지급을 유지한다. 처리 중 실제 리셋 회차가 달라지면 공개 전에 중단한다.
+- 영지·티어의 자체 중복 판정도 공통 /리셋 회차를 따른다. 영지의 순위·점수가 같아도 다음 리셋 회차는 새 지급이 가능하고, 같은 회차에서는 순위 변경·자정·반복/개별/통합 호출에도 한 번만 지급한다. 신규 lastPaidCycle과 실제 지급일/시각을 보존하며, 첫 리셋 전의 구 지급일을 확인할 수 없으면 재지급하지 않는다. 영지 순위 확정 이후 통합 실행을 권장한다.
+
+## 2026-11-02 운영 방명 변경
+- room10은 `🚨30대 반말방💊도파민 비상사태💥`이다. 기존 호이서버6[30] 유입 매핑·공지/응답 대상과 변수 참조를 재사용하며 다른 방·서버명·기존 회원 소속은 변경하지 않는다.

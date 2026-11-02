@@ -7,7 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
-    halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":5,"placeCount":45,"rewardVersion":3,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
+    halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
     manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
     petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, grandPercent: 10, royalPercent: 20, arcanaPercent: 30, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
@@ -3121,7 +3121,7 @@ function requireHalloweenAccount(account, id) {
         requireHalloweenInteger(run.epoch); requireHalloweenInteger(run.step); requireHalloweenInteger(run.total);
         if (run.step >= run.rooms.length || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
         var rewardVersion = run.rewardVersion === undefined ? (run.rooms.length === config.previousRoomCount ? 2 : run.rooms.length === config.legacyRoomCount ? 1 : 0) : run.rewardVersion;
-        var roomCount = rewardVersion === 1 ? config.legacyRoomCount : rewardVersion === 2 ? config.previousRoomCount : rewardVersion === config.rewardVersion ? config.roomCount : 0;
+        var roomCount = rewardVersion === 1 ? config.legacyRoomCount : rewardVersion === 2 ? config.previousRoomCount : rewardVersion === 3 ? config.expandedRoomCount : rewardVersion === config.rewardVersion ? config.roomCount : 0;
         var placeCount = rewardVersion === 1 ? config.legacyPlaceCount : rewardVersion === 2 ? config.previousPlaceCount : config.placeCount; // Main과 같은 입장 당시 장소 범위 검증
         if (roomCount === 0 || run.rooms.length !== roomCount) throw new Error("할로윈 탐험 보상 기준 오류");
         for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= placeCount || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
