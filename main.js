@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.762"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.763"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -10612,7 +10612,7 @@ replier.reply(
                     }
                 }
 
-                if ((sender == "호이 남" || isOrderLogRoomBot(sender)) && isHoiPassPremiumAdminCommandMessage(msg)) {
+                if ((sender == "호이 남" || isMaster(sender) || isOrderLogRoomBot(sender)) && isHoiPassPremiumAdminCommandMessage(msg)) {
                     var premiumCommandActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var premiumCommandResult = processHoiPassPremiumCommand(msg, data, petSkillData, premiumCommandActivityData, sender);
                     if (premiumCommandResult.changed) {
@@ -10654,7 +10654,7 @@ replier.reply(
                     replier.reply(territoryPassCommandResult);
                     return;
                 }
-                if ((sender == "호이 남" || isOrderLogRoomBot(sender)) && (/^\/인형패스(추가|삭제),\s*.+$/.test(msg) || /^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
+                if ((sender == "호이 남" || isMaster(sender) || isOrderLogRoomBot(sender)) && (/^\/인형패스(추가|삭제),\s*.+$/.test(msg) || /^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
                     let result = processUserIDCommand(msg, data, sender);
                     if (String(result || "").indexOf("❌") !== 0 && String(result || "").indexOf("알 수 없는 명령어") !== 0) {
                         saveJsonFile(data, filePath);
