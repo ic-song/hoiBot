@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.763"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.764"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -66789,7 +66789,7 @@ function getHowolDramaAccountId(data, sender) {
 function getHowolDramaAccessMessage(data, sender) {
     var member = data.member[sender], state = getAdventureOnboardingMemberState(data, sender);
     if (!member || !member.agree || state && state.stage !== "COMPLETE") return "먼저 /모험시작을 완료하세요.";
-    if (!isHoiPassPremiumActive(data, sender)) return "🔒 호이패스 프리미엄 전용\n" + GLOBAL_CONFIG.howolDrama.title + "\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 이용 안내\n❌ 프리미엄 회원만 스토리 진행 가능\n🍁 총 10DAY · 30장면\n💎 최종 다이아상자 최대 400개\n━━━━━━━━━━━━\n🔗 호이패스 프리미엄 이용 안내\n" + GLOBAL_CONFIG.howolDrama.premiumLink;
+    if (!isHoiPassPremiumActive(data, sender)) return "🔒 호이패스 프리미엄 전용\n" + GLOBAL_CONFIG.howolDrama.title + "\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 이용 안내\n❌ 프리미엄 회원만 스토리 진행 가능\n🍁 총 10DAY · 30장면\n💎 완주마다 다이아상자 최대 400개\n━━━━━━━━━━━━\n🔗 호이패스 프리미엄 이용 안내\n" + GLOBAL_CONFIG.howolDrama.premiumLink;
     return "";
 }
 
@@ -66827,20 +66827,20 @@ function buildHowolDramaScene(record, sender, full) {
 
 // 모두가 볼 수 있는 최초 예고편을 만드는 함수
 function buildHowolDramaTrailer(sender) {
-    return "🎬 호월드라마 | 작품 1\n" + GLOBAL_CONFIG.howolDrama.title + "\n🍁 시즌1 · 호월이의 첫사랑\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 시청 안내\n\n🎞️ 【스토리 예고편】\n어느 가을날, 첫눈에 반한 호월이!\n하지만 연애는 책으로만 배웠다?!\n\n🐱 호월이: \"연애? 책으로 다 배웠지!\"\n💕 봄봄이: \"저기... 누구세요?\"\n😎 호동이: \"나도 봄봄이 좋아해!\"\n\n서툰 플러팅과 뜻밖의 라이벌,\n과연 호월이의 첫사랑은 성공할까?\n━━━━━━━━━━━━\n🎁 프리미엄 독점 보상\n💎 호감도 1점당 다이아상자 4개\n🏆 최대 400개 · 엔딩 후 일괄 지급\n━━━━━━━━━━━━\n📖 총 10DAY · 장소 30곳\n📖 하루 제한 없이 자유 진행\n📖 본편 선택: /플러팅선택 1 또는 /플러팅선택 2\n📖 재도전 시 최고점 갱신 차액만 지급\n━━━━━━━━━━━━\n【1】 드라마 시작하기\n【2】 취소\n▶ 1(시작) 또는 2(취소) 입력";
+    return "🎬 호월드라마 | 작품 1\n" + GLOBAL_CONFIG.howolDrama.title + "\n🍁 시즌1 · 호월이의 첫사랑\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 시청 안내\n\n🎞️ 【스토리 예고편】\n어느 가을날, 첫눈에 반한 호월이!\n하지만 연애는 책으로만 배웠다?!\n\n🐱 호월이: \"연애? 책으로 다 배웠지!\"\n💕 봄봄이: \"저기... 누구세요?\"\n😎 호동이: \"나도 봄봄이 좋아해!\"\n\n서툰 플러팅과 뜻밖의 라이벌,\n과연 호월이의 첫사랑은 성공할까?\n━━━━━━━━━━━━\n🎁 프리미엄 독점 보상\n💎 호감도 1점당 다이아상자 4개\n🏆 완주마다 최대 400개 · 엔딩 후 일괄 지급\n━━━━━━━━━━━━\n📖 총 10DAY · 장소 30곳\n📖 하루 제한 없이 자유 진행\n📖 본편 선택: /플러팅선택 1 또는 /플러팅선택 2\n📖 재도전 완주 시에도 점수 × 4개 전액 지급\n━━━━━━━━━━━━\n【1】 드라마 시작하기\n【2】 취소\n▶ 1(시작) 또는 2(취소) 입력";
 }
 
-// 최고 기록과 실제 누적 지급을 구분해 완주 결과를 만드는 함수
+// 새 완주 지급과 기존 완주 기록 조회를 구분해 결과를 만드는 함수
 function buildHowolDramaEnding(record, sender, added) {
-    var reward = added > 0 ? "🎁 이번 추가 지급: 다이아상자💎 ×" + added + "\n✅ 보상 지급 완료" : "🎁 이번 추가 지급: 0개 · 이전 최고 기록 유지";
-    return GLOBAL_CONFIG.howolDrama.title + "\n🍁 DAY 10 | 해피엔딩!\n━━━━━━━━━━━━\n🌙 장소: 달빛 전망대\n🐱 호월이: \"처음부터 널 좋아했어.\"\n💕 봄봄이: \"나도 너 좋아해.\"\n💋 두 사람은 첫 키스를 나누며 연인이 되었다!\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 최종 결과\n💗 호감도: " + record.score + "/100\n" + buildHowolDramaHearts(record.score) + "\n🏆 완주 최고 호감도: " + record.high + "/100\n━━━━━━━━━━━━\n" + reward + "\n💎 누적 지급: " + record.paid + "/400개\n━━━━━━━━━━━━\n🎬 시즌1 시청 완료!\n▶ /호월드라마\n🔄 /드라마재도전 1";
+    var reward = added > 0 ? "🎁 완주 보상: 다이아상자💎 ×" + added + "\n✅ 보상 지급 완료" : "📖 완주 기록 다시보기\n" + (record.paid > 0 ? "✅ 저장된 보상 지급 기록이 있어요." : "⚠️ 보상 지급 기록 확인이 필요해요.") + "\n🎁 이번 조회 추가 지급: 0개";
+    return GLOBAL_CONFIG.howolDrama.title + "\n🍁 DAY 10 | 해피엔딩!\n━━━━━━━━━━━━\n🌙 장소: 달빛 전망대\n🐱 호월이: \"처음부터 널 좋아했어.\"\n💕 봄봄이: \"나도 너 좋아해.\"\n💋 두 사람은 첫 키스를 나누며 연인이 되었다!\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 최종 결과\n💗 호감도: " + record.score + "/100\n" + buildHowolDramaHearts(record.score) + "\n🏆 저장된 완주 호감도: " + record.high + "/100\n━━━━━━━━━━━━\n" + reward + "\n💎 저장된 지급 기록: " + record.paid + "/400개\n━━━━━━━━━━━━\n🎬 시즌1 시청 완료!\n▶ /호월드라마\n🔄 /드라마재도전 1";
 }
 
 // 두 단계 재도전 안내에 실제 진행과 보유권을 표시하는 함수
 function buildHowolDramaRetry(record, sender, tickets, final) {
     var lines = [final ? "🚨 호월드라마 | 재도전 최종 확인" : "🎬 호월드라마 | 재도전 안내", "👤 [" + sender + "] 님의 재도전", "━━━━━━━━━━━━━━", "【1】 " + GLOBAL_CONFIG.howolDrama.title,
         "📖 현재 진행: " + buildHowolDramaProgress(record) + (final ? " → DAY 01" : ""), "💗 현재 호감도: " + record.score + (final ? " → 0" : "/100"), "🎬 보유 재도전권: " + tickets + "개" + (final ? " → " + Math.max(0, tickets - 1) + "개 (확정 시)" : ""), "━━━━━━━━━━━━━━",
-        "⚠️ 재도전 시 현재 진행 상황이 초기화됩니다.", "⚠️ DAY 01부터 처음부터 다시 시작합니다.", "⚠️ 완료 전에 초기화하면 이번 미완료 시도의 보상은 0개입니다.", "✔ 이전 완주 최고 기록과 이미 받은 보상은 보존됩니다.", "━━━━━━━━━━━━━━", final ? "【1】 초기화 확정" : "【1】 재도전 진행", "【2】 취소", "▶ 1(" + (final ? "초기화 확정" : "진행") + ") 또는 2(취소) 입력"];
+        "⚠️ 재도전 시 진행도·완주 기록·보상 기록이 초기화됩니다.", "⚠️ DAY 01부터 처음부터 다시 시작합니다.", "⚠️ 완료 전에 초기화하면 이번 미완료 시도의 보상은 0개입니다.", "💎 이미 받은 아이템은 가방에 유지됩니다.", "🎁 다시 완주하면 점수 × 4개를 전액 지급해요.", "━━━━━━━━━━━━━━", final ? "【1】 초기화 확정" : "【1】 재도전 진행", "【2】 취소", "▶ 1(" + (final ? "초기화 확정" : "진행") + ") 또는 2(취소) 입력"];
     return lines.join("\n");
 }
 
@@ -66916,22 +66916,23 @@ function runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, reques
         removeItem(data, sender, config.retryItem, 1);
         memberChanged = true;
         record.attempt++; record.next = 0; record.score = 0; record.choices = [];
-        prefix = "🎬 호월드라마 | 재도전 완료\n👤 [" + sender + "] 님\n✅ 현재 진행 초기화 완료\n📖 DAY 01 / 10부터 다시 시작\n💗 호감도: 0/100\n🎬 남은 재도전권: " + (tickets - 1) + "개\n━━━━━━━━━━━━━━\n";
+        record.high = 0; record.paid = 0; record.completed = []; // 재도전 확정 때 현재 회차의 완주·지급 기록도 초기화
+        prefix = "🎬 호월드라마 | 재도전 완료\n👤 [" + sender + "] 님\n✅ 진행도·완주 기록·보상 기록 초기화 완료\n📖 DAY 01 / 10부터 다시 시작\n💗 호감도: 0/100\n🎬 남은 재도전권: " + (tickets - 1) + "개\n━━━━━━━━━━━━━━\n";
     } else if (request && request.kind === "choice") {
         if (!record || record.next >= config.scenes.length) { replier.reply("이미 완주했어요. /드라마재도전 1로 다시 도전할 수 있어요."); return true; }
         var choice = config.scenes[record.next].choices[request.choice - 1];
         record.choices.push(request.choice); record.next++; record.score += choice.score;
         prefix = "💗 호감도 +" + choice.score + " → " + record.score + "/100\n" + choice.reaction + "\n━━━━━━━━━━━━\n";
         if (record.next === config.scenes.length) {
-            record.completed.push({ attempt: record.attempt, score: record.score, at: new Date(now).toISOString() });
-            record.high = Math.max(record.high, record.score);
-            added = Math.max(0, record.score * config.boxesPerPoint - record.paid);
+            record.completed = [{ attempt: record.attempt, score: record.score, at: new Date(now).toISOString() }]; // 이전 방식으로 진행 중인 회차도 이번 완주 기록으로 전환
+            record.high = record.score;
+            added = record.score * config.boxesPerPoint;
             if (added > 0) {
                 var boxes = getHowolDramaItemCount(member, GLOBAL_CONFIG.items.diamondBoxName);
                 requireHowolDramaInteger(boxes + added, 9007199254740991);
                 addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, added);
                 if (getHowolDramaItemCount(member, GLOBAL_CONFIG.items.diamondBoxName) !== boxes + added) throw new Error("호월드라마 보상 가방 확인 실패");
-                record.paid += added; memberChanged = true;
+                record.paid = added; memberChanged = true;
             }
         }
     } else return true;
