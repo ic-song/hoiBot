@@ -6,6 +6,17 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-11-02 - 펫스킬 확장권 사용 후 기본 슬롯 30칸 고정 회귀
+
+Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/pet-skill-slot-fix, ver_2.757)
+
+- 원인: 949e88c2의 확장권 추가 과정에서 Main·Info의 친밀도100레벨당1칸(기본 최대30) 공식이 기본30칸 고정으로 바뀌었다. 친밀도1792·학개론3·프리미엄7·확장권3은17+3+7+3=30칸인데 현재 운영 계산은43칸이며 확장0일 때는27칸 대신40칸으로 재현됐다.
+- 수정: Main의 슬롯 상세/장착/표시·확장 검증과 Info의 조회에서 친밀도 기본 공식을 복원한다. 학개론3·프리미엄7·확장권 사용 누적분·합산100칸 한도는 유지한다. 누적 확장 수·기존 장착/잠금·가방 기록을 일괄 보정·초기화·자동 삭제하지 않는다. 기존 한도를 넘는 장착은 보존하며 기존 추가 장착 차단을 따른다.
+- 검증: 실제 현재 함수·확장권 명령 분기에서 Node/Rhino 각각13그룹 통과. 친밀도0~10000×학개론/프리미엄4조합의 과거 공식 일치와 확장3/60/100칸을 비교했다. 제보30칸·Main/Info 일치·100칸 경계·구/신 아이템명 합산·오입력/부족/저장 예외·표시·과거 장착 보존 포함. 전체 Main/Info Rhino1.7.15 languageVersion200 컴파일·node --check·git diff --check 통과.
+- 범위/한계: 슬롯 계산·설정·설명만 변경하며 회원 저장/로드/경로/리셋/잠금 복구 함수 본문은 유지한다. 저장 시험은 합성 계정과 저장 어댑터를 사용했다. 운영 기기/실제 데이터 복구·운영 Git 반영·Notion/카카오 갱신은 수행하지 않았다. 기존 feature/bugFix b45affeb는 보존한다.
+
+---
+
 ## 2026-11-02 - 주문기록방 글자수 전체 정리 무응답
 
 Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/order-log-cleanup, ver_2.751)
