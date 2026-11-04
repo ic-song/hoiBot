@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    storage: { pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     howolDrama: { pendingName: "howolDramaPending.json" },
     halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
@@ -654,7 +655,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var dramaPendingPath = ctx.rootPath + GLOBAL_CONFIG.howolDrama.pendingName;
 		if (!new java.io.File(dramaPendingPath).exists() && new java.io.File(dramaPendingPath + ".rollback").exists()) return;
 		if (new java.io.File(dramaPendingPath).exists()) {
-			var dramaPending = JSON.parse(FileStream.read(dramaPendingPath, "utf-8"));
+			var dramaPending = readInfoPendingJson(dramaPendingPath);
 			if (!dramaPending || dramaPending.version !== 1 || !Object.prototype.hasOwnProperty.call(dramaPending, "pending") || dramaPending.pending !== null && !Array.isArray(dramaPending.pending)) throw new Error("호월드라마 게시 기록 오류");
 			if (dramaPending.pending !== null) return;
 		}
@@ -668,20 +669,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, false)) return;
 		// 인형 저장 복구 전에는 부분 반영된 재화·매력 정보를 표시하지 않는다.
 		if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
-			var infoDollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
+			var infoDollPending = readInfoPendingJson(DATA_ROOT_PATH + "dollPending.json");
 			if (!infoDollPending || !Object.prototype.hasOwnProperty.call(infoDollPending, "pending")) throw new Error("인형 복구 기록 형식 오류");
 			if (infoDollPending.pending !== null) return;
 		}
 		// 강탈 저장 복구가 끝나기 전에는 부분 반영된 포인트·펫 정보를 표시하지 않는다.
 		var infoRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName);
 		if (new java.io.File(infoRobberyPendingPath).exists()) {
-			var infoRobberyPending = loadJsonFile(infoRobberyPendingPath);
+			var infoRobberyPending = readInfoPendingJson(infoRobberyPendingPath);
 			if (!infoRobberyPending || !Object.prototype.hasOwnProperty.call(infoRobberyPending, "pending") || (infoRobberyPending.pending !== null && !Array.isArray(infoRobberyPending.pending))) throw new Error("강탈 복구 기록 형식 오류");
 			if (infoRobberyPending.pending !== null) return;
 		}
 		var infoAdventurePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.historyPendingName);
 		if (new java.io.File(infoAdventurePendingPath).exists()) {
-			var infoAdventurePending = loadJsonFile(infoAdventurePendingPath);
+			var infoAdventurePending = readInfoPendingJson(infoAdventurePendingPath);
 			if (!infoAdventurePending || !Object.prototype.hasOwnProperty.call(infoAdventurePending, "pending") || (infoAdventurePending.pending !== null && !Array.isArray(infoAdventurePending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
 			if (infoAdventurePending.pending !== null) return;
 		}
@@ -689,7 +690,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var infoMiniPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + "miniGamePending.json");
 		if (new java.io.File(infoMiniPendingPath + ".rollback").exists() && !new java.io.File(infoMiniPendingPath).exists()) return;
 		if (new java.io.File(infoMiniPendingPath).exists()) {
-			var infoMiniPending = loadJsonFile(infoMiniPendingPath);
+			var infoMiniPending = readInfoPendingJson(infoMiniPendingPath);
 			if (!infoMiniPending || infoMiniPending.version !== 1 || !Object.prototype.hasOwnProperty.call(infoMiniPending, "pending") || infoMiniPending.pending !== null && !Array.isArray(infoMiniPending.pending)) throw new Error("미니게임 복구 기록 형식 오류");
 			if (infoMiniPending.pending !== null) return;
 		}
@@ -2216,6 +2217,25 @@ function getMissingDevDataFiles() {
 	return missing;
 }
 
+// 큰 활성 복구 저널은 헤더만 확인해 부분 데이터 표시를 차단하고, 나머지는 기존처럼 엄격히 파싱하는 함수
+function readInfoPendingJson(path) {
+    var activePath = resolveActiveDataPath(path), file = new java.io.File(activePath);
+    if (file.length() > GLOBAL_CONFIG.storage.pendingHeaderThresholdBytes) {
+        var reader = new java.io.InputStreamReader(new java.io.FileInputStream(file), "UTF-8");
+        try {
+            var buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, GLOBAL_CONFIG.storage.pendingHeaderChars);
+            var count = reader.read(buffer), prefix = count > 0 ? String(new java.lang.String(buffer, 0, count)) : "";
+            var match = prefix.match(/^\s*\{\s*(?:"(version|schemaVersion)"\s*:\s*(\d+)\s*,\s*)?"pending"\s*:\s*\[/);
+            if (match) {
+                var blocked = { pending: [] };
+                if (match[1]) blocked[match[1]] = Number(match[2]);
+                return blocked;
+            }
+        } finally { reader.close(); }
+    }
+    return JSON.parse(FileStream.read(activePath, "utf-8"));
+}
+
 function loadJsonFile(path) {
 	try {
 		path = resolveActiveDataPath(path);
@@ -3153,7 +3173,7 @@ function runHalloweenInfoEntry(mode, ctx, data, user) {
     if (mode === "state") {
         if (!new java.io.File(pendingPath).exists() && new java.io.File(pendingPath + ".rollback").exists()) return false;
         if (new java.io.File(pendingPath).exists()) {
-            var pending = loadJsonFile(pendingPath);
+            var pending = readInfoPendingJson(pendingPath);
             if (!pending || pending.version !== 1 || !Object.prototype.hasOwnProperty.call(pending, "pending")) throw new Error("할로윈 복구 기록 오류");
             if (pending.pending !== null) return false;
         }
