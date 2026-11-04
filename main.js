@@ -4731,7 +4731,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         if (runHowolMysteryEntry(ctx, sender, msg, replier, data)) return;
         ctx.guildWarGroupChat = isGroupChat;
-        if (runGuildWarEntry(ctx, sender, room, msg, replier, Date.now())) return;
+        if (runGuildWarEntry(ctx, sender, room, msg, replier, Date.now(), data)) return;
         if (runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, miniGameRequestAt, serverRaidEvent)) return;
 
         var miniGameRequest = /^\/(?:미니게임|밸런스결과|밸런스|호월주사위|금고|금고리셋|금고횟수리셋)(?:\s|$)/.test(msg) ? getMiniGameRequest(msg) : null;
@@ -68079,11 +68079,13 @@ function scheduleGuildWarWork(ctx) {
         var previous = enterCommandContext(ctx), lock = commandDataFlowLock.writeLock();
         lock.lock(); dataTransactionLock.lock(); beginDataSaveTransaction();
         try {
-            recoverGuildWarPublication(); recoverHowolDramaPending(); recoverPackageGrantPending(); recoverDailyRankingPending(); recoverAdventureRecordPending(false); recoverMemberSplitPublication();
-            var data = loadJsonFile(filePath), currentGuilds = loadJsonFile(guildPath);
+            recoverGuildWarPublication(); recoverHowolDramaPending(); recoverPackageGrantPending(); recoverDailyRankingPending(); recoverAdventureRecordPending(false);
+            var currentGuilds = loadJsonFile(guildPath);
             var tickNow = Date.now(); // 전투 마감과 회원 저장 여부에 같은 시각 적용
+            var memberWork = !currentGuilds.war24 || currentGuilds.war24.active.some(function (w) { return w.due <= tickNow; }); // 초기화·전투 때만 회원 원본 필요
+            if (memberWork) recoverMemberSplitPublication();
+            var data = memberWork ? loadJsonFile(filePath, "bootstrap") : null; // 전투와 무관한 레이드·운영 로그는 펼치지 않는다.
             var initialized = initializeGuildWar(data, currentGuilds, tickNow);
-            var memberWork = currentGuilds.war24.active.some(function (w) { return w.due <= tickNow; });
             var workChanged = processGuildWars(data, currentGuilds, tickNow, Math.random);
             if (initialized || workChanged) publishGuildWar(data, currentGuilds, memberWork);
             flushGuildWarNotices(currentGuilds, ctx);
@@ -68093,13 +68095,13 @@ function scheduleGuildWarWork(ctx) {
 }
 
 // 공개·내부 조회와 등록방 전쟁 실행을 처리하는 진입점
-function runGuildWarEntry(ctx, sender, room, msg, replier, now) {
+function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     var request = getGuildWarRequest(msg);
     if (!request) return false;
     if (request.kind !== "main" && request.kind !== "guide" && !getCurrentContext().guildWarGroupChat) { replier.reply("길드전쟁 내부 명령은 등록 길드톡에서만 사용할 수 있습니다."); return true; }
     if (request.kind === "invalid") { replier.reply("📌 /길드전쟁가이드에서 정확한 명령어와 번호를 확인해 주세요.\n⚔️ 공격권 차감 없음"); return true; }
     if (request.kind === "guide") { replier.reply(GLOBAL_CONFIG.guildWar.guide); return true; }
-    var data = loadJsonFile(filePath), guildData = loadJsonFile(guildPath), initialized = initializeGuildWar(data, guildData, now), state = guildData.war24;
+    var guildData = loadJsonFile(guildPath), initialized = initializeGuildWar(data, guildData, now), state = guildData.war24;
     var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
     if (guild && (!guild.members || !guild.members[sender])) { gid = null; guild = null; }
     if (initialized) publishGuildWar(data, guildData, false);
