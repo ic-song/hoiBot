@@ -113,12 +113,25 @@ if /i "%TARGET_LD_INDEX%"=="auto" (
 	set DETECTED_LD_INDEX=
 	set DETECTED_LD_COUNT=0
 	for /f "tokens=1 delims=," %%i in ('"%LD_CONSOLE_EXE%" list2') do (
+		echo [INFO] LDPlayer index %%i - TARGET_FILE 확인
 		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell ls -l %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
-		findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
-		if errorlevel 1 (
+		set "LD_PROBE_EXIT_CODE=!ERRORLEVEL!"
+		type "%DEPLOY_LOG%"
+		set LD_PROBE_OK=0
+		rem 종료코드와 실제 파일 경로를 함께 확인하여 빈 응답을 성공으로 처리하지 않습니다.
+		if "!LD_PROBE_EXIT_CODE!"=="0" (
+			findstr /l /c:"%TARGET_FILE%" "%DEPLOY_LOG%" > nul 2>&1
+			if not errorlevel 1 (
+				findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+				if errorlevel 1 set LD_PROBE_OK=1
+			)
+		)
+		if "!LD_PROBE_OK!"=="1" (
 			set /a DETECTED_LD_COUNT+=1
 			set DETECTED_LD_INDEX=%%i
 			echo [INFO] 고정 TARGET_FILE 확인: LDPlayer index %%i, %TARGET_FILE%
+		) else (
+			echo [WARN] LDPlayer index %%i 확인 실패 - exit=!LD_PROBE_EXIT_CODE!, 위 ADB 응답을 확인하세요.
 		)
 	)
 	if "!DETECTED_LD_COUNT!"=="0" goto FAIL_LD_AUTO_INDEX
@@ -350,7 +363,10 @@ echo  FAIL - 운영 LDPlayer 자동 감지 실패
 echo ============================================================
 echo  고정 TARGET_FILE 경로를 가진 운영 LDPlayer를 찾지 못했습니다.
 echo  TARGET_FILE = %TARGET_FILE%
-echo  LDPlayer와 MessengerBot 봇 파일 경로를 확인하세요.
+echo  위 인스턴스별 ADB 응답과 종료코드를 확인하세요.
+echo  device not found / offline이면 ADB 연결을 먼저 확인하세요.
+echo  LDPlayer 설정의 ADB 디버깅이 로컬 연결 허용인지 확인하세요.
+echo  No such file이면 MessengerBot 봇 파일 경로를 확인하세요.
 echo ============================================================
 pause
 exit /b 1
