@@ -7,6 +7,9 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    storage: { pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
+    howolDrama: { pendingName: "howolDramaPending.json" },
+    halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
     manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
     petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, grandPercent: 10, royalPercent: 20, arcanaPercent: 30, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
@@ -117,6 +120,7 @@ const GLOBAL_CONFIG = {
 		maxLength: 30 // 타이틀 선물 내용 최대 길이
 	},
 	petSkill: { // 펫스킬 시스템 설정
+		slots: { maxCount: 100, introBonus: 3, intimacyLevelsPerSlot: 100 },
 		miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
 		bookItemName: "펫스킬북📙(/펫스킬오픈)",
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
@@ -647,6 +651,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 			applyItemInfoContext(loadJsonFile(itemInfoPath));
 		}
+		// 회원 가방과 드라마 기록의 원문 게시가 완료되기 전에는 부분 결과를 표시하지 않음
+		var dramaPendingPath = ctx.rootPath + GLOBAL_CONFIG.howolDrama.pendingName;
+		if (!new java.io.File(dramaPendingPath).exists() && new java.io.File(dramaPendingPath + ".rollback").exists()) return;
+		if (new java.io.File(dramaPendingPath).exists()) {
+			var dramaPending = readInfoPendingJson(dramaPendingPath);
+			if (!dramaPending || dramaPending.version !== 1 || !Object.prototype.hasOwnProperty.call(dramaPending, "pending") || dramaPending.pending !== null && !Array.isArray(dramaPending.pending)) throw new Error("호월드라마 게시 기록 오류");
+			if (dramaPending.pending !== null) return;
+		}
+		if (!runHalloweenInfoEntry("state", ctx)) return;
 		var plainCommands = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
 		if (!msg.startsWith("/") && plainCommands.indexOf(msg) === -1) {
 			return;
@@ -656,20 +669,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, false)) return;
 		// 인형 저장 복구 전에는 부분 반영된 재화·매력 정보를 표시하지 않는다.
 		if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
-			var infoDollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
+			var infoDollPending = readInfoPendingJson(DATA_ROOT_PATH + "dollPending.json");
 			if (!infoDollPending || !Object.prototype.hasOwnProperty.call(infoDollPending, "pending")) throw new Error("인형 복구 기록 형식 오류");
 			if (infoDollPending.pending !== null) return;
 		}
 		// 강탈 저장 복구가 끝나기 전에는 부분 반영된 포인트·펫 정보를 표시하지 않는다.
 		var infoRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName);
 		if (new java.io.File(infoRobberyPendingPath).exists()) {
-			var infoRobberyPending = loadJsonFile(infoRobberyPendingPath);
+			var infoRobberyPending = readInfoPendingJson(infoRobberyPendingPath);
 			if (!infoRobberyPending || !Object.prototype.hasOwnProperty.call(infoRobberyPending, "pending") || (infoRobberyPending.pending !== null && !Array.isArray(infoRobberyPending.pending))) throw new Error("강탈 복구 기록 형식 오류");
 			if (infoRobberyPending.pending !== null) return;
 		}
 		var infoAdventurePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.historyPendingName);
 		if (new java.io.File(infoAdventurePendingPath).exists()) {
-			var infoAdventurePending = loadJsonFile(infoAdventurePendingPath);
+			var infoAdventurePending = readInfoPendingJson(infoAdventurePendingPath);
 			if (!infoAdventurePending || !Object.prototype.hasOwnProperty.call(infoAdventurePending, "pending") || (infoAdventurePending.pending !== null && !Array.isArray(infoAdventurePending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
 			if (infoAdventurePending.pending !== null) return;
 		}
@@ -677,7 +690,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var infoMiniPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + "miniGamePending.json");
 		if (new java.io.File(infoMiniPendingPath + ".rollback").exists() && !new java.io.File(infoMiniPendingPath).exists()) return;
 		if (new java.io.File(infoMiniPendingPath).exists()) {
-			var infoMiniPending = loadJsonFile(infoMiniPendingPath);
+			var infoMiniPending = readInfoPendingJson(infoMiniPendingPath);
 			if (!infoMiniPending || infoMiniPending.version !== 1 || !Object.prototype.hasOwnProperty.call(infoMiniPending, "pending") || infoMiniPending.pending !== null && !Array.isArray(infoMiniPending.pending)) throw new Error("미니게임 복구 기록 형식 오류");
 			if (infoMiniPending.pending !== null) return;
 		}
@@ -853,8 +866,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg === "/포인트" || msg === "ㅍㅍㅍ") {
 			if (data.member && data.member[sender]) {
+				runHalloweenInfoEntry("view", ctx, data, sender);
+				ctx.halloweenScreen = true;
 				var pointDiamond = data.member[sender].diamond || 0;
 				var pointMessage = getInfoHoiPassPremiumHeader(data, sender) + "[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개";
+				if (ctx.halloweenState && ctx.halloweenState.active) pointMessage += "\n" + getHalloweenCandyLine(ctx, true).trim();
 				var pointExploreData = loadJsonFile(petExplorePath);
 				if (pointExploreData && pointExploreData.chuseokEvent && pointExploreData.chuseokEvent.active === true) pointMessage += "\n🌕: " + numberWithCommas(getInfoChuseokCarrotBalance(data, pointExploreData, sender)) + "개";
 				if (hasInfoPrivateChatPass(data, sender)) {
@@ -869,6 +885,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (data.member[sender]) replier.reply(buildInfoLevelMessage(data, petData, guildData, sender));
 		}
 		if (msg === "/내정보") {
+			ctx.halloweenScreen = true;
 			if (!data.member || !data.member[sender]) {
 				return;
 			}
@@ -1487,6 +1504,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("펫을 먼저 생성해주세요.");
 				return;
 			}
+			ctx.halloweenScreen = true;
 
 			// 이미지/기본값 보정
 			if (petInfo.newimg) petInfo.petimg = petInfo.newimg;
@@ -2113,7 +2131,7 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
 	return {
 		reply: function (message) {
-			return replier.reply(ctx.header(formatNicknameRankMessage(message)));
+			return replier.reply(ctx.header(formatHalloweenMessage(formatNicknameRankMessage(message), ctx)));
 		}
 	};
 }
@@ -2143,6 +2161,15 @@ function requireGmEducationStore(store) {
 function getGmEducationProgress(store, member, allowPending) {
     var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
+    var compact = member && member.gmEducationReceipt;
+    if (compact !== undefined) {
+        if (!compact || typeof compact !== "object" || Array.isArray(compact) || typeof compact.chapter !== "number" || Math.floor(compact.chapter) !== compact.chapter || compact.chapter < 1 || compact.chapter > getGmEducationChapterCount() || typeof compact.txId !== "string" || !compact.txId || (compact.completedAt !== null && (typeof compact.completedAt !== "string" || !isFinite(Date.parse(compact.completedAt))))) throw new Error("교육 요약 영수증 형식 오류");
+        if (member.gmEducationRewards !== undefined || member.gmEducationRewardTimes !== undefined) throw new Error("교육 영수증 형식이 혼재되어 있습니다.");
+        if (compact.chapter < chapters.length || compact.chapter > chapters.length + (allowPending ? 1 : 0)) throw new Error("교육 완료와 요약 지급 기록 불일치");
+        var lastChapter = chapters[compact.chapter - 1];
+        if (lastChapter && (lastChapter.txId !== compact.txId || (compact.completedAt !== null && lastChapter.completedAt !== compact.completedAt))) throw new Error("교육 요약 영수증 불일치");
+        return chapters.length;
+    }
     var receipts = member && member.gmEducationRewards;
     if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > getGmEducationChapterCount())) throw new Error("교육 지급 영수증 형식 오류");
     receipts = receipts || [];
@@ -2188,6 +2215,25 @@ function getMissingDevDataFiles() {
 		if (!devFile.exists()) missing.push(fileName);
 	}
 	return missing;
+}
+
+// 큰 활성 복구 저널은 헤더만 확인해 부분 데이터 표시를 차단하고, 나머지는 기존처럼 엄격히 파싱하는 함수
+function readInfoPendingJson(path) {
+    var activePath = resolveActiveDataPath(path), file = new java.io.File(activePath);
+    if (file.length() > GLOBAL_CONFIG.storage.pendingHeaderThresholdBytes) {
+        var reader = new java.io.InputStreamReader(new java.io.FileInputStream(file), "UTF-8");
+        try {
+            var buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, GLOBAL_CONFIG.storage.pendingHeaderChars);
+            var count = reader.read(buffer), prefix = count > 0 ? String(new java.lang.String(buffer, 0, count)) : "";
+            var match = prefix.match(/^\s*\{\s*(?:"(version|schemaVersion)"\s*:\s*(\d+)\s*,\s*)?"pending"\s*:\s*\[/);
+            if (match) {
+                var blocked = { pending: [] };
+                if (match[1]) blocked[match[1]] = Number(match[2]);
+                return blocked;
+            }
+        } finally { reader.close(); }
+    }
+    return JSON.parse(FileStream.read(activePath, "utf-8"));
 }
 
 function loadJsonFile(path) {
@@ -3025,18 +3071,137 @@ function getEquippedTierPetSkillExp(petSkillData, user, equippedSkillNames) {
 	return totalExp;
 }
 // 펫스킬 슬롯 개수 계산 함수
+
+
+// 계산된 채크랭크의 외곽 표기를 현재 응답에만 등록하는 함수
+function rememberHalloweenRank(rank) {
+    var ctx = getCurrentContext();
+    if (ctx.halloweenState && ctx.halloweenState.active) {
+        if (!ctx.halloweenRanks) ctx.halloweenRanks = {};
+        ctx.halloweenRanks[formatNicknameRankMessage("[" + rank + "]")] = true;
+    }
+    return rank;
+}
+
+// 원본 닉네임을 건드리지 않고 현재 응답의 장식·최상단 배너를 적용하는 함수
+function formatHalloweenMessage(message, ctx) {
+    if (typeof message !== "string" || !ctx.halloweenState || !ctx.halloweenState.active) return message;
+    var labels = Object.keys(ctx.halloweenRanks || {}), suffix = GLOBAL_CONFIG.halloween.decoration;
+    labels.sort(function (a,b) { return b.length - a.length; });
+    for (var i = 0; i < labels.length; i++) {
+        var label = labels[i];
+        message = message.split(label + suffix).join(label).split(label).join(label + suffix);
+    }
+    if (ctx.halloweenScreen) {
+        message = GLOBAL_CONFIG.halloween.banner + "\n" + message;
+        ctx.halloweenScreen = false;
+    }
+    return message;
+}
+
+// 표시용 계정 ID에서 안전한 이벤트 파일 이름을 만드는 함수
+function getHalloweenAccountName(id) {
+    if (typeof id !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(id)) throw new Error("할로윈 공통 계정 ID 오류");
+    return GLOBAL_CONFIG.halloween.accountPrefix + id + ".json";
+}
+
+// 기존 화면에 덧붙일 사탕 표시 한 줄을 만드는 함수
+function getHalloweenCandyLine(ctx, pointScreen) {
+    if (!ctx.halloweenState || !ctx.halloweenState.active) return "";
+    return (pointScreen ? "🍬: " : "🍬 할로윈 사탕: ") + numberWithCommas(ctx.halloweenBalance || 0) + "개\n";
+}
+
+// Main과 같은 이벤트 수량 검증을 조회 경로에도 적용하는 함수
+function requireHalloweenInteger(value) {
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("할로윈 수량 형식 오류");
+    return value;
+}
+// Main과 같은 이벤트 활성 상태 원본을 검증하는 함수
+function requireHalloweenState(state) {
+    if (!state || state.version !== 1 || typeof state.active !== "boolean" || typeof state.lastResetDay !== "string" || !Array.isArray(state.logs)) throw new Error("할로윈 이벤트 원본 형식 오류");
+    requireHalloweenInteger(state.epoch);
+    if (state.resetCycle !== undefined) requireHalloweenInteger(state.resetCycle);
+    if (state.candyClearEpoch !== undefined) {
+        requireHalloweenInteger(state.candyClearEpoch);
+        if (state.candyClearEpoch > state.epoch) throw new Error("할로윈 사탕 종료 세대 오류");
+    }
+    return state;
+}
+// Main과 같은 이벤트 계정 원본을 검증하는 함수
+function requireHalloweenAccount(account, id) {
+    if (!account || account.version !== 1 || account.id !== id || typeof account.day !== "string" || !Array.isArray(account.purchases) || account.purchases.length !== 6 ||
+        !Array.isArray(account.titles) || !Array.isArray(account.history) || !Array.isArray(account.orders) || !account.requests || typeof account.requests !== "object" || Array.isArray(account.requests)) throw new Error("할로윈 계정 원본 형식 오류");
+    var values = [account.epoch, account.used, account.extra];
+    for (var i = 0; i < values.length; i++) requireHalloweenInteger(values[i]);
+    if (account.candy !== undefined) {
+        if (account.free !== undefined || account.paid !== undefined) throw new Error("할로윈 사탕 잔액 형식 혼합");
+        requireHalloweenInteger(account.candy);
+    } else {
+        requireHalloweenInteger(account.free); requireHalloweenInteger(account.paid);
+        requireHalloweenInteger(account.free + account.paid);
+    }
+    if (account.resetCycle !== undefined) requireHalloweenInteger(account.resetCycle);
+    for (var p = 0; p < account.purchases.length; p++) requireHalloweenInteger(account.purchases[p]);
+    for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
+    if (account.run !== null) {
+        var run = account.run;
+        var config = GLOBAL_CONFIG.halloween;
+        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
+        requireHalloweenInteger(run.epoch); requireHalloweenInteger(run.step); requireHalloweenInteger(run.total);
+        if (run.step >= run.rooms.length || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
+        var rewardVersion = run.rewardVersion === undefined ? (run.rooms.length === config.previousRoomCount ? 2 : run.rooms.length === config.legacyRoomCount ? 1 : 0) : run.rewardVersion;
+        var roomCount = rewardVersion === 1 ? config.legacyRoomCount : rewardVersion === 2 ? config.previousRoomCount : rewardVersion === 3 ? config.expandedRoomCount : rewardVersion === config.rewardVersion ? config.roomCount : 0;
+        var placeCount = rewardVersion === 1 ? config.legacyPlaceCount : rewardVersion === 2 ? config.previousPlaceCount : config.placeCount; // Main과 같은 입장 당시 장소 범위 검증
+        if (roomCount === 0 || run.rooms.length !== roomCount) throw new Error("할로윈 탐험 보상 기준 오류");
+        for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= placeCount || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
+    }
+    return account;
+}
+
+// 구 잔액과 단일 사탕 잔액에 같은 종료 소멸 기준을 적용하는 함수
+function getHalloweenBalance(state, account) {
+    if (!account) return 0;
+    if (account.epoch > state.epoch) throw new Error("할로윈 계정과 이벤트 상태의 세대가 일치하지 않습니다.");
+    if (account.candy !== undefined) return account.epoch === state.epoch ? requireHalloweenInteger(account.candy) : 0;
+    var legacyPaid = state.candyClearEpoch === undefined || account.epoch >= state.candyClearEpoch ? account.paid : 0;
+    return requireHalloweenInteger(legacyPaid + (account.epoch === state.epoch ? account.free : 0));
+}
+
+// Info 명령 진입점에서 복구 대기와 이벤트 표시용 원본만 읽는 함수
+function runHalloweenInfoEntry(mode, ctx, data, user) {
+    var config = GLOBAL_CONFIG.halloween, pendingPath = ctx.rootPath + config.pendingName;
+    if (mode === "state") {
+        if (!new java.io.File(pendingPath).exists() && new java.io.File(pendingPath + ".rollback").exists()) return false;
+        if (new java.io.File(pendingPath).exists()) {
+            var pending = readInfoPendingJson(pendingPath);
+            if (!pending || pending.version !== 1 || !Object.prototype.hasOwnProperty.call(pending, "pending")) throw new Error("할로윈 복구 기록 오류");
+            if (pending.pending !== null) return false;
+        }
+        var statePath = ctx.rootPath + config.stateName;
+        ctx.halloweenState = new java.io.File(statePath).exists() ? requireHalloweenState(loadJsonFile(statePath)) : null;
+        return true;
+    }
+    ctx.halloweenBalance = 0;
+    var member = data.member && data.member[user], id = member && member.serverRaidAccount && member.serverRaidAccount.id;
+    if (ctx.halloweenState && ctx.halloweenState.active && id) {
+        var path = ctx.rootPath + getHalloweenAccountName(id);
+        if (new java.io.File(path).exists()) {
+            var account = requireHalloweenAccount(loadJsonFile(path), id);
+            ctx.halloweenBalance = getHalloweenBalance(ctx.halloweenState, account);
+        }
+    }
+    return true;
+}
+
+// 펫스킬 슬롯 개수 계산 함수
 function getPetSkillSlotCount(data, petSkillData, user) {
 	var info = getUserIntimacyInfo(data, user);
-	var level = info && info.level ? info.level : 0;
-	var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론");
+	var base = Math.max(0, Math.min(PET_SKILL_MAX_EQUIP_SLOT, Math.floor((info && info.level ? info.level : 0) / GLOBAL_CONFIG.petSkill.slots.intimacyLevelsPerSlot))); // 친밀도 100레벨당 1칸, 기본 최대 30칸
+	var member = data && data.member ? data.member[user] : null;
+	var extra = Math.max(0, parseInt(member && member.petSkillExtraSlots, 10) || 0); // 누적 사용한 확장권 수
+	var intro = hasPetSkill(petSkillData, user, "펫스킬 학개론") ? GLOBAL_CONFIG.petSkill.slots.introBonus : 0;
 	var premiumSlotBonus = isInfoSupportPassActive(data, user, "premium") ? GLOBAL_CONFIG.supportPass.premium.skillSlotBonus : 0;
-	var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0);
-	var slots = Math.floor(level / 100);
-	slots += hasIntro ? 3 : 0;
-
-	if (slots > maxSlot) slots = maxSlot;
-	if (slots < 0) slots = 0;
-	return slots + premiumSlotBonus;
+	return Math.min(GLOBAL_CONFIG.petSkill.slots.maxCount, base + intro + premiumSlotBonus + extra);
 }
 // 숫자 3자리마다 쉼표 추가 함수
 function numberWithCommas(x) {
@@ -3356,9 +3521,9 @@ function checkRank(data, petData, guildData, user) {
 			userwithrank = "[무쌍⚔️]" + userwithrank;
 		}
 
-		return userwithrank;
+		return rememberHalloweenRank(userwithrank);
 	} else {
-		return userwithrank;
+		return rememberHalloweenRank(userwithrank);
 	}
 }
 /**
