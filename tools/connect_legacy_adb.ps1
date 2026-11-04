@@ -27,14 +27,21 @@ function Invoke-HoiConnectionCommand {
     $info.StandardErrorEncoding = [Text.Encoding]::UTF8
     $process = New-Object Diagnostics.Process
     $process.StartInfo = $info
+    Write-Host ('[RUN] {0} {1}' -f [IO.Path]::GetFileName($Executable), ($Arguments -join ' '))
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     try {
         [void]$process.Start()
         $stdout = $process.StandardOutput.ReadToEndAsync()
         $stderr = $process.StandardError.ReadToEndAsync()
         if (-not $process.WaitForExit(10000)) {
             $process.Kill()
-            $process.WaitForExit()
+            [void]$process.WaitForExit(1000)
             return @{ ExitCode = -1; Text = 'Command timed out after 10 seconds.' }
+        }
+        # A spawned ADB daemon can hold output pipes open after the command exits.
+        $remaining = [int][Math]::Max(0, 10000 - $timer.ElapsedMilliseconds)
+        if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), $remaining)) {
+            return @{ ExitCode = -1; Text = 'Command output timed out after 10 seconds.' }
         }
         return @{ ExitCode = $process.ExitCode; Text = ($stdout.Result + $stderr.Result).Trim() }
     } finally { $process.Dispose() }
