@@ -5,6 +5,14 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 시작 단계의 요청 모니터링 설정 저장
+
+Status: VERIFIED
+
+- `main.js`: `requestMonitorConfigPath`에서 설정을 읽고 기존 기준대로 누락·잘못된 설정값을 보완한다.
+- 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`는 `GLOBAL_CONFIG`와 저장 잠금 초기화 이후, 지급 복구·최초 회원 로드 이전에 실행한다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조한다.
+- `loadJsonFile`·`saveJsonFile`·DEV/PROD 경로 선택과 저장 실패 전파 방식은 유지한다.
+
 ## 패스 관리 MASTER 권한
 
 Status: VERIFIED
