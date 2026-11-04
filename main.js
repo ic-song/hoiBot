@@ -3897,11 +3897,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (getHowolMysteryRequest(responseDiceCommand) || isDevCommandMessage(msg) && responseDiceCommand === "/ㅊㄹ" || getGuildWarRequest(responseDiceCommand) || getHowolDramaRequest(responseDiceCommand) || isServerRaidMutationCommand(msg) || isPackageGrantCommand(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || getDailyRankingPayoutRequest(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
         else if (!dataTransactionLock.tryLock()) return;
         responseTransactionAcquired = true;
+        var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
         beginDataSaveTransaction();
         dataSaveTransactionEntered = true;
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        var responseRecoveryStartMs = Date.now();
         recoverGuildWarPublication();
         recoverInterruptedMemberWrite();
         recoverHowolDramaPending();
@@ -3909,8 +3911,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         recoverDailyRankingPending();
         runHalloweenEntry("state", { ctx: ctx });
         replier = createContextReplier(replier, ctx);
-        var responseStartMs = Date.now();
-        var responseTimingRows = [];
+        var responseStartMs = miniGameRequestAt; // 잠금·초기 복구를 포함한 실제 응답 진입 기준
+        var responsePreprocessStartMs = Date.now();
+        var responseTimingRows = [
+            { label: "공통 잠금·진입 대기", ms: responseLockReadyMs - miniGameRequestAt },
+            { label: "초기 복구 검사", ms: responsePreprocessStartMs - responseRecoveryStartMs }
+        ];
         function addResponseTiming(label, startMs) {
             responseTimingRows.push({ label: label, ms: Date.now() - startMs });
         }
@@ -3939,13 +3945,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (msg === "ㅁㅂ") msg = "/마블굴리기";
         else if (msg === "ㅁㄱ") msg = "/마블구매";
         else if (msg === "ㅁㅌ") msg = "/마블통과";
-        var territoryEntryGuildData;
+        var territoryEntryGuildData, territoryEntryTransaction;
+        var territoryEntryLoadStartMs = Date.now();
         try {
             territoryEntryGuildData = loadJsonFile(guildPath);
+            territoryEntryTransaction = getDataSaveTransaction();
         } catch (territoryEntryError) {
             if (isManualResetInput(msg)) delete manualResetSessions[getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev)];
             throw territoryEntryError;
         }
+        addResponseTiming("초기 guildData.json 로드", territoryEntryLoadStartMs);
         if (isGuildTerritoryWarCommandLockActive(territoryEntryGuildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             if (msg.charAt(0) === "/" || msg === "ㅊㅊ") replier.reply("🏰 길드 영지전 진행 중에는 영지전 관련 명령어와 /글자수전체정리만 사용할 수 있습니다.");
             return;
@@ -4231,7 +4240,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         recoverAdventureRecordPending(); // 회원을 읽기 전에 중단된 기록·회원·분리 저장본을 함께 복구
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
+        var initialMemberLoadStartMs = Date.now();
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
+        addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
         if (dataCleanupAction) {
             if (!memberStorageCleanupAllowed) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("⛔ 사용 권한이 없습니다."); return; }
             if (dataCleanupAction === "cancel" || dataCleanupAction === "confirm" && (!dataCleanupSessions[dataCleanupKey] || Date.now() >= dataCleanupSessions[dataCleanupKey].expiresAt)) {
@@ -5505,7 +5516,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
 
         var commonStepStart = Date.now();
-        addResponseTiming("명령 전처리/과부하체크", responseStartMs);
+        addResponseTiming("명령 전처리/과부하체크", responsePreprocessStartMs);
         commonStepStart = Date.now();
         if (!data) data = loadJsonFile(filePath);
         addResponseTiming("member.json 로드", commonStepStart);
@@ -5522,7 +5533,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var petSkillData = loadJsonFile(petSkillDataPath);
         addResponseTiming("petSkillData.json 로드", commonStepStart);
         commonStepStart = Date.now();
-        var guildData = loadJsonFile(guildPath);
+        var commonGuildTransaction = getDataSaveTransaction();
+        var commonGuildSaveEntry = commonGuildTransaction && commonGuildTransaction.entries[resolveActiveDataPath(guildPath)];
+        var reuseEntryGuildData = commonGuildTransaction && territoryEntryTransaction === commonGuildTransaction && !commonGuildTransaction.failed && !commonGuildTransaction.rollingBack && !(commonGuildSaveEntry && commonGuildSaveEntry.saved);
+        var guildData = reuseEntryGuildData ? territoryEntryGuildData : loadJsonFile(guildPath); // 복구 경계·길드 저장이 없을 때만 같은 요청의 검증 원본 재사용
+        territoryEntryGuildData = null;
         if (msg === "/스케줄") {
             replier.reply(buildDailyScheduleMessage(data, petData, guildData, sender));
             return;
