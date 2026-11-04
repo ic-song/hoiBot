@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.767"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.768"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -985,7 +985,6 @@ if (!(requestMonitorConfig.excludedRooms instanceof Array)) {
 }
 USER_REQUEST_WINDOW_MS = requestMonitorConfig.windowMs;
 USER_REQUEST_LIMIT = requestMonitorConfig.limit;
-saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
 var protectedJsonSaveLocks = {}; // 보호 JSON과 직전 백업 경로별 저장 잠금
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
@@ -3518,6 +3517,9 @@ blockedNicknameTerms: [
         }
     }
 };
+
+// 저장 계층이 참조하는 전역 설정 초기화 후 요청 모니터링 설정을 저장한다.
+saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 
 // 중단된 지급의 회원 원문부터 복구한 뒤 최초 권한·캐시를 읽는다.
 recoverGuildWarPublication();
