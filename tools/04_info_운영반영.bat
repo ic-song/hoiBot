@@ -75,81 +75,11 @@ echo.
 
 echo [3/5] LDPlayer 인스턴스 연결 확인
 echo ------------------------------------------------------------
-if exist "%ADB_EXE%" (
-	echo [INFO] ADB devices:
-	"%ADB_EXE%" devices
-	if /i "%TARGET_ADB_DEVICE%"=="auto" (
-		set DETECTED_ADB_DEVICE=
-		set DETECTED_ADB_COUNT=0
-		for /f "skip=1 tokens=1,2" %%a in ('"%ADB_EXE%" devices') do (
-			if "%%b"=="device" (
-				set /a DETECTED_ADB_COUNT+=1
-				set DETECTED_ADB_DEVICE=%%a
-			)
-		)
-		if "!DETECTED_ADB_COUNT!"=="1" (
-			set TARGET_ADB_DEVICE=!DETECTED_ADB_DEVICE!
-			set USE_DIRECT_ADB=1
-			echo [INFO] 직접 ADB device 사용: !TARGET_ADB_DEVICE!
-		)
-	) else (
-		set USE_DIRECT_ADB=1
-	)
-)
-if "%USE_DIRECT_ADB%"=="1" (
-	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "ls -l '%TARGET_FILE%'" > "%DEPLOY_LOG%" 2>&1
-	type "%DEPLOY_LOG%"
-	if errorlevel 1 goto FAIL_REMOTE_VERIFY
-	findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
-	if not errorlevel 1 goto FAIL_REMOTE_VERIFY
-	echo [OK] 직접 ADB device: %TARGET_ADB_DEVICE%
-	echo [OK] TARGET_FILE = %TARGET_FILE%
-	echo.
-) else (
-echo [INFO] LDPlayer list2:
-"%LD_CONSOLE_EXE%" list2
-if /i "%TARGET_LD_INDEX%"=="auto" (
-	echo [INFO] TARGET_LD_INDEX=auto - 고정 TARGET_FILE이 있는 LDPlayer를 찾습니다.
-	set DETECTED_LD_INDEX=
-	set DETECTED_LD_COUNT=0
-	for /f "tokens=1 delims=," %%i in ('"%LD_CONSOLE_EXE%" list2') do (
-		echo [INFO] LDPlayer index %%i - TARGET_FILE 확인
-		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell ls -l %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
-		set "LD_PROBE_EXIT_CODE=!ERRORLEVEL!"
-		type "%DEPLOY_LOG%"
-		set LD_PROBE_OK=0
-		rem 종료코드와 실제 파일 경로를 함께 확인하여 빈 응답을 성공으로 처리하지 않습니다.
-		if "!LD_PROBE_EXIT_CODE!"=="0" (
-			findstr /l /c:"%TARGET_FILE%" "%DEPLOY_LOG%" > nul 2>&1
-			if not errorlevel 1 (
-				findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
-				if errorlevel 1 set LD_PROBE_OK=1
-			)
-		)
-		if "!LD_PROBE_OK!"=="1" (
-			set /a DETECTED_LD_COUNT+=1
-			set DETECTED_LD_INDEX=%%i
-			echo [INFO] 고정 TARGET_FILE 확인: LDPlayer index %%i, %TARGET_FILE%
-		) else (
-			echo [WARN] LDPlayer index %%i 확인 실패 - exit=!LD_PROBE_EXIT_CODE!, 위 ADB 응답을 확인하세요.
-		)
-	)
-	if "!DETECTED_LD_COUNT!"=="0" goto FAIL_LD_AUTO_INDEX
-	if not "!DETECTED_LD_COUNT!"=="1" goto FAIL_LD_MULTI_INDEX
-	set TARGET_LD_INDEX=!DETECTED_LD_INDEX!
-) else (
-	"%LD_CONSOLE_EXE%" list2 | findstr /b "%TARGET_LD_INDEX%," > nul 2>&1
-	if errorlevel 1 goto FAIL_LD_INDEX
-)
-rem 같은 괄호 안에서 자동 감지한 인스턴스 번호를 즉시 사용합니다.
-"%LD_CONSOLE_EXE%" adb --index !TARGET_LD_INDEX! --command "shell echo ok" > "%DEPLOY_LOG%" 2>&1
-type "%DEPLOY_LOG%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0connect_legacy_adb.ps1" -AdbExe "%ADB_EXE%" -LdConsoleExe "%LD_CONSOLE_EXE%" -TargetFile "%TARGET_FILE%" -TargetLdIndex "%TARGET_LD_INDEX%" -TargetDevice "%TARGET_ADB_DEVICE%" -ResultFile "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_ADB
-findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
-if not errorlevel 1 goto FAIL_ADB
-echo [OK] LDPlayer index: !TARGET_LD_INDEX!
+for /f "usebackq tokens=1,* delims==" %%a in ("%DEPLOY_LOG%") do set "%%a=%%b"
+echo [OK] 직접 ADB device: !TARGET_ADB_DEVICE!
 echo.
-)
 
 echo [4/5] Info.js 업로드
 echo ------------------------------------------------------------
