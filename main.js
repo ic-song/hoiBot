@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.765"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.766"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1003,6 +1003,7 @@ var howolDramaPublishingThread = new java.lang.ThreadLocal();
 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     howolDrama: {
         fileName: "howolDrama.json", pendingName: "howolDramaPending.json", menuTimeoutMs: 300000, eventLimit: 128,
         workId: "flirting-season-1", title: "💗 플러팅은 책으로 배웠습니다만?", maxScore: 100, boxesPerPoint: 4,
@@ -3103,7 +3104,7 @@ blockedNicknameTerms: [
         visibleRankCount: 10
     },
     adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
-        history: { fileName: "adventureQuestHistory.json", pendingName: "adventureQuestHistoryPending.json", backupName: "adventureQuestHistory_legacy.json", markerKey: "adventureQuestHistorySplit20261014", schemaVersion: 1 },
+        history: { fileName: "adventureQuestHistory.json", pendingName: "adventureQuestHistoryPending.json", snapshotSuffix: ".quest-rollback", backupName: "adventureQuestHistory_legacy.json", markerKey: "adventureQuestHistorySplit20261014", schemaVersion: 1 },
         seasonMaxStage: 100,
         tutorialMaxStage: 16,
         battleResultGoal: 5,
@@ -3883,7 +3884,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             for (var cleanupLoadIndex = 0; cleanupLoadIndex < cleanupFilterPaths.length; cleanupLoadIndex++) {
                 var cleanupStore = loadJsonFile(cleanupFilterPaths[cleanupLoadIndex]);
                 cleanupFilterStores.push(cleanupStore);
-                cleanupFilterSnapshots.push(JSON.stringify(cleanupStore));
+                cleanupFilterSnapshots.push(createJsonRollbackSnapshot(cleanupStore));
             }
             var cleanupFilterResult = cleanupMessageFilterData(cleanupFilterStores, cleanupFilterWords);
             for (var cleanupSaveIndex = 0; cleanupSaveIndex < cleanupFilterPaths.length; cleanupSaveIndex++) {
@@ -3984,7 +3985,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (absentHistoryFile.exists() && !absentHistoryFile.delete()) throw new Error("강탈 기록 초기 이전 복구 실패");
                     } else writeVerifiedJsonFile(recoveryPath, recoveryRow.text, true);
                 }
-                writeMemberSplitSlot(robberyPendingPath, JSON.stringify({ pending: null }));
+                writeMemberSplitSlot(robberyPendingPath, { pending: null });
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 복구 완료 이후 새 명령 실패와 복구를 분리
             }
         }
@@ -4008,7 +4009,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var gmRecoveryStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
             var gmRecovery = applyGmEducationPending(gmRecoveryMember, gmRecoveryStore, gmRecoveryPending);
             if (gmRecovery.memberChanged) { saveJsonFile(gmRecoveryMember, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
-            if (gmRecovery.storeChanged) { writeMemberSplitSlot(gmEducationPath, JSON.stringify(gmRecoveryStore)); endDataSaveTransaction(); beginDataSaveTransaction(); }
+            if (gmRecovery.storeChanged) { writeMemberSplitSlot(gmEducationPath, gmRecoveryStore); endDataSaveTransaction(); beginDataSaveTransaction(); }
             if (!new java.io.File(gmEducationPendingPath).delete()) throw new Error("교육 복구 요청 정리 실패");
             endDataSaveTransaction(); beginDataSaveTransaction();
         }
@@ -4037,7 +4038,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var marbleCreatedFile = new java.io.File(marblePath);
                     if (marbleCreatedFile.exists() && !marbleCreatedFile.delete()) throw new Error("길드마블 미완료 신규 파일 복구 실패");
                 } else writeVerifiedJsonFile(marblePath, marblePending.pending.marbleText, true);
-                writeVerifiedJsonFile(marblePendingPath, JSON.stringify({ schemaVersion: marbleConfig.schemaVersion, pending: null }), true);
+                writeVerifiedJsonFile(marblePendingPath, { schemaVersion: marbleConfig.schemaVersion, pending: null }, true);
                 endDataSaveTransaction(); beginDataSaveTransaction();
             }
         }
@@ -4107,7 +4108,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var memberStorageBackupPath = resolveActiveDataPath(MEMBER_STORAGE_SPLIT_CONFIG.backupPrefix + memberStorageId + ".json");
                     if (new java.io.File(memberStorageBackupPath).exists()) throw new Error("파일 분리 원본 백업이 이미 존재합니다.");
                     var memberStorageBeforeBytes = getMemberSplitByteLength(data);
-                    writeVerifiedJsonFile(memberStorageBackupPath, JSON.stringify(data), true);
+                    writeVerifiedJsonFile(memberStorageBackupPath, data, true);
                     memberStorageMarker = { version: MEMBER_STORAGE_SPLIT_CONFIG.version, id: memberStorageId, phase: "COPYING",
                         backupPath: memberStorageBackupPath, beforeBytes: memberStorageBeforeBytes, startedAt: formatDateTime(new Date()) };
                     if (!data.migrations) data.migrations = {};
@@ -4159,11 +4160,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     for (var repairPathIndex = 0; repairPathIndex < memberStorageRepairPaths.length; repairPathIndex++) {
                         var repairPath = memberStorageRepairPaths[repairPathIndex];
                         var repairFileExists = new java.io.File(repairPath).exists();
-                        var repairOriginalText = repairFileExists ? FileStream.read(repairPath, "utf-8") : null; // 불일치·손상된 옛 백업도 원문으로 보관
-                        if (repairFileExists && repairOriginalText == null) throw new Error("잔류 로그 복구 원본을 읽을 수 없습니다: " + repairPath);
-                        memberStorageRepairSet.files.push({ path: repairPath, text: repairOriginalText });
+                        var repairRow = { path: repairPath, text: null }; // 손상된 옛 백업도 파일별 원문 그대로 보관
+                        if (repairFileExists) defineJsonFileText(repairRow, "text", repairPath);
+                        memberStorageRepairSet.files.push(repairRow);
                     }
-                    writeVerifiedJsonFile(memberStorageRepairSetPath, JSON.stringify(memberStorageRepairSet), true);
+                    writeVerifiedJsonFile(memberStorageRepairSetPath, memberStorageRepairSet, true);
                     saveJsonFile(data, filePath, true); // 명시적 복구에서만 기존 백업 회전을 생략; 원본·분리 슬롯 롤백은 유지
                     var memberStorageRepairedText = FileStream.read(resolveActiveDataPath(filePath), "utf-8");
                     for (var repairBackupGeneration = 1; repairBackupGeneration <= 2; repairBackupGeneration++) {
@@ -4200,7 +4201,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var adventureMigration = buildAdventureRecordMigration(data);
                 var adventureOriginalPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureHistoryConfig.backupName);
                 if (new java.io.File(adventureOriginalPath).exists()) requireAdventureRecordStore(loadJsonFile(adventureOriginalPath));
-                else writeVerifiedJsonFile(adventureOriginalPath, JSON.stringify(adventureMigration.store), true);
+                else writeVerifiedJsonFile(adventureOriginalPath, adventureMigration.store, true);
                 if (!data.migrations) data.migrations = {};
                 data.migrations[adventureHistoryConfig.markerKey] = true;
                 Object.defineProperty(data, "__adventureRecordContext", { value: { store: adventureMigration.store, text: null }, configurable: true, enumerable: false });
@@ -4218,11 +4219,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg) || msg === "/데이터정리") && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists() && (isMasterIdentity(sender) || (msg === "/데이터정리" && isAdminIdentity(sender)))) {
             ctx.dollDeletion = { index: requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json")), stores: [], snapshots: [], dirty: false };
-            ctx.dollDeletion.indexSnapshot = JSON.stringify(ctx.dollDeletion.index);
+            ctx.dollDeletion.indexSnapshot = createJsonRollbackSnapshot(ctx.dollDeletion.index);
             for (var dollDeleteSlot = 0; dollDeleteSlot < GLOBAL_CONFIG.doll.shardCount; dollDeleteSlot++) {
                 var dollDeleteStore = requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollRecords_" + dollDeleteSlot + ".json"));
                 ctx.dollDeletion.stores.push(dollDeleteStore);
-                ctx.dollDeletion.snapshots.push(JSON.stringify(dollDeleteStore));
+                ctx.dollDeletion.snapshots.push(createJsonRollbackSnapshot(dollDeleteStore));
             }
         }
         var raidCommand = isServerRaidCommand(msg);
@@ -4474,7 +4475,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(mainDataBack, filePath, true);
                     saveJsonFile(petDataBack, memberPetPath, true);
                     if (petSkillDataBack) saveJsonFile(petSkillDataBack, petSkillDataPath, true);
-                    writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), JSON.stringify(petHomeActivityDataBack), true);
+                    writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), petHomeActivityDataBack, true);
 
                     replier.reply(sender + "님이 직전 데이터로 봇을 살립니다.");
                 } else {
@@ -4498,7 +4499,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 var petHomeActivityBackupContent = FileStream.read(activePetHomeActivityBackupPath, "utf-8");
                 var restoredPetHomeActivityData = requirePetHomeActivityData(parseJsonContent(petHomeActivityBackupContent, activePetHomeActivityBackupPath));
-                writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), JSON.stringify(restoredPetHomeActivityData), true);
+                writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), restoredPetHomeActivityData, true);
                 replier.reply("✅ 펫홈 활동 데이터를 직전 정상 백업으로 복구했습니다.");
                 return;
             } catch (petHomeActivityRestoreError) {
@@ -4607,12 +4608,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var marbleJournal = { schemaVersion: marbleConfig.schemaVersion, pending: { memberText: FileStream.read(resolveActiveDataPath(filePath), "utf-8"), marbleText: marbleOriginalText } };
                     validateGuildMarblePending(marbleJournal);
-                    writeVerifiedJsonFile(marblePendingPath, JSON.stringify(marbleJournal), true);
+                    writeVerifiedJsonFile(marblePendingPath, marbleJournal, true);
                     saveJsonFile(data, filePath);
-                    writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
-                    writeVerifiedJsonFile(marblePendingPath, JSON.stringify({ schemaVersion: marbleConfig.schemaVersion, pending: null }), true);
+                    writeMemberSplitSlot(marblePath, marbleStore);
+                    writeVerifiedJsonFile(marblePendingPath, { schemaVersion: marbleConfig.schemaVersion, pending: null }, true);
                     endDataSaveTransaction(); beginDataSaveTransaction();
-                } else writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
+                } else writeMemberSplitSlot(marblePath, marbleStore);
             }
             replyGuildMarbleSafely(replier, marbleMessage);
             return;
@@ -4683,14 +4684,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     gmStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
                     gmPlan = applyGmEducationPending(data, gmStore, gmPending);
                 }
-                writeVerifiedJsonFile(gmEducationPendingPath, JSON.stringify(gmPending), true);
+                writeVerifiedJsonFile(gmEducationPendingPath, gmPending, true);
                 endDataSaveTransaction(); beginDataSaveTransaction();
                 // 요청이 영속화된 뒤 최초 보상 확정 시각을 영수증과 같은 회원 저장에 남긴다.
                 data = loadJsonFile(filePath); gmContext.data = data;
                 gmStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
                 gmPlan = applyGmEducationPending(data, gmStore, gmPending);
                 if (gmPlan.memberChanged) { saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
-                if (gmPlan.storeChanged) { writeMemberSplitSlot(gmEducationPath, JSON.stringify(gmStore)); endDataSaveTransaction(); beginDataSaveTransaction(); }
+                if (gmPlan.storeChanged) { writeMemberSplitSlot(gmEducationPath, gmStore); endDataSaveTransaction(); beginDataSaveTransaction(); }
                 if (!new java.io.File(gmEducationPendingPath).delete()) throw new Error("교육 완료 요청 정리 실패");
                 endDataSaveTransaction(); beginDataSaveTransaction();
             } catch (gmSaveError) {
@@ -4779,6 +4780,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var memberStatsUserCount = parsedMemberForStats.member ? Object.keys(parsedMemberForStats.member).length : 0;
                 out += "- 멤버: " + numberWithCommas(c1.length) + "자 / " + numberWithCommas(memberStatsUserCount) + "명\n";
                 out += "  ↳ 동기화: /길드데이터동기화, /전체동기화\n";
+                c1 = null; parsedMemberForStats = null;
             }
 
             // 펫홈
@@ -4791,6 +4793,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var parsedPetHomeForStats = parseJsonContent(c2, activePath2);
                 out += "- 펫홈: " + numberWithCommas(c2.length) + "자 / " + numberWithCommas(Object.keys(parsedPetHomeForStats).length) + "명\n";
                 out += "  ↳ 동기화: /장착가구동기화\n";
+                c2 = null; parsedPetHomeForStats = null;
             }
 
             // 장착 가구 상세
@@ -4803,6 +4806,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var parsedPlacedFurnitureForStats = parseJsonContent(placedFurnitureContent, activePlacedFurniturePath);
                 out += "- 장착가구: " + numberWithCommas(placedFurnitureContent.length) + "자 / " + numberWithCommas(Object.keys(parsedPlacedFurnitureForStats).length) + "명\n";
                 out += "  ↳ 동기화: /장착가구동기화\n";
+                placedFurnitureContent = null; parsedPlacedFurnitureForStats = null;
             }
 
             // 펫멤버
@@ -4828,6 +4832,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
                 pendantTextLength = JSON.stringify(pendantOnlyData).length;
+                c3 = null; parsedPetMemberForStats = null;
             }
 
             // 펫스킬
@@ -4839,6 +4844,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var c4 = FileStream.read(activePath4, "utf-8");
                 var parsedPetSkillForStats = parseJsonContent(c4, activePath4);
                 out += "- 펫스킬: " + numberWithCommas(c4.length) + "자 / " + numberWithCommas(Object.keys(parsedPetSkillForStats).length) + "명\n";
+                c4 = null; parsedPetSkillForStats = null;
             }
             out += "- 펜던트: " + (pendantTextLength === null ? "❌ 파일 없음" : numberWithCommas(pendantTextLength) + "자 / " + numberWithCommas(Object.keys(pendantOnlyData).length) + "명") + "\n";
 
@@ -4856,6 +4862,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 dollStatsTotalChars += dollStatsText.length;
                 if (dollStatsName.indexOf("dollRecords_") === 0) dollStatsRecordUsers += dollStatsCount;
                 out += "- " + dollStatsName + ": " + numberWithCommas(dollStatsText.length) + "자" + (dollStatsCount === null ? "" : " / " + numberWithCommas(dollStatsCount) + (dollStatsName === "dollCatalog.json" ? "종" : "명")) + "\n";
+                dollStatsText = null;
             }
             out += "- 인형 합계: " + numberWithCommas(dollStatsTotalChars) + "자 / 도감 " + numberWithCommas(dollStatsRecordUsers) + "명\n";
             out += "\n[칭호·성장 데이터]\n";
@@ -4870,6 +4877,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var parsedMemberTitleForStats = parseJsonContent(memberTitleContent, activeMemberTitlePath);
                 var memberTitleStatsUserCount = parsedMemberTitleForStats.member ? Object.keys(parsedMemberTitleForStats.member).length : 0;
                 out += "- 회원칭호: " + numberWithCommas(memberTitleContent.length) + "자 / " + numberWithCommas(memberTitleStatsUserCount) + "명\n";
+                memberTitleContent = null; parsedMemberTitleForStats = null;
             }
 
             // 펫칭호
@@ -4883,6 +4891,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var petTitleStatsUserCount = parsedPetTitleForStats.member ? Object.keys(parsedPetTitleForStats.member).length : 0;
                 out += "- 펫칭호: " + numberWithCommas(petTitleContent.length) + "자 / " + numberWithCommas(petTitleStatsUserCount) + "명\n";
                 out += "  ↳ 동기화: /펫타이틀동기화, /전체동기화\n";
+                petTitleContent = null; parsedPetTitleForStats = null;
             }
 
             // 미니펫칭호
@@ -4895,6 +4904,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var parsedMiniPetTitleForStats = parseJsonContent(miniPetTitleContent, activeMiniPetTitlePath);
                 var miniPetTitleStatsUserCount = parsedMiniPetTitleForStats.member ? Object.keys(parsedMiniPetTitleForStats.member).length : 0;
                 out += "- 미니펫칭호: " + numberWithCommas(miniPetTitleContent.length) + "자 / " + numberWithCommas(miniPetTitleStatsUserCount) + "명\n";
+                miniPetTitleContent = null; parsedMiniPetTitleForStats = null;
             }
 
             // 미니펫도감
@@ -4907,6 +4917,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var parsedMiniPetCollectionForStats = parseJsonContent(miniPetCollectionContent, activeMiniPetCollectionPath);
                 var miniPetCollectionStatsUserCount = parsedMiniPetCollectionForStats.member ? Object.keys(parsedMiniPetCollectionForStats.member).length : 0;
                 out += "- 미니펫도감: " + numberWithCommas(miniPetCollectionContent.length) + "자 / " + numberWithCommas(miniPetCollectionStatsUserCount) + "명\n";
+                miniPetCollectionContent = null; parsedMiniPetCollectionForStats = null;
             }
 
             // 시련의탑
@@ -4920,6 +4931,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var trialTowerStatsUserCount = parsedTrialTowerForStats.user ? Object.keys(parsedTrialTowerForStats.user).length : 0;
                 out += "- 시련의탑: " + numberWithCommas(trialTowerContent.length) + "자 / " + numberWithCommas(trialTowerStatsUserCount) + "명\n";
                 out += "  ↳ 동기화: /시련의탑동기화, /전체동기화\n";
+                trialTowerContent = null; parsedTrialTowerForStats = null;
             }
 
             out += "\n[운영 데이터]\n";
@@ -4951,6 +4963,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
                 out += "- 펫탐험: " + numberWithCommas(petExploreContent.length) + "자 / " + numberWithCommas(Object.keys(petExploreStatsUsers).length) + "명\n";
+                petExploreContent = null; parsedPetExploreForStats = null;
             }
 
             // 길드
@@ -4972,6 +4985,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 out += "- 길드: " + numberWithCommas(guildContent.length) + "자 / " + numberWithCommas(Object.keys(guildStatsUsers).length) + "명\n";
                 out += "  ↳ 동기화: /길드데이터동기화, /전체동기화\n";
+                guildContent = null; parsedGuildForStats = null;
             }
 
             // 경량출석
@@ -4984,6 +4998,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var parsedAttendanceLightForStats = parseJsonContent(attendanceLightContent, activeAttendanceLightPath);
                 var attendanceLightStatsUserCount = parsedAttendanceLightForStats.users ? Object.keys(parsedAttendanceLightForStats.users).length : 0;
                 out += "- 경량출석: " + numberWithCommas(attendanceLightContent.length) + "자 / " + numberWithCommas(attendanceLightStatsUserCount) + "명\n";
+                attendanceLightContent = null; parsedAttendanceLightForStats = null;
             }
 
             // 게시판
@@ -5002,6 +5017,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
                 out += "- 게시판: " + numberWithCommas(boardContent.length) + "자 / " + numberWithCommas(Object.keys(boardStatsUsers).length) + "명\n";
+                boardContent = null; parsedBoardForStats = null;
             }
 
             // 자유시장
@@ -5020,6 +5036,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (freeMarketStatsEntry.buyer) freeMarketStatsUsers[freeMarketStatsEntry.buyer] = true;
                 }
                 out += "- 자유시장: " + numberWithCommas(freeMarketContentForStats.length) + "자 / " + numberWithCommas(Object.keys(freeMarketStatsUsers).length) + "명\n";
+                freeMarketContentForStats = null; parsedFreeMarketForStats = null;
             }
 
             replier.reply(out.trim());
@@ -5619,7 +5636,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var dollResetPath = resolveActiveDataPath(DATA_ROOT_PATH + dollResetNames[dollResetFileIndex]);
                 var dollResetText = FileStream.read(dollResetPath, "utf-8");
                 dollResetObjects.push(parseManagedJsonContent(dollResetText, dollResetPath));
-                dollResetSnapshots.push({ name: dollResetNames[dollResetFileIndex], text: dollResetText });
+                dollResetSnapshots.push(defineJsonFileText({ name: dollResetNames[dollResetFileIndex] }, "text", dollResetPath));
             }
             var dollResetResult = resetAllDollRecords(dollResetObjects[0], dollResetObjects[1], dollResetObjects.slice(2));
             saveJsonFile({ pending: dollResetSnapshots }, DATA_ROOT_PATH + "dollPending.json");
@@ -5669,7 +5686,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
                 var dollSnapshotText = FileStream.read(resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName), "utf-8");
                 parseJsonContent(dollSnapshotText, dollSnapshotName);
-                dollSnapshots.push({ name: dollSnapshotName, text: dollSnapshotText });
+                dollSnapshots.push(defineJsonFileText({ name: dollSnapshotName }, "text", resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName)));
             }
             var dollDateKey = getAttendanceKstDateKey();
             var dollDateText = dollDateKey.substring(0, 4) + "." + dollDateKey.substring(4, 6) + "." + dollDateKey.substring(6, 8);
@@ -8573,7 +8590,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         // 원래 포인트와 종료가 확정된 정산 대기를 보존해 중단 복구 후에도 경기를 재개하지 않는다.
                         var resetMarbleJournal = { schemaVersion: marbleConfig.schemaVersion, pending: { memberText: String(FileStream.read(resolveActiveDataPath(filePath), "utf-8")), marbleText: resetMarbleResult.recoveryText } };
                         validateGuildMarblePending(resetMarbleJournal);
-                        writeVerifiedJsonFile(marblePendingPath, JSON.stringify(resetMarbleJournal), true);
+                        writeVerifiedJsonFile(marblePendingPath, resetMarbleJournal, true);
                     }
                     saveJsonFile(
                         {
@@ -8589,14 +8606,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var resetAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(data, filePath);
-                    if (resetMarbleResult && resetMarbleResult.changed) writeMemberSplitSlot(marblePath, JSON.stringify(resetMarbleStore));
+                    if (resetMarbleResult && resetMarbleResult.changed) writeMemberSplitSlot(marblePath, resetMarbleStore);
                     for (var miniResetIndex = 0; miniResetIndex < miniGameResetWrites.length; miniResetIndex++) {
                         var miniResetWrite = miniGameResetWrites[miniResetIndex], miniResetPath = resolveActiveDataPath(DATA_ROOT_PATH + miniResetWrite.name);
                         var miniResetEntry = prepareManagedJsonTransactionEntry(miniResetPath, false, miniResetWrite.previousText === null ? "" : miniResetWrite.previousText).entry;
                         if (miniResetEntry && miniResetWrite.previousText === null) miniResetEntry.created = true;
                         writeVerifiedJsonFile(miniResetPath, miniResetWrite.text);
                     }
-                    if (resetMarbleResult && resetMarbleResult.changed) writeVerifiedJsonFile(marblePendingPath, JSON.stringify({ schemaVersion: marbleConfig.schemaVersion, pending: null }), true);
+                    if (resetMarbleResult && resetMarbleResult.changed) writeVerifiedJsonFile(marblePendingPath, { schemaVersion: marbleConfig.schemaVersion, pending: null }, true);
                     if (miniGameResetWrites.length) scheduleMiniGameWork(ctx, 1);
                     if (resetMarbleResult) replier.reply("🎲 길드마블 정리: 경기 " + resetMarbleResult.closed + "개 종료 · 모집 " + resetMarbleResult.cancelled + "개 취소 · 정산 대기 " + resetMarbleResult.pending + "개");
                     if (ctx.miniGameRecoveryBlocked) replier.reply("⏸️ 미니게임 지급 확인 중이라 미니게임의 일일 초기화는 보류했어요. 기존 기록은 보존했어요.");
@@ -9063,22 +9080,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
                 if (msg.includes("/백업") && (isMaster(sender) || sender == "쓱싹 여" || sender == "오픈채팅봇")) {
-                    var board = loadJsonFile(boardPath);
-                    var petTitleData = loadJsonFile(petTitlePath);
-                    var trialTower = loadJsonFile(trialTowerPath);
-                    var titleData = loadJsonFile(memberTitlePath);
-                    let homeData = loadJsonFile(homeDataFile);
                     var placedFurnitureBackupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
-                    var petHomeActivityBackupData = new java.io.File(resolveActiveDataPath(petHomeActivityFile)).exists() ? requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)) : null;
+                    var petHomeActivityBackupExists = new java.io.File(resolveActiveDataPath(petHomeActivityFile)).exists();
                     savebackupJsonFile(filePath, data);
                     savebackupJsonFile(memberPetPath, petData);
-                    savebackupJsonFile(boardPath, board);
-                    savebackupJsonFile(petTitlePath, petTitleData);
-                    savebackupJsonFile(trialTowerPath, trialTower);
-                    savebackupJsonFile(homeDataFile, homeData);
+                    savebackupJsonFile(boardPath, loadJsonFile(boardPath));
+                    savebackupJsonFile(petTitlePath, loadJsonFile(petTitlePath));
+                    savebackupJsonFile(trialTowerPath, loadJsonFile(trialTowerPath));
+                    savebackupJsonFile(homeDataFile, loadJsonFile(homeDataFile));
                     if (placedFurnitureBackupData) savebackupJsonFile(petHomePlacedFurniturePath, placedFurnitureBackupData);
-                    if (petHomeActivityBackupData) savebackupJsonFile(petHomeActivityFile, petHomeActivityBackupData);
-                    savebackupJsonFile(memberTitlePath, titleData);
+                    if (petHomeActivityBackupExists) savebackupJsonFile(petHomeActivityFile, requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)));
+                    savebackupJsonFile(memberTitlePath, loadJsonFile(memberTitlePath));
                     savebackupJsonFile(guildPath, guildData);
                     replier.reply("백업 완료");
                 }
@@ -10260,7 +10272,7 @@ replier.reply(
                         replier.reply("❌ 레벨 리뉴얼 적용이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
                         return;
                     }
-                    var levelResetBackup = JSON.parse(JSON.stringify(data));
+                    var levelResetBackup = data; // 변경 전 원본은 검증된 디스크 백업을 재사용
                     var levelResetBackupPath = buildAdventureLevelResetBackupPath(new Date());
                     saveJsonFile(levelResetBackup, levelResetBackupPath, true);
                     var verifiedLevelResetBackup = loadJsonFile(levelResetBackupPath);
@@ -10268,6 +10280,7 @@ replier.reply(
                         replier.reply("❌ 원본 백업 검증에 실패해 전체 레벨 초기화를 중단했습니다.");
                         return;
                     }
+                    levelResetBackup = verifiedLevelResetBackup; verifiedLevelResetBackup = null;
                     var levelResetResult = applyAdventureLevelReset(data, levelResetBackupPath);
                     if (!levelResetResult.ok) {
                         replier.reply("❌ " + levelResetResult.message);
@@ -10318,13 +10331,14 @@ replier.reply(
                         replier.reply("❌ " + GLOBAL_CONFIG.level.boosterName + " 보상 후 포인트가 안전 정수 범위를 넘는 계정이 " + numberWithCommas(currentLevelRenewalInspection.unsafeBoosterCompensationUsers.length) + "명 있어 적용을 중단했습니다.");
                         return;
                     }
-                    var levelRenewalBackup = JSON.parse(JSON.stringify(data));
+                    var levelRenewalBackup = data; // 변경 전 원본은 검증된 디스크 백업을 재사용
                     saveJsonFile(levelRenewalBackup, GLOBAL_CONFIG.level.migrationBackupPath, true);
                     var verifiedLevelRenewalBackup = loadJsonFile(GLOBAL_CONFIG.level.migrationBackupPath);
                     if (!isExactJsonSnapshot(levelRenewalBackup, verifiedLevelRenewalBackup)) {
                         replier.reply("❌ 원본 백업 검증에 실패해 레벨 리뉴얼 적용을 중단했습니다.");
                         return;
                     }
+                    levelRenewalBackup = verifiedLevelRenewalBackup; verifiedLevelRenewalBackup = null;
                     var levelRenewalResult = applyAdventureLevelRenewal(data);
                     if (!levelRenewalResult.ok) {
                         replier.reply("❌ " + levelRenewalResult.message);
@@ -10353,13 +10367,14 @@ replier.reply(
                         replier.reply("❌ 환급 후 포인트가 안전한 정수 범위를 넘는 계정이 " + numberWithCommas(rebirthRecallPrecheck.unsafeRefundUsers.length) + "명 있어 회수를 중단했습니다.\n먼저 해당 계정의 포인트를 점검해주세요.");
                         return;
                     }
-                    var rebirthRecallBackup = JSON.parse(JSON.stringify(data));
+                    var rebirthRecallBackup = data; // 변경 전 원본은 검증된 디스크 백업을 재사용
                     saveJsonFile(rebirthRecallBackup, GLOBAL_CONFIG.level.rebirthRecallBackupPath, true);
                     var verifiedRebirthRecallBackup = loadJsonFile(GLOBAL_CONFIG.level.rebirthRecallBackupPath);
                     if (!isExactJsonSnapshot(rebirthRecallBackup, verifiedRebirthRecallBackup)) {
                         replier.reply("❌ 원본 백업 검증에 실패해 환생버섯 회수를 중단했습니다.");
                         return;
                     }
+                    rebirthRecallBackup = verifiedRebirthRecallBackup; verifiedRebirthRecallBackup = null;
                     var rebirthRecallResult = applyRebirthMushroomRecall(data);
                     if (!rebirthRecallResult.ok) {
                         replier.reply("❌ " + rebirthRecallResult.message);
@@ -18780,7 +18795,7 @@ replier.reply(
                     if (packageGrantResult.ok) {
                         recordPackageGrant(packageStats, data, sender, packageParsed, packageSelected, packageEventId, msg, packageGrantResult.message, Date.now());
                         var packagePublication = buildPackageGrantPublication(data, packageGrantResult.packageLogData, packageStats, packageGrantResult.packageGrantFiles || []);
-                        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName), JSON.stringify(packagePublication), true);
+                        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName), packagePublication, true);
                         endDataSaveTransaction(); beginDataSaveTransaction(); // 접수된 지급은 재시작 때 같은 내용으로 완결한다.
                         recoverPackageGrantPending();
                         endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 전송 실패로 확정 지급을 취소하지 않는다.
@@ -18898,7 +18913,7 @@ replier.reply(
                     if (data.migrations && data.migrations[adventureRecordConfig.markerKey] === true) {
                         var adventureRecordPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureRecordConfig.fileName);
                         var adventureRecordText = FileStream.read(adventureRecordPath, "utf-8");
-                        var adventureRecordStore = requireAdventureRecordStore(loadJsonFile(adventureRecordPath));
+                        var adventureRecordStore = requireAdventureRecordStore(parseJsonContent(adventureRecordText, adventureRecordPath));
                         attachAdventureRecordStore(data, adventureRecordStore, sender, adventureRecordText);
                     }
                     var adventureQuestChanged = false;
@@ -19284,27 +19299,18 @@ replier.reply(
                                 delete data.member[sender].bag["선물상자🎁"];
                             }
                             let giftTotal = 0;
-                            let giftMsg = [];
+                            let giftMsg = new java.lang.StringBuilder();
                             for (let i = 0; i < giftOpenCount; i++) {
                                 var gift10 = parseInt(Math.floor(Math.random() * 6) + 1);
                                 gift10 = parseInt(gift10 * 500000);
                                 giftTotal += gift10;
-                                if (i == giftOpenCount - 1) {
-                                    giftMsg.push(i + 1 + ". 🎁 " + numberWithCommas(gift10));
-                                } else {
-                                    giftMsg.push(i + 1 + ". 🎁 " + numberWithCommas(gift10) + "\n");
-                                }
+                                if (i === 10) giftMsg.append(String(allsee));
+                                giftMsg.append(String(i + 1 + ". 🎁 " + numberWithCommas(gift10)));
+                                if (i !== giftOpenCount - 1) giftMsg.append("\n");
                             }
                             data.member[sender].point += parseInt(giftTotal);
-                            let giftTotalMsg = giftMsg.join("");
                             let giftMsg1 = "선물상자🎁 오픈!(" + giftOpenCount + "회)\n🎁 총 포인트 🅟" + numberWithCommas(giftTotal) + "획득🎁\n🎁 사용량 : " + giftOpenCount + " 🎁\n\n";
-                            let giftOpenCount1 = giftMsg.slice(0, 10).join("");
-                            let giftOpenCount2 = giftMsg.slice(10).join("");
-                            if (giftMsg.length > 10) {
-                                replier.reply(giftMsg1 + giftOpenCount1 + allsee + giftOpenCount2);
-                            } else {
-                                replier.reply(giftMsg1 + giftTotalMsg);
-                            }
+                            replier.reply(giftMsg1 + String(giftMsg.toString()));
                         } else {
                             replier.reply("선물상자를 이미 사용했어요.😅");
                         }
@@ -22184,7 +22190,7 @@ replier.reply(
                                 var robberySavePending = { pending: robberyHistorySnapshots };
                                 validateMiniPetRobberyPending(robberySavePending);
                                 if (!robberyBatch || !robberyBatch.robberyPending) {
-                                    writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), JSON.stringify(robberySavePending));
+                                    writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), robberySavePending);
                                     if (robberyBatch) { robberyBatch.robberyPending = true; robberyBatch.robberySnapshots = robberyHistorySnapshots; }
                                 }
                             }
@@ -22209,8 +22215,8 @@ replier.reply(
                     saveJsonFile(petData, memberPetPath, false, robberyHistorySnapshots ? robberyHistorySnapshots[1].text : undefined);
                     saveJsonFile(data, filePath);
                     if (robberyHistorySnapshots) {
-                        writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.fileName), JSON.stringify(robberyHistoryData));
-                        if (!getAutoDailyBatchContext()) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), JSON.stringify({ pending: null }));
+                        writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.fileName), robberyHistoryData);
+                        if (!getAutoDailyBatchContext()) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), { pending: null });
                     }
                     return;
                 }
@@ -31943,9 +31949,9 @@ replier.reply(
                         validateMiniPetRobberyPending(robberyMigrationPending);
                         var robberyLegacyPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.backupName);
                         if (new java.io.File(robberyLegacyPath).exists()) requireMiniPetRobberyStore(loadJsonFile(robberyLegacyPath));
-                        else writeVerifiedJsonFile(robberyLegacyPath, JSON.stringify(robberyMigration.legacy), true);
-                        writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), JSON.stringify(robberyMigrationPending));
-                        writeMemberSplitSlot(robberyCleanupPath, JSON.stringify(robberyMigration.store));
+                        else writeVerifiedJsonFile(robberyLegacyPath, robberyMigration.legacy, true);
+                        writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), robberyMigrationPending);
+                        writeMemberSplitSlot(robberyCleanupPath, robberyMigration.store);
                         for (var rm = 0; rm < robberyMigration.users.length; rm++) delete petData[robberyMigration.users[rm]].miniPetRobberyHistory;
                         if (!data.migrations) data.migrations = {};
                         data.migrations[robberyCleanupConfig.markerKey] = true;
@@ -32095,7 +32101,7 @@ replier.reply(
                     saveJsonFile(boardCleanupData, boardPath);
                     saveJsonFile(carrotBoardCleanupData, carrotBoardPath);
                     saveJsonFile(packageLogCleanupData, packageLogPath);
-                    if (robberyMigrationPending) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), JSON.stringify({ pending: null }));
+                    if (robberyMigrationPending) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), { pending: null });
 
                     var out = "🧹 /데이터정리 완료\n";
                     out += allsee + "\n";
@@ -33649,6 +33655,172 @@ function getPunchResult() {
     };
 }
 
+// 수정할 최상위 필드만 분리하고 나머지 조회 데이터는 공유하는 함수
+function copyJsonObjectShallow(value) {
+    var copy = {};
+    for (var key in value) if (Object.prototype.hasOwnProperty.call(value, key)) Object.defineProperty(copy, key, { value: value[key], enumerable: true, writable: true, configurable: true });
+    return copy;
+}
+
+// UTF-8 JSON을 작은 문자열 조각으로 기록해 전체 직렬화 문자열의 중복 보관을 피하는 함수
+function writeJsonStream(writer, value) {
+    var ancestors = [], chunkSize = GLOBAL_CONFIG.storage.jsonChunkChars, pending = "", transformed = false;
+    // 작은 토큰을 모아 Java 쓰기·해시 호출 횟수도 함께 줄인다.
+    function emit(part) {
+        pending += String(part);
+        if (pending.length >= chunkSize) { writer.write(pending); pending = ""; }
+    }
+    // 문자열 경계에서 이모지의 UTF-16 쌍이 끊어지지 않도록 JSON 문자열을 기록한다.
+    function writeString(text) {
+        emit('"');
+        for (var start = 0; start < text.length;) {
+            var end = Math.min(start + chunkSize, text.length);
+            if (end < text.length && text.charCodeAt(end - 1) >= 55296 && text.charCodeAt(end - 1) <= 56319) end--;
+            var part = JSON.stringify(text.substring(start, end));
+            emit(part.substring(1, part.length - 1)); start = end;
+        }
+        emit('"');
+    }
+    // native JSON.stringify와 같은 키·배열·toJSON 규칙으로 한 값을 기록한다.
+    function writeValue(item, key, prepared) {
+        if (!prepared && item && typeof item === "object" && typeof item.toJSON === "function") { transformed = true; item = item.toJSON(key); }
+        var tag = Object.prototype.toString.call(item);
+        if (tag === "[object Number]" || tag === "[object String]" || tag === "[object Boolean]") item = item.valueOf();
+        var type = typeof item;
+        if (type === "undefined" || type === "function") return false;
+        if (item === null || type === "number" || type === "boolean") { emit(JSON.stringify(item)); return true; }
+        if (type === "string") { writeString(item); return true; }
+        if (ancestors.indexOf(item) !== -1) throw new Error("순환 JSON 데이터는 저장할 수 없습니다.");
+        ancestors.push(item);
+        var array = Array.isArray(item), keys = array ? null : Object.keys(item), length = array ? item.length : keys.length, first = true;
+        emit(array ? "[" : "{");
+        for (var i = 0; i < length; i++) {
+            var childKey = array ? String(i) : keys[i], child = item[childKey];
+            if (child && typeof child === "object" && typeof child.toJSON === "function") { transformed = true; child = child.toJSON(childKey); }
+            if (!array && (typeof child === "undefined" || typeof child === "function")) continue;
+            if (!first) emit(","); first = false;
+            if (!array) { writeString(childKey); emit(":"); }
+            if (!writeValue(child, childKey, true)) emit("null");
+        }
+        emit(array ? "]" : "}"); ancestors.pop(); return true;
+    }
+    if (!writeValue(value, "")) throw new Error("JSON 직렬화 대상이 없습니다.");
+    if (pending) writer.write(pending);
+    return transformed;
+}
+
+// 기존 일반 파일의 직접 쓰기 방식을 유지하며 직렬화 원문 보관만 줄이는 저장 계층 함수
+function writeJsonFileDirect(path, value) {
+    getJsonValueFingerprint(value); // 순환 참조 등 직렬화 오류는 원본 파일을 열기 전에 확인
+    var stream = null, writer = null;
+    try {
+        stream = new java.io.FileOutputStream(path, false);
+        writer = new java.io.OutputStreamWriter(stream, "UTF-8");
+        writeJsonStream(writer, value); writer.flush(); stream.getFD().sync();
+    } finally {
+        try { if (writer) writer.close(); } finally { if (stream) stream.close(); }
+    }
+}
+
+// 큰 활성 저널은 헤더로 저장 대기를 판단하고 실제 복구 시에만 본문을 읽는 저장 계층 함수
+function readPendingJsonStatus(path) {
+    var activePath = resolveActiveDataPath(path), file = new java.io.File(activePath);
+    if (file.length() > GLOBAL_CONFIG.storage.pendingHeaderThresholdBytes) {
+        var reader = new java.io.InputStreamReader(new java.io.FileInputStream(file), "UTF-8");
+        try {
+            var buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, GLOBAL_CONFIG.storage.pendingHeaderChars);
+            var count = reader.read(buffer), prefix = count > 0 ? String(new java.lang.String(buffer, 0, count)) : "";
+            var match = prefix.match(/^\s*\{\s*(?:"(version|schemaVersion)"\s*:\s*(\d+)\s*,\s*)?"pending"\s*:\s*\[/);
+            if (match) {
+                var blocked = { pending: [] };
+                if (match[1]) blocked[match[1]] = Number(match[2]);
+                return blocked;
+            }
+        } finally { reader.close(); }
+    }
+    return parseJsonContent(FileStream.read(activePath, "utf-8"), activePath);
+}
+
+// 메모리에 전체 JSON을 만들지 않고 변경 비교에 사용할 SHA-256을 계산하는 함수
+function getJsonValueFingerprint(value) {
+    var digest = java.security.MessageDigest.getInstance("SHA-256");
+    writeJsonStream({ write: function (part) { digest.update(new java.lang.String(String(part)).getBytes("UTF-8")); } }, value);
+    return getJsonDigestHex(digest.digest());
+}
+
+// SHA-256 바이트를 고정 길이 소문자 문자열로 변환하는 함수
+function getJsonDigestHex(hash) {
+    var hex = "";
+    for (var i = 0; i < hash.length; i++) hex += ("0" + ((hash[i] & 255).toString(16))).slice(-2);
+    return hex;
+}
+
+// 파일 원문을 필요한 순간에만 읽어 대형 백업 목록의 동시 원문 보관을 피하는 함수
+function defineJsonFileText(target, key, path) {
+    Object.defineProperty(target, key, { enumerable: true, configurable: true, get: function () {
+        var text = FileStream.read(path, "utf-8");
+        if (text === null || text === undefined) throw new Error("복구 원문을 읽을 수 없습니다: " + path);
+        return text;
+    } });
+    return target;
+}
+
+// 회원 분리 저장은 객체로 기록하고 기존 저널 호출에는 원문 접근을 제공하는 함수
+function createMemberSplitWrite(path, value) {
+    var write = { path: path, value: value };
+    Object.defineProperty(write, "text", { get: function () { return JSON.stringify(value); } });
+    return write;
+}
+
+// 일괄 변경 전 객체를 기존 JSON으로 기록하고 원문 대신 사본 참조를 반환하는 저장 계층 함수
+function createJsonRollbackSnapshot(value) {
+    var transaction = getDataSaveTransaction();
+    if (!transaction) throw new Error("롤백 사본에는 명령 트랜잭션이 필요합니다.");
+    var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.storage.transactionPrefix + String(java.util.UUID.randomUUID()));
+    transaction.temporaryFiles.push(path);
+    writeVerifiedJsonFile(path, value, true);
+    return { snapshotPath: path, fingerprint: getJsonValueFingerprint(value) };
+}
+
+// 명시적으로 전달된 이전 JSON 원문도 명령 동안에는 파일로 보관하는 저장 계층 함수
+function createTransactionTextSnapshot(text) {
+    var transaction = getDataSaveTransaction();
+    if (!transaction) throw new Error("롤백 사본에는 명령 트랜잭션이 필요합니다.");
+    var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.storage.transactionPrefix + String(java.util.UUID.randomUUID()));
+    transaction.temporaryFiles.push(path);
+    writeVerifiedJsonFile(path, text, true);
+    return path;
+}
+
+// 내부에서 만든 현재 환경의 롤백 사본 참조인지 확인하는 함수
+function isJsonRollbackSnapshot(value) {
+    var root = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.storage.transactionPrefix);
+    return !!(value && typeof value === "object" && typeof value.snapshotPath === "string" && value.snapshotPath.indexOf(root) === 0 && /^[0-9a-f-]{36}$/.test(value.snapshotPath.substring(root.length)));
+}
+
+// 명령 중에만 필요한 롤백 원문을 디스크에 보존하는 저장 계층 함수
+function createTransactionFileSnapshot(path) {
+    var transaction = getDataSaveTransaction();
+    if (!transaction) throw new Error("롤백 사본에는 명령 트랜잭션이 필요합니다.");
+    var target = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.storage.transactionPrefix + String(java.util.UUID.randomUUID()));
+    transaction.temporaryFiles.push(target);
+    var before = inspectJsonRecoveryFile(path, target), copied = inspectJsonRecoveryFile(target);
+    if (before.bytes !== copied.bytes || before.hash !== copied.hash) throw new Error("롤백 사본 검증 실패");
+    return target;
+}
+
+// 재시작 전에 메모리에만 존재하던 명령 롤백 사본의 잔류 파일을 제거하는 저장 계층 함수
+function cleanupIdleTransactionFiles() {
+    var folder = new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH)), files = folder.listFiles();
+    if (files === null) return;
+    for (var i = 0; i < files.length; i++) {
+        var name = String(files[i].getName());
+        if (/^\.hoi-memory-[0-9a-f-]{36}$/.test(name) && files[i].isFile() && Date.now() - Number(files[i].lastModified()) >= GLOBAL_CONFIG.storage.transactionStaleMs && !files[i].delete()) {
+            try { debuggerLog("[WARN : 롤백 임시 사본 정리 실패]"); } catch (ignored) {}
+        }
+    }
+}
+
 // JSON 파일 로드 함수
 
 // JSON 문자열을 파싱하는 함수로, 빈 문자열이나 null/undefined인 경우 예외를 던지거나 기본값을 반환하도록 처리
@@ -33811,7 +33983,8 @@ function readMemberSplitStore(path, kind) {
     if (!new java.io.File(path).exists()) throw new Error("회원 분리 파일이 없습니다: " + path);
     var text = FileStream.read(path, "utf-8");
     var store = requireMemberSplitStore(parseJsonContent(text, path), kind);
-    Object.defineProperty(store, "__memberSplitSourceText", { value: text, enumerable: false });
+    defineJsonFileText(store, "__memberSplitSourceText", path);
+    Object.defineProperty(store, "__memberSplitSourceText", { enumerable: false });
     return store;
 }
 
@@ -33851,16 +34024,24 @@ function buildMemberSplitPublicationRecovery(member, backup, raid, logs) {
         marker.raidRevision !== prior.raidRevision + 1 || marker.logsRevision !== prior.logsRevision) throw new Error("회원 게시 복구 기준이 일치하지 않습니다.");
     requireMemberSplitStore(raid, "raid"); requireMemberSplitStore(logs, "logs");
     if (raid.id !== marker.id || raid.revision !== prior.raidRevision || logs.id !== marker.id || logs.revision !== marker.logsRevision) throw new Error("회원 게시 복구 분리 기록이 일치하지 않습니다.");
-    var comparison = JSON.parse(JSON.stringify(member)); // 재화·구독·회원 및 다른 모든 기록까지 직전 백업과 대조
+    var comparison = copyJsonObjectShallow(member); // 변경할 참조 표시만 분리하고 회원 기록은 공유
+    comparison.migrations = copyJsonObjectShallow(member.migrations);
+    comparison.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = copyJsonObjectShallow(member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key]);
     comparison.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key].raidRevision = prior.raidRevision;
-    if (JSON.stringify(comparison) !== JSON.stringify(backup) || JSON.stringify(member.serverRaid) !== JSON.stringify(buildMemberSplitRaidSummary(raid.data))) throw new Error("회원 게시 복구 중 기존 기록 차이를 발견했습니다.");
+    if (getJsonValueFingerprint(comparison) !== getJsonValueFingerprint(backup) || JSON.stringify(member.serverRaid) !== JSON.stringify(buildMemberSplitRaidSummary(raid.data))) throw new Error("회원 게시 복구 중 기존 기록 차이를 발견했습니다.");
     if (raid.data.current !== null) throw new Error("진행·정산 중인 레이드는 게시 복구할 수 없습니다.");
     for (var h = 0; h < raid.data.history.length; h++) {
         var round = raid.data.history[h];
         if (!round || round.state !== "DONE" || !round.accounts || typeof round.accounts !== "object") throw new Error("레이드 지급 기록을 확인할 수 없습니다.");
         for (var account in round.accounts) if (Object.prototype.hasOwnProperty.call(round.accounts, account) && round.accounts[account].paid !== true) throw new Error("미지급 레이드는 게시 복구할 수 없습니다.");
     }
-    var recoveredRaid = JSON.parse(JSON.stringify(raid)), cancelled = 0;
+    var recoveredRaid = copyJsonObjectShallow(raid), cancelled = 0;
+    recoveredRaid.data = copyJsonObjectShallow(raid.data);
+    recoveredRaid.data.outbox = raid.data.outbox.map(function (notice) {
+        var copy = copyJsonObjectShallow(notice);
+        copy.deliveries = notice.deliveries.map(function (delivery) { return copyJsonObjectShallow(delivery); });
+        return copy;
+    });
     recoveredRaid.revision = marker.raidRevision; // 회원 본문과 지급액을 되돌리지 않고 참조하는 저장 슬롯을 완성
     for (var n = 0; n < recoveredRaid.data.outbox.length; n++) {
         var notice = recoveredRaid.data.outbox[n];
@@ -33870,7 +34051,7 @@ function buildMemberSplitPublicationRecovery(member, backup, raid, logs) {
             if (!delivery.sent && !delivery.cancelled) { delivery.cancelled = true; cancelled++; }
         }
     }
-    var recoveredMember = JSON.parse(JSON.stringify(member));
+    var recoveredMember = copyJsonObjectShallow(member);
     recoveredMember.serverRaid = buildMemberSplitRaidSummary(recoveredRaid.data);
     return { member: recoveredMember, raid: recoveredRaid, cancelled: cancelled };
 }
@@ -33899,10 +34080,12 @@ function recoverMemberSplitPublication() {
         var plan = buildMemberSplitPublicationRecovery(member, backup, priorRaid, logs);
         var archivePath = resolveActiveDataPath(MEMBER_STORAGE_SPLIT_CONFIG.backupPrefix + "publication_recovery_" + String(java.util.UUID.randomUUID()) + ".json");
         if (new java.io.File(archivePath).exists()) throw new Error("회원 게시 복구 원본 보관 경로가 이미 있습니다.");
-        writeVerifiedJsonFile(archivePath, JSON.stringify({ memberText: memberText, raidText: FileStream.read(raidPath, "utf-8"), backupText: backupText, raidSource: priorRaid }), true);
+        var recoveryArchive = { memberText: memberText, backupText: backupText, raidSource: priorRaid };
+        defineJsonFileText(recoveryArchive, "raidText", raidPath);
+        writeVerifiedJsonFile(archivePath, recoveryArchive, true);
         beginDataSaveTransaction(); entered = true;
-        writeMemberSplitSlot(raidPath, JSON.stringify(plan.raid));
-        writeMemberSplitSlot(memberPath, JSON.stringify(plan.member));
+        writeMemberSplitSlot(raidPath, plan.raid);
+        writeMemberSplitSlot(memberPath, plan.member);
         var verified = loadJsonFile(filePath, "raid");
         if (JSON.stringify(verified.member) !== JSON.stringify(member.member) || JSON.stringify(verified.serverRaid) !== JSON.stringify(plan.raid.data)) throw new Error("회원 게시 복구 내용 검증 실패");
         return true;
@@ -33917,7 +34100,7 @@ function recoverMemberSplitPublication() {
 
 // 회원 객체에 저장 대상에서 제외되는 운영 로그와 저장 컨텍스트를 연결하는 함수
 function attachMemberSplitStores(data, marker, logs, raid) {
-    var context = { logsText: JSON.stringify(logs.data), raidText: raid ? JSON.stringify(raid.data) : null };
+    var context = { logsText: getJsonValueFingerprint(logs.data), raidText: raid ? getJsonValueFingerprint(raid.data) : null };
     for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
         var key = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
         if (Object.prototype.hasOwnProperty.call(data, key)) throw new Error("분리 완료 회원 파일에 운영 로그가 남아 있습니다: " + key);
@@ -33964,19 +34147,19 @@ function buildMemberSplitSavePlan(data) {
         if (!Array.isArray(data[logKey])) throw new Error("잘못된 운영 로그입니다: " + logKey);
         logs[logKey] = data[logKey];
     }
-    var logsText = JSON.stringify(logs), writes = [];
+    var logsText = getJsonValueFingerprint(logs), writes = [];
     if (logsText !== context.logsText) {
         nextMarker.logsRevision++;
         var logStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.logsRevision, data: logs }, "logs");
-        writes.push({ path: getMemberSplitStorePath("logs", nextMarker.logsRevision), text: stringifyMemberSplitStore(logStore, logsText) });
+        writes.push(createMemberSplitWrite(getMemberSplitStorePath("logs", nextMarker.logsRevision), logStore));
     }
     if (context.raidText !== null) {
-        raidText = JSON.stringify(data.serverRaid);
+        raidText = getJsonValueFingerprint(data.serverRaid);
         member.serverRaid = buildMemberSplitRaidSummary(data.serverRaid);
         if (raidText !== context.raidText) {
             nextMarker.raidRevision++;
             var raidStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.raidRevision, data: data.serverRaid }, "raid");
-            writes.push({ path: getMemberSplitStorePath("raid", nextMarker.raidRevision), text: stringifyMemberSplitStore(raidStore, raidText) });
+            writes.push(createMemberSplitWrite(getMemberSplitStorePath("raid", nextMarker.raidRevision), raidStore));
         }
     } else if (!data.serverRaid || data.serverRaid.storageSummary !== true) throw new Error("레이드 상세를 읽지 않은 상태에서 레이드 저장을 요청했습니다.");
     member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = nextMarker;
@@ -33995,7 +34178,7 @@ function writeMemberSplitSlot(path, text) {
     if (transaction && transaction.failed) throw new Error("Data save transaction already failed");
     if (transaction && !entry) {
         var existed = new java.io.File(path).exists();
-        entry = { path: path, snapshotText: existed ? FileStream.read(path, "utf-8") : null, created: !existed, saved: false };
+        entry = { path: path, snapshotText: null, snapshotPath: existed ? createTransactionFileSnapshot(path) : null, created: !existed, saved: false };
         transaction.entries[path] = entry;
         transaction.order.push(path);
     }
@@ -34021,7 +34204,9 @@ function preserveMemberSplitBackupStores(memberText, generation, sourceGeneratio
 
 // 회원 파일 분리 전후의 실제 UTF-8 저장 바이트 수를 구하는 함수
 function getMemberSplitByteLength(data) {
-    return new java.lang.String(JSON.stringify(data)).getBytes("UTF-8").length;
+    var bytes = 0;
+    writeJsonStream({ write: function (part) { bytes += new java.lang.String(String(part)).getBytes("UTF-8").length; } }, data);
+    return bytes;
 }
 
 // 기존 회원 객체에서 레이드·운영 로그 분리 파일의 최초 내용을 구성하는 함수
@@ -34039,15 +34224,18 @@ function createMemberSplitMigrationStores(data, marker) {
 
 // 재개 시 복사 중인 회원 데이터가 보존한 원본과 같은지 확인하는 함수
 function verifyMemberSplitMigrationSource(data, original) {
-    var source = JSON.parse(JSON.stringify(data));
+    var source = copyJsonObjectShallow(data);
+    source.migrations = copyJsonObjectShallow(data.migrations);
     delete source.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key];
     if (!original.migrations && Object.keys(source.migrations).length === 0) delete source.migrations;
-    if (JSON.stringify(source) !== JSON.stringify(original)) throw new Error("복사 중인 회원 데이터가 원본 백업과 다릅니다. 파일을 확인해 주세요.");
+    if (getJsonValueFingerprint(source) !== getJsonValueFingerprint(original)) throw new Error("복사 중인 회원 데이터가 원본 백업과 다릅니다. 파일을 확인해 주세요.");
 }
 
 // 검증된 분리 파일을 참조하도록 회원 객체의 공개 상태만 전환하는 함수
 function completeMemberSplitMigration(data, stores, completedAt) {
-    var member = JSON.parse(JSON.stringify(data)); // 분리 전 회원 정보·재화는 그대로 보존
+    var member = copyJsonObjectShallow(data); // 회원·재화는 공유하고 전환 표시만 복사
+    member.migrations = copyJsonObjectShallow(data.migrations);
+    member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = copyJsonObjectShallow(data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key]);
     var marker = member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key];
     marker.phase = "COMPLETE";
     marker.completedAt = completedAt;
@@ -34311,7 +34499,11 @@ function isProtectedManagedJsonPath(path) {
 
 // 관리 JSON 내용을 엄격하게 파싱하고 파일별 필수 구조를 검증하는 함수
 function parseManagedJsonContent(jsonText, path) {
-    var parsedData = parseJsonContent(jsonText, path);
+    return validateManagedJsonValue(parseJsonContent(jsonText, path), path);
+}
+
+// 이미 읽은 객체에도 기존 파일별 필수 구조 검증을 동일하게 적용하는 함수
+function validateManagedJsonValue(parsedData, path) {
     var splitFileName = String(new java.io.File(path).getName());
     if (/^dailyRankingPayout(?:_back2?)?\.json$/.test(splitFileName)) return requireDailyRankingStore(parsedData);
     if (splitFileName === "dailyRankingPayoutPending.json") { validateDailyRankingPending(parsedData); return parsedData; }
@@ -34386,6 +34578,7 @@ function beginDataSaveTransaction() {
     transaction = {
         depth: 1,
         entries: {},
+        temporaryFiles: [],
         order: [],
         rollingBack: false,
         rollbackAttempted: false,
@@ -34400,14 +34593,20 @@ function endDataSaveTransaction() {
     var transaction = getDataSaveTransaction();
     if (!transaction) return;
     transaction.depth--;
-    if (transaction.depth <= 0) dataSaveTransactionThreadLocal.remove();
+    if (transaction.depth <= 0) {
+        dataSaveTransactionThreadLocal.remove();
+        for (var i = 0; i < transaction.temporaryFiles.length; i++) {
+            var temporary = new java.io.File(transaction.temporaryFiles[i]);
+            if (temporary.exists() && !temporary.delete()) { try { debuggerLog("[WARN : 롤백 임시 사본 정리 실패]"); } catch (ignored) {} }
+        }
+    }
 }
 
 // 관리 JSON 백업 또는 명령 전 스냅샷을 트랜잭션에 최초 한 번만 등록하는 함수
 function prepareManagedJsonTransactionEntry(path, skipManagedBackup, rollbackSnapshotText) {
     var transaction = getDataSaveTransaction();
     var backupPath = getManagedJsonBackupPath(path);
-    var hasSnapshot = typeof rollbackSnapshotText === "string";
+    var hasSnapshot = typeof rollbackSnapshotText === "string" || isJsonRollbackSnapshot(rollbackSnapshotText);
     if (!transaction || (!backupPath && !hasSnapshot) || skipManagedBackup === true || transaction.rollingBack) {
         return { entry: null, skipManagedBackup: skipManagedBackup === true };
     }
@@ -34415,7 +34614,7 @@ function prepareManagedJsonTransactionEntry(path, skipManagedBackup, rollbackSna
     if (transaction.entries[path]) {
         return { entry: transaction.entries[path], skipManagedBackup: true };
     }
-    var entry = { path: path, backupPath: backupPath, snapshotText: hasSnapshot ? rollbackSnapshotText : null, saved: false };
+    var entry = { path: path, backupPath: backupPath, snapshotText: null, snapshotPath: typeof rollbackSnapshotText === "string" ? createTransactionTextSnapshot(rollbackSnapshotText) : isJsonRollbackSnapshot(rollbackSnapshotText) ? rollbackSnapshotText.snapshotPath : null, saved: false };
     transaction.entries[path] = entry;
     transaction.order.push(path);
     return { entry: entry, skipManagedBackup: false };
@@ -34437,6 +34636,8 @@ function rollbackDataSaveTransaction() {
                 if (entry.created === true) {
                     var createdFile = new java.io.File(entry.path);
                     if (createdFile.exists() && !createdFile.delete()) throw new Error("새 분리 파일 롤백 삭제 실패: " + entry.path);
+                } else if (entry.snapshotPath) {
+                    writeVerifiedJsonFile(entry.path, FileStream.read(entry.snapshotPath, "utf-8"), true);
                 } else if (entry.snapshotText !== null) {
                     writeVerifiedJsonFile(entry.path, entry.snapshotText, true);
                 } else {
@@ -34459,6 +34660,7 @@ function rollbackDataSaveTransaction() {
 // 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
 function getProtectedJsonSaveLock(path) {
     path = String(path);
+    if (String(new java.io.File(path).getName()).indexOf(GLOBAL_CONFIG.storage.transactionPrefix) === 0) return dataTransactionLock;
     if (!protectedJsonSaveLocks[path]) {
         protectedJsonSaveLocks[path] = new java.util.concurrent.locks.ReentrantLock();
     }
@@ -34474,9 +34676,11 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
     var rollbackFile = new java.io.File(path + ".rollback");
     var outputStream = null;
     var writer = null;
+    var structuredValue = jsonText === null || typeof jsonText === "object" || typeof jsonText === "number" || typeof jsonText === "boolean", digest = null, transformed = false;
 
     lock.lock();
     try {
+        if (structuredValue) validateManagedJsonValue(jsonText, path);
         ensureParentFolder(path);
         if (tempFile.exists() && !tempFile.delete()) {
             throw new Error("Temporary JSON file cleanup failed: " + tempFile.getPath());
@@ -34489,7 +34693,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         var repeatedSaveEntry = repeatedSaveTransaction && !repeatedSaveTransaction.failed && !repeatedSaveTransaction.rollingBack ? repeatedSaveTransaction.entries[path] : null;
         var canReuseVerifiedJson = repeatedSaveEntry && repeatedSaveEntry.backupPath && !/(^|[\\/])member\.json$/.test(String(path));
         // 같은 명령에서 검증 저장한 관리 파일만 잠금 안에서 원문을 재확인하고 재쓰기를 생략한다. 회원 분리·복구 기록은 제외한다.
-        if (skipManagedBackup === true && canReuseVerifiedJson && repeatedSaveEntry.saved && repeatedSaveEntry.verifiedJsonText === jsonText && targetFile.exists()) {
+        if (!structuredValue && skipManagedBackup === true && canReuseVerifiedJson && repeatedSaveEntry.saved && repeatedSaveEntry.verifiedJsonText === jsonText && targetFile.exists()) {
             var repeatedSaveMatches = false;
             try { repeatedSaveMatches = String(FileStream.read(path, "utf-8")) === jsonText; }
             catch (repeatedSaveReadError) {} // 중복 확인만 실패하면 기존 전체 쓰기를 수행한다. 아래 임시 파일 검증·저장 오류는 그대로 처리한다.
@@ -34497,15 +34701,19 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         }
 
         outputStream = new java.io.FileOutputStream(tempFile, false);
-        writer = new java.io.OutputStreamWriter(outputStream, "UTF-8");
-        writer.write(jsonText);
+        digest = structuredValue ? java.security.MessageDigest.getInstance("SHA-256") : null;
+        writer = new java.io.OutputStreamWriter(structuredValue ? new java.security.DigestOutputStream(outputStream, digest) : outputStream, "UTF-8");
+        if (structuredValue) transformed = writeJsonStream(writer, jsonText); else writer.write(jsonText);
         writer.flush();
         outputStream.getFD().sync();
         writer.close();
         writer = null;
         outputStream = null;
 
-        parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
+        if (structuredValue) {
+            if (inspectJsonRecoveryFile(tempFile.getPath()).hash !== getJsonDigestHex(digest.digest())) throw new Error("임시 JSON 기록 검증 실패");
+            if (transformed) parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
+        } else parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
         var seedManagedBackup = false;
         var managedBackupPath = getManagedJsonBackupPath(path);
@@ -34561,7 +34769,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         if (rollbackFile.exists() && !rollbackFile.delete()) {
             try { debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath()); } catch (cleanupLogError) {} // 완료된 저장은 로그 전송 실패로 취소하지 않음
         }
-        if (canReuseVerifiedJson) repeatedSaveEntry.verifiedJsonText = jsonText;
+        if (canReuseVerifiedJson && !structuredValue) repeatedSaveEntry.verifiedJsonText = jsonText;
     } catch (e) {
         if (!targetFile.exists() && rollbackFile.exists()) {
             rollbackFile.renameTo(targetFile);
@@ -34596,14 +34804,14 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
         var dollDeletionState = getCurrentContext().dollDeletion;
         if (path === resolveActiveDataPath(filePath) && dollDeletionState && dollDeletionState.dirty) {
             for (var dollDeletionSlot = 0; dollDeletionSlot < dollDeletionState.stores.length; dollDeletionSlot++) {
-                if (JSON.stringify(dollDeletionState.stores[dollDeletionSlot]) !== dollDeletionState.snapshots[dollDeletionSlot]) saveJsonFile(dollDeletionState.stores[dollDeletionSlot], DATA_ROOT_PATH + "dollRecords_" + dollDeletionSlot + ".json", false, dollDeletionState.snapshots[dollDeletionSlot]);
+                if (getJsonValueFingerprint(dollDeletionState.stores[dollDeletionSlot]) !== dollDeletionState.snapshots[dollDeletionSlot].fingerprint) saveJsonFile(dollDeletionState.stores[dollDeletionSlot], DATA_ROOT_PATH + "dollRecords_" + dollDeletionSlot + ".json", false, dollDeletionState.snapshots[dollDeletionSlot]);
             }
             saveJsonFile(dollDeletionState.index, DATA_ROOT_PATH + "dollIndex.json", false, dollDeletionState.indexSnapshot);
             dollDeletionState.dirty = false;
         }
         var splitPlan = path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
-        var jsonText = JSON.stringify(splitPlan ? splitPlan.member : data);
-        if (typeof jsonText !== "string") {
+        var jsonText = splitPlan ? splitPlan.member : data;
+        if (!jsonText || typeof jsonText !== "object") {
             throw new Error("JSON stringify failed: " + path);
         }
         dataTransactionLock.lock();
@@ -34614,25 +34822,25 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                 var rankingSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.rewardPayout.pendingName);
                 if (!new java.io.File(rankingSavePendingPath).exists() && new java.io.File(rankingSavePendingPath+".rollback").exists()) throw new Error("순위 지급 복구 대기");
                 if (new java.io.File(rankingSavePendingPath).exists()) {
-                    var rankingSavePending = parseJsonContent(FileStream.read(rankingSavePendingPath,"utf-8"),rankingSavePendingPath);
-                    validateDailyRankingPending(rankingSavePending);
+                    var rankingSavePending = readPendingJsonStatus(rankingSavePendingPath);
                     if (rankingSavePending.pending !== null) throw new Error("순위 지급 복구 대기");
+                    validateDailyRankingPending(rankingSavePending);
                 }
             }
             if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.packageGrant) {
                 var packageSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName);
                 if (!new java.io.File(packageSavePendingPath).exists() && new java.io.File(packageSavePendingPath + ".rollback").exists()) throw new Error("패키지 지급 복구 대기");
                 if (new java.io.File(packageSavePendingPath).exists()) {
-                    var packageSavePending = parseJsonContent(FileStream.read(packageSavePendingPath,"utf-8"),packageSavePendingPath);
-                    validatePackageGrantPending(packageSavePending);
+                    var packageSavePending = readPendingJsonStatus(packageSavePendingPath);
                     if (packageSavePending.pending !== null) throw new Error("패키지 지급 복구 대기");
+                    validatePackageGrantPending(packageSavePending);
                 }
             }
             if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.halloween && !getCurrentContext().halloweenPublishing) {
                 var halloweenSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.halloween.pendingName);
                 if (!new java.io.File(halloweenSavePendingPath).exists() && new java.io.File(halloweenSavePendingPath + ".rollback").exists()) throw new Error("할로윈 게시 복구 대기");
                 if (new java.io.File(halloweenSavePendingPath).exists()) {
-                    var halloweenSavePending = JSON.parse(FileStream.read(halloweenSavePendingPath, "utf-8"));
+                    var halloweenSavePending = readPendingJsonStatus(halloweenSavePendingPath);
                     if (!halloweenSavePending || halloweenSavePending.version !== 1 || !Object.prototype.hasOwnProperty.call(halloweenSavePending, "pending") || halloweenSavePending.pending !== null) throw new Error("할로윈 게시 복구 대기");
                 }
             }
@@ -34641,17 +34849,18 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                 var miniSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName);
                 if (!new java.io.File(miniSavePendingPath).exists() && new java.io.File(miniSavePendingPath + ".rollback").exists()) throw new Error("미니게임 게시 복구 대기");
                 if (new java.io.File(miniSavePendingPath).exists()) {
-                    var miniSavePending = JSON.parse(FileStream.read(miniSavePendingPath, "utf-8"));
+                    var miniSavePending = readPendingJsonStatus(miniSavePendingPath);
                     if (!miniSavePending || miniSavePending.version !== 1 || !Object.prototype.hasOwnProperty.call(miniSavePending, "pending") || miniSavePending.pending !== null) throw new Error("미니게임 게시 복구 대기");
                 }
             }
             ensureParentFolder(path);
-            if (typeof rollbackSnapshotText === "string" && !getDataSaveTransaction()) {
+            if ((typeof rollbackSnapshotText === "string" || isJsonRollbackSnapshot(rollbackSnapshotText)) && !getDataSaveTransaction()) {
                 throw new Error("Transactional JSON snapshot requires command transaction: " + path);
             }
             if (path === resolveActiveDataPath(filePath) && data.__adventureRecordContext && !getDataSaveTransaction()) { beginDataSaveTransaction(); splitOwnTransaction = true; }
-            if (isProtectedManagedJsonPath(path) || typeof rollbackSnapshotText === "string") {
+            if (isProtectedManagedJsonPath(path) || typeof rollbackSnapshotText === "string" || isJsonRollbackSnapshot(rollbackSnapshotText)) {
                 if (splitPlan) {
+                    if (isJsonRollbackSnapshot(rollbackSnapshotText)) rollbackSnapshotText = FileStream.read(rollbackSnapshotText.snapshotPath, "utf-8");
                     if (!getDataSaveTransaction()) { beginDataSaveTransaction(); splitOwnTransaction = true; }
                     var currentMemberSplitText = FileStream.read(path, "utf-8");
                     var currentMemberSplitData = parseJsonContent(currentMemberSplitText, path);
@@ -34676,21 +34885,16 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                 var adventurePendingPath = null;
                 if (adventureRecordChanged) {
                     requireAdventureRecordStore(adventureRecordContext.store);
-                    var adventureJournal = { pending: [] }, adventureRecoveryNames = getAdventureRecordRecoveryNames();
-                    for (var ar = 0; ar < adventureRecoveryNames.length; ar++) {
-                        var adventureRecoveryPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureRecoveryNames[ar]);
-                        adventureJournal.pending.push({ name: adventureRecoveryNames[ar], text: new java.io.File(adventureRecoveryPath).exists() ? FileStream.read(adventureRecoveryPath, "utf-8") : null });
-                    }
-                    validateAdventureRecordPending(adventureJournal);
+                    var adventureJournal = prepareAdventureRecordRecovery();
                     if (splitPlan) {
                         readPublishedMemberSplitStore(currentMemberSplitMarker, "raid");
                         readPublishedMemberSplitStore(currentMemberSplitMarker, "logs");
                     }
                     adventurePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.pendingName);
-                    writeMemberSplitSlot(adventurePendingPath, JSON.stringify(adventureJournal));
-                    writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName), JSON.stringify(adventureRecordContext.store));
+                    writeMemberSplitSlot(adventurePendingPath, adventureJournal);
+                    writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName), adventureRecordContext.store);
                 }
-                if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].text);
+                if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].value);
                 writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup, splitPlan ? { path: path, text: currentMemberSplitText, data: currentMemberSplitData } : null);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
                 if (splitPlan) {
@@ -34698,11 +34902,12 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                     if (splitPlan.context) { splitPlan.context.logsText = splitPlan.logsText; splitPlan.context.raidText = splitPlan.raidText; }
                 }
                 if (adventureRecordChanged) {
-                    writeMemberSplitSlot(adventurePendingPath, JSON.stringify({ pending: null }));
+                    writeMemberSplitSlot(adventurePendingPath, { pending: null });
                     adventureRecordContext.text = JSON.stringify(adventureRecordContext.store);
+                    cleanupAdventureRecordRecoveryFiles();
                 }
             } else {
-                FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+                writeJsonFileDirect(path, jsonText);
             }
         } catch (e) {
             try { debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString()); } catch (saveLogError) {}
@@ -35759,7 +35964,7 @@ function runServerRaidNotices(ctx, worker) {
                     var activeReceiptPath = resolveActiveDataPath(receiptPath);
                     if (new java.io.File(activeReceiptPath).exists()) requireServerRaidNoticeReceipts(parseJsonContent(FileStream.read(activeReceiptPath, "utf-8"), receiptPath));
                     receiptStore = { version: 1, generation: state.generation, sent: {} };
-                    writeMemberSplitSlot(activeReceiptPath, JSON.stringify(receiptStore));
+                    writeMemberSplitSlot(activeReceiptPath, receiptStore);
                     state.noticeReceiptsVersion = 1;
                     saveJsonFile(latest, filePath);
                 }
@@ -36247,7 +36452,7 @@ function runMiniGameEntry(mode, args) {
         var journal = requireMiniGameJournal(loadJsonFile(pendingPath));
         if (journal.pending !== null) {
             for (i = 0; i < journal.pending.length; i++) writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name), journal.pending[i].text, true);
-            writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+            writeVerifiedJsonFile(pendingPath, { version: 1, pending: null }, true);
             endDataSaveTransaction(); beginDataSaveTransaction();
             stateExists = true; restored = true;
         } else if (!stateExists) throw new Error("미니게임 진행 파일 누락");
@@ -36259,7 +36464,7 @@ function runMiniGameEntry(mode, args) {
         var recoveryReason = getMiniGameMissingJournalReviewReason(missingJournalState);
         if (pendingEvidence.exists() || new java.io.File(statePath + ".tmp").exists()) recoveryReason = "미완료 임시 저장 원문이 남아 있습니다.";
         if (recoveryReason) journal.recovery = { required: true, reason: recoveryReason };
-        writeVerifiedJsonFile(pendingPath, JSON.stringify(journal), true);
+        writeVerifiedJsonFile(pendingPath, journal, true);
     }
     if (journal && journal.recovery) {
         args.ctx.miniGameRecoveryBlocked = true;
@@ -36326,7 +36531,7 @@ function runMiniGameEntry(mode, args) {
                 } else {
                     var bundled = getMiniGameBundledCatalog(kind);
                     requireMiniGameCatalog(bundled, kind);
-                    writeVerifiedJsonFile(path, JSON.stringify(bundled), true);
+                    writeVerifiedJsonFile(path, bundled, true);
                 }
             }
             var stamp = path + ":" + file.lastModified() + ":" + file.length(), cache = miniGameCatalogCaches[catalogCacheKey][kind];
@@ -36377,7 +36582,7 @@ function runMiniGameEntry(mode, args) {
         var journal = { version: 1, pending: writes };
         requireMiniGameJournal(journal);
         endDataSaveTransaction(); beginDataSaveTransaction(); // 기존 진입 처리와 미니게임 원문 게시의 확정 경계를 분리
-        writeVerifiedJsonFile(pendingPath, JSON.stringify(journal), true);
+        writeVerifiedJsonFile(pendingPath, journal, true);
         for (var w = 0; w < writes.length; w++) {
             if (writes[w].name === "member.json") {
                 args.ctx.miniGamePublishing = true;
@@ -36386,7 +36591,7 @@ function runMiniGameEntry(mode, args) {
             else writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + writes[w].name), writes[w].text, true);
         }
         endDataSaveTransaction(); beginDataSaveTransaction(); // 완성된 지급 원문은 저널 정리 실패로 회원만 되돌리지 않는다.
-        writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+        writeVerifiedJsonFile(pendingPath, { version: 1, pending: null }, true);
         endDataSaveTransaction(); beginDataSaveTransaction();
         stateOriginal = stateText; memberChanged = false;
         for (var a in archives) if (Object.prototype.hasOwnProperty.call(archives, a)) archiveChanged[a] = false;
@@ -41126,7 +41331,7 @@ function savebackupJsonFile(path, data) {
         const randomSuffix = Math.floor(Math.random() * 100); // 랜덤한 숫자 (0부터 99까지)
         const backupFilePath = path.replace(/\.json$/, "_" + formattedDate + "_" + randomSuffix + ".json");
         ensureParentFolder(backupFilePath);
-        FileStream.write(backupFilePath, JSON.stringify(data), "utf-8");
+        writeVerifiedJsonFile(backupFilePath, data, true);
     } catch (error) {
         const randomNumber = Math.floor(Math.random() * 90 + 10);
         save("호이랜드/로그", "Log3_" + randomNumber + ".txt", "Error while saving JSON file: " + error.message);
@@ -41841,7 +42046,7 @@ function isAdventureLevelRenewalSnapshotCurrent(snapshot, inspection) {
 function isExactJsonSnapshot(source, saved) {
     if (!source || !saved) return false;
     try {
-        return JSON.stringify(source) === JSON.stringify(saved);
+        return getJsonValueFingerprint(source) === getJsonValueFingerprint(saved);
     } catch (error) {
         return false;
     }
@@ -45801,7 +46006,7 @@ function recoverDailyRankingPending() {
             var targetPath = resolveActiveDataPath(DATA_ROOT_PATH+journal.pending[i].name);
             if (!new java.io.File(targetPath).exists() || String(FileStream.read(targetPath,"utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(targetPath,journal.pending[i].text,false);
         }
-        writeVerifiedJsonFile(path,JSON.stringify({version:1,pending:null}),true);
+        writeVerifiedJsonFile(path,{version:1,pending:null},true);
         memberSplitBackupCache = {};
         return true;
     } finally { dataTransactionLock.unlock(); }
@@ -45830,7 +46035,7 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
             if (data.rewardPayoutReset === undefined) {
                 var initialCycle = getDailyRankingPayoutCycle(data); // 기존 완료 기록을 보존하며 최초 기준일만 고정
                 data.rewardPayoutReset = { day: initialCycle.day, cycle: 0, at: 0 };
-                writeVerifiedJsonFile(pendingPath, JSON.stringify(buildDailyRankingPublication(data, guildData, store)), true);
+                writeVerifiedJsonFile(pendingPath, buildDailyRankingPublication(data, guildData, store), true);
                 endDataSaveTransaction(); beginDataSaveTransaction();
                 recoverDailyRankingPending();
                 endDataSaveTransaction(); beginDataSaveTransaction();
@@ -45842,7 +46047,7 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
             if (isDailyRewardPayoutDone(data,guildData,schedule.key,store)) {
                 if (!store.days[day][schedule.key] || store.days[day][schedule.key].status !== "DONE") {
                     store.days[day][schedule.key] = {status:"DONE",at:new Date().toISOString()};
-                    writeVerifiedJsonFile(path,JSON.stringify(store),false);
+                    writeVerifiedJsonFile(path,store,false);
                     endDataSaveTransaction(); beginDataSaveTransaction();
                 }
                 outcomes.push("↪️ "+schedule.label+": 금일 지급 완료 (건너뜀)");
@@ -45862,7 +46067,7 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
                 if (schedule.key === "tier") { data.tierReward.lastPaidDate=cycle.day; data.tierReward.lastPaidCycle=cycle.key; }
                 store.days[day][schedule.key] = {status:"DONE",at:new Date().toISOString()};
                 var journal = buildDailyRankingPublication(data,guildData,store);
-                writeVerifiedJsonFile(pendingPath,JSON.stringify(journal),true);
+                writeVerifiedJsonFile(pendingPath,journal,true);
                 endDataSaveTransaction(); beginDataSaveTransaction();
                 recoverDailyRankingPending();
                 endDataSaveTransaction(); beginDataSaveTransaction();
@@ -45888,7 +46093,7 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
                 }
                 if (!confirmed.days[day]) confirmed.days[day]={};
                 confirmed.days[day][schedule.key]={status:"FAILED",at:new Date().toISOString()};
-                writeVerifiedJsonFile(path,JSON.stringify(confirmed),false);
+                writeVerifiedJsonFile(path,confirmed,false);
                 endDataSaveTransaction(); beginDataSaveTransaction();
                 outcomes.push("⚠️ "+schedule.label+": 미완료 · "+String(error.message || error));
                 singleMessage=outcomes[outcomes.length-1];
@@ -47828,7 +48033,7 @@ function commitAutoDailyBatch() {
             }
         }
         if (batch.robberyPending) {
-            writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), JSON.stringify({ pending: null }));
+            writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), { pending: null });
             batch.robberyPending = false;
         }
     } finally {
@@ -49676,7 +49881,7 @@ function recoverPackageGrantPending() {
             var targetPath = resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name);
             if (!new java.io.File(targetPath).exists() || String(FileStream.read(targetPath,"utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(targetPath,journal.pending[i].text,false);
         }
-        writeVerifiedJsonFile(path,JSON.stringify({ version: 1, pending: null }),true);
+        writeVerifiedJsonFile(path,{ version: 1, pending: null },true);
         memberSplitBackupCache = {};
         return true;
     } finally { dataTransactionLock.unlock(); }
@@ -51114,16 +51319,17 @@ function runOpenAll(sender, data, petData, replier, guildData) {
             let count = bag[boxName];
             delete bag[boxName];
             let total = 0,
-                msgs = [];
+                msgs = new java.lang.StringBuilder();
             for (let i = 0; i < count; i++) {
                 let reward = (Math.floor(Math.random() * 8) + 1) * multiplier;
                 total += reward;
-                msgs.push(i + 1 + ". " + emoji + " " + numberWithCommas(reward));
+                if (i > 0) msgs.append("\n");
+                msgs.append(String(i + 1 + ". " + emoji + " " + numberWithCommas(reward)));
             }
             data.member[sender].point = (data.member[sender].point || 0) + total;
             totPoint += total;
             totalResults1.push(boxName + " " + count + "개 오픈");
-            totalResults2.push(emoji + "\n" + msgs.join("\n") + "\n");
+            totalResults2.push(emoji + "\n" + String(msgs.toString()) + "\n");
             totalResults3.push(emoji + " 오픈 획득 포인트: 🅟" + numberWithCommas(total) + "획득" + emoji);
         }
     };
@@ -57763,14 +57969,88 @@ function getAdventureRecordRecoveryNames() {
         "memberOperationLogs.json", "memberOperationLogs_next.json", "memberOperationLogs_back.json", "memberOperationLogs_back2.json"];
 }
 
+// 파일을 작은 버퍼로 읽어 지문을 계산하고 필요한 경우 동기화된 복구 사본을 만드는 저장 계층 함수
+function inspectJsonRecoveryFile(sourcePath, copyPath) {
+    var input = null, output = null, digest = java.security.MessageDigest.getInstance("SHA-256");
+    var buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, GLOBAL_CONFIG.storage.copyBufferBytes);
+    var bytes = 0, count; // 복사 완료 후 원본 크기와 대조할 실제 바이트 수
+    try {
+        input = new java.io.FileInputStream(sourcePath);
+        if (copyPath) output = new java.io.FileOutputStream(copyPath, false);
+        while ((count = input.read(buffer)) !== -1) {
+            digest.update(buffer, 0, count);
+            if (output) output.write(buffer, 0, count);
+            bytes += count;
+        }
+        if (output) { output.flush(); output.getFD().sync(); }
+    } finally {
+        try { if (output) output.close(); } finally { if (input) input.close(); }
+    }
+    var hash = digest.digest(), hex = "";
+    for (var i = 0; i < hash.length; i++) hex += ("0" + ((hash[i] & 255).toString(16))).slice(-2);
+    return { bytes: bytes, hash: hex };
+}
+
+// 기존 복구 범위를 유지하며 원문 대신 파일명과 검증 지문만 저널에 담는 저장 계층 함수
+function prepareAdventureRecordRecovery() {
+    var config = GLOBAL_CONFIG.adventureQuest.history, names = getAdventureRecordRecoveryNames();
+    var pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
+    if (!new java.io.File(pendingPath).exists() && new java.io.File(pendingPath + ".rollback").exists()) throw new Error("퀘스트 기록 복구 대기");
+    if (new java.io.File(pendingPath).exists()) {
+        var previous = parseJsonContent(FileStream.read(pendingPath, "utf-8"), pendingPath);
+        validateAdventureRecordPending(previous);
+        if (previous.pending !== null) throw new Error("퀘스트 기록 복구 대기");
+    }
+    var journal = { version: 2, pending: [] };
+    for (var i = 0; i < names.length; i++) {
+        var path = resolveActiveDataPath(DATA_ROOT_PATH + names[i]), source = new java.io.File(path);
+        var row = { name: names[i], exists: source.exists() };
+        if (row.exists) {
+            var fingerprint = inspectJsonRecoveryFile(path, path + config.snapshotSuffix);
+            if (fingerprint.bytes !== Number(source.length())) throw new Error("퀘스트 복구 사본 크기 불일치");
+            var copied = inspectJsonRecoveryFile(path + config.snapshotSuffix);
+            if (copied.bytes !== fingerprint.bytes || copied.hash !== fingerprint.hash) throw new Error("퀘스트 복구 사본 검증 실패");
+            validateAdventureRecoveryText(names[i], FileStream.read(path + config.snapshotSuffix, "utf-8"));
+            row.bytes = fingerprint.bytes; row.hash = fingerprint.hash;
+        }
+        journal.pending.push(row);
+    }
+    validateAdventureRecordPending(journal);
+    return journal;
+}
+
+// 복구 완료 표식이 확정된 뒤에만 고정된 복구 사본을 제거하는 저장 계층 함수
+function cleanupAdventureRecordRecoveryFiles() {
+    var names = getAdventureRecordRecoveryNames(), suffix = GLOBAL_CONFIG.adventureQuest.history.snapshotSuffix;
+    for (var i = 0; i < names.length; i++) {
+        var file = new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + names[i]) + suffix);
+        if (file.exists() && !file.delete()) { try { debuggerLog("[WARN : 퀘스트 복구 사본 정리 실패] " + names[i]); } catch (cleanupLogError) {} }
+    }
+}
+
+// 복구 원문이 회원·퀘스트·분리 저장소의 기존 필수 구조를 만족하는지 검사하는 함수
+function validateAdventureRecoveryText(name, text) {
+    var parsed = parseJsonContent(text, name);
+    if (/^member(?:_back2?)?\.json$/.test(name) && (!parsed || !parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("퀘스트 기록 복구 회원 원문 오류");
+    if (name === GLOBAL_CONFIG.adventureQuest.history.fileName) requireAdventureRecordStore(parsed);
+    else if (/^(serverRaidData|memberOperationLogs)/.test(name)) requireMemberSplitStore(parsed, name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
+}
+
 // 모든 복구 원문을 검증하여 일부만 복구되는 상황과 임의 파일 덮어쓰기를 차단하는 함수
 function validateAdventureRecordPending(pending) {
     if (!pending || !Object.prototype.hasOwnProperty.call(pending, "pending") || (pending.pending !== null && !Array.isArray(pending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
     if (pending.pending === null) return;
+    if (pending.version !== undefined && pending.version !== 2) throw new Error("퀘스트 복구 버전 오류");
     var names = getAdventureRecordRecoveryNames(), seen = {};
     if (pending.pending.length !== names.length) throw new Error("퀘스트 기록 복구 목록 오류");
     for (var i = 0; i < pending.pending.length; i++) {
         var row = pending.pending[i];
+        if (pending.version === 2) {
+            if (!row || names.indexOf(row.name) < 0 || seen[row.name] || typeof row.exists !== "boolean" || (row.name === "member.json" && !row.exists) || Object.prototype.hasOwnProperty.call(row, "text")) throw new Error("퀘스트 복구 사본 대상 오류");
+            if (row.exists && (typeof row.bytes !== "number" || !isFinite(row.bytes) || row.bytes <= 0 || Math.floor(row.bytes) !== row.bytes || typeof row.hash !== "string" || !/^[0-9a-f]{64}$/.test(row.hash))) throw new Error("퀘스트 복구 사본 지문 오류");
+            seen[row.name] = true;
+            continue;
+        }
         if (!row || names.indexOf(row.name) < 0 || seen[row.name] || (row.text !== null && typeof row.text !== "string") || (row.name === "member.json" && row.text === null)) throw new Error("퀘스트 기록 복구 대상 오류");
         seen[row.name] = true;
         if (row.text !== null) {
@@ -57783,22 +58063,38 @@ function validateAdventureRecordPending(pending) {
 }
 
 // 진입 시 중단된 퀘스트 저장의 원문 전체를 복구하는 저장 계층 함수
-function recoverAdventureRecordPending() {
+function recoverAdventureRecordPending(cleanupIdle) {
     dataTransactionLock.lock();
     try {
     var pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.pendingName);
-    if (!new java.io.File(pendingPath).exists()) return false;
-    var pending = parseJsonContent(FileStream.read(pendingPath, "utf-8"), pendingPath);
+    var readPath = new java.io.File(pendingPath).exists() ? pendingPath : pendingPath + ".rollback";
+    if (!new java.io.File(readPath).exists()) { if (cleanupIdle) cleanupAdventureRecordRecoveryFiles(); return false; }
+    var pending = parseJsonContent(FileStream.read(readPath, "utf-8"), pendingPath);
     validateAdventureRecordPending(pending);
-    if (pending.pending === null) return false;
+    if (pending.pending === null) {
+        if (readPath !== pendingPath) writeVerifiedJsonFile(pendingPath, { pending: null }, true);
+        if (cleanupIdle) cleanupAdventureRecordRecoveryFiles();
+        return false;
+    }
+    if (pending.version === 2) {
+        for (var check = 0; check < pending.pending.length; check++) {
+            var saved = pending.pending[check];
+            if (!saved.exists) continue;
+            var savedPath = resolveActiveDataPath(DATA_ROOT_PATH + saved.name);
+            var fingerprint = inspectJsonRecoveryFile(savedPath + GLOBAL_CONFIG.adventureQuest.history.snapshotSuffix);
+            if (fingerprint.bytes !== saved.bytes || fingerprint.hash !== saved.hash) throw new Error("퀘스트 복구 사본 손상: " + saved.name);
+            validateAdventureRecoveryText(saved.name, FileStream.read(savedPath + GLOBAL_CONFIG.adventureQuest.history.snapshotSuffix, "utf-8"));
+        }
+    }
     for (var i = pending.pending.length - 1; i >= 0; i--) {
         var row = pending.pending[i], path = resolveActiveDataPath(DATA_ROOT_PATH + row.name);
-        if (row.text === null) {
+        if (pending.version === 2 ? !row.exists : row.text === null) {
             var absent = new java.io.File(path);
             if (absent.exists() && !absent.delete()) throw new Error("퀘스트 기록 복구 파일 제거 실패");
-        } else writeVerifiedJsonFile(path, row.text, true);
+        } else writeVerifiedJsonFile(path, pending.version === 2 ? FileStream.read(path + GLOBAL_CONFIG.adventureQuest.history.snapshotSuffix, "utf-8") : row.text, true);
     }
-    writeVerifiedJsonFile(pendingPath, JSON.stringify({ pending: null }), true);
+    writeVerifiedJsonFile(pendingPath, { pending: null }, true);
+    cleanupAdventureRecordRecoveryFiles();
     memberSplitBackupCache = {};
     return true;
     } finally { dataTransactionLock.unlock(); }
@@ -64981,9 +65277,11 @@ function isDollTestRoomCommand(msg) {
 }
 // 표시용 사본에서 길드 불일치를 제거해 저장 없이 테스트방 안내를 만드는 함수
 function buildDollTestRoomRestrictionMessage(data, guildData, user) {
-    var displayData = JSON.parse(JSON.stringify(data)); // checkRank의 길드 정리가 원본 저장으로 이어지지 않도록 분리
+    var displayData = copyJsonObjectShallow(data); // 안내에 필요한 두 회원만 복사해 원본 길드 정리를 방지
+    displayData.member = copyJsonObjectShallow(data.member);
     var displayUsers = [user, displayData.HoiCastle && displayData.HoiCastle.lord];
     for (var i = 0; i < displayUsers.length; i++) {
+        if (displayData.member[displayUsers[i]]) displayData.member[displayUsers[i]] = copyJsonObjectShallow(displayData.member[displayUsers[i]]);
         var member = displayData.member[displayUsers[i]];
         if (!member || !member.guild || !member.guild.id) continue;
         var guild = guildData && guildData.guilds && guildData.guilds[member.guild.id];
@@ -65987,11 +66285,12 @@ function initializeLegacyStartup(startupData) {
                     if (startupHistoryFile.exists() && !startupHistoryFile.delete()) throw new Error("강탈 기록 초기 이전 복구 실패");
                 } else writeVerifiedJsonFile(startupPath, startupRow.text, true);
             }
-            writeMemberSplitSlot(startupRobberyPendingPath, JSON.stringify({ pending: null }));
+            writeMemberSplitSlot(startupRobberyPendingPath, { pending: null });
             startupData = loadJsonFile(filePath, "bootstrap");
         }
     }
-    if (recoverAdventureRecordPending()) startupData = loadJsonFile(filePath, "bootstrap");
+    if (recoverAdventureRecordPending(true)) startupData = loadJsonFile(filePath, "bootstrap");
+    cleanupIdleTransactionFiles();
     if (recoverMemberSplitPublication()) startupData = loadJsonFile(filePath, "bootstrap");
     // 재컴파일 시에도 이미 보관한 기록과 새 기록을 유지한다.
     var startupRecordCurrentFile = new java.io.File(resolveActiveDataPath(boardPath));
@@ -66462,7 +66761,7 @@ function runHalloweenEntry(mode, args) {
                     if (createdFile.exists() && !createdFile.delete()) throw new Error("할로윈 신규 파일 복구 실패");
                 } else { JSON.parse(previous.text); writeVerifiedJsonFile(previousPath, previous.text, true); }
             }
-            writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+            writeVerifiedJsonFile(pendingPath, { version: 1, pending: null }, true);
             ctx.halloweenRecovered = true;
         }
     }
@@ -66476,7 +66775,7 @@ function runHalloweenEntry(mode, args) {
             state.lastResetDay = resetDay;
             state.resetCycle = requireHalloweenInteger((state.resetCycle || 0) + 1);
             state.logs.push({ action: "dailyReset", at: args.now, day: resetDay, cycle: state.resetCycle });
-            writeMemberSplitSlot(statePath, JSON.stringify(state));
+            writeMemberSplitSlot(statePath, state);
         }
         return null; // 모든 계정 파일을 읽지 않고 다음 이벤트 이용 시 새 리셋 회차를 반영한다.
     }
@@ -66610,17 +66909,17 @@ function runHalloweenEntry(mode, args) {
     }
     if (result.stateChanged) { requireHalloweenState(state); snapshots.push({ name: config.stateName, text: stateExists ? String(FileStream.read(statePath, "utf-8")) : null }); }
     if (result.packageLogData && result.ok) snapshots.push({ name: "packageLog.json", text: String(FileStream.read(resolveActiveDataPath(packageLogPath), "utf-8")) });
-    writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: snapshots }), true);
+    writeVerifiedJsonFile(pendingPath, { version: 1, pending: snapshots }, true);
     try {
         if (result.memberChanged) {
             ctx.halloweenPublishing = true;
             try { saveJsonFile(data, filePath); } finally { delete ctx.halloweenPublishing; }
         }
-        if (accountChanged) writeMemberSplitSlot(root + accountName, JSON.stringify(account));
-        for (var cleanupWriteIndex = 0; cleanupWriteIndex < cleanupWrites.length; cleanupWriteIndex++) writeMemberSplitSlot(root + cleanupWrites[cleanupWriteIndex].name, JSON.stringify(cleanupWrites[cleanupWriteIndex].account));
-        if (result.stateChanged) writeMemberSplitSlot(statePath, JSON.stringify(state));
-        if (result.packageLogData && result.ok) writeMemberSplitSlot(resolveActiveDataPath(packageLogPath), JSON.stringify(result.packageLogData));
-        writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+        if (accountChanged) writeMemberSplitSlot(root + accountName, account);
+        for (var cleanupWriteIndex = 0; cleanupWriteIndex < cleanupWrites.length; cleanupWriteIndex++) writeMemberSplitSlot(root + cleanupWrites[cleanupWriteIndex].name, cleanupWrites[cleanupWriteIndex].account);
+        if (result.stateChanged) writeMemberSplitSlot(statePath, state);
+        if (result.packageLogData && result.ok) writeMemberSplitSlot(resolveActiveDataPath(packageLogPath), result.packageLogData);
+        writeVerifiedJsonFile(pendingPath, { version: 1, pending: null }, true);
         endDataSaveTransaction(); beginDataSaveTransaction(); // 확정 뒤 응답·알림 실패로 완료된 구매를 취소하지 않는다.
     } catch (error) {
         try { rollbackDataSaveTransaction(); }
@@ -66743,7 +67042,7 @@ function recoverHowolDramaPending() {
             var target = resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name);
             if (!new java.io.File(target).exists() || String(FileStream.read(target, "utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(target, journal.pending[i].text, false);
         }
-        writeVerifiedJsonFile(path, JSON.stringify({ version: 1, pending: null }), true);
+        writeVerifiedJsonFile(path, { version: 1, pending: null }, true);
         memberSplitBackupCache = {};
         return true;
     } finally { howolDramaPublishingThread.set(previousPublishing); dataTransactionLock.unlock(); }
@@ -66762,10 +67061,10 @@ function publishHowolDramaEntry(data, store, memberChanged) {
             { name: GLOBAL_CONFIG.howolDrama.fileName, text: JSON.stringify(store) }
         ] };
         validateHowolDramaPending(journal);
-        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.pendingName), JSON.stringify(journal), true);
+        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.pendingName), journal, true);
         endDataSaveTransaction(); beginDataSaveTransaction();
         recoverHowolDramaPending();
-    } else writeVerifiedJsonFile(path, JSON.stringify(store), false);
+    } else writeVerifiedJsonFile(path, store, false);
     endDataSaveTransaction(); beginDataSaveTransaction();
 }
 
@@ -66950,7 +67249,7 @@ function assertHowolDramaNoPending() {
     var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.pendingName);
     if (!new java.io.File(path).exists() && new java.io.File(path + ".rollback").exists()) throw new Error("호월드라마 게시 복구 대기");
     if (!new java.io.File(path).exists()) return;
-    var journal = parseJsonContent(FileStream.read(path, "utf-8"), path);
-    validateHowolDramaPending(journal);
+    var journal = readPendingJsonStatus(path);
     if (journal.pending !== null) throw new Error("호월드라마 게시 복구 대기");
+    validateHowolDramaPending(journal);
 }

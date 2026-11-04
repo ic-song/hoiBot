@@ -657,6 +657,11 @@ Status: VERIFIED
 - `Info.js`: info/query-oriented `response(...)` entry point
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
 - `main.js`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
+- 구조화된 저장 값은 `writeJsonStream`으로 조각 기록하고 `validateManagedJsonValue` 및 기록 SHA-256으로 검증한다. 기존 직렬화 원문 호출은 기존 재파싱 검증을 유지하며, `toJSON` 변환이 있으면 출력도 다시 파싱한다. 저장 JSON 구조와 지급·조회 정책은 유지한다.
+- `writeJsonFileDirect`는 일반 파일의 기존 직접 쓰기 흐름을 유지한다. 순환 참조 등 직렬화 오류를 파일을 열기 전에 확인한다.
+- 회원 분리 로그·레이드 변경 비교 문맥의 `logsText`/`raidText`는 64자리 SHA-256이다. `createMemberSplitWrite`는 일반 저장에 `.value` 객체를 제공하고 기존 게시 저널에는 `.text` 원문 접근을 유지한다.
+- `createTransactionFileSnapshot`/`createTransactionTextSnapshot`/`createJsonRollbackSnapshot`은 명령 롤백 사본을 현재 환경의 `.hoi-memory-<UUID>` 파일에 보관한다. 명령 종료 후 정리하며, 시작 시에는 24시간 이상 지난 사본만 정리한다. 기존 고정 2세대 백업과 수동복구 경로는 유지한다.
+- `readPendingJsonStatus`/Info의 `readInfoPendingJson`은 큰 활성 저널의 헤더만 읽어 저장·표시를 차단한다. 실제 자동복구는 기존 전체 검증을 수행하며, 비활성·알 수 없는 형식은 기존 JSON 파싱을 거친다.
 - `Info.js`: separate `loadJsonFile(path)` implementation used by info commands
 - `main.js`: production/DEV root constants and major runtime data-file constants
 
@@ -7479,7 +7484,7 @@ Status: VERIFIED
 - `data.member[사용자].adventureQuest`: 현재 단계, 단계별 행동, 지급 영수증, 완료 단계, 장착 타이틀 번호/표시 이름, 누적 보상
 - `adventureQuestHistory.json`: 사용자별 기존 완료 기록/획득 타이틀의 전체 배열과 순서. `adventureQuestHistory_legacy.json`은 최초 이전 원본 기록 보관용이다.
 - `data.migrations.adventureQuestHistorySplit20261014`: 완료 표시; `/데이터정리` 재실행은 다시 이전하지 않는다.
-- `adventureQuestHistoryPending.json`: 회원 본문·기록·회원 백업·raid/log 저장 슬롯/백업 원문. 저장 중단 시 MAIN 진입/시작에서 전체 검증 후 복구하며 Info는 복구 대기 중 부분 정보를 표시하지 않는다.
+- `adventureQuestHistoryPending.json`: v2는 회원 본문·기록·회원 백업·raid/log 저장 슬롯/백업 12개 파일의 존재 여부·바이트 수·SHA-256만 보관한다. 원문은 고정 이름의 `*.json.quest-rollback` 사본에 8KiB 버퍼로 복사하며, 전부 검증한 뒤 저널을 게시한다. 저장 중단 시 MAIN 진입/시작에서 모든 사본의 지문·구조를 먼저 검증하고 역순 복구한다. 기존 원문 내장 저널도 복구하며, Info는 복구 대기 중 부분 정보를 표시하지 않는다. 완료 표식 확정 후 사본을 정리하며 일반 백업·수동복구·기록 보존 범위는 유지한다.
 - `memberPet.json`, `petSkillData`, 펫홈·탐험·홈뱃지 자료: 완료 시 실제 적용 상태 확인
 
 ## Save Flow
