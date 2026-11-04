@@ -10,24 +10,59 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 
+$script:connectionTraceFile = $ResultFile + '.trace.log'
+$script:workerTraceFile = $script:connectionTraceFile + '.worker.log'
+$script:connectionCommandId = 0
+[IO.File]::WriteAllText($script:connectionTraceFile, '', (New-Object Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText($script:workerTraceFile, '', (New-Object Text.UTF8Encoding($false)))
+
+# Write diagnostics directly to disk before console output or process waits can block.
+function Write-HoiConnectionTrace {
+    param([string]$Stage)
+    $line = '{0} supervisor={1} {2}' -f [DateTime]::UtcNow.ToString('o'), $PID, $Stage
+    [IO.File]::AppendAllText($script:connectionTraceFile, $line + "`r`n", (New-Object Text.UTF8Encoding($false)))
+}
+
+$traceHasher = [Security.Cryptography.SHA256]::Create()
+try {
+    $traceScriptHash = [BitConverter]::ToString($traceHasher.ComputeHash([IO.File]::ReadAllBytes($PSCommandPath))).Replace('-', '')
+} finally { $traceHasher.Dispose() }
+Write-HoiConnectionTrace ('SESSION script={0} sha256={1} powershell={2} clr={3} host={4}' -f $PSCommandPath, $traceScriptHash, $PSVersionTable.PSVersion, [Environment]::Version, $Host.Name)
+Write-Host ('[TRACE] ' + $script:connectionTraceFile)
+
 # Run each CLI command in an isolated worker so blocked output cannot stall the watchdog.
 function Invoke-HoiConnectionCommand {
     param([string]$Executable, [string[]]$Arguments)
+    $script:connectionCommandId++
+    $commandId = $script:connectionCommandId
+    Write-HoiConnectionTrace ("command=$commandId BEGIN $Executable " + ($Arguments -join ' '))
     $commandResultFile = [IO.Path]::GetTempFileName()
-    $request = @{ Executable = $Executable; Arguments = @($Arguments); ResultFile = $commandResultFile } | ConvertTo-Json -Compress
+    $request = @{ Executable = $Executable; Arguments = @($Arguments); ResultFile = $commandResultFile; TraceFile = $script:workerTraceFile; CommandId = $commandId } | ConvertTo-Json -Compress
     $payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($request))
     $worker = @'
 $ErrorActionPreference = 'Continue'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 $request = ConvertFrom-Json ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('__PAYLOAD__')))
+# Record worker progress separately so it cannot contend with the supervisor's log.
+function Write-HoiWorkerTrace {
+    param([string]$Stage)
+    $line = '{0} worker={1} command={2} {3}' -f [DateTime]::UtcNow.ToString('o'), $PID, $request.CommandId, $Stage
+    [IO.File]::AppendAllText($request.TraceFile, $line + "`r`n", (New-Object Text.UTF8Encoding($false)))
+}
+Write-HoiWorkerTrace 'WORKER_BEGIN'
 try {
     $nativeArguments = @($request.Arguments)
+    Write-HoiWorkerTrace 'NATIVE_BEGIN'
     $lines = @(& $request.Executable @nativeArguments 2>&1 | ForEach-Object { "$_" })
     $result = @{ ExitCode = $LASTEXITCODE; Text = ($lines -join "`n").Trim() }
+    Write-HoiWorkerTrace ('NATIVE_END exit=' + $result.ExitCode)
 } catch {
     $result = @{ ExitCode = -1; Text = $_.Exception.Message }
+    Write-HoiWorkerTrace ('NATIVE_ERROR ' + $_.Exception.Message)
 }
+Write-HoiWorkerTrace 'RESULT_WRITE_BEGIN'
 [IO.File]::WriteAllText($request.ResultFile, ($result | ConvertTo-Json -Compress), (New-Object Text.UTF8Encoding($false)))
+Write-HoiWorkerTrace 'RESULT_WRITE_END'
 '@
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = (Get-Command powershell.exe -ErrorAction Stop).Source
@@ -36,10 +71,16 @@ try {
     $info.CreateNoWindow = $true
     $process = New-Object Diagnostics.Process
     $process.StartInfo = $info
+    Write-HoiConnectionTrace ("command=$commandId RUN_CONSOLE_BEGIN")
     Write-Host ('[RUN] {0} {1}' -f [IO.Path]::GetFileName($Executable), ($Arguments -join ' '))
+    Write-HoiConnectionTrace ("command=$commandId RUN_CONSOLE_END")
     try {
+        Write-HoiConnectionTrace ("command=$commandId START_BEGIN")
         [void]$process.Start()
+        Write-HoiConnectionTrace ("command=$commandId START_END worker=" + $process.Id)
+        Write-HoiConnectionTrace ("command=$commandId WAIT_BEGIN")
         if (-not $process.WaitForExit(10000)) {
+            Write-HoiConnectionTrace ("command=$commandId WAIT_TIMEOUT")
             # Stop only this worker's process tree, including its hung ADB client.
             $stopInfo = New-Object Diagnostics.ProcessStartInfo
             $stopInfo.FileName = Join-Path $env:SystemRoot 'System32\taskkill.exe'
@@ -48,15 +89,20 @@ try {
             $stopInfo.CreateNoWindow = $true
             $stopInfo.RedirectStandardOutput = $true
             $stopInfo.RedirectStandardError = $true
+            Write-HoiConnectionTrace ("command=$commandId STOP_BEGIN worker=" + $process.Id)
             $stopProcess = [Diagnostics.Process]::Start($stopInfo)
             try {
                 if (-not $stopProcess.WaitForExit(1000)) { $stopProcess.Kill() }
             } finally { $stopProcess.Dispose() }
             if (-not $process.HasExited) { $process.Kill() }
             [void]$process.WaitForExit(1000)
+            Write-HoiConnectionTrace ("command=$commandId STOP_END")
             return @{ ExitCode = -1; Text = 'Command/response timed out after 10 seconds; continuing recovery.' }
         }
+        Write-HoiConnectionTrace ("command=$commandId WAIT_END exit=" + $process.ExitCode)
+        Write-HoiConnectionTrace ("command=$commandId RESULT_READ_BEGIN")
         $resultText = [IO.File]::ReadAllText($commandResultFile, [Text.Encoding]::UTF8)
+        Write-HoiConnectionTrace ("command=$commandId RESULT_READ_END")
         if ($process.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($resultText)) {
             return @{ ExitCode = -1; Text = 'Command worker ended without a result.' }
         }
@@ -64,8 +110,11 @@ try {
         if ($null -eq $result.ExitCode) { return @{ ExitCode = -1; Text = 'Command worker returned no exit code.' } }
         return @{ ExitCode = [int]$result.ExitCode; Text = [string]$result.Text }
     } finally {
+        Write-HoiConnectionTrace ("command=$commandId DISPOSE_BEGIN")
         $process.Dispose()
+        Write-HoiConnectionTrace ("command=$commandId DISPOSE_END")
         [IO.File]::Delete($commandResultFile)
+        Write-HoiConnectionTrace ("command=$commandId END")
     }
 }
 
@@ -157,6 +206,7 @@ try {
             $chosen = $selection.Found[0]
             $selectedIndex = if ($chosen.Index -ne '') { $chosen.Index } else { $TargetLdIndex }
             [IO.File]::WriteAllLines($ResultFile, @(('TARGET_ADB_DEVICE=' + $chosen.Serial), ('TARGET_LD_INDEX=' + $selectedIndex), 'USE_DIRECT_ADB=1'), (New-Object Text.UTF8Encoding($false)))
+            Write-HoiConnectionTrace ('SESSION_SUCCESS device=' + $chosen.Serial)
             Write-Host ('[OK] Verified bot file: {0}, device: {1}' -f $TargetFile, $chosen.Serial)
             exit 0
         }
@@ -164,6 +214,7 @@ try {
     }
     throw 'ADB recovery failed. Check the per-device responses, LDPlayer ADB setting and port conflicts.'
 } catch {
+    Write-HoiConnectionTrace ('SESSION_FAIL ' + $_.Exception.Message)
     Write-Host ('[FAIL] ' + $_.Exception.Message)
     exit 1
 }
