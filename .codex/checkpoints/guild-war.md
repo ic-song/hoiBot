@@ -2,9 +2,10 @@
 
 - 작업 키: guild-war
 - 작업 이름: 24시간 길드전쟁 단독 개발
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 1
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: 1e716c2d0ed5fe7f71afa5b6b1ac5827f9301dd8
+- 체크포인트 버전: 2
 - 마지막 갱신: 2026-11-05 Asia/Seoul
 
 ## 범위와 사용자 확정
@@ -21,6 +22,9 @@
 - 작업 트리: C:/Users/user/.codex/worktrees/hoiBot-guild-war
 - 브랜치: feature/guild-war
 - 기준 커밋: f8a840dc, 최신 origin/feature/prod와 일치한 local feature/prod에서 분기.
+- 마지막 코드 푸시 커밋: 1e716c2d0ed5fe7f71afa5b6b1ac5827f9301dd8, origin/feature/guild-war와 동일함을 확인했다.
+- 최종 확인 중 운영 기준이 bd406cf879b48c164e76a207d8fe935fd104c086으로 진전했다. README/tools만 변경됐으며 작업 브랜치에 동기화했다. 검증한 main.js와 명령어 문서는 코드 커밋과 같은 내용이다.
+- 체크포인트 Git 추적: 예. 원격 feature/guild-war에 코드와 함께 보관한다.
 - 변경: main.js, COMMAND_INDEX.md, COMMAND_REGISTRY.md, 이 체크포인트.
 - 추리소설은 포함하지 않았다. 기존 혼합 초안은 C:/Users/user/.codex/worktrees/hoiBot-nov5-content, feature/nov5-content에 그대로 보존했다. 그 초안을 통째로 병합하지 말 것.
 - 버전/개발자노트는 운영반영 요청 때 최신 prod 기준으로 추가한다. 이번에는 feature/prod를 갱신하지 않는다.
@@ -49,5 +53,5 @@
 
 ## 다음 행동
 
-1. 검증된 소스·명령어 문서를 feature/guild-war에 커밋·푸시하고 원격을 확인한다.
-2. 명시적인 운영반영 요청이 있을 때만 최신 prod를 다시 확인하고 버전/개발자노트 추가 후 운영 브랜치에 반영한다.
+1. 개발 요청 범위의 추가 작업은 없다. 실제 MessengerBot/길드톡 출력·시간 지연은 운영자 환경에서 별도 확인한다.
+2. 명시적인 운영반영 요청이 있을 때만 최신 prod를 다시 확인하고 버전/개발자노트 추가 후 운영 브랜치에 반영한다. 이번 작업은 운영 브랜치에 반영하지 않았으며 Notion 상태/버전 및 카카오톡 버전 알림도 변경하지 않았다.
