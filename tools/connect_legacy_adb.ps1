@@ -10,41 +10,63 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
 
-# Run one local CLI command with a timeout and preserve its diagnostic output.
+# Run each CLI command in an isolated worker so blocked output cannot stall the watchdog.
 function Invoke-HoiConnectionCommand {
     param([string]$Executable, [string[]]$Arguments)
-    $quoted = @($Arguments | ForEach-Object {
-        '"' + [regex]::Replace([regex]::Replace($_, '(\\*)"', '$1$1\"'), '(\\+)$', '$1$1') + '"'
-    })
+    $commandResultFile = [IO.Path]::GetTempFileName()
+    $request = @{ Executable = $Executable; Arguments = @($Arguments); ResultFile = $commandResultFile } | ConvertTo-Json -Compress
+    $payload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($request))
+    $worker = @'
+$ErrorActionPreference = 'Continue'
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
+$request = ConvertFrom-Json ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('__PAYLOAD__')))
+try {
+    $nativeArguments = @($request.Arguments)
+    $lines = @(& $request.Executable @nativeArguments 2>&1 | ForEach-Object { "$_" })
+    $result = @{ ExitCode = $LASTEXITCODE; Text = ($lines -join "`n").Trim() }
+} catch {
+    $result = @{ ExitCode = -1; Text = $_.Exception.Message }
+}
+[IO.File]::WriteAllText($request.ResultFile, ($result | ConvertTo-Json -Compress), (New-Object Text.UTF8Encoding($false)))
+'@
     $info = New-Object Diagnostics.ProcessStartInfo
-    $info.FileName = $Executable
-    $info.Arguments = $quoted -join ' '
+    $info.FileName = (Get-Command powershell.exe -ErrorAction Stop).Source
+    $info.Arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' + [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($worker.Replace('__PAYLOAD__', $payload)))
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
-    $info.RedirectStandardOutput = $true
-    $info.RedirectStandardError = $true
-    $info.StandardOutputEncoding = [Text.Encoding]::UTF8
-    $info.StandardErrorEncoding = [Text.Encoding]::UTF8
     $process = New-Object Diagnostics.Process
     $process.StartInfo = $info
     Write-Host ('[RUN] {0} {1}' -f [IO.Path]::GetFileName($Executable), ($Arguments -join ' '))
-    $timer = [Diagnostics.Stopwatch]::StartNew()
     try {
         [void]$process.Start()
-        $stdout = $process.StandardOutput.ReadToEndAsync()
-        $stderr = $process.StandardError.ReadToEndAsync()
         if (-not $process.WaitForExit(10000)) {
-            $process.Kill()
+            # Stop only this worker's process tree, including its hung ADB client.
+            $stopInfo = New-Object Diagnostics.ProcessStartInfo
+            $stopInfo.FileName = Join-Path $env:SystemRoot 'System32\taskkill.exe'
+            $stopInfo.Arguments = '/PID ' + $process.Id + ' /T /F'
+            $stopInfo.UseShellExecute = $false
+            $stopInfo.CreateNoWindow = $true
+            $stopInfo.RedirectStandardOutput = $true
+            $stopInfo.RedirectStandardError = $true
+            $stopProcess = [Diagnostics.Process]::Start($stopInfo)
+            try {
+                if (-not $stopProcess.WaitForExit(1000)) { $stopProcess.Kill() }
+            } finally { $stopProcess.Dispose() }
+            if (-not $process.HasExited) { $process.Kill() }
             [void]$process.WaitForExit(1000)
-            return @{ ExitCode = -1; Text = 'Command timed out after 10 seconds.' }
+            return @{ ExitCode = -1; Text = 'Command/response timed out after 10 seconds; continuing recovery.' }
         }
-        # A spawned ADB daemon can hold output pipes open after the command exits.
-        $remaining = [int][Math]::Max(0, 10000 - $timer.ElapsedMilliseconds)
-        if (-not [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), $remaining)) {
-            return @{ ExitCode = -1; Text = 'Command output timed out after 10 seconds.' }
+        $resultText = [IO.File]::ReadAllText($commandResultFile, [Text.Encoding]::UTF8)
+        if ($process.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($resultText)) {
+            return @{ ExitCode = -1; Text = 'Command worker ended without a result.' }
         }
-        return @{ ExitCode = $process.ExitCode; Text = ($stdout.Result + $stderr.Result).Trim() }
-    } finally { $process.Dispose() }
+        $result = ConvertFrom-Json $resultText -ErrorAction Stop
+        if ($null -eq $result.ExitCode) { return @{ ExitCode = -1; Text = 'Command worker returned no exit code.' } }
+        return @{ ExitCode = [int]$result.ExitCode; Text = [string]$result.Text }
+    } finally {
+        $process.Dispose()
+        [IO.File]::Delete($commandResultFile)
+    }
 }
 
 # Map the emulator and loopback aliases of one running LDPlayer to the same index.
