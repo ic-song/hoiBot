@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.766"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.767"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -67608,11 +67608,11 @@ function getGuildWarRequest(msg) {
     var simple = { "/길드전쟁": "main", "/길드전쟁가이드": "guide", "/전쟁편성": "formation", "/전쟁정찰": "scout", "/전쟁기록": "records", "/전쟁톡등록": "register", "/전쟁톡확인": "room", "/전쟁톡해제": "unregister" };
     if (Object.prototype.hasOwnProperty.call(simple, msg)) return { kind: simple[msg], args: [] };
     var match = /^\/(전쟁공격편성|전쟁방어편성)[ \t]+(\d+)[ \t]+(\d+)[ \t]+(\d+)(?:[ \t]+(\d+))?$/.exec(msg);
-    if (match && (match[1] === "전쟁방어편성" || !match[5])) return { kind: match[1] === "전쟁공격편성" ? "attackFormation" : "defenseFormation", args: match.slice(2).filter(function (v) { return v !== undefined; }).map(Number) };
+    if (match && match[0] === msg && (match[1] === "전쟁방어편성" || !match[5])) return { kind: match[1] === "전쟁공격편성" ? "attackFormation" : "defenseFormation", args: match.slice(2).filter(function (v) { return v !== undefined; }).map(Number) };
     match = /^\/(전쟁정찰편성|전쟁선포|전쟁기록)[ \t]+(\d+)$/.exec(msg);
-    if (match) return { kind: match[1] === "전쟁정찰편성" ? "scoutFormation" : match[1] === "전쟁선포" ? "declare" : "record", args: [Number(match[2])] };
-    match = /^\/(정찰|전쟁톡확인|전쟁톡해제)[ \t]+([^\s]+)$/.exec(msg);
-    if (match) return { kind: match[1] === "정찰" ? "recon" : match[1] === "전쟁톡확인" ? "room" : "unregister", args: [match[2]] };
+    if (match && match[0] === msg) return { kind: match[1] === "전쟁정찰편성" ? "scoutFormation" : match[1] === "전쟁선포" ? "declare" : "record", args: [Number(match[2])] };
+    match = /^\/(정찰|전쟁톡확인|전쟁톡해제)[ \t]+(\S(?:[^\r\n]*\S)?)$/.exec(msg);
+    if (match && match[0] === msg) return { kind: match[1] === "정찰" ? "recon" : match[1] === "전쟁톡확인" ? "room" : "unregister", args: [match[2]] };
     if (/^\/(?:길드전쟁(?:가이드)?|전쟁(?:편성|정찰(?:편성)?|공격편성|방어편성|선포|기록|톡등록|톡확인|톡해제)|정찰)(?:\s|$)/.test(msg)) return { kind: "invalid", args: [] };
     return null;
 }
@@ -68079,9 +68079,10 @@ function scheduleGuildWarWork(ctx) {
         try {
             recoverGuildWarPublication(); recoverHowolDramaPending(); recoverPackageGrantPending(); recoverDailyRankingPending(); recoverAdventureRecordPending(false); recoverMemberSplitPublication();
             var data = loadJsonFile(filePath), currentGuilds = loadJsonFile(guildPath);
-            var initialized = initializeGuildWar(data, currentGuilds, Date.now());
-            var memberWork = currentGuilds.war24.active.some(function (w) { return w.due <= Date.now(); });
-            var workChanged = processGuildWars(data, currentGuilds, Date.now(), Math.random);
+            var tickNow = Date.now(); // 전투 마감과 회원 저장 여부에 같은 시각 적용
+            var initialized = initializeGuildWar(data, currentGuilds, tickNow);
+            var memberWork = currentGuilds.war24.active.some(function (w) { return w.due <= tickNow; });
+            var workChanged = processGuildWars(data, currentGuilds, tickNow, Math.random);
             if (initialized || workChanged) publishGuildWar(data, currentGuilds, memberWork);
             flushGuildWarNotices(currentGuilds, ctx);
         } catch (error) { debuggerLog("[길드전쟁 자동 처리 보류] " + error); }
