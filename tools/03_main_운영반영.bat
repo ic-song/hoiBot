@@ -128,12 +128,13 @@ if /i "%TARGET_LD_INDEX%"=="auto" (
 	"%LD_CONSOLE_EXE%" list2 | findstr /b "%TARGET_LD_INDEX%," > nul 2>&1
 	if errorlevel 1 goto FAIL_LD_INDEX
 )
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell echo ok" > "%DEPLOY_LOG%" 2>&1
+rem 같은 괄호 안에서 자동 감지한 인스턴스 번호를 즉시 사용합니다.
+"%LD_CONSOLE_EXE%" adb --index !TARGET_LD_INDEX! --command "shell echo ok" > "%DEPLOY_LOG%" 2>&1
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_ADB
 findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_ADB
-echo [OK] LDPlayer index: %TARGET_LD_INDEX%
+echo [OK] LDPlayer index: !TARGET_LD_INDEX!
 echo.
 )
 
