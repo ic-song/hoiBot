@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.777"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.778"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3887,6 +3887,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     sender = String(sender);
     var request = { room: room, msg: msg, sender: sender, isGroupChat: isGroupChat, replier: replier,
         imageDB: imageDB, packageName: packageName, receivedAt: Date.now(),
+        callbackEvent: getServerRaidCallbackEvent(arguments, packageName), // 실제 콜백의 확장 정보만 접수 시 보존
         gameId: getMiniGameObservedVaultId(isDevCommandMessage(msg)) };
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     if (responseQueueThread.get()) { executeResponseRequest(request); return; }
@@ -4235,7 +4236,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var raidTurnInput = String(msg || "").trim(); // 남은 턴 조회 두 명령만 앞뒤 공백 허용
         if (ctx.isDev && raidTurnInput === "/ㄹㄹ") raidTurnInput = "ㄹㄹ"; // DEV 전처리가 붙인 슬래시만 제거
         if (isServerRaidTurnQueryCommand(raidTurnInput)) msg = raidTurnInput;
-        var serverRaidEvent = getServerRaidCallbackEvent(arguments, packageName); // 기본 7인수 콜백을 지원하며 확장 ID는 제공될 때만 사용
+        var serverRaidEvent = request.callbackEvent; // 내부 8번째 인수인 큐 요청을 이벤트로 오인하지 않는다.
         if (isServerRaidCommand(msg) && !isServerRaidCommandRoom(room, isGroupChat, ctx, msg)) {
             replyServerRaidSafely(replier, serverRaidHeader() + (ctx.isDev ? "DEV 레이드 명령어는 팻 테스트방에서만 사용할 수 있습니다." : "레이드 명령어는 공성전 또는 팻 테스트방에서만 사용할 수 있습니다.\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom));
             return;

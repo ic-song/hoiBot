@@ -6,6 +6,16 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-11-05 - 큐 내부 8번째 인수와 레이드 이벤트 정보 충돌
+
+Status: FIX_IMPLEMENTED_AND_VALIDATED (ver_2.778)
+
+- 제보: 최신 큐 버전에서 `/레이드공격`이 무응답. MASTER 권한 관련 무응답과 같은 원인인지 검토 요청.
+- 원인: `response`의 기본 7인수를 큐에 넣고 `processResponse(..., request)`로 내부 8번째 인수를 전달했으나, 내부 코드가 계속 `getServerRaidCallbackEvent(arguments, packageName)`을 호출했다. 기존 디코더는 8번째 객체를 신뢰 이벤트로 반환하므로 큐 요청을 이벤트로 오인했다. `createServerRaidAttackEvent`는 객체가 존재한다는 이유로 UUID를 생성하지 않고, ACTIVE 회차의 `getServerRaidAttackCheck`가 `서버 레이드대전 공격 저장 식별값이 없습니다`로 실패한다. 포인트/공격 변경 전 검사에서 실패하는 경로다.
+- 수정: 실제 `response` 콜백의 선택적 식별 정보를 접수 시 `request.callbackEvent`에 보존하고 처리 함수는 그 값만 사용한다. 기본 7인수, 기존 8번째 신뢰 이벤트·11인수 네이티브 ID와 문자열 정밀도·잘못된 숫자 ID 거부 규칙을 유지한다. 게임/보상/저장 함수는 변경하지 않는다.
+- 권한 구분: MASTER 명단 및 방 권한 판정은 이벤트를 사용하지 않아 같은 원인으로 볼 수 없다. 합성 MASTER가 큐에서도 기존 허용 방에서 통과하고 일반 사용자/다른 방은 제한되는 것을 실제 함수로 검증했다. 이벤트 기반 운영자 판정의 식별 정보 유실은 이 전달 수정으로 보완된다. 운영 설정의 이벤트 운영자 명단은 비어 있으며 이를 채우거나 MASTER 명단을 변경하지 않았다. 노트·요청횟수 무응답의 운영 원인은 여전히 별도 확인 대상이다.
+- 검증: 실제 큐·이벤트 디코더·레이드 공격 분기·자격/보상/횟수/초과 패널티/결과 생성·MASTER 판정 함수를 추출해 Rhino 1.7.15/Java에서 수정 전 오류를 재현했다. 수정 후 7/8/11인수, 64비트 문자열 ID·재전송, 5+10회/서공권/초과 경계, 잘못된 ID 미차감, 저장 실패 미확정/재시도, 응답 실패 뒤 저장 유지·영수증 재로드, 동시 공격 50건 및 80개 단언을 통과했다. 회원 로드·저장 및 매력/치명타 계산은 합성 어댑터이며 실제 Android/디스크 복구 전체를 재검증한 것은 아니다. 전체 Main Rhino 컴파일(128MiB), Node 문법·diff·기존 함수 동일성을 확인했다.
+
 ## 2026-11-05 - 개발자노트·요청횟수 무응답 원인 표시 보완
 
 Status: DIAGNOSTIC_IMPLEMENTED_AND_VALIDATED (ver_2.777, 운영 원인 미확정)

@@ -655,6 +655,7 @@ Status: VERIFIED
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
 - `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`는 입력·응답 대상·접수 시각·관찰 회차만 메모리 큐에 넣는다. `responseQueueLock`으로 접수와 작업자 전환을 보호하며, 비어 있던 큐의 첫 접수가 Java 작업자 하나를 시작한다. 큐가 비면 작업자는 종료한다.
 - 큐 접수 전 `room`, `msg`, `sender`를 `String(...)`으로 변환한다. Java 문자열 객체와 원시 문자열을 같은 명령·방·권한 비교에 사용하며, 공백 제거·별칭 추가·권한 확대는 하지 않는다.
+- `response(...)`는 실제 콜백의 `arguments`를 `getServerRaidCallbackEvent`로 접수 시 해석하고 `request.callbackEvent`에 보관한다. `processResponse`는 그 값을 사용하며 내부 8번째 인수인 큐 요청을 신뢰된 이벤트로 해석하지 않는다. 기본 7인수는 `null` 이벤트를 유지해 레이드 공격 진입에서 호출별 UUID를 생성하고, 기존 신뢰 어댑터 8번째 객체·선택적 네이티브 11인수의 메시지/방/운영자 식별값은 이전 규칙 그대로 보존한다. 확장 인수는 필수가 아니다.
 - `drainResponseQueue` → `executeResponseRequest` → `processResponse` 순으로 기존 데이터 흐름 잠금과 `dataTransactionLock.lock()`을 얻은 뒤 최신 데이터를 읽는다. Main 일반 채팅도 기존 글자수·경험치 처리를 위해 같은 큐를 사용한다. Info.js 콜백은 변경하지 않는다.
 - `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않고 안내한다. 초과 접수·작업자 시작 실패도 안내한다. 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다.
 - `responseQueueThread`가 설정된 현재 작업자의 내부 `response(...)` 재호출은 바로 실행한다. 자동일퀘의 캡처 응답·중첩 트랜잭션·DEV 컨텍스트를 유지하며 자기 큐를 기다리지 않는다.
@@ -4821,6 +4822,7 @@ Status: PARTIAL
 ## 2026-10-11 수정요청서 반영 (ver_2.623)
 
 - 기획: `서버레이드대전 수정요청서_2026-10-12` (`fc0393bdd7aa83db847f8167f9164a77`). 사용자 요청으로 예정일보다 먼저 반영한다.
+- ver_2.778: 큐 내부 요청을 8번째 이벤트로 오인해 기본 공격의 저장 ID가 누락되던 회귀를 수정했다. 명단·방 기반 `isMaster`/`isMasterIdentity`는 이벤트 정보와 독립이며, 이 변경으로 일반 MASTER 권한 조건을 확대하거나 노트·요청횟수 무응답 원인이 해결됐다고 단정하지 않는다. 이벤트 기반 `isServerRaidVerifiedOperator`의 전달 정보는 보존한다.
 - `/레이드전적`은 개인 누적·최근 참가 보상, `/레이드순위`는 현재 소속 서버 유저의 누적 순위다. `/서버대전`은 준비·진행·정산 중인 현재 회차만 조회한다. 종료 후에는 진행 중인 대전이 없다고 안내한다.
 - `buildServerRaidCurrentRows`는 현재 회차의 정상 공격 계정을 서버별로 집계해 등록 10개 서버를 모두 표시한다. 같은 계정은 한 명이며 0데미지 정상 공격도 참가자로 포함한다. 데미지 합산·비교는 기존 정수 문자열 연산, 동점은 기존 공동 순위다. 누적 기록·회원·회차 원본을 변경하거나 저장하지 않는다.
 - `buildServerRaidCurrentStatus`는 실제 소속·KST 종료 시각·승수·데미지·참가 인원을 출력한다. 준비 중에는 준비 종료 시각과 공격 시작 후 마감 확정 안내를 표시한다. 마감 또는 정산 중에는 공격 진행 중이라고 표시하지 않는다. `📂 전체 서버 실시간 순위 펼쳐보기` 바로 뒤에 ALLSEE를 둔다.
