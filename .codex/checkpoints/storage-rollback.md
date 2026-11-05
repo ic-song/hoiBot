@@ -1,8 +1,8 @@
 # 공통 저장 방식 선택 롤백
 
 - 작업 키: storage-rollback
-- 작업 상태: 검증 완료
-- 정리 후보: 아니오
+- 작업 상태: 작업 완료
+- 정리 후보: 예
 - 위치: C:/Users/user/.codex/worktrees/hoiBot-common-performance
 - 브랜치: feature/common-performance (기존 저장 성능 작업 후속)
 - 기준: origin/feature/prod 4645e953 / ver_2.773
@@ -22,3 +22,11 @@
 - ver_2.774 개발자노트·main.js 동기화. 다음: 소스 push→PR 운영반영→원격 버전/코드 검증→카카오 버전 알림.
 
 - 작업 전용 합성 검증/벤치/JAR 모두 정리 완료.
+
+## 운영 소스 반영 완료
+
+- 검증 소스961a81b118886453d5d232651a1ae2a8e51a46aa 푸시 후 다른 작업의 운영도구/README 커밋99aa9d6f를 보존하기 위해 최신운영기준을 merge해5e0731c3ca59fcfcb651eb4e7e4edefcd1d25297로 푸시. 해당 운영 런타임 도구는 실행하지 않음. 게임 소스/검증 범위 변경 없음.
+- PR #231(https://github.com/ic-song/hoiBot/pull/231) 병합. origin/feature/prod=f07062e2cbea98c1e267daa96900dfa4a63b4341. 소스 포함, native 저장/메모리 원문 롤백/퀘스트v3/인형원문재사용/main.js·개발자노트 ver_2.774 날짜 재검증. 원래 폴더도 동일커밋ff-only갱신, 미추적 사용자파일7개 유지.
+- PlayMCP 알림 스킬로 정확히 ver_2.774 1회 전송 성공. 운영 실행기 업로드/컴파일/접속/재시작 미수행.
+- Notion 관련 퀘스트 항목은 기존 LIVE/DEV/DRAFT로 이번 별도 성능롤백의 READY/HOTFIX 항목 없음. 본문/기존 운영속성 미변경, 새 페이지 미생성.
+- 일반 저장의 메모리 최소화 일부를 명시적으로 되돌렸으며 파일별 직렬화 문자열은 다시 메모리에 잡힌다. 퀘스트12파일 묶음 전체 문자열 생성은 복원하지 않고 파일형 선택 복구를 유지한다. 실제 운영 개선 시간과 장시간 메모리는 이번 로컬검증만으로 확정하지 않음.
