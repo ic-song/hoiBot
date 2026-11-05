@@ -1,8 +1,8 @@
 # 인형뽑기 최적화와 펫무쌍 운영반영
 
 - 작업 키: doll-performance
-- 작업 상태: 검증 완료
-- 정리 후보: 아니오
+- 작업 상태: 작업 완료
+- 정리 후보: 예
 - 위치: C:/Users/user/.codex/worktrees/hoiBot-periodic-performance
 - 브랜치: feature/periodic-performance
 - 기준: origin/feature/prod 3fec2032 / ver_2.769
@@ -22,3 +22,11 @@
 - ver_2.770 / 2026-11-05 개발자노트·main.js 버전 동기화. 남은 단계: 임시 파일 정리, 소스 commit/push 및 feature/prod 원격 반영 검증, 카카오 정확한 버전 알림.
 
 - 임시 검증 스크립트·합성 파일·Rhino JAR는 검증 후 작업 전용 폴더와 함께 삭제 완료. 운영 데이터/다른 작업 임시 파일 미변경.
+
+## 운영 반영 완료
+
+- 검증 소스 8cdb89411fa7cd4317069dcc313510041b939662을 먼저 원격 개발 브랜치에 푸시·검증하고 PR #227(https://github.com/ic-song/hoiBot/pull/227)을 승인된 범위에서 병합.
+- origin/feature/prod = 1c0c2192b5c86875daf1bfe9333c8b8788bbd870. 검증 소스 포함, 인형/무쌍 최적화 코드와 main.js·개발자노트 ver_2.770 일치 및 2026-11-05 날짜 재검증. 원래 작업 폴더 feature/prod도 동일 커밋으로 ff-only 갱신. 사용자 미추적 체크포인트 7개 유지.
+- PlayMCP 나에게 보내기로 정확히 ver_2.770 1회 전송 성공. 운영 실행기 접속/업로드/컴파일/재시작은 수행하지 않았으며 운영자 범위.
+- 이번 최적화와 일치하는 Notion READY/HOTFIX 없음. 기존 LIVE 본문/상태/운영 속성과 별개 92종 추가 READY 문서는 그대로 유지. 신규 기획 페이지 미생성.
+- 추가 변경 필요 없음. 이번 요청에서 확인만 한 탐험/영지전/레이드/미니게임의 후속 구조 최적화는 적용하지 않음.
