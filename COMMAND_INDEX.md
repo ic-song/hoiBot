@@ -656,7 +656,7 @@ Status: VERIFIED
 - `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
 - A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
-- Main 기본 종료부의 펫 저장만 선택적으로 불변 비교를 허용한다. 검증·동기화한 임시 파일과 현재 펫 원본 및 직전 백업의 크기/SHA256이 모두 같고 2세대 백업이 존재하며 5분 갱신 기한 전일 때만 동일 백업 재기록·원본 교체를 생략한다. 누락·불일치·추가 비교 실패·백업 갱신 기한·강제 복원·기존 인수 호출은 기존 전체 저장으로 처리한다. 임시 파일 생성·검증은 유지하고 회원 저장은 생략하지 않는다.
+- 일반 회원·펫 저장은 기존 내장 JSON 직렬화와 UTF-8 임시 파일 기록·재파싱 검증 경로를 사용한다. 2.773의 기본 펫 저장 선택 인수/전체 파일 해시 비교는 제거했으며, 변경 데이터·기존 백업/복원은 그대로 처리한다.
 - Main 응답 종료는 컨텍스트·트랜잭션 정리 예외에도 데이터/응답 흐름 잠금을 중첩 finally에서 해제한다. 예외를 숨기거나 일반 명령의 tryLock 실패 반환 정책을 바꾸지 않는다.
 - `writeVerifiedJsonFile(...)` reuses an already verified write only inside the same healthy response transaction, with backup rotation already skipped and identical serialized text rechecked against the current target under its path lock. The first save, changed/missing/different target, explicit backup rotation, and rollback still write normally. Reuse state ends with the transaction; member files, split stores, and recovery journals are excluded. `tools/test_command_save_reuse*.js` covers parity, failures, restart, DEV/PROD, Java threads, and actual-file timing.
 - `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
@@ -667,11 +667,12 @@ Status: VERIFIED
 - `Info.js`: info/query-oriented `response(...)` entry point
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
 - `main.js`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
-- 구조화된 저장 값은 `writeJsonStream`으로 조각 기록하고 `validateManagedJsonValue` 및 기록 SHA-256으로 검증한다. 기존 직렬화 원문 호출은 기존 재파싱 검증을 유지하며, `toJSON` 변환이 있으면 출력도 다시 파싱한다. 저장 JSON 구조와 지급·조회 정책은 유지한다.
-- `getSmallJsonLeafText`는 일반/빈 프로토타입의 순수 JSON 말단 객체만 최대32키·이스케이프 전4096문자 이내에서 묶어 직렬화한다. 접근자·`toJSON`·사용자 프로토타입·중첩/큰 객체·배열은 기존 스트림을 유지한다. 공통 회원 로드/저장 지문과 관리 저장에 같은 JSON 바이트를 사용하며, 파일 전체를 한 문자열로 만들거나 검증·백업·복구를 생략하지 않는다.
+- 일반 저장의 객체형 호출은 `writeVerifiedJsonFile` 입구에서 JSON.stringify로 처리하고 임시 파일의 JSON·도메인 구조를 재파싱 검증한다. 길드전쟁/드라마 게시 차단, 기존 백업·원자적 교체·복구는 유지한다.
+- `writeJsonStream`/`getSmallJsonLeafText`는 명시적 파일 스냅샷 등 잔여 도구의 제한 직렬화에만 사용한다. 일반 회원/레이드/로그 변경 비교와 관리 저장의 공통 경로에는 사용하지 않는다.
 - `writeJsonFileDirect`는 일반 파일의 기존 직접 쓰기 흐름을 유지한다. 순환 참조 등 직렬화 오류를 파일을 열기 전에 확인한다.
-- 회원 분리 로그·레이드 변경 비교 문맥의 `logsText`/`raidText`는 64자리 SHA-256이다. `createMemberSplitWrite`는 일반 저장에 `.value` 객체를 제공하고 기존 게시 저널에는 `.text` 원문 접근을 유지한다.
-- `createTransactionFileSnapshot`/`createTransactionTextSnapshot`/`createJsonRollbackSnapshot`은 명령 롤백 사본을 현재 환경의 `.hoi-memory-<UUID>` 파일에 보관한다. 명령 종료 후 정리하며, 시작 시에는 24시간 이상 지난 사본만 정리한다. 기존 고정 2세대 백업과 수동복구 경로는 유지한다.
+- 회원 분리 로그·레이드 변경 문맥 logsText/raidText와 분리 저장 계획은 2.765의 JSON 원문 비교·text 저장 계획을 복원했다. 일반 문자열 롤백 원문은 명령 메모리에 보관해 추가 사본 파일을 만들지 않는다.
+- 대용량 분리 슬롯·명시적 `createJsonRollbackSnapshot`의 snapshotPath와 .hoi-memory 파일 복구는 호환 유지한다. 일반 문자열 원문용 createTransactionTextSnapshot과 불필요한 createMemberSplitWrite는 제거했다.
+- 퀘스트 새 version3 복구 저널은 실제 쓰기 계획의 대상만 사본으로 만든다. 정상 분리 저장 완료 케이스는 member.json·adventureQuestHistory.json·member_back.json의 기본3개, 같은 명령의 후속 저장은 기본2개이며 분리 슬롯/백업 갱신 시 필요한 대상만 추가한다. 구형12개 v1/v2 복구와 미분리 데이터의 기존 v2 준비는 계속 지원한다.
 - `readPendingJsonStatus`/Info의 `readInfoPendingJson`은 큰 활성 저널의 헤더만 읽어 저장·표시를 차단한다. 실제 자동복구는 기존 전체 검증을 수행하며, 비활성·알 수 없는 형식은 기존 JSON 파싱을 거친다.
 - `Info.js`: separate `loadJsonFile(path)` implementation used by info commands
 - `main.js`: production/DEV root constants and major runtime data-file constants
