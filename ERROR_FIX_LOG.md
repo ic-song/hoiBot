@@ -6,6 +6,15 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-11-05 - 개발자노트·요청횟수 무응답 원인 표시 보완
+
+Status: DIAGNOSTIC_IMPLEMENTED_AND_VALIDATED (ver_2.777, 운영 원인 미확정)
+
+- 제보: 최신 ver_2.776 적용 뒤에도 호이 남/팻 테스트방에서 `/개발자노트`, `/요청횟수`가 무응답. `/디버깅모드`는 ON 응답이 나오며 이후 노트·오류 메시지는 없다고 확인했다.
+- 확인: `debuggerLog`는 디버그 OFF에서 메시지를 전송하지 않는다. 앞선 Java 문자열 합성 재현은 가능했지만 운영 원인이라는 증거는 없었고, 문자열 변환 보완 후에도 실제 증상은 유지됐다. 채팅 오류 부재만으로 예외가 없다고 결론내리면 안 된다.
+- 대응: 두 정확한 조회 명령만 원래 replier의 성공 여부를 추적하고, 실제 처리 경로의 확인 단계를 기록한다. 권한 거부·필터 등 조기 반환·파일/생성 오류·전송 false/throw·정리 오류가 정상 응답 없이 끝나면 해당 요청에 짧은 안내를 보낸다. 명단 전체나 운영 파일 내용은 공개하지 않고 권한·게임 제한을 완화하지 않는다.
+- 검증: 실제 큐, 공통 처리 진입/catch/finally, 권한·컨텍스트·두 명령 분기·노트 생성 함수를 사용했다. 관련 없는 게임 처리는 합성 시나리오로 대체했다. Rhino 1.7.15/Java에서 정상·거부·조기 종료·파일/생성 오류·전송·DEV·정리 실패 18그룹, 동시 요청 60건, 잠금 해제와 기존 오류 기록/롤백 호출을 확인했다. 전체 Main Rhino 컴파일(128MiB), Node 문법 및 diff 검사를 통과했다. 운영 MessengerBot 자체에서 검증한 결과가 아니며, 실제 안내 결과로 원인을 추가 확인해야 한다.
+
 ## 2026-11-05 - 봇 시작 시 saveJsonFile의 storage 미초기화 오류
 
 Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/bootstrap-save-fix, ver_2.768 운영 준비)

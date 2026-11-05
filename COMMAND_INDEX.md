@@ -2584,6 +2584,8 @@ Status: VERIFIED
 
 - `/호이봇버전` replies with `ver_` + `HoiBotVersion`
 - `/개발자노트` is admin/master-only and shows the latest 10 entries from the manually maintained `data/hoiBotChangeLog.json` after an `allsee` fold marker
+- 정확한 `/개발자노트`, `/요청횟수`와 같은 DEV 입력은 `executeResponseRequest`에서 응답 여부를 추적한다. 정상 응답은 그대로 1회 전송하며, 응답 없이 종료하면 `buildOperatorReadFailureMessage`로 마지막 확인 단계와 원인을 안내한다. `reply(...) === false`와 예외는 성공 응답으로 취급하지 않는다. 권한 불일치에는 본인의 명단 등록 여부·수신 닉네임/방·권한 검사 방만 표시하며, 오류 상세는 허용된 운영자에게만 최대 200자 표시한다.
+- 진단은 게임 가드·필터·복구를 건너뛰지 않는다. 기존 롤백·오류 기록·잠금 해제 후 안내하며, 진단이 전송된 예외에 큐 일반 오류 안내를 중복 전송하지 않는다. `/요청횟수 대상` 및 다른 명령은 이 추적 대상이 아니다. 운영 무응답의 원인은 아직 미확정이며, 안내된 단계/조건과 실제 입력으로 재확인이 필요하다.
 - Entries are grouped under date sections in the output; each production-facing change still increments `HoiBotVersion` by `0.001`
 - `HoiBotVersion` should be increased by `0.001` whenever source changes are intentionally reflected
 

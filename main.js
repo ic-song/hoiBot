@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.776"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.777"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -2152,7 +2152,8 @@ const GLOBAL_CONFIG = {
         labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "호이월드 커뮤니티"]
     },
     display: { // 화면 표시 설정
-        changeLogMax: 10 // 최근 수정 이력 표시 개수
+        changeLogMax: 10, // 최근 수정 이력 표시 개수
+        operatorReadErrorMax: 200 // 운영 조회 오류 안내 길이
     },
     worldNews: { // 호이월드 소식·소식복권 설정
         maxPosts: 100,
@@ -3914,8 +3915,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 // 큐 접수 실패·만료·실행 오류를 원래 요청의 응답 대상으로 안내하는 함수
 function notifyResponseQueue(request, message) {
-    try { request.replier.reply(message); }
-    catch (noticeError) { try { debuggerLog("[명령 큐 안내 실패] " + noticeError); } catch (logError) {} }
+    try { return request.replier.reply(message) !== false; }
+    catch (noticeError) { try { debuggerLog("[명령 큐 안내 실패] " + noticeError); } catch (logError) {} return false; }
 }
 
 // 한 작업자가 접수 순서대로 실행하고 오류 후에도 다음 요청을 처리하는 함수
@@ -3936,15 +3937,49 @@ function drainResponseQueue() {
             executeResponseRequest(request);
         } catch (queueError) {
             try { debuggerLog("[명령 큐 실행 오류] " + queueError); } catch (logError) {}
-            notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
+            if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
         } finally { responseQueueThread.remove(); }
     }
 }
 
 // 원래 입력과 접수 정보를 기존 데이터 처리 흐름에 전달하는 함수
 function executeResponseRequest(request) {
-    processResponse(request.room, request.msg, request.sender, request.isGroupChat, request.replier,
-        request.imageDB, request.packageName, request);
+    var command = isDevCommandMessage(request.msg) ? stripDevCommandPrefix(request.msg) : request.msg;
+    var diagnostic = command === "/개발자노트" || command === "/요청횟수" ?
+        { command: command, stage: "공통 처리 진입", replied: false, attempted: false, allowed: null, error: null, notified: false } : null;
+    if (diagnostic) request.operatorReadDiagnostic = diagnostic;
+    var responseReplier = diagnostic ? { reply: function (message) {
+        diagnostic.attempted = true;
+        var result = request.replier.reply(message);
+        if (result !== false) diagnostic.replied = true;
+        return result;
+    } } : request.replier;
+    try {
+        processResponse(request.room, request.msg, request.sender, request.isGroupChat, responseReplier,
+            request.imageDB, request.packageName, request);
+    } catch (executionError) {
+        if (diagnostic) diagnostic.error = String(executionError);
+        throw executionError;
+    } finally {
+        if (diagnostic && !diagnostic.replied) {
+            diagnostic.notified = notifyResponseQueue(request, buildOperatorReadFailureMessage(request, diagnostic));
+        }
+    }
+}
+
+// 두 운영 조회 명령의 무응답 원인을 본인 권한 범위 안에서 안내하는 함수
+function buildOperatorReadFailureMessage(request, diagnostic) {
+    var lines = ["⚠️ " + diagnostic.command + " 처리 확인", "ver_" + HoiBotVersion, "확인 단계: " + diagnostic.stage];
+    if (diagnostic.allowed === false) {
+        lines.push("관리자·MASTER 권한 또는 허용된 방 조건을 확인해 주세요.");
+        lines.push("본인 명단: " + (diagnostic.admin ? "관리자" : "") + (diagnostic.admin && diagnostic.master ? "·" : "") + (diagnostic.master ? "MASTER" : "") + (!diagnostic.admin && !diagnostic.master ? "미등록" : ""));
+        lines.push("수신 닉네임: [" + request.sender + "] · " + request.sender.length + "자", "수신 방: [" + request.room + "] · " + request.room.length + "자", "권한 검사 방: [" + diagnostic.permissionRoom + "]");
+    } else if (diagnostic.error) {
+        lines.push("처리 중 오류가 발생했습니다.");
+        if (diagnostic.allowed === true) lines.push(String(diagnostic.error).substring(0, GLOBAL_CONFIG.display.operatorReadErrorMax));
+    } else if (diagnostic.attempted) lines.push("응답 전송이 완료되지 않았습니다.");
+    else lines.push("명령의 실제 처리 전에 종료되었습니다.");
+    return (isDevCommandMessage(request.msg) ? "[DEV 테스트환경]\n" : "") + lines.join("\n");
 }
 
 // 큐에서 받은 명령을 기존 검증·저장·복구 흐름으로 처리하는 함수
@@ -3969,6 +4004,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        if (request.operatorReadDiagnostic) {
+            request.operatorReadDiagnostic.admin = Admins.indexOf(sender) !== -1;
+            request.operatorReadDiagnostic.master = Master.indexOf(sender) !== -1;
+            request.operatorReadDiagnostic.permissionRoom = ctx.permissionRoom;
+            request.operatorReadDiagnostic.allowed = isAdmin(sender) || isMaster(sender);
+            request.operatorReadDiagnostic.stage = "초기 복구 검사";
+        }
         var responseRecoveryStartMs = Date.now();
         recoverGuildWarPublication();
         recoverInterruptedMemberWrite();
@@ -4155,6 +4197,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             catch (cleanupReplyError) { try { debuggerLog("[필터 정리 응답] " + cleanupReplyError); } catch (cleanupLogError) {} }
             return;
         }
+        if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "명령 필터 검사";
         if (!ctx.manualResetConfirmed && isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) {
             if (/^\/밸런스(?:\s|$)/.test(msg)) replier.reply("이유에 사용할 수 없는 문구가 있어요. 바꿔서 다시 입력해 주세요.");
             return;
@@ -4306,6 +4349,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
         recoverAdventureRecordPending(); // 회원을 읽기 전에 중단된 기록·회원·분리 저장본을 함께 복구
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
+        if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "회원 데이터 로드";
         var initialMemberLoadStartMs = Date.now();
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
@@ -4985,6 +5029,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
 
+        if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "공통 명령 전처리";
         if (!isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
             let requestInfo = getUserRequestInfo(sender);
             if (requestInfo.isFirstDetect) {
@@ -5463,7 +5508,15 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
 
-        if (msg == "/요청횟수" && (isAdmin(sender) || isMaster(sender))) {
+        if (msg === "/요청횟수") {
+            var requestCountAllowed = isAdmin(sender) || isMaster(sender);
+            if (request.operatorReadDiagnostic) {
+                request.operatorReadDiagnostic.stage = "요청횟수 권한 검사";
+                request.operatorReadDiagnostic.allowed = requestCountAllowed;
+                request.operatorReadDiagnostic.permissionRoom = getCurrentContext().permissionRoom;
+            }
+            if (!requestCountAllowed) return;
+            if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "요청횟수 응답 전송";
             replier.reply("[" + sender + "] 최근 " + getUserRequestWindowSeconds() + "초 요청 횟수: " + getUserRequestCount(sender) + "회");
             return;
         }
@@ -5581,6 +5634,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
 
+        if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "가입·펫·출석 및 공통 제한 검사";
         var commonStepStart = Date.now();
         addResponseTiming("명령 전처리/과부하체크", responsePreprocessStartMs);
         commonStepStart = Date.now();
@@ -8870,12 +8924,20 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     replier.reply("ver_" + HoiBotVersion);
                 }
                 if (msg === "/개발자노트") {
-                    if (!(isAdmin(sender) || isMaster(sender))) return;
+                    var noteReadAllowed = isAdmin(sender) || isMaster(sender);
+                    if (request.operatorReadDiagnostic) {
+                        request.operatorReadDiagnostic.stage = "개발자노트 권한 검사";
+                        request.operatorReadDiagnostic.allowed = noteReadAllowed;
+                        request.operatorReadDiagnostic.permissionRoom = getCurrentContext().permissionRoom;
+                    }
+                    if (!noteReadAllowed) return;
+                    if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "개발자노트 파일 읽기";
                     var hoiBotChangeLogData = loadJsonFile(hoiBotChangeLogPath);
                     if (!hoiBotChangeLogData || !Array.isArray(hoiBotChangeLogData.entries)) {
                         replier.reply("❌ 개발자노트 파일을 확인할 수 없습니다.\n" + resolveActiveDataPath(hoiBotChangeLogPath));
                         return;
                     }
+                    if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "개발자노트 생성·전송";
                     replier.reply(buildHoiBotChangeLogMessage(hoiBotChangeLogData));
                     return;
                 }
@@ -32481,6 +32543,7 @@ replier.reply(
             room: room,
             sender: sender
         };
+        if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.error = errorObj.error;
         debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
         if (error.miniGameCatalogFailure) {
             try { replier.reply("⚠️ 미니게임 자료를 불러오지 못했어요.\n잠시 후 다시 이용해 주세요."); }
