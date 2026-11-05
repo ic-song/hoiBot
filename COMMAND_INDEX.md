@@ -666,6 +666,7 @@ Status: VERIFIED
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
 - `main.js`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
 - 구조화된 저장 값은 `writeJsonStream`으로 조각 기록하고 `validateManagedJsonValue` 및 기록 SHA-256으로 검증한다. 기존 직렬화 원문 호출은 기존 재파싱 검증을 유지하며, `toJSON` 변환이 있으면 출력도 다시 파싱한다. 저장 JSON 구조와 지급·조회 정책은 유지한다.
+- `getSmallJsonLeafText`는 일반/빈 프로토타입의 순수 JSON 말단 객체만 최대32키·이스케이프 전4096문자 이내에서 묶어 직렬화한다. 접근자·`toJSON`·사용자 프로토타입·중첩/큰 객체·배열은 기존 스트림을 유지한다. 공통 회원 로드/저장 지문과 관리 저장에 같은 JSON 바이트를 사용하며, 파일 전체를 한 문자열로 만들거나 검증·백업·복구를 생략하지 않는다.
 - `writeJsonFileDirect`는 일반 파일의 기존 직접 쓰기 흐름을 유지한다. 순환 참조 등 직렬화 오류를 파일을 열기 전에 확인한다.
 - 회원 분리 로그·레이드 변경 비교 문맥의 `logsText`/`raidText`는 64자리 SHA-256이다. `createMemberSplitWrite`는 일반 저장에 `.value` 객체를 제공하고 기존 게시 저널에는 `.text` 원문 접근을 유지한다.
 - `createTransactionFileSnapshot`/`createTransactionTextSnapshot`/`createJsonRollbackSnapshot`은 명령 롤백 사본을 현재 환경의 `.hoi-memory-<UUID>` 파일에 보관한다. 명령 종료 후 정리하며, 시작 시에는 24시간 이상 지난 사본만 정리한다. 기존 고정 2세대 백업과 수동복구 경로는 유지한다.
