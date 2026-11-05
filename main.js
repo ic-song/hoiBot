@@ -44138,6 +44138,11 @@ function runPetMusouScheduleTick(timerCtx, replier, now) {
         beginDataSaveTransaction();
         timerTransactionEntered = true;
         var latestData = loadJsonFile(filePath);
+        // 이미 처리한 정시 예약과 비활성 이벤트는 전투 자료를 읽기 전에 제외한다.
+        if (getActivePetMusouStartTimes(latestData, now).indexOf(timeText) === -1) return;
+        var scheduleKey = getPetMusouScheduleKey(now, timeText);
+        var latestMusou = ensurePetMusouData(latestData);
+        if (latestMusou.lastScheduledStartKey === scheduleKey) return;
         var latestPetData = loadJsonFile(memberPetPath);
         var latestHomeData = loadJsonFile(homeDataFile);
         var latestPetSkillData = loadJsonFile(petSkillDataPath);
@@ -44998,11 +45003,11 @@ function startPetMusouOpeningTimer(data, petData, petSkillData, guildData, repli
             timerTransactionEntered = true;
             delete petMusouOpeningTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
+            var latestMusou = ensurePetMusouData(latestData);
+            if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
             var latestPetData = loadJsonFile(memberPetPath);
             var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
-            var latestMusou = ensurePetMusouData(latestData);
-            if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
             var latestHomeData = loadJsonFile(homeDataFile);
             openPetMusouForAttacks(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat, latestHomeData);
         } finally {
@@ -45050,11 +45055,11 @@ function startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier,
             timerTransactionEntered = true;
             delete petMusouTurnTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
+            var latestMusou = ensurePetMusouData(latestData);
+            if (!latestMusou.active || latestMusou.turnToken !== token) return;
             var latestPetData = loadJsonFile(memberPetPath);
             var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
-            var latestMusou = ensurePetMusouData(latestData);
-            if (!latestMusou.active || latestMusou.turnToken !== token) return;
             var timeoutResult = processPetMusouTimeout(latestData, latestPetData, latestPetSkillData, latestGuildData);
             if (!timeoutResult.ok) return;
             saveJsonFile(latestData, filePath);
