@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.775"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.776"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3880,6 +3880,10 @@ try {
 
 // 기본 7인수 콜백에서 접수 시각·회차를 보존하고 한 작업자에게 전달하는 함수
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    // Java 문자열도 접수 시 원시 문자열로 고정해 명령·방·권한 비교를 유지한다.
+    room = String(room);
+    msg = String(msg);
+    sender = String(sender);
     var request = { room: room, msg: msg, sender: sender, isGroupChat: isGroupChat, replier: replier,
         imageDB: imageDB, packageName: packageName, receivedAt: Date.now(),
         gameId: getMiniGameObservedVaultId(isDevCommandMessage(msg)) };

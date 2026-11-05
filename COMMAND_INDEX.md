@@ -654,6 +654,7 @@ Status: VERIFIED
 
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
 - `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`는 입력·응답 대상·접수 시각·관찰 회차만 메모리 큐에 넣는다. `responseQueueLock`으로 접수와 작업자 전환을 보호하며, 비어 있던 큐의 첫 접수가 Java 작업자 하나를 시작한다. 큐가 비면 작업자는 종료한다.
+- 큐 접수 전 `room`, `msg`, `sender`를 `String(...)`으로 변환한다. Java 문자열 객체와 원시 문자열을 같은 명령·방·권한 비교에 사용하며, 공백 제거·별칭 추가·권한 확대는 하지 않는다.
 - `drainResponseQueue` → `executeResponseRequest` → `processResponse` 순으로 기존 데이터 흐름 잠금과 `dataTransactionLock.lock()`을 얻은 뒤 최신 데이터를 읽는다. Main 일반 채팅도 기존 글자수·경험치 처리를 위해 같은 큐를 사용한다. Info.js 콜백은 변경하지 않는다.
 - `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않고 안내한다. 초과 접수·작업자 시작 실패도 안내한다. 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다.
 - `responseQueueThread`가 설정된 현재 작업자의 내부 `response(...)` 재호출은 바로 실행한다. 자동일퀘의 캡처 응답·중첩 트랜잭션·DEV 컨텍스트를 유지하며 자기 큐를 기다리지 않는다.
