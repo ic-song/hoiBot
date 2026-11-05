@@ -6,6 +6,19 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-11-05 - 봇 시작 시 saveJsonFile의 storage 미초기화 오류
+
+Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/bootstrap-save-fix, ver_2.768 운영 준비)
+
+- 제보: Runtime Error(main), TypeError: Cannot read property 'storage' from undefined, main:35138(saveJsonFile) 및 main:988. ADB 복구 뒤 제공된 오류 화면을 기준으로 소스를 확인했다.
+- 원인: 시작 단계의 요청 모니터링 설정 저장이 `GLOBAL_CONFIG` 선언보다 먼저 실행됐다. `saveJsonFile` 내부 롤백 사본 판별이 `GLOBAL_CONFIG.storage.transactionPrefix`에 접근하면서 초기화가 중단됐다. 현재 운영 기준 소스에서 실제 Rhino로 같은 storage 오류를 재현했다.
+- 수정: 최초 요청 모니터링 설정 저장 한 줄을 전역 설정·저장 잠금 초기화 뒤, 기존 지급 복구·최초 회원 로드 이전으로 이동했다. 저장 함수 본문·설정 보완 기준·로드 실패 전파·데이터 경로·명령 목록은 변경하지 않았다.
+- 검증: Rhino 1.7.15 languageVersion200/opt-1에서 현재 소스 AST의 실제 저장 함수 8개와 초기 설정 순서를 추출했다. 수정 전 오류 재현, 기본값 보완, 사용자 설정·한글/이모지·추가 필드 보존, PROD/DEV를 구분한 합성 임시 경로 저장, 손상 JSON 원문 보존·실패 전파, 실제 Java 파일 쓰기 실패·롤백 호출·잠금 해제의 7시나리오 및 전체 main.js Rhino 컴파일을 통과했다. 초기 로드는 엄격한 JSON 파일 읽기 어댑터, 명령 컨텍스트·트랜잭션 경계는 어댑터를 사용했고 실제 운영 데이터에는 접근하지 않았다. 관련 저장 함수 본문은 수정 전과 동일함을 대조했다.
+- 추가 검사: `node --check main.js`, `git diff --check`, 버전·개발자노트 2.768 일치, 최초 설정 저장 순서, UTF-8·기존 CRLF 보존을 확인했다. 작업 전용 임시 검증 파일은 완료 후 제거했다.
+- 한계: Android MessengerBot 전체 초기화와 운영 단말 재컴파일은 미검증이다. 운영 Git 반영은 별도 사용자 지시 전까지 수행하지 않는다. 기존 feature/bugFix의 미반영 b45affeb와 다른 작업의 미추적 체크포인트는 보존했다.
+
+---
+
 ## 2026-11-02 - 영지 순위보상 미완료·이미 지급 안내 불일치 및 /리셋 기준 통일
 
 Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/room-halloween-payout-fix, ver_2.760 운영 준비)

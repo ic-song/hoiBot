@@ -5,6 +5,14 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 시작 단계의 요청 모니터링 설정 저장
+
+Status: VERIFIED
+
+- `main.js`: `requestMonitorConfigPath`에서 설정을 읽고 기존 기준대로 누락·잘못된 설정값을 보완한다.
+- 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`는 `GLOBAL_CONFIG`와 저장 잠금 초기화 이후, 지급 복구·최초 회원 로드 이전에 실행한다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조한다.
+- `loadJsonFile`·`saveJsonFile`·DEV/PROD 경로 선택과 저장 실패 전파 방식은 유지한다.
+
 ## 패스 관리 MASTER 권한
 
 Status: VERIFIED
@@ -648,6 +656,8 @@ Status: VERIFIED
 - `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
 - A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
+- Main 기본 종료부의 펫 저장만 선택적으로 불변 비교를 허용한다. 검증·동기화한 임시 파일과 현재 펫 원본 및 직전 백업의 크기/SHA256이 모두 같고 2세대 백업이 존재하며 5분 갱신 기한 전일 때만 동일 백업 재기록·원본 교체를 생략한다. 누락·불일치·추가 비교 실패·백업 갱신 기한·강제 복원·기존 인수 호출은 기존 전체 저장으로 처리한다. 임시 파일 생성·검증은 유지하고 회원 저장은 생략하지 않는다.
+- Main 응답 종료는 컨텍스트·트랜잭션 정리 예외에도 데이터/응답 흐름 잠금을 중첩 finally에서 해제한다. 예외를 숨기거나 일반 명령의 tryLock 실패 반환 정책을 바꾸지 않는다.
 - `writeVerifiedJsonFile(...)` reuses an already verified write only inside the same healthy response transaction, with backup rotation already skipped and identical serialized text rechecked against the current target under its path lock. The first save, changed/missing/different target, explicit backup rotation, and rollback still write normally. Reuse state ends with the transaction; member files, split stores, and recovery journals are excluded. `tools/test_command_save_reuse*.js` covers parity, failures, restart, DEV/PROD, Java threads, and actual-file timing.
 - `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
 - `/데이터상태` reads the original and both backup generations for all four managed JSON files without modifying them; `/데이터복구 [파일] [1|2]` restores only the selected file from the explicitly selected validated backup generation.
@@ -658,6 +668,7 @@ Status: VERIFIED
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
 - `main.js`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
 - 구조화된 저장 값은 `writeJsonStream`으로 조각 기록하고 `validateManagedJsonValue` 및 기록 SHA-256으로 검증한다. 기존 직렬화 원문 호출은 기존 재파싱 검증을 유지하며, `toJSON` 변환이 있으면 출력도 다시 파싱한다. 저장 JSON 구조와 지급·조회 정책은 유지한다.
+- `getSmallJsonLeafText`는 일반/빈 프로토타입의 순수 JSON 말단 객체만 최대32키·이스케이프 전4096문자 이내에서 묶어 직렬화한다. 접근자·`toJSON`·사용자 프로토타입·중첩/큰 객체·배열은 기존 스트림을 유지한다. 공통 회원 로드/저장 지문과 관리 저장에 같은 JSON 바이트를 사용하며, 파일 전체를 한 문자열로 만들거나 검증·백업·복구를 생략하지 않는다.
 - `writeJsonFileDirect`는 일반 파일의 기존 직접 쓰기 흐름을 유지한다. 순환 참조 등 직렬화 오류를 파일을 열기 전에 확인한다.
 - 회원 분리 로그·레이드 변경 비교 문맥의 `logsText`/`raidText`는 64자리 SHA-256이다. `createMemberSplitWrite`는 일반 저장에 `.value` 객체를 제공하고 기존 게시 저널에는 `.text` 원문 접근을 유지한다.
 - `createTransactionFileSnapshot`/`createTransactionTextSnapshot`/`createJsonRollbackSnapshot`은 명령 롤백 사본을 현재 환경의 `.hoi-memory-<UUID>` 파일에 보관한다. 명령 종료 후 정리하며, 시작 시에는 24시간 이상 지난 사본만 정리한다. 기존 고정 2세대 백업과 수동복구 경로는 유지한다.
@@ -2917,6 +2928,8 @@ Status: VERIFIED
 ## Save Flow
 - 참가, 시작, 공격, 시간 초과, 강제 종료, 전체 초기화 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
 - 운영 컨텍스트에서는 KST 기준 매일 12:30에 정규 펫무쌍 시작을 확인하고, 티켓 이벤트가 활성화되어 있으면 날짜 제한 없이 20:30 시작을 추가한다. 타이머 등록 직후에도 현재 회차를 확인하고 날짜·시각 키로 중복 실행을 막으며 맞짱필드·길드 영지전과 동시 시작하지 않는다.
+- 정시 감시는 해당 시각 외에는 파일을 읽지 않는다. 해당 시각에도 회원의 저장된 회차 키·이벤트 활성 상태를 먼저 확인해 중복 또는 비활성 예약이면 펫·홈·스킬·길드 파일을 읽지 않는다.
+- 모집·턴 타이머는 회원을 읽어 활성 상태와 예약 토큰을 확인한 뒤 필요한 전투 파일을 읽는다. 오래된 예약은 보조 파일 로드 전에 종료하며 정상 실행의 저장·기한·중단 후 복구 절차는 유지한다.
 - `/티켓이벤트시작`, `/티켓이벤트종료`, `/티켓전체회수`는 이벤트 상태·로그·쿠폰 회수 결과를 `member.json`에 한 번 저장한다. 시작은 운영 기간 제한 없이 가능하며, 이벤트 종료만으로 보유 쿠폰을 회수하지 않는다.
 - `/벼락확률 [0-100]`은 진행 중인 대회의 `lightningRate`만 변경하고 `member.json`을 한 번 저장한다. `dev/` 입력은 기존 DEV 컨텍스트의 `member.json`에만 반영한다.
 - 종합매력과 크리티컬 기준값은 60초 참가 모집 마감 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
@@ -8268,7 +8281,7 @@ Status: VERIFIED
 
 ## Files / Helpers
 
-- main.js: getDollRequest, applyDollDraw, applyDollAcquisition, getDollBoxRequest, applyDollBoxOpen, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
+- main.js: getDollRequest, getDollDrawTicketCount, isDollPetDataUnchanged, recordDollTiming, buildDollTimingMessage, applyDollDraw, applyDollAcquisition, getDollBoxRequest, applyDollBoxOpen, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
 - MAIN·Info의 캐슬·레이드 기본 매력에 `member_pet.json`의 `dollCharm / 2`를 합산한 뒤 기존 퍼센트를 적용한다. 종합매력·진단도 같은 기본값을 사용한다. 원본 종합매력은 정수로 누적하므로 각 모드 +12.5도 누적 과정에서 보존한다.
 
 ## Commands / Policy
@@ -8292,8 +8305,10 @@ Status: VERIFIED
 - dollCatalog.json: Notion 고정 ID D0001–D1000, 9등급, 0.1cm 정수 크기. 첫 이용 때 검증·캐시하며 DEV도 공통 목록을 읽는다.
 - ver_2.699: `getDollGradeRows`는 활성 `dollCatalogCache`와 동일한 검증 목록만 등급별 원래 순서로 재사용한다. 반환 배열은 매번 복사하여 도감 정렬이 다음 추첨에 영향을 주지 않는다. 다른 목록 객체·비숫자 등급은 기존 엄격 비교 필터로 처리하고, 카탈로그 객체 교체 시 캐시를 다시 만든다. 사용자 기록·확률·난수 호출 순서·소모·보상·저장 경로는 변경하지 않는다.
 - dollRecords_0.json–dollRecords_15.json: 이름 해시로 분리한 도감·최초일·횟수·최대 크기. dollIndex.json: 순위 대표 기록. 회원 파일에 도감 원본을 넣지 않는다.
-- 뽑기 전 회원·펫·인덱스·해당 기록 원문을 dollPending.json에 보관하고, 명령 트랜잭션 안에서 기록→인덱스→펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 중단된 요청은 다음 MAIN에서 이전 원문으로 복구한다.
+- 이용권 부족은 회원·펫·재화 검증 후 인형 전용 파일·복구 원문을 읽기 전에 안내한다. 추첨 계산은 메모리에서 진행하고, 파일 게시 전에 회원·펫·인덱스·해당 기록 원문 4개를 기존 형식의 dollPending.json에 보관한다.
+- 명령 트랜잭션 안에서 변경된 기록→대표 인형이 달라진 인덱스→변경된 펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 정상 실패는 불변 기록·순위 저장을 건너뛰며, 펫은 디스크 원본의 JSON 값과 직접 비교해 공통 처리 변경도 보존한다. 실패 경로에 추가됐던 전체 SHA256 직렬화 2회는 제거하고 변경 발견 시 비교를 종료한다. 기존 자동·수동 복구 원문·저장 경로와 중단 후 원상복구 절차는 유지한다.
 - 저장 완료 뒤 전송 실패는 재추첨·재지급·소모 취소를 하지 않는다. Info는 복구 대기 상태를 표시하지 않는다. DEV 사용자 저장 경로는 분리한다.
+- 기존 `/디버깅모드` ON 상태에서 정상 뽑기 결과 전송 후 테스트방에 `[인형 처리 시간]`을 보낸다. 실제 명령 진입부터 공통 처리·목록/기록 읽기·추첨·원문 검증/펫 비교·각 파일 저장·기존 결과/디버그 전송을 구분한다. 진단 전송 자체는 총시간에서 제외하며 같은 요청에서 기존 공통 처리 세부 시간도 함께 출력한다(일부 측정 구간 중첩). 진단 실패로 완료된 저장을 취소하지 않는다. OFF에서는 진단 메시지를 보내지 않는다.
 - `/계삭진행`, `/계정잠수삭제`, `/데이터정리`의 기존 삭제 정리와 연결해 인형 도감·순위 잔여 데이터를 함께 제거한다. 재가입은 새 기록이다. 닉네임 변경 기록 이전은 사용자 지시로 제외됐다.
 - 최초 설치 자료와 운영자 확인 절차: docs/DOLL_CONTENT_DEPLOYMENT.md. 누락·손상 파일을 빈 데이터로 바꾸지 않는다.
 
@@ -8629,3 +8644,70 @@ Status: VERIFIED
 
 ## 2026-11-02 운영 방명 변경
 - room10은 `🚨30대 반말방💊도파민 비상사태💥`이다. 기존 호이서버6[30] 유입 매핑·공지/응답 대상과 변수 참조를 재사용하며 다른 방·서버명·기존 회원 소속은 변경하지 않는다.
+
+# 24시간 길드전쟁
+
+Status: VERIFIED
+
+## Commands and permissions
+- `main.js`: `getGuildWarRequest` → `runGuildWarEntry`. 실행 명령은 인수 전체 일치로 해석하며 후행 안내문·잘못된 번호는 실행하지 않는다. `response`와 자동 작업은 기존 데이터 배타 잠금·트랜잭션을 사용한다.
+- `/길드전쟁`, `/길드전쟁가이드`는 공개. `/전쟁편성`, `/전쟁정찰`, `/전쟁기록 [번호]`는 자기 등록 길드톡의 소속 길드원만 조회한다.
+- `/전쟁공격편성 번호 번호 번호`, `/전쟁방어편성 번호 번호 번호`, `/전쟁정찰편성 번호`, `/전쟁선포 지역번호`는 등록방의 길마·부길마. `/정찰 길드명`은 등록 정찰병만 사용한다. 동시 방어전 순서 변경은 `/전쟁방어편성 영지번호 번호 번호 번호`로 지정한다.
+- `/전쟁톡등록`은 길마·부길마·MASTER. `/전쟁톡확인 길드명`, `/전쟁톡해제 길드명`은 MASTER 원격 기능이며 신규 명령에서만 기존 MASTER 명단 기준을 사용한다. 전쟁 중 등록 변경·해제는 MASTER도 금지한다. 방은 마크 제외 길드명과 정확히 같은 `room` 문자열로 판별한다.
+
+## Data and battle flow
+- 원본은 `guildData.json`의 `war24`. 영지 1=호월킹덤, 2~4=동부·중앙·서부 금광. 기존 영지전의 광산 2~7과 별개다. 최초 금광은 기존 지구방위대 길드가 소유하고, 호월킹덤은 기존 점령 길드·영주를 유지한다.
+- 기본 점령 대상인 지구방위대 길드의 존속·해산은 운영에서 관리한다. 별도 지구방위대 해산 차단은 추가하지 않는다.
+- `snapshotGuildWarFighter`, `snapshotGuildWarScout`는 선포 당시 참가자·매력·크리티컬·큐브·아이템 보유 자격을 기록한다. 정찰은 종합매력, 실제 전투는 캐슬매력. 정찰 승리 측만 3분 동안 해당 전쟁 기존 3명의 순서 변경이 가능하다.
+- `resolveGuildWarMatch`: 절대방어권+큐브[4] 합산 1회(최대 100%) → 기습권 → 펫 크리티컬 → 최종 캐슬 비교. 빈 방어 슬롯은 큐브/아이템/크리티컬 없음, 동률은 방어 승리. 전투 시 실제 아이템 잔량을 다시 확인한다. 기존 저확률 아이템을 삭제·변환하지 않는다.
+- `processGuildWars`는 3경기 모두 처리하고 완료한 전쟁을 진행 목록에서 제거한다. 공격 대장이 준비 중 탈퇴하면 2승 이상이어도 호월킹덤 점령은 실패한다. 정상 점령은 대장이 영주, 기본 세율 및 새 누적 수익 0으로 시작한다. 기존 세금은 이미 길드/재단에 적립된 누계이므로 다시 지급하지 않는다.
+- `creditGuildWarVictory`는 호월킹덤·금광 4개 지역 모두 유효한 공격 점령 성공에 기존 길드자금 300,000,000P, 정상 방어 승리에 200,000,000P를 지급한다. 길드원 개인 포인트는 변경하지 않는다. 취소·공격 대장 탈퇴로 호월킹덤 점령 무효인 경우 보상은 없다. 보상 표식·길드자금·완료 기록·진행 목록 제거는 같은 길드 원본 게시로 확정하며 과거 완료 기록에 소급 지급하지 않는다.
+- `initializeGuildWar`는 기존 `war24`의 보상 정책 표시가 없을 때만 `settleLegacyGuildWarProduction`으로 전환 시점까지 미정산 생산분을 마지막 한 번 마감하고 정책2/전환 시각을 같은 길드 원본에 기록한다. 기존 자금·점령·편성·진행 전쟁·과거 기록을 유지한다. 이후 시간 생산·재시작 누락분 생산은 없고, 구 since/incomeAt/income 필드는 호환을 위해 보존한다.
+- `scheduleGuildWarWork`는 가장 빠른 원래 전투 예정 시각 또는 필요한 복구·알림 처리만 예약한다. 진행 전쟁·복구·알림이 없으면 타이머를 만들지 않는다. 게시 실패 시 진행 목록이 이미 비었더라도 5초 뒤 복구를 다시 시도하고, 예정 시각이 지났다는 이유로 1ms 무한 재시도하지 않는다. 점령 시간·금광 생산 중/누적 수익 표시는 메인에서 제거했다.
+- `resetGuildWarDay`는 기존 `/리셋`에서 새 KST 날짜일 때만 공격권 3·단독 정찰 1·정찰병 교체 1회로 복구한다. 진행 전쟁과 선포일 기록은 유지하며 취소 환급은 현재 3회 상한이다.
+- `detachGuildWarMember`는 탈퇴·추방·계정 삭제에서 기본 편성을 해제하고 진행 전쟁에는 탈퇴 표식을 남긴다. 재가입으로 해당 전쟁의 매력을 복원하지 않는다. `reconcileGuildWarRoster`는 기존 `/소드마스터` 변경 시 기본 편성 자격을 갱신한다. 신규 공격 편성은 기존 소드마스터를 선택한 3명으로 연동하므로 기존 4번째 지정은 해제된다.
+- 기존 영지전에서는 호월킹덤의 수동/자동 공격·랜덤 점령 해제·점령 초기화를 제외한다. `/호월킹덤`의 점령 길드 표시는 영주의 현재 가입 길드와 분리해 신규 점령 원본을 사용한다. 다른 기존 영지는 유지한다.
+
+## Save and recovery
+- `prepareGuildWarPublication` → `publishGuildWar` → `cleanupGuildWarPublication`. 길드 전용 게시에는 길드 원본/백업 3개만 고정 사본으로 보존한다. 회원 변경이 포함되면 회원·길드 및 연결된 레이드/로그 원본·백업 14개를 8KiB 버퍼로 복사하며 큰 JSON 문자열 묶음을 만들지 않는다.
+- `guildWarPending.json`에는 허용 파일명·존재 여부·크기·SHA-256만 보관한다. `recoverGuildWarPublication`은 모든 사본의 해시/JSON과 필수 원본을 검증한 뒤 이전의 일치하는 원본으로 복구한다. 최초 회원 로드 전·명령 진입·자동 작업에서 복구하며 `.rollback` 이름 교체 중단도 처리한다.
+- `assertGuildWarNoPending`은 다른 직접 게시 작업까지 회원/길드 원본 덮어쓰기를 차단한다. 다른 콘텐츠 저널이 미완료면 새 전쟁 게시를 보류한다. DEV는 기존 컨텍스트로 별도 경로를 쓰고 알림도 테스트방으로 제한한다.
+- `guildData.json`도 기존 검증 저장·2세대 백업 경로를 사용한다. 손상/누락을 빈 기본값으로 대체하지 않는다. 진행 전쟁과 길드별 최근 30건(취소 포함)을 원본·백업에 함께 보존한다.
+
+## Results and notices
+- `buildGuildWarResult`는 수신 길드별 상단 승리/패배·점령 성공/상실·방어 성공/점령 실패를 구분한다. 경기별 세로 PvP와 allsee 상세는 같은 확정 결과를 재사용한다. `buildGuildWarRecordDetail`은 당시 시각·허용된 정찰 정보도 표시하며 재판정하지 않는다.
+- `flushGuildWarNotices`는 저장된 결과만 발송하고 실패 시 동일 메시지를 1회 추가 시도한다. 전송 실패가 전투·수익·점령·아이템을 재실행하지 않는다. 외부 전송 성공 직후 프로세스가 중단되는 구간의 전송 확인은 MessengerBot API 한계가 있으므로 게임 정산의 중복 방지와 구분한다.
+
+# 호월 추리소설
+
+Status: VERIFIED
+
+## Files and commands
+
+- `main.js`: `getHowolMysteryRequest`, `runHowolMysteryEntry`, `advanceHowolMysteryDay`, `requireHowolMysteryState`, `getHowolMysteryRecord`, `settleHowolMystery`, `renderHowolMysteryText`, `buildHowolMysteryResult`.
+- `/추리소설`과 슬래시 없는 `ㅊㄹ`은 같은 환경·계정의 1/2↔2/2 임시 페이지 상태를 공유한다. `/추리선택 1~3`은 정확한 번호만 접수한다. 신규 명령은 배타 데이터 잠금과 명령 트랜잭션을 사용하며 DEV 단축어도 같은 잠금을 적용한다.
+- 전체 등록 회원 무료·추가 배수 없음. 기존 개인방 이용 정책·정지·필터·서버대전·영지전 제한을 유지한다. `ㅊㄹ`도 공통 게임 입력으로 분류해 필터와 대전 제한을 우회하지 않는다.
+- `/미니게임`은 기존 밸런스 안내 바로 아래에 추리소설 두 줄만 추가한다.
+
+## Data, reset and result
+
+- `GLOBAL_CONFIG.howolMystery.cases`는 최신 단일 통합 기획서의 고정 순서 100편을 공통으로 보관한다. 공개 페이지 2개와 운영자용 정답·해설·결말을 분리하며 개인별 원고 사본은 저장하지 않는다.
+- 회원 원본의 `howolMystery`는 시작 KST 날짜·마지막 갱신 날짜·공개 사건 번호만 보관한다. `initializeGuildWarStartup`에서 적용 즉시 001을 열며 재시작으로 공개 번호를 변경하지 않는다. 이후 기존 `/리셋`에서 새 날짜일 때만 시작일 대비 공통 번호를 갱신한다. 같은 날 재호출은 그대로이며 101에서 종료한다.
+- 각 회원의 `howolMystery`는 마지막 선택 사건·선택 번호·마지막 정산 사건·정산 선택 번호의 네 수치만 유지한다. 당일 재선택은 막고, 미정산 지난 선택이 있으면 먼저 `/추리소설` 또는 `ㅊㄹ`로 결과를 확인하도록 안내한다.
+- `settleHowolMystery`는 공개 번호보다 이전인 미정산 참여만 판정한다. 정답 100,000,000P, 오답·미참여 0P이며 잔고와 정산 표식을 같은 회원 원본에 확정한다. `/리셋` 회원 전체 정산은 없다.
+- 결과는 당일 첫 진입에 별도 allsee 메시지로 표시하고 오늘 페이지는 1/2부터 시작한다. 결석 뒤에는 마지막 미정산 건부터 처리하고 재시작 뒤 재조회도 정산된 선택과 재지급 없음으로 표시한다. 101 이후에는 마지막 결과·정산과 종료 안내만 제공하며 001로 반복하지 않는다.
+
+## Save and recovery
+
+- `response`가 읽은 회원 원본을 진입점에 전달한다. 신규 선택·최초 정산·최초 공개 때만 `saveJsonFile(data, filePath)`로 저장하며 페이지 전환·재조회·오입력에는 회원 쓰기가 없다. 기존 회원 분리 참조·자동 백업·수동 복구를 그대로 사용한다.
+- 페이지 캐시는 메모리만 사용하고 KST 날짜 변경 또는 5,000개 한도에서 비운다. 재시작 시 첫 페이지로 돌아가도 영속 선택·포인트·정산 표식은 유지된다.
+- `recoverInterruptedMemberWrite`는 최초 회원 로드 전과 명령 진입 잠금 안에서 실행한다. 원본이 없고 원본 이름 교체 중 남은 `.rollback`이 있을 때만 JSON·회원 구조·추리 공개 상태·분리 마커를 검증해 원래 경로로 되돌린다. 현재 원본이 있으면 덮어쓰지 않고 손상 복구 파일은 오류로 남긴다. 다른 콘텐츠 게시 저널 복구는 기존 순서를 유지한다.
+
+## 길드전쟁 운영 전 재검토 보완 (2026-11-05)
+
+- `getGuildWarRequest`는 숫자 명령 뒤 줄바꿈·안내문을 실행하지 않는다. `/정찰`, MASTER 원격 `/전쟁톡확인`·`/전쟁톡해제`는 공백이 포함된 길드명 전체를 정확히 비교한다.
+- `scheduleGuildWarWork`의 한 처리에서는 `tickNow`를 한 번만 확정해 예정 전투 판정과 회원 저장 여부에 공통 적용한다. 마감 경계를 넘긴 계산으로 아이템·영주 변경 저장이 누락되지 않는다.
+- 매분 금광 전용 처리는 폐지했다. 초기화 또는 예정 시각이 지난 전투가 있을 때만 기존 `recoverMemberSplitPublication`을 실행하고 `bootstrap` 회원 원본을 읽는다. 보상 전환·알림 처리만 필요하면 회원 원본을 읽지 않는다. 기존 저장·복구·백업은 유지한다.
+- `runGuildWarEntry`는 `response`에서 이미 읽은 회원 원본을 인자로 받는다. 명령 진입 시 회원·분리 로그를 다시 읽지 않는다.
+- 일반 명령의 공통 길드 로드는 초기 영지전 제한 검사에서 읽은 원본을 같은 정상 트랜잭션 안에서 재사용한다. 복구로 트랜잭션이 바뀌었거나 길드 저장·실패·롤백 표시가 있으면 다시 읽으며 요청 사이에는 캐시하지 않는다.
+- 기존 `/맞짱시간체크 닉네임`의 응답 진입 총 시간은 잠금 전 최초 진입부터 계산한다. 공통 잠금·진입 대기, 초기 복구 검사, 초기 길드 로드, 최초 회원·분리 데이터 로드가 공통 시간 항목에 포함된다.
