@@ -654,6 +654,7 @@ Status: VERIFIED
 
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
 - `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`는 입력·응답 대상·접수 시각·관찰 회차만 메모리 큐에 넣는다. `responseQueueLock`으로 접수와 작업자 전환을 보호하며, 비어 있던 큐의 첫 접수가 Java 작업자 하나를 시작한다. 큐가 비면 작업자는 종료한다.
+- ver_2.779: 외부 콜백의 `replier` 객체를 큐 작업자에 넘기는 대신 `createQueuedResponseReplier(room)`로 접수 방 이름에 응답 목적지를 고정해 `Api.replyRoom(room, message)`을 호출한다. 성공·권한 거부·조회 실패·큐 초과/만료 안내도 같은 목적지를 사용한다. 전송 실패 시 원본 콜백 객체로 우회하지 않는다. 현재 작업자의 내부 `response(...)` 재호출은 이 래핑 전에 바로 실행해 자동일퀘 capture replier를 유지한다. 권한 판정과 데이터 경로는 바꾸지 않는다.
 - 큐 접수 전 `room`, `msg`, `sender`를 `String(...)`으로 변환한다. Java 문자열 객체와 원시 문자열을 같은 명령·방·권한 비교에 사용하며, 공백 제거·별칭 추가·권한 확대는 하지 않는다.
 - `response(...)`는 실제 콜백의 `arguments`를 `getServerRaidCallbackEvent`로 접수 시 해석하고 `request.callbackEvent`에 보관한다. `processResponse`는 그 값을 사용하며 내부 8번째 인수인 큐 요청을 신뢰된 이벤트로 해석하지 않는다. 기본 7인수는 `null` 이벤트를 유지해 레이드 공격 진입에서 호출별 UUID를 생성하고, 기존 신뢰 어댑터 8번째 객체·선택적 네이티브 11인수의 메시지/방/운영자 식별값은 이전 규칙 그대로 보존한다. 확장 인수는 필수가 아니다.
 - `drainResponseQueue` → `executeResponseRequest` → `processResponse` 순으로 기존 데이터 흐름 잠금과 `dataTransactionLock.lock()`을 얻은 뒤 최신 데이터를 읽는다. Main 일반 채팅도 기존 글자수·경험치 처리를 위해 같은 큐를 사용한다. Info.js 콜백은 변경하지 않는다.
@@ -2585,6 +2586,7 @@ Status: VERIFIED
 
 - `/호이봇버전` replies with `ver_` + `HoiBotVersion`
 - `/개발자노트` is admin/master-only and shows the latest 10 entries from the manually maintained `data/hoiBotChangeLog.json` after an `allsee` fold marker
+- 테스트방에서 길드방의 권한 진단이 보인다는 제보를 바탕으로 원본 콜백 응답 객체가 후속 입력의 방 정보로 바뀌는 합성 상황을 재현했다. ver_2.779는 큐 외부 응답 목적지를 접수 방에 고정한다. 길드방의 거부 안내는 그 길드방에, 허용된 테스트방의 정상 조회는 테스트방에만 보낸다. 관리자·MASTER 명단/허용 방을 늘리지 않는다. 실제 기기의 응답 객체 구현을 직접 확인한 것은 아니므로 운영 적용 후 방별 응답을 확인해야 한다.
 - 정확한 `/개발자노트`, `/요청횟수`와 같은 DEV 입력은 `executeResponseRequest`에서 응답 여부를 추적한다. 정상 응답은 그대로 1회 전송하며, 응답 없이 종료하면 `buildOperatorReadFailureMessage`로 마지막 확인 단계와 원인을 안내한다. `reply(...) === false`와 예외는 성공 응답으로 취급하지 않는다. 권한 불일치에는 본인의 명단 등록 여부·수신 닉네임/방·권한 검사 방만 표시하며, 오류 상세는 허용된 운영자에게만 최대 200자 표시한다.
 - 진단은 게임 가드·필터·복구를 건너뛰지 않는다. 기존 롤백·오류 기록·잠금 해제 후 안내하며, 진단이 전송된 예외에 큐 일반 오류 안내를 중복 전송하지 않는다. `/요청횟수 대상` 및 다른 명령은 이 추적 대상이 아니다. 운영 무응답의 원인은 아직 미확정이며, 안내된 단계/조건과 실제 입력으로 재확인이 필요하다.
 - Entries are grouped under date sections in the output; each production-facing change still increments `HoiBotVersion` by `0.001`

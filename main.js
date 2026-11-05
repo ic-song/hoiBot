@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.778"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.779"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3891,6 +3891,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         gameId: getMiniGameObservedVaultId(isDevCommandMessage(msg)) };
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     if (responseQueueThread.get()) { executeResponseRequest(request); return; }
+    request.replier = createQueuedResponseReplier(room); // 외부 콜백의 가변 응답 객체를 작업자에 넘기지 않는다.
     var rejected = false;
     responseQueueLock.lock();
     try {
@@ -3912,6 +3913,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
     } finally { responseQueueLock.unlock(); }
     if (rejected) notifyResponseQueue(request, "⚠️ 요청이 몰려 접수하지 못했어요. 잠시 후 다시 입력해 주세요.");
+}
+
+// 큐 외부 요청의 응답을 접수한 방 이름에 고정하는 함수
+function createQueuedResponseReplier(room) {
+    return { reply: function (message) { return Api.replyRoom(room, message); } };
 }
 
 // 큐 접수 실패·만료·실행 오류를 원래 요청의 응답 대상으로 안내하는 함수
