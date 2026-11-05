@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.771"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.772"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1107,7 +1107,7 @@ const GLOBAL_CONFIG = {
         {"id":99,"title":"🪙 가벼워진 동전 상자","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🪙 가벼워진 동전 상자 (보통) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님이 같은 무게의 동전 상자 세 개를 포장했는데, 확인해 보니 한 개만 원래 상자 대신 가벼운 소품 상자로 바뀌어 있었다.\n\n🐱 호월이: “난 빨간 상자만 들었어.”\n🐾 호동이: “난 파란 상자만 들었어.”\n💕 봄봄이: “전 노란 상자만 옮겼어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🪙 가벼워진 동전 상자 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 정상 동전 상자는 모두 2.0kg이고, 바꿔 놓은 빈 소품 상자는 0.8kg이다.\n② 저울 기록에는 빨간 상자 2.0kg, 파란 상자 0.8kg, 노란 상자 2.0kg으로 남았고, 포장 영상에는 각자가 자신이 말한 색의 상자 하나만 단독으로 다루는 모습이 남았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":2,"explanation":"실측 결과 파란 상자만 정상 무게 2.0kg보다 가벼운 0.8kg이었다. 색깔별 상자에 혼자 접근한 사람을 영상과 대조하면 파란 상자를 맡은 호동이만 바꿔치기할 수 있었다.","ending":"호동이는 실수로 빈 소품 상자를 파란 상자와 바꿔 놓았다고 인정했다."},
         {"id":100,"title":"🍀 마지막 행운의 카드","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🍀 마지막 행운의 카드 (보통) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님의 행사 카드가 책상 서랍에서 없어졌다.\n\n🐱 호월이: “난 초록 카드를 만졌어.”\n🐾 호동이: “난 빨간 카드만 만졌어.”\n💕 봄봄이: “저는 가방을 옮겼어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🍀 마지막 행운의 카드 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 사라진 빨간 카드 앞면에는 아직 마르지 않은 붉은 잉크가, 뒷면에는 그 카드에만 바른 특수 검은 잉크가 있었다.\n② 호동이 손가락에는 빨간 카드 앞면의 붉은 잉크와 뒷면 특수 검은 잉크가 함께 묻어 있었고 다른 작업 도구에는 특수 잉크가 없었다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":2,"explanation":"호동이 손에는 사라진 빨간 카드 앞뒷면에서만 동시에 묻을 수 있는 두 가지 잉크가 함께 있다. 카드를 직접 뒤집어 만졌다는 강한 물증이다.","ending":"호동이는 기념 카드로 보관하려다 잊었다고 고백했다."}
     ] },
-    storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
+    storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, nativeLeafMaxKeys: 32, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     guildWar: {
     "earthName": "지구방위대",
     "regions": [
@@ -33901,6 +33901,25 @@ function copyJsonObjectShallow(value) {
     return copy;
 }
 
+// 작은 순수 JSON 말단 객체만 제한된 크기로 묶어 직렬화하고 나머지는 기존 스트림에 맡기는 함수
+function getSmallJsonLeafText(value, keys, maxChars) {
+    var maxKeys = GLOBAL_CONFIG.storage.nativeLeafMaxKeys;
+    if (typeof maxKeys !== "number" || keys.length > maxKeys) return null;
+    var prototype = Object.getPrototypeOf(value);
+    if (prototype !== null && prototype !== Object.prototype) return null;
+    if (Object.getOwnPropertyDescriptor(value, "toJSON") || Object.getOwnPropertyDescriptor(Object.prototype, "toJSON")) return null;
+    var chars = 0; // 이스케이프 전 키·문자열 합계를 제한해 전체 파일 직렬화를 방지
+    for (var i = 0; i < keys.length; i++) {
+        var descriptor = Object.getOwnPropertyDescriptor(value, keys[i]);
+        if (!descriptor || !Object.prototype.hasOwnProperty.call(descriptor, "value")) return null;
+        var child = descriptor.value, type = typeof child;
+        if (child !== null && type !== "string" && type !== "number" && type !== "boolean" && type !== "undefined") return null;
+        chars += keys[i].length + (type === "string" ? child.length : 24);
+        if (chars > maxChars) return null;
+    }
+    return JSON.stringify(value);
+}
+
 // UTF-8 JSON을 작은 문자열 조각으로 기록해 전체 직렬화 문자열의 중복 보관을 피하는 함수
 function writeJsonStream(writer, value) {
     var ancestors = [], chunkSize = GLOBAL_CONFIG.storage.jsonChunkChars, pending = "", transformed = false;
@@ -33932,6 +33951,8 @@ function writeJsonStream(writer, value) {
         if (ancestors.indexOf(item) !== -1) throw new Error("순환 JSON 데이터는 저장할 수 없습니다.");
         ancestors.push(item);
         var array = Array.isArray(item), keys = array ? null : Object.keys(item), length = array ? item.length : keys.length, first = true;
+        var leafText = !array ? getSmallJsonLeafText(item, keys, chunkSize) : null;
+        if (leafText !== null) { emit(leafText); ancestors.pop(); return true; }
         emit(array ? "[" : "{");
         for (var i = 0; i < length; i++) {
             var childKey = array ? String(i) : keys[i], child = item[childKey];
