@@ -2,9 +2,9 @@
 
 - 작업 키: guild-war-fixed-rewards
 - 작업 이름: 금광 매분 적립 제거 및 전투 결과 정액 보상
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 2
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 체크포인트 버전: 3
 - 마지막 갱신: 2026-11-05 Asia/Seoul
 - 위치: C:/Users/user/.codex/worktrees/hoiBot-war-performance, feature/guild-war-performance.
 - 기준: d4b3a2817f59ef7eca33ffed6ec3e80a0e2c2719. 앞선 자동 작업·공통 명령 최적화는 원격 소스에 보존됐고 운영은6a67197e/ver_2.768이다.
@@ -33,4 +33,5 @@
 - main.js/Info.js Node syntax·전체 Rhino128MiB 컴파일·git diff --check 통과. 변경 후 보완된 예약 재시도 분기는 실제 Rhino 타이머 테스트로 재검증했다.
 - 기존 saveJsonFile/loadJsonFile/prepareGuildWarPublication/publishGuildWar/recoverGuildWarPublication/resolveGuildWarMatch/runHowolMysteryEntry 본문은 유지했다. 현재 운영2.768·개발자노트·Notion 본문/반영 속성·카카오 알림은 변경하지 않았다.
 - 검증 임시 파일은 %TEMP%/hoiBot/guild-war-fixed-rewards에만 만들었다. 검증 후 소유·절대경로·reparse point 없음을 확인하고 임시 파일과 빈 디렉터리를 전부 제거했다. 영구 테스트 코드는 추가하지 않았다.
-- 다음 행동: 임시 자료 정리 → 소스 커밋·푸시 검증 → 완료 기록. 운영반영 요청이 오면 당시 최신 prod와 새 기획 정책을 확인하고 버전/개발자노트를 갱신한 소스부터 반영한다. 앞선 최적화는 .codex/checkpoints/guild-war-performance.md를 참조한다.
+- 소스 b7dce29eece68e21a73852303577d227144c9b29를 feature/guild-war-performance에 푸시하고 원격 HEAD 일치 및 clean working tree를 확인했다. 운영은6a67197e/ver_2.768 그대로이며 실제 업로드·컴파일·재시작은 수행하지 않았다.
+- 승인된 개발·검증·소스 보존은 완료, 필요한 다음 작업 없음. 운영반영 요청이 오면 당시 최신 prod와 새 기획 정책을 확인하고 버전/개발자노트를 갱신한 소스부터 반영한다. Notion 본문은 기존 생산 정책이므로 사용자 지시와의 차이를 보고하며 임의로 수정하지 않는다. 앞선 최적화는 .codex/checkpoints/guild-war-performance.md를 참조한다.
