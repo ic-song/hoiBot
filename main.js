@@ -68117,14 +68117,16 @@ function buildGuildWarResult(war, recipientId) {
 
 // 정상·취소 전쟁을 길드마다 최근 30건만 보관하고 결과 알림을 예약하는 함수
 function recordGuildWar(state, guildData, war) {
-    var ids = [war.attackId, war.defenseId];
+    var ids = [war.attackId, war.defenseId], results = [];
+    // 양쪽 결과를 먼저 완성해 표시 오류가 완료 기록 일부만 남기지 않게 한다.
+    for (var r = 0; r < ids.length; r++) if (ids[r]) results[r] = buildGuildWarResult(war, ids[r]);
     for (var i = 0; i < ids.length; i++) {
         var gid = ids[i];
         if (!gid) continue;
         if (!state.records[gid]) state.records[gid] = [];
         state.records[gid].unshift(war);
         state.records[gid] = state.records[gid].slice(0, GLOBAL_CONFIG.guildWar.recordLimit);
-        queueGuildWarNotice(state, guildData, gid, buildGuildWarResult(war, gid));
+        queueGuildWarNotice(state, guildData, gid, results[i]);
     }
 }
 
@@ -68132,6 +68134,51 @@ function recordGuildWar(state, guildData, war) {
 function transferGuildWarTerritory(state, no, gid, now) {
     var territory = state.territories[String(no)];
     territory.owner = gid; territory.since = now; territory.incomeAt = now; territory.income = 0;
+}
+
+// 전쟁 한 건이 변경할 점령·아이템·자금·기록만 복구용으로 보관하는 함수
+function snapshotGuildWarSettlement(data, guildData, state, war) {
+    var snapshot = { war: JSON.stringify(war), territory: JSON.stringify(state.territories[String(war.no)]), notices: state.notices.slice(0), bags: [], guilds: {} };
+    var fighters = war.attack.concat(war.defense), ids = [war.attackId, war.defenseId];
+    for (var f = 0; f < fighters.length; f++) {
+        var name = fighters[f].name, member = data.member[name];
+        if (member) snapshot.bags.push({ name: name, bag: JSON.stringify(member.bag) });
+    }
+    for (var i = 0; i < ids.length; i++) if (ids[i]) {
+        var gid = ids[i], guild = getGuildByIdSafe(guildData, gid);
+        snapshot.guilds[gid] = { warehouse: guild ? JSON.stringify(guild.warehouse) : undefined, records: state.records[gid] ? state.records[gid].slice(0) : undefined };
+    }
+    snapshot.tickets = getGuildWarEntry(state, war.attackId).tickets;
+    if (war.no === 1) {
+        snapshot.castle = JSON.stringify(data.HoiCastle);
+        var legacy = guildData.territoryWar && guildData.territoryWar.territories;
+        snapshot.legacyCastle = legacy ? JSON.stringify(legacy["1"]) : undefined;
+    }
+    return snapshot;
+}
+
+// 실패한 전쟁의 부분 변경을 되돌리고 재판정되지 않은 선포 기록을 반환하는 함수
+function restoreGuildWarSettlement(data, guildData, state, snapshot) {
+    var war = JSON.parse(snapshot.war);
+    state.territories[String(war.no)] = JSON.parse(snapshot.territory);
+    state.notices = snapshot.notices.slice(0);
+    getGuildWarEntry(state, war.attackId).tickets = snapshot.tickets;
+    for (var f = 0; f < snapshot.bags.length; f++) {
+        var savedBag = snapshot.bags[f];
+        if (savedBag.bag === undefined) delete data.member[savedBag.name].bag;
+        else data.member[savedBag.name].bag = JSON.parse(savedBag.bag);
+    }
+    for (var gid in snapshot.guilds) if (Object.prototype.hasOwnProperty.call(snapshot.guilds, gid)) {
+        var saved = snapshot.guilds[gid], guild = getGuildByIdSafe(guildData, gid);
+        if (guild) { if (saved.warehouse === undefined) delete guild.warehouse; else guild.warehouse = JSON.parse(saved.warehouse); }
+        if (saved.records === undefined) delete state.records[gid]; else state.records[gid] = saved.records.slice(0);
+    }
+    if (war.no === 1) {
+        if (snapshot.castle === undefined) delete data.HoiCastle; else data.HoiCastle = JSON.parse(snapshot.castle);
+        var legacy = guildData.territoryWar && guildData.territoryWar.territories;
+        if (legacy) { if (snapshot.legacyCastle === undefined) delete legacy["1"]; else legacy["1"] = JSON.parse(snapshot.legacyCastle); }
+    }
+    return war;
 }
 
 // 예정 시각을 지난 전쟁을 접수 순서대로 한 번만 정산하는 함수
@@ -68142,6 +68189,9 @@ function processGuildWars(data, guildData, now, random, disbandId) {
         var war = state.active[i], attackGuild = getGuildByIdSafe(guildData, war.attackId), defenseGuild = getGuildByIdSafe(guildData, war.defenseId);
         var attackGone = !attackGuild || war.attackId === disbandId, defenseGone = !!war.defenseId && (!defenseGuild || war.defenseId === disbandId);
         if (!attackGone && !defenseGone && now < war.due) { remaining.push(war); continue; }
+        var snapshot = snapshotGuildWarSettlement(data, guildData, state, war);
+        war = JSON.parse(snapshot.war); // 완료 전에는 진행 목록의 선포 원본을 변경하지 않는다.
+        try {
         war.finished = now; war.refunded = false; war.occupied = false; changed = true;
         if (attackGone || defenseGone) {
             war.cancelled = true; war.reason = attackGone ? "공격 길드 해체" : "방어 길드 해체";
@@ -68171,6 +68221,23 @@ function processGuildWars(data, guildData, now, random, disbandId) {
         var owner = getGuildByIdSafe(guildData, state.territories[String(war.no)].owner);
         war.ownerName = owner ? formatGuildDisplay(owner) : "미점령";
         recordGuildWar(state, guildData, war);
+        } catch (settlementError) {
+            war = restoreGuildWarSettlement(data, guildData, state, snapshot);
+            state.active[i] = war;
+            try {
+                war.finished = now; war.cancelled = true; war.occupied = false; war.refunded = !attackGone;
+                war.reason = "전투 결과 처리 오류 · 점령·아이템·보상 변경 없음";
+                if (war.refunded) { var refundedEntry = getGuildWarEntry(state, war.attackId); refundedEntry.tickets = Math.min(3, refundedEntry.tickets + 1); }
+                var currentOwner = getGuildByIdSafe(guildData, state.territories[String(war.no)].owner);
+                war.ownerName = currentOwner ? formatGuildDisplay(currentOwner) : "미점령";
+                creditGuildWarVictory(guildData, war);
+                recordGuildWar(state, guildData, war);
+            } catch (cancelError) {
+                state.active[i] = restoreGuildWarSettlement(data, guildData, state, snapshot);
+                throw cancelError;
+            }
+            try { debuggerLog("[길드전쟁 오류 취소 #" + war.id + "] " + settlementError); } catch (logError) {}
+        }
     }
     state.active = remaining;
     for (var no = 1; no <= 4; no++) {
@@ -68373,24 +68440,26 @@ function publishGuildWar(data, guildData, memberChanged) {
     cleanupGuildWarPublication();
 }
 
-// 확정된 전쟁 알림만 전송하고 실패한 동일 메시지는 한 번만 추가 시도하는 진입점
+// 확정된 전쟁 알림만 전송하고 실패한 메시지는 다음 예약에서 한 번만 재시도하는 진입점
 function flushGuildWarNotices(guildData, ctx) {
     var state = guildData.war24;
     if (!state.notices.length) return;
+    var pending = [];
     for (var i = 0; i < state.notices.length; i++) {
         var notice = state.notices[i];
         if (notice.gid && !isGuildWarRoomValid(state, guildData, notice.gid)) { notice.attempts = 2; continue; }
         if (notice.gid) notice.room = state.guilds[notice.gid].room; // 재등록 후에는 현재 등록 이름으로만 발송
-        while (notice.attempts < 2) {
+        if (notice.attempts < 2) {
             notice.attempts++;
             // 전송 전 횟수를 보관해 재시작 때문에 무제한 재전송하지 않는다.
             writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData);
             endDataSaveTransaction(); beginDataSaveTransaction();
-            try { if (Api.replyRoom(ctx.isDev ? testRoom : notice.room, ctx.header(notice.text)) !== false) { notice.attempts = 2; writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData); endDataSaveTransaction(); beginDataSaveTransaction(); break; } }
+            try { if (Api.replyRoom(ctx.isDev ? testRoom : notice.room, ctx.header(notice.text)) !== false) { notice.attempts = 2; writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData); endDataSaveTransaction(); beginDataSaveTransaction(); } }
             catch (sendError) { debuggerLog("[길드전쟁 알림 전송 실패] " + sendError); }
         }
+        if (notice.attempts < 2) pending.push(notice);
     }
-    state.notices = [];
+    state.notices = pending;
     writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData);
     endDataSaveTransaction(); beginDataSaveTransaction();
 }
@@ -68440,7 +68509,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
     if (guild && (!guild.members || !guild.members[sender])) { gid = null; guild = null; }
     if (initialized) publishGuildWar(data, guildData, false);
-    if (state.active.some(function (w) { return w.due <= now; })) { processGuildWars(data, guildData, now, Math.random); publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); }
+    if (state.active.some(function (w) { return w.due <= now; })) { processGuildWars(data, guildData, now, Math.random); publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); }
     if (request.kind === "main") { replier.reply(buildGuildWarMain(data, guildData, gid, now)); return true; }
     if (isAccountSuspended(data, sender)) { replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요"); return true; }
     if (request.args.length && (request.kind === "room" || request.kind === "unregister")) {
