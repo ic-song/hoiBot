@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.774"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.775"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -961,6 +961,10 @@ var COMMON_DATA_FILE_MAP = {
 var commandContextThreadLocal = new java.lang.ThreadLocal();
 var commandDataFlowLock = new java.util.concurrent.locks.ReentrantReadWriteLock(true); // 자동일퀘와 일반 응답의 데이터 처리 순서 보호
 var dataTransactionLock = new java.util.concurrent.locks.ReentrantLock(); // 명령 단위 데이터 로드·백업·변경·저장 동시 실행 방지
+var responseQueueLock = new java.util.concurrent.locks.ReentrantLock(); // 접수·작업자 전환만 짧게 보호
+var responseQueue = []; // 데이터 대신 원래 입력과 접수 정보만 보관
+var responseQueueRunning = false;
+var responseQueueThread = new java.lang.ThreadLocal(); // 내부 명령은 현재 작업에서 바로 실행
 var dataSaveTransactionThreadLocal = new java.lang.ThreadLocal(); // 명령별 최초 백업과 자동 롤백 상태
 var autoDailyBatchThreadLocal = new java.lang.ThreadLocal(); // 자동일퀘 스레드별 메모리 저장 배치
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
@@ -1005,6 +1009,7 @@ var howolDramaPublishingThread = new java.lang.ThreadLocal();
 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    commandQueue: { capacity: 128, maxWaitMs: 120000 },
     howolMystery: { reward: 100000000, sessionLimit: 5000, suspects: ["호월이", "호동이", "봄봄이"], cases: [
         {"id":1,"title":"🍰 사라진 마지막 케이크","difficulty":"쉬움","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님이 카페 냉장고에 넣어 둔 케이크가 사라졌다. 케이크는 불투명한 상자에 담겨 있었다.\n\n🐱 호월이: “서재에서 책을 읽었어. 케이크는 보지도 않았어.”\n🐾 호동이: “부엌에서 생크림을 만들었어. 손에 크림이 묻었지.”\n💕 봄봄이: “딸기 한 알 올린 케이크는 원래 별로 안 좋아해요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 상자를 닫기 직전 올린 딸기 장식은 당신만 봤다.\n② 호동이가 만든 생크림에는 딸기가 들어가지 않았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"봄봄이는 볼 수 없던 딸기 장식을 알고 있었다. 호동이 손의 크림은 별도 요리에서 묻은 것이었다.","ending":"봄봄이는 케이크를 깜짝 파티용으로 옮겼다고 실토하고 새 접시를 꺼냈다."},
         {"id":2,"title":"📸 남아 있지 않은 사진","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 1/2\n━━━━━━━━━━━━\n저녁 8시 무렵, [채크랭크] 님의 카메라에서 메모리 카드가 사라졌다. 카메라는 7시 55분에 확인한 뒤 8시 5분에 다시 보니 카드가 없었다.\n\n🐱 호월이: “난 카메라를 만지지 않았어.”\n🐾 호동이: “난 그 시각에 정원에 있었어.”\n💕 봄봄이: “8시에 카메라에서 사진을 골라 봤어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 카메라 배터리는 7시 50분에 완전히 방전됐고 그날 교체하거나 외부 전원을 연결한 기록도 없었다.\n② 저녁 7시 55분부터 8시 5분까지 마당 영상에 호월이와 호동이가 함께 찍혀 있었다. 봄봄이만 카메라가 있던 방에 남았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"8시에 카메라에서 사진을 골라 봤다는 봄봄이의 진술은 방전된 기기의 상태와 맞지 않는다. 카드가 사라진 10분 동안 다른 두 사람은 마당 영상에 있었고 봄봄이만 카메라에 접근할 수 있었다.","ending":"봄봄이는 카드에 담긴 낮 사진을 깜짝 전시하려고 가져갔다고 밝혔다."},
@@ -3873,9 +3878,75 @@ try {
     messageFilterCaches.DEV = { error: String(messageFilterDevError), text: messageFilterDevErrorText };
 }
 
+// 기본 7인수 콜백에서 접수 시각·회차를 보존하고 한 작업자에게 전달하는 함수
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-    var miniGameRequestAt = Date.now(); // 잠금 대기 이전 시각으로 일일 리셋·동시 입력 경계 판정
-    var miniGameRequestGameId = getMiniGameObservedVaultId(isDevCommandMessage(msg));
+    var request = { room: room, msg: msg, sender: sender, isGroupChat: isGroupChat, replier: replier,
+        imageDB: imageDB, packageName: packageName, receivedAt: Date.now(),
+        gameId: getMiniGameObservedVaultId(isDevCommandMessage(msg)) };
+    if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
+    if (responseQueueThread.get()) { executeResponseRequest(request); return; }
+    var rejected = false;
+    responseQueueLock.lock();
+    try {
+        if (responseQueue.length >= GLOBAL_CONFIG.commandQueue.capacity) rejected = true;
+        else {
+            responseQueue.push(request);
+            if (!responseQueueRunning) {
+                try {
+                    var worker = new java.lang.Thread(new java.lang.Runnable({ run: drainResponseQueue }));
+                    worker.setDaemon(true);
+                    responseQueueRunning = true;
+                    worker.start();
+                } catch (startError) {
+                    responseQueueRunning = false;
+                    responseQueue.pop();
+                    rejected = true;
+                }
+            }
+        }
+    } finally { responseQueueLock.unlock(); }
+    if (rejected) notifyResponseQueue(request, "⚠️ 요청이 몰려 접수하지 못했어요. 잠시 후 다시 입력해 주세요.");
+}
+
+// 큐 접수 실패·만료·실행 오류를 원래 요청의 응답 대상으로 안내하는 함수
+function notifyResponseQueue(request, message) {
+    try { request.replier.reply(message); }
+    catch (noticeError) { try { debuggerLog("[명령 큐 안내 실패] " + noticeError); } catch (logError) {} }
+}
+
+// 한 작업자가 접수 순서대로 실행하고 오류 후에도 다음 요청을 처리하는 함수
+function drainResponseQueue() {
+    while (true) {
+        var request;
+        responseQueueLock.lock();
+        try {
+            if (!responseQueue.length) { responseQueueRunning = false; return; }
+            request = responseQueue.shift();
+        } finally { responseQueueLock.unlock(); }
+        try {
+            if (Date.now() - request.receivedAt > GLOBAL_CONFIG.commandQueue.maxWaitMs) {
+                notifyResponseQueue(request, "⚠️ 대기가 길어 실행하지 않았어요. 명령어를 다시 입력해 주세요.");
+                continue;
+            }
+            responseQueueThread.set(true);
+            executeResponseRequest(request);
+        } catch (queueError) {
+            try { debuggerLog("[명령 큐 실행 오류] " + queueError); } catch (logError) {}
+            notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
+        } finally { responseQueueThread.remove(); }
+    }
+}
+
+// 원래 입력과 접수 정보를 기존 데이터 처리 흐름에 전달하는 함수
+function executeResponseRequest(request) {
+    processResponse(request.room, request.msg, request.sender, request.isGroupChat, request.replier,
+        request.imageDB, request.packageName, request);
+}
+
+// 큐에서 받은 명령을 기존 검증·저장·복구 흐름으로 처리하는 함수
+function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packageName, request) {
+    var miniGameRequestAt = request.receivedAt; // 실제 접수 시각으로 리셋·회차 경계 판정
+    var miniGameRequestGameId = request.gameId;
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     var responseDataLock = getResponseDataFlowLock(msg);
     var responseTransactionAcquired = false;
@@ -3883,21 +3954,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     var commandContextEntered = false;
     var ctx = null;
     var prevCtx = null;
-    var responseDiceCommand = isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : String(msg || "");
-    var responseDiceNoWait = responseDiceCommand === "/호월주사위" || responseDiceCommand.trim() === "ㅎㅈ" || isDevCommandMessage(msg) && responseDiceCommand === "/ㅎㅈ"; // 동시 주사위 입력의 잠금 대기 누적 방지
-    if (responseDiceNoWait) {
-        try {
-            if (!responseDataLock.tryLock(0, java.util.concurrent.TimeUnit.MILLISECONDS)) return;
-        } catch (responseDiceLockError) {
-            if (!responseDiceLockError.javaException || !(responseDiceLockError.javaException instanceof java.lang.InterruptedException)) throw responseDiceLockError;
-            java.lang.Thread.currentThread().interrupt();
-            return;
-        }
-    } else responseDataLock.lock();
+    responseDataLock.lock();
     //데이터 검사
     try {
-        if (getHowolMysteryRequest(responseDiceCommand) || isDevCommandMessage(msg) && responseDiceCommand === "/ㅊㄹ" || getGuildWarRequest(responseDiceCommand) || getHowolDramaRequest(responseDiceCommand) || isServerRaidMutationCommand(msg) || isPackageGrantCommand(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || getDailyRankingPayoutRequest(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
-        else if (!dataTransactionLock.tryLock()) return;
+        dataTransactionLock.lock(); // 자동 작업이 보유한 잠금도 기다린 뒤 최신 데이터를 읽는다.
         responseTransactionAcquired = true;
         var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
         beginDataSaveTransaction();

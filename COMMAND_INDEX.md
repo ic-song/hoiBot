@@ -64,7 +64,7 @@ Status: VERIFIED
 - `main.js`: `getMiniGameRequest`, `runMiniGameEntry`, `hasMiniGameAutomaticWork`, `scheduleMiniGameWork`, `getMiniGameWorkDelay`, `getMiniGameObservedVaultId`, `initializeLegacyStartup`.
 - `Info.js`: 회원 읽기 전 `miniGamePending.json` 게시 대기 차단. 포인트 중간 상태 표시 방지.
 - 기본 7인수 `response(...)` 유지. 기존 등록·출석·정지·개인톡 패스·대전/영지전 제한을 통과한 뒤 진입.
-- 정확한 `/호월주사위`, 앞뒤 공백을 제거한 `ㅎㅈ`, 기존 DEV 정규화로 같은 명령이 되는 입력은 응답 진입의 데이터 흐름 잠금을 `tryLock()`으로 시도한다. 처리 중 겹친 요청은 대기열·파일 읽기·저장·응답 없이 반환하며, 정상적으로 잠금을 얻은 요청은 기존 검증·두 화면·지급·복구 흐름을 유지한다. 다른 명령의 잠금 방식과 입력 가드는 유지한다.
+- 주사위를 포함한 Main 입력은 공통 메모리 큐에서 접수 순서대로 실행한다. 접수 시각과 관찰한 금고 회차는 대기 전 값으로 유지하며, 기존 명령 가드·두 화면·지급·복구 흐름을 유지한다.
 - 무인수 명령은 정확히 일치할 때만 실행. 투표는 1·2와 한 줄 1~80자 이유, 금고는 100~999999 정수 하나만 구문으로 허용하고 현재 단계 범위는 판정 직전에 검증한다. 접미 안내·개행·숨김 문자 거부.
 
 ## Helpers and behavior
@@ -653,11 +653,15 @@ Status: VERIFIED
 ## Runtime / Save-Flow Hotspots
 
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
-- `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
+- `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`는 입력·응답 대상·접수 시각·관찰 회차만 메모리 큐에 넣는다. `responseQueueLock`으로 접수와 작업자 전환을 보호하며, 비어 있던 큐의 첫 접수가 Java 작업자 하나를 시작한다. 큐가 비면 작업자는 종료한다.
+- `drainResponseQueue` → `executeResponseRequest` → `processResponse` 순으로 기존 데이터 흐름 잠금과 `dataTransactionLock.lock()`을 얻은 뒤 최신 데이터를 읽는다. Main 일반 채팅도 기존 글자수·경험치 처리를 위해 같은 큐를 사용한다. Info.js 콜백은 변경하지 않는다.
+- `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않고 안내한다. 초과 접수·작업자 시작 실패도 안내한다. 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다.
+- `responseQueueThread`가 설정된 현재 작업자의 내부 `response(...)` 재호출은 바로 실행한다. 자동일퀘의 캡처 응답·중첩 트랜잭션·DEV 컨텍스트를 유지하며 자기 큐를 기다리지 않는다.
+- 큐는 메모리에만 존재한다. 같은 명령도 입력마다 실행되며, 재시작 후 미실행 요청은 자동 재생하지 않는다. 실행에 들어간 명령은 기존 저장·백업·자동·수동 복구를 사용한다. 실제 MessengerBot의 지연 `replier` 응답과 재컴파일 동작은 운영자 적용 후 확인이 필요하다.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
 - A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
 - 일반 회원·펫 저장은 기존 내장 JSON 직렬화와 UTF-8 임시 파일 기록·재파싱 검증 경로를 사용한다. 2.773의 기본 펫 저장 선택 인수/전체 파일 해시 비교는 제거했으며, 변경 데이터·기존 백업/복원은 그대로 처리한다.
-- Main 응답 종료는 컨텍스트·트랜잭션 정리 예외에도 데이터/응답 흐름 잠금을 중첩 finally에서 해제한다. 예외를 숨기거나 일반 명령의 tryLock 실패 반환 정책을 바꾸지 않는다.
+- Main 응답 종료는 컨텍스트·트랜잭션 정리 예외에도 데이터/응답 흐름 잠금을 중첩 finally에서 해제한다. 기존 예외·저장 처리는 유지하며, 일반 명령도 잠금을 기다린 뒤 처리한다.
 - `writeVerifiedJsonFile(...)` reuses an already verified write only inside the same healthy response transaction, with backup rotation already skipped and identical serialized text rechecked against the current target under its path lock. The first save, changed/missing/different target, explicit backup rotation, and rollback still write normally. Reuse state ends with the transaction; member files, split stores, and recovery journals are excluded. `tools/test_command_save_reuse*.js` covers parity, failures, restart, DEV/PROD, Java threads, and actual-file timing.
 - `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
 - `/데이터상태` reads the original and both backup generations for all four managed JSON files without modifying them; `/데이터복구 [파일] [1|2]` restores only the selected file from the explicitly selected validated backup generation.
