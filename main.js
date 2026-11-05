@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.773"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.774"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -5919,7 +5919,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var dollSnapshotData = parseJsonContent(dollSnapshotText, dollSnapshotName);
                 if (dollSnapshotName === "member_pet.json" && !dollPetChanged) dollPetChanged = !isDollPetDataUnchanged(dollSnapshotData, petData);
                 dollSnapshotData = null; // 검증한 대용량 원본 객체는 다음 파일을 읽기 전에 해제
-                dollSnapshots.push(defineJsonFileText({ name: dollSnapshotName }, "text", resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName)));
+                dollSnapshots.push({ name: dollSnapshotName, text: dollSnapshotText }); // 검증한 원문을 재사용해 직렬화 중 파일 재읽기를 피한다
             }
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 원문 검증·펫 비교", dollStepStartedAt);
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
@@ -32398,7 +32398,7 @@ replier.reply(
                 }
 
                 // 마지막@
-                saveJsonFile(petData, memberPetPath, false, undefined, true);
+                saveJsonFile(petData, memberPetPath);
                 saveJsonFile(data, filePath);
             }
         }
@@ -33981,15 +33981,10 @@ function writeJsonStream(writer, value) {
 
 // 기존 일반 파일의 직접 쓰기 방식을 유지하며 직렬화 원문 보관만 줄이는 저장 계층 함수
 function writeJsonFileDirect(path, value) {
-    getJsonValueFingerprint(value); // 순환 참조 등 직렬화 오류는 원본 파일을 열기 전에 확인
-    var stream = null, writer = null;
-    try {
-        stream = new java.io.FileOutputStream(path, false);
-        writer = new java.io.OutputStreamWriter(stream, "UTF-8");
-        writeJsonStream(writer, value); writer.flush(); stream.getFD().sync();
-    } finally {
-        try { if (writer) writer.close(); } finally { if (stream) stream.close(); }
-    }
+    var text = JSON.stringify(value);
+    if (typeof text !== "string") throw new Error("JSON stringify failed: " + path);
+    ensureParentFolder(path);
+    FileStream.write(path, text, "utf-8");
 }
 
 // 큰 활성 저널은 헤더로 저장 대기를 판단하고 실제 복구 시에만 본문을 읽는 저장 계층 함수
@@ -34035,12 +34030,6 @@ function defineJsonFileText(target, key, path) {
     return target;
 }
 
-// 회원 분리 저장은 객체로 기록하고 기존 저널 호출에는 원문 접근을 제공하는 함수
-function createMemberSplitWrite(path, value) {
-    var write = { path: path, value: value };
-    Object.defineProperty(write, "text", { get: function () { return JSON.stringify(value); } });
-    return write;
-}
 
 // 일괄 변경 전 객체를 기존 JSON으로 기록하고 원문 대신 사본 참조를 반환하는 저장 계층 함수
 function createJsonRollbackSnapshot(value) {
@@ -34052,15 +34041,6 @@ function createJsonRollbackSnapshot(value) {
     return { snapshotPath: path, fingerprint: getJsonValueFingerprint(value) };
 }
 
-// 명시적으로 전달된 이전 JSON 원문도 명령 동안에는 파일로 보관하는 저장 계층 함수
-function createTransactionTextSnapshot(text) {
-    var transaction = getDataSaveTransaction();
-    if (!transaction) throw new Error("롤백 사본에는 명령 트랜잭션이 필요합니다.");
-    var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.storage.transactionPrefix + String(java.util.UUID.randomUUID()));
-    transaction.temporaryFiles.push(path);
-    writeVerifiedJsonFile(path, text, true);
-    return path;
-}
 
 // 내부에서 만든 현재 환경의 롤백 사본 참조인지 확인하는 함수
 function isJsonRollbackSnapshot(value) {
@@ -34370,7 +34350,7 @@ function recoverMemberSplitPublication() {
 
 // 회원 객체에 저장 대상에서 제외되는 운영 로그와 저장 컨텍스트를 연결하는 함수
 function attachMemberSplitStores(data, marker, logs, raid) {
-    var context = { logsText: getJsonValueFingerprint(logs.data), raidText: raid ? getJsonValueFingerprint(raid.data) : null };
+    var context = { logsText: JSON.stringify(logs.data), raidText: raid ? JSON.stringify(raid.data) : null };
     for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
         var key = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
         if (Object.prototype.hasOwnProperty.call(data, key)) throw new Error("분리 완료 회원 파일에 운영 로그가 남아 있습니다: " + key);
@@ -34417,19 +34397,19 @@ function buildMemberSplitSavePlan(data) {
         if (!Array.isArray(data[logKey])) throw new Error("잘못된 운영 로그입니다: " + logKey);
         logs[logKey] = data[logKey];
     }
-    var logsText = getJsonValueFingerprint(logs), writes = [];
+    var logsText = JSON.stringify(logs), writes = [];
     if (logsText !== context.logsText) {
         nextMarker.logsRevision++;
         var logStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.logsRevision, data: logs }, "logs");
-        writes.push(createMemberSplitWrite(getMemberSplitStorePath("logs", nextMarker.logsRevision), logStore));
+        writes.push({ path: getMemberSplitStorePath("logs", nextMarker.logsRevision), text: stringifyMemberSplitStore(logStore, logsText) });
     }
     if (context.raidText !== null) {
-        raidText = getJsonValueFingerprint(data.serverRaid);
+        raidText = JSON.stringify(data.serverRaid);
         member.serverRaid = buildMemberSplitRaidSummary(data.serverRaid);
         if (raidText !== context.raidText) {
             nextMarker.raidRevision++;
             var raidStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.raidRevision, data: data.serverRaid }, "raid");
-            writes.push(createMemberSplitWrite(getMemberSplitStorePath("raid", nextMarker.raidRevision), raidStore));
+            writes.push({ path: getMemberSplitStorePath("raid", nextMarker.raidRevision), text: stringifyMemberSplitStore(raidStore, raidText) });
         }
     } else if (!data.serverRaid || data.serverRaid.storageSummary !== true) throw new Error("레이드 상세를 읽지 않은 상태에서 레이드 저장을 요청했습니다.");
     member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = nextMarker;
@@ -34904,7 +34884,7 @@ function prepareManagedJsonTransactionEntry(path, skipManagedBackup, rollbackSna
     if (transaction.entries[path]) {
         return { entry: transaction.entries[path], skipManagedBackup: true };
     }
-    var entry = { path: path, backupPath: backupPath, snapshotText: null, snapshotPath: typeof rollbackSnapshotText === "string" ? createTransactionTextSnapshot(rollbackSnapshotText) : isJsonRollbackSnapshot(rollbackSnapshotText) ? rollbackSnapshotText.snapshotPath : null, saved: false };
+    var entry = { path: path, backupPath: backupPath, snapshotText: typeof rollbackSnapshotText === "string" ? rollbackSnapshotText : null, snapshotPath: isJsonRollbackSnapshot(rollbackSnapshotText) ? rollbackSnapshotText.snapshotPath : null, saved: false };
     transaction.entries[path] = entry;
     transaction.order.push(path);
     return { entry: entry, skipManagedBackup: false };
@@ -34958,7 +34938,7 @@ function getProtectedJsonSaveLock(path) {
 }
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
-function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup, allowUnchangedPetCheck) {
+function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup) {
     if (GLOBAL_CONFIG.guildWar && (path === resolveActiveDataPath(filePath) || path === resolveActiveDataPath(guildPath))) assertGuildWarNoPending();
     if (path === resolveActiveDataPath(filePath)) assertHowolDramaNoPending();
     var lock = getProtectedJsonSaveLock(path);
@@ -34967,11 +34947,14 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
     var rollbackFile = new java.io.File(path + ".rollback");
     var outputStream = null;
     var writer = null;
-    var structuredValue = jsonText === null || typeof jsonText === "object" || typeof jsonText === "number" || typeof jsonText === "boolean", digest = null, transformed = false;
 
     lock.lock();
     try {
-        if (structuredValue) validateManagedJsonValue(jsonText, path);
+        // 현재 객체형 호출도 기존 내장 JSON 직렬화·원문 검증 경로로 처리한다.
+        if (jsonText === null || typeof jsonText === "object" || typeof jsonText === "number" || typeof jsonText === "boolean") {
+            jsonText = JSON.stringify(jsonText);
+        }
+        if (typeof jsonText !== "string") throw new Error("JSON stringify failed: " + path);
         ensureParentFolder(path);
         if (tempFile.exists() && !tempFile.delete()) {
             throw new Error("Temporary JSON file cleanup failed: " + tempFile.getPath());
@@ -34984,7 +34967,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         var repeatedSaveEntry = repeatedSaveTransaction && !repeatedSaveTransaction.failed && !repeatedSaveTransaction.rollingBack ? repeatedSaveTransaction.entries[path] : null;
         var canReuseVerifiedJson = repeatedSaveEntry && repeatedSaveEntry.backupPath && !/(^|[\\/])member\.json$/.test(String(path));
         // 같은 명령에서 검증 저장한 관리 파일만 잠금 안에서 원문을 재확인하고 재쓰기를 생략한다. 회원 분리·복구 기록은 제외한다.
-        if (!structuredValue && skipManagedBackup === true && canReuseVerifiedJson && repeatedSaveEntry.saved && repeatedSaveEntry.verifiedJsonText === jsonText && targetFile.exists()) {
+        if (skipManagedBackup === true && canReuseVerifiedJson && repeatedSaveEntry.saved && repeatedSaveEntry.verifiedJsonText === jsonText && targetFile.exists()) {
             var repeatedSaveMatches = false;
             try { repeatedSaveMatches = String(FileStream.read(path, "utf-8")) === jsonText; }
             catch (repeatedSaveReadError) {} // 중복 확인만 실패하면 기존 전체 쓰기를 수행한다. 아래 임시 파일 검증·저장 오류는 그대로 처리한다.
@@ -34992,39 +34975,19 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         }
 
         outputStream = new java.io.FileOutputStream(tempFile, false);
-        digest = structuredValue ? java.security.MessageDigest.getInstance("SHA-256") : null;
-        writer = new java.io.OutputStreamWriter(structuredValue ? new java.security.DigestOutputStream(outputStream, digest) : outputStream, "UTF-8");
-        if (structuredValue) transformed = writeJsonStream(writer, jsonText); else writer.write(jsonText);
+        writer = new java.io.OutputStreamWriter(outputStream, "UTF-8");
+        writer.write(jsonText);
         writer.flush();
         outputStream.getFD().sync();
         writer.close();
         writer = null;
         outputStream = null;
 
-        var verifiedTemp = null; // 검증된 임시 파일 지문은 불변 펫 파일 비교에도 재사용
-        if (structuredValue) {
-            verifiedTemp = inspectJsonRecoveryFile(tempFile.getPath());
-            if (verifiedTemp.hash !== getJsonDigestHex(digest.digest())) throw new Error("임시 JSON 기록 검증 실패");
-            if (transformed) parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
-        } else parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
+        parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
         var seedManagedBackup = false;
         var managedBackupPath = getManagedJsonBackupPath(path);
         var secondaryManagedBackupPath = getManagedJsonSecondaryBackupPath(path);
-        // 원본과 직전 백업이 이미 검증 결과와 같고 2세대 갱신도 필요 없을 때만 불변 펫 교체를 생략한다.
-        if (allowUnchangedPetCheck === true && verifiedTemp && skipManagedBackup !== true && path === resolveActiveDataPath(memberPetPath) && targetFile.exists() && targetFile.length() === verifiedTemp.bytes &&
-            managedBackupPath && secondaryManagedBackupPath && new java.io.File(managedBackupPath).exists() &&
-            new java.io.File(secondaryManagedBackupPath).exists() && new java.io.File(managedBackupPath).length() === verifiedTemp.bytes &&
-            Date.now() - new java.io.File(secondaryManagedBackupPath).lastModified() < MANAGED_BACKUP_SECONDARY_ROTATION_MS) {
-            try {
-                var petOriginal = inspectJsonRecoveryFile(path);
-                if (petOriginal.bytes === verifiedTemp.bytes && petOriginal.hash === verifiedTemp.hash) {
-                    var petBackup = inspectJsonRecoveryFile(managedBackupPath);
-                    if (petBackup.bytes === verifiedTemp.bytes && petBackup.hash === verifiedTemp.hash) return;
-                }
-            } catch (petCompareError) {} // 추가 비교만 실패하면 아래 기존 필수 검증·백업·저장을 그대로 수행
-        }
-
         if (managedBackupPath && skipManagedBackup !== true) {
             if (targetFile.exists()) {
                 var reuseMemberBackup = verifiedMemberBackup && verifiedMemberBackup.path === path && path === resolveActiveDataPath(filePath); // 같은 저장 잠금에서 방금 읽고 검증한 회원 원문만 재사용
@@ -35035,7 +34998,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
                     var secondaryManagedBackupFile = new java.io.File(secondaryManagedBackupPath);
                     if (currentPrimaryBackupFile.exists()) {
                         var shouldRotateSecondary = !secondaryManagedBackupFile.exists() ||
-                            Date.now() - secondaryManagedBackupFile.lastModified() >= MANAGED_BACKUP_SECONDARY_ROTATION_MS;
+                            (verifiedMemberBackup && typeof verifiedMemberBackup.backupNow === "number" ? verifiedMemberBackup.backupNow : Date.now()) - secondaryManagedBackupFile.lastModified() >= MANAGED_BACKUP_SECONDARY_ROTATION_MS;
                         if (shouldRotateSecondary) {
                             try {
                                 var currentPrimaryBackupText = FileStream.read(managedBackupPath, "utf-8");
@@ -35076,7 +35039,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         if (rollbackFile.exists() && !rollbackFile.delete()) {
             try { debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath()); } catch (cleanupLogError) {} // 완료된 저장은 로그 전송 실패로 취소하지 않음
         }
-        if (canReuseVerifiedJson && !structuredValue) repeatedSaveEntry.verifiedJsonText = jsonText;
+        if (canReuseVerifiedJson) repeatedSaveEntry.verifiedJsonText = jsonText;
     } catch (e) {
         if (!targetFile.exists() && rollbackFile.exists()) {
             rollbackFile.renameTo(targetFile);
@@ -35097,7 +35060,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
 }
 
 // JSON 파일 저장 함수
-function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText, allowUnchangedPetCheck) {
+function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
     if (data === null || (typeof data !== "object" && typeof data !== "function")) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
@@ -35197,7 +35160,32 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText, allow
                 var adventurePendingPath = null;
                 if (adventureRecordChanged) {
                     requireAdventureRecordStore(adventureRecordContext.store);
-                    var adventureJournal = prepareAdventureRecordRecovery();
+                    var adventureRecoveryNow = Date.now(); // 복구 사본 준비 중 백업 갱신 경계를 넘지 않도록 한 번 확정
+                    var adventureRecoveryNames = null;
+                    if (splitPlan && transactionEntryResult.skipManagedBackup) {
+                        adventureRecoveryNames = getAdventureRecordSaveRecoveryNames(currentMemberSplitData, null, splitPlan, { enabled: false, exists: {} });
+                    } else if (splitPlan) {
+                        var adventurePrimaryPath = getManagedJsonBackupPath(path), adventureSecondaryPath = getManagedJsonSecondaryBackupPath(path);
+                        var adventurePrimary = adventurePrimaryPath ? new java.io.File(adventurePrimaryPath) : null;
+                        var adventureSecondary = adventureSecondaryPath ? new java.io.File(adventureSecondaryPath) : null;
+                        var adventureBackupPlan = { enabled: !transactionEntryResult.skipManagedBackup && !!adventurePrimaryPath,
+                            primaryExists: !!(adventurePrimary && adventurePrimary.exists()), rotateSecondary: false, exists: {} };
+                        if (adventureBackupPlan.enabled && adventureSecondary) {
+                            adventureBackupPlan.rotateSecondary = !adventureSecondary.exists() || adventureBackupPlan.primaryExists &&
+                                adventureRecoveryNow - adventureSecondary.lastModified() >= MANAGED_BACKUP_SECONDARY_ROTATION_MS;
+                        }
+                        var adventurePriorBackup = adventureBackupPlan.enabled && adventureBackupPlan.rotateSecondary && adventureBackupPlan.primaryExists ?
+                            parseManagedJsonContent(FileStream.read(adventurePrimaryPath, "utf-8"), adventurePrimaryPath) : null;
+                        for (var adventureGeneration = 1; adventureGeneration <= 2; adventureGeneration++) {
+                            var adventureKinds = ["raid", "logs"];
+                            for (var adventureKindIndex = 0; adventureKindIndex < adventureKinds.length; adventureKindIndex++) {
+                                var adventureBackupFile = new java.io.File(getMemberSplitBackupPath(adventureKinds[adventureKindIndex], adventureGeneration));
+                                adventureBackupPlan.exists[String(adventureBackupFile.getName())] = adventureBackupFile.exists();
+                            }
+                        }
+                        adventureRecoveryNames = getAdventureRecordSaveRecoveryNames(currentMemberSplitData, adventurePriorBackup, splitPlan, adventureBackupPlan);
+                    }
+                    var adventureJournal = prepareAdventureRecordRecovery(adventureRecoveryNames);
                     if (splitPlan) {
                         readPublishedMemberSplitStore(currentMemberSplitMarker, "raid");
                         readPublishedMemberSplitStore(currentMemberSplitMarker, "logs");
@@ -35206,8 +35194,8 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText, allow
                     writeMemberSplitSlot(adventurePendingPath, adventureJournal);
                     writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName), adventureRecordContext.store);
                 }
-                if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].value);
-                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup, splitPlan ? { path: path, text: currentMemberSplitText, data: currentMemberSplitData } : null, allowUnchangedPetCheck);
+                if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].text);
+                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup, splitPlan ? { path: path, text: currentMemberSplitText, data: currentMemberSplitData, backupNow: adventureRecordChanged ? adventureRecoveryNow : undefined } : null);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
                 if (splitPlan) {
                     data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = splitPlan.marker;
@@ -58289,6 +58277,35 @@ function getAdventureRecordRecoveryNames() {
         "memberOperationLogs.json", "memberOperationLogs_next.json", "memberOperationLogs_back.json", "memberOperationLogs_back2.json"];
 }
 
+// 이번 퀘스트 저장에서 바뀔 수 있는 원본·분리 슬롯·백업만 복구 대상으로 계산하는 함수
+function getAdventureRecordSaveRecoveryNames(member, priorBackup, splitPlan, backupPlan) {
+    var names = ["member.json", GLOBAL_CONFIG.adventureQuest.history.fileName];
+    // 중복 없이 기존 허용 파일 이름만 목록에 추가한다.
+    function add(name) { if (names.indexOf(name) === -1) names.push(name); }
+    // 실제 백업 함수와 같은 리비전·캐시 조건으로 분리 백업 쓰기를 계산한다.
+    function addSplitBackups(sourceMember, generation, sourceGeneration) {
+        var marker = getMemberSplitMarker(sourceMember);
+        if (!marker || marker.phase !== "COMPLETE") return;
+        var kinds = ["raid", "logs"];
+        for (var i = 0; i < kinds.length; i++) {
+            var kind = kinds[i], revision = kind === "raid" ? marker.raidRevision : marker.logsRevision;
+            var name = String(new java.io.File(getMemberSplitBackupPath(kind, generation)).getName());
+            var key = resolveActiveDataPath(filePath) + ":" + generation + ":" + kind;
+            if (sourceGeneration || memberSplitBackupCache[key] !== marker.id + ":" + revision || !backupPlan.exists[name]) add(name);
+        }
+    }
+    if (splitPlan) for (var p = 0; p < splitPlan.writes.length; p++) add(String(new java.io.File(splitPlan.writes[p].path).getName()));
+    if (backupPlan.enabled) {
+        add("member_back.json");
+        if (backupPlan.rotateSecondary) {
+            add("member_back2.json");
+            addSplitBackups(backupPlan.primaryExists ? priorBackup : member, 2, backupPlan.primaryExists ? 1 : 0);
+        }
+        addSplitBackups(member, 1, 0);
+    }
+    return names;
+}
+
 // 파일을 작은 버퍼로 읽어 지문을 계산하고 필요한 경우 동기화된 복구 사본을 만드는 저장 계층 함수
 function inspectJsonRecoveryFile(sourcePath, copyPath) {
     var input = null, output = null, digest = java.security.MessageDigest.getInstance("SHA-256");
@@ -58312,8 +58329,16 @@ function inspectJsonRecoveryFile(sourcePath, copyPath) {
 }
 
 // 기존 복구 범위를 유지하며 원문 대신 파일명과 검증 지문만 저널에 담는 저장 계층 함수
-function prepareAdventureRecordRecovery() {
-    var config = GLOBAL_CONFIG.adventureQuest.history, names = getAdventureRecordRecoveryNames();
+function prepareAdventureRecordRecovery(selectedNames) {
+    var config = GLOBAL_CONFIG.adventureQuest.history, names = selectedNames || getAdventureRecordRecoveryNames();
+    if (selectedNames) {
+        var allowedNames = getAdventureRecordRecoveryNames(), selectedSeen = {};
+        if (!Array.isArray(names) || names.length < 2 || names.indexOf("member.json") === -1 || names.indexOf(config.fileName) === -1) throw new Error("퀘스트 선택 복구 목록 오류");
+        for (var selectedIndex = 0; selectedIndex < names.length; selectedIndex++) {
+            if (allowedNames.indexOf(names[selectedIndex]) === -1 || selectedSeen[names[selectedIndex]]) throw new Error("퀘스트 선택 복구 경로 오류");
+            selectedSeen[names[selectedIndex]] = true;
+        }
+    }
     var pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
     if (!new java.io.File(pendingPath).exists() && new java.io.File(pendingPath + ".rollback").exists()) throw new Error("퀘스트 기록 복구 대기");
     if (new java.io.File(pendingPath).exists()) {
@@ -58321,7 +58346,8 @@ function prepareAdventureRecordRecovery() {
         validateAdventureRecordPending(previous);
         if (previous.pending !== null) throw new Error("퀘스트 기록 복구 대기");
     }
-    var journal = { version: 2, pending: [] };
+    var journal = { version: selectedNames ? 3 : 2, pending: [] };
+    if (selectedNames) journal.targets = names.slice();
     for (var i = 0; i < names.length; i++) {
         var path = resolveActiveDataPath(DATA_ROOT_PATH + names[i]), source = new java.io.File(path);
         var row = { name: names[i], exists: source.exists() };
@@ -58360,12 +58386,17 @@ function validateAdventureRecoveryText(name, text) {
 function validateAdventureRecordPending(pending) {
     if (!pending || !Object.prototype.hasOwnProperty.call(pending, "pending") || (pending.pending !== null && !Array.isArray(pending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
     if (pending.pending === null) return;
-    if (pending.version !== undefined && pending.version !== 2) throw new Error("퀘스트 복구 버전 오류");
+    if (pending.version !== undefined && pending.version !== 2 && pending.version !== 3) throw new Error("퀘스트 복구 버전 오류");
     var names = getAdventureRecordRecoveryNames(), seen = {};
-    if (pending.pending.length !== names.length) throw new Error("퀘스트 기록 복구 목록 오류");
+    if (pending.version === 3) {
+        if (!Array.isArray(pending.targets) || pending.targets.length < 2 || pending.targets.length > names.length ||
+            pending.targets.indexOf("member.json") === -1 || pending.targets.indexOf(GLOBAL_CONFIG.adventureQuest.history.fileName) === -1 ||
+            pending.pending.length !== pending.targets.length) throw new Error("퀘스트 선택 복구 목록 오류");
+    } else if (pending.pending.length !== names.length) throw new Error("퀘스트 기록 복구 목록 오류");
     for (var i = 0; i < pending.pending.length; i++) {
         var row = pending.pending[i];
-        if (pending.version === 2) {
+        if (pending.version === 3 && (!row || row.name !== pending.targets[i])) throw new Error("퀘스트 선택 복구 대상 불일치");
+        if (pending.version === 2 || pending.version === 3) {
             if (!row || names.indexOf(row.name) < 0 || seen[row.name] || typeof row.exists !== "boolean" || (row.name === "member.json" && !row.exists) || Object.prototype.hasOwnProperty.call(row, "text")) throw new Error("퀘스트 복구 사본 대상 오류");
             if (row.exists && (typeof row.bytes !== "number" || !isFinite(row.bytes) || row.bytes <= 0 || Math.floor(row.bytes) !== row.bytes || typeof row.hash !== "string" || !/^[0-9a-f]{64}$/.test(row.hash))) throw new Error("퀘스트 복구 사본 지문 오류");
             seen[row.name] = true;
@@ -58396,7 +58427,7 @@ function recoverAdventureRecordPending(cleanupIdle) {
         if (cleanupIdle) cleanupAdventureRecordRecoveryFiles();
         return false;
     }
-    if (pending.version === 2) {
+    if ((pending.version === 2 || pending.version === 3)) {
         for (var check = 0; check < pending.pending.length; check++) {
             var saved = pending.pending[check];
             if (!saved.exists) continue;
@@ -58408,10 +58439,10 @@ function recoverAdventureRecordPending(cleanupIdle) {
     }
     for (var i = pending.pending.length - 1; i >= 0; i--) {
         var row = pending.pending[i], path = resolveActiveDataPath(DATA_ROOT_PATH + row.name);
-        if (pending.version === 2 ? !row.exists : row.text === null) {
+        if ((pending.version === 2 || pending.version === 3) ? !row.exists : row.text === null) {
             var absent = new java.io.File(path);
             if (absent.exists() && !absent.delete()) throw new Error("퀘스트 기록 복구 파일 제거 실패");
-        } else writeVerifiedJsonFile(path, pending.version === 2 ? FileStream.read(path + GLOBAL_CONFIG.adventureQuest.history.snapshotSuffix, "utf-8") : row.text, true);
+        } else writeVerifiedJsonFile(path, (pending.version === 2 || pending.version === 3) ? FileStream.read(path + GLOBAL_CONFIG.adventureQuest.history.snapshotSuffix, "utf-8") : row.text, true);
     }
     writeVerifiedJsonFile(pendingPath, { pending: null }, true);
     cleanupAdventureRecordRecoveryFiles();
