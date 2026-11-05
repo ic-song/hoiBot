@@ -91,7 +91,7 @@ try {
         if ($result -notmatch 'Events injected:\s*1\b' -or $result -match '(?i)error|exception|aborted|no activities') {
             throw "App launch failed: $package`n$result"
         }
-        if ($package -eq 'com.kakao.talk') { Start-Sleep -Seconds 3 }
+        if ($package -eq 'com.kakao.talk') { Start-Sleep -Seconds 5 }
     }
     Write-Host '[OK] Index 1 apps launched. Check bot activation in MessengerBotR.'
     exit 0
