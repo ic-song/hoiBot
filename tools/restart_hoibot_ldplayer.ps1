@@ -42,7 +42,8 @@ function Get-HoiLdInstance {
     $rows = @($listing -split '\r?\n' | Where-Object { $_ -match '^1,' })
     if ($rows.Count -ne 1) { throw 'LDPlayer index 1 was not found. Check the multi-manager.' }
     $fields = $rows[0] -split ','
-    if ($fields.Count -ne 7 -or $fields[5] -notmatch '^-?\d+$' -or $fields[6] -notmatch '^-?\d+$') {
+    # Newer list2 output appends width, height and DPI after the original seven fields.
+    if ($fields.Count -lt 7 -or $fields[5] -notmatch '^-?\d+$' -or $fields[6] -notmatch '^-?\d+$') {
         throw 'Unexpected LDPlayer list2 response for index 1.'
     }
     return ,$fields
