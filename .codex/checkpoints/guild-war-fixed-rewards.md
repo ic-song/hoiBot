@@ -2,9 +2,9 @@
 
 - 작업 키: guild-war-fixed-rewards
 - 작업 이름: 금광 매분 적립 제거 및 전투 결과 정액 보상
-- 작업 상태: 작업 완료
-- 정리 후보: 예
-- 체크포인트 버전: 3
+- 작업 상태: 검증 완료
+- 정리 후보: 아니요
+- 체크포인트 버전: 4
 - 마지막 갱신: 2026-11-05 Asia/Seoul
 - 위치: C:/Users/user/.codex/worktrees/hoiBot-war-performance, feature/guild-war-performance.
 - 기준: d4b3a2817f59ef7eca33ffed6ec3e80a0e2c2719. 앞선 자동 작업·공통 명령 최적화는 원격 소스에 보존됐고 운영은6a67197e/ver_2.768이다.
@@ -35,3 +35,11 @@
 - 검증 임시 파일은 %TEMP%/hoiBot/guild-war-fixed-rewards에만 만들었다. 검증 후 소유·절대경로·reparse point 없음을 확인하고 임시 파일과 빈 디렉터리를 전부 제거했다. 영구 테스트 코드는 추가하지 않았다.
 - 소스 b7dce29eece68e21a73852303577d227144c9b29를 feature/guild-war-performance에 푸시하고 원격 HEAD 일치 및 clean working tree를 확인했다. 운영은6a67197e/ver_2.768 그대로이며 실제 업로드·컴파일·재시작은 수행하지 않았다.
 - 승인된 개발·검증·소스 보존은 완료, 필요한 다음 작업 없음. 운영반영 요청이 오면 당시 최신 prod와 새 기획 정책을 확인하고 버전/개발자노트를 갱신한 소스부터 반영한다. Notion 본문은 기존 생산 정책이므로 사용자 지시와의 차이를 보고하며 임의로 수정하지 않는다. 앞선 최적화는 .codex/checkpoints/guild-war-performance.md를 참조한다.
+
+## 운영 반영 진행 (2026-11-05)
+
+- 최신 사용자 요청 ‘운영반영진행’으로 기존 자동 작업·공통 명령 최적화와 정액 보상 전환을 함께 반영한다. source feature/guild-war-performance 전체 커밋은 해당 범위만 포함한다.
+- origin/feature/prod 6a67197e/ver_2.768을 fetch·확인하고 소스 브랜치에 동기화했다. 충돌 없음. 운영 버전은2.769, 개발자노트 반영일2026-11-05 KST.
+- 기존 검증 소스75aadcd8과 최종 main.js의 버전 문자열 이외 전체 동일성을 확인했다. Node main/Info syntax, 최종 전체 Rhino128MiB compile, diff --check, 버전/개발자노트 일치·0.001 증가·보상300,000,000/200,000,000·주기 tick 제거·무응답 종료 정책 유지 검사 통과.
+- 노션 최신 페이지3e6393bdd7aa82179b7981c1816d6b82는 DB 상태 🧪 DEV, 반영일/버전 공란이며 본문은 구 생산 방식이다. 사용자 확정안을 우선하고 본문은 보존한다. 운영 원격 검증 뒤 상태/반영일/버전만 갱신·확인한다. 새 페이지는 만들지 않는다.
+- 다음: 검증 JAR 임시 파일 제거 → 소스 커밋·푸시·원격 검증 → feature/prod 반영·원격 검증 → 노션 속성 검증 → PlayMCP ver_2.769 알림1회. 운영기기 업로드·컴파일·재시작은 수행하지 않는다.
