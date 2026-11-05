@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.772"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.773"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -5956,7 +5956,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
             } catch (dollReplyError) { debuggerLog("[인형 전송 오류] " + dollReplyError); }
             recordDollTiming(dollTimingRows, "결과·기존 디버그 전송", dollReplyStartedAt);
-            if (isDebuggerFlag) { try { debuggerLog(buildDollTimingMessage(dollTimingRows, Date.now() - miniGameRequestAt)); } catch (dollTimingLogError) {} }
+            if (isDebuggerFlag) { try { debuggerLog(buildDollTimingMessage(dollTimingRows, Date.now() - miniGameRequestAt, responseTimingRows)); } catch (dollTimingLogError) {} }
             return;
         }
         if (msg === "/펫무쌍준비") {
@@ -32398,7 +32398,7 @@ replier.reply(
                 }
 
                 // 마지막@
-                saveJsonFile(petData, memberPetPath);
+                saveJsonFile(petData, memberPetPath, false, undefined, true);
                 saveJsonFile(data, filePath);
             }
         }
@@ -32435,10 +32435,20 @@ replier.reply(
         // }
         FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
     } finally {
-        if (commandContextEntered) exitCommandContext(prevCtx);
-        if (dataSaveTransactionEntered) endDataSaveTransaction();
-        if (responseTransactionAcquired) dataTransactionLock.unlock();
-        responseDataLock.unlock();
+        // 정리 단계에서 예외가 발생해도 두 잠금은 끝까지 해제한다.
+        try {
+            if (commandContextEntered) exitCommandContext(prevCtx);
+        } finally {
+            try {
+                if (dataSaveTransactionEntered) endDataSaveTransaction();
+            } finally {
+                try {
+                    if (responseTransactionAcquired) dataTransactionLock.unlock();
+                } finally {
+                    responseDataLock.unlock();
+                }
+            }
+        }
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -34948,7 +34958,7 @@ function getProtectedJsonSaveLock(path) {
 }
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
-function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup) {
+function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup, allowUnchangedPetCheck) {
     if (GLOBAL_CONFIG.guildWar && (path === resolveActiveDataPath(filePath) || path === resolveActiveDataPath(guildPath))) assertGuildWarNoPending();
     if (path === resolveActiveDataPath(filePath)) assertHowolDramaNoPending();
     var lock = getProtectedJsonSaveLock(path);
@@ -34991,14 +35001,30 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         writer = null;
         outputStream = null;
 
+        var verifiedTemp = null; // 검증된 임시 파일 지문은 불변 펫 파일 비교에도 재사용
         if (structuredValue) {
-            if (inspectJsonRecoveryFile(tempFile.getPath()).hash !== getJsonDigestHex(digest.digest())) throw new Error("임시 JSON 기록 검증 실패");
+            verifiedTemp = inspectJsonRecoveryFile(tempFile.getPath());
+            if (verifiedTemp.hash !== getJsonDigestHex(digest.digest())) throw new Error("임시 JSON 기록 검증 실패");
             if (transformed) parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
         } else parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
         var seedManagedBackup = false;
         var managedBackupPath = getManagedJsonBackupPath(path);
         var secondaryManagedBackupPath = getManagedJsonSecondaryBackupPath(path);
+        // 원본과 직전 백업이 이미 검증 결과와 같고 2세대 갱신도 필요 없을 때만 불변 펫 교체를 생략한다.
+        if (allowUnchangedPetCheck === true && verifiedTemp && skipManagedBackup !== true && path === resolveActiveDataPath(memberPetPath) && targetFile.exists() && targetFile.length() === verifiedTemp.bytes &&
+            managedBackupPath && secondaryManagedBackupPath && new java.io.File(managedBackupPath).exists() &&
+            new java.io.File(secondaryManagedBackupPath).exists() && new java.io.File(managedBackupPath).length() === verifiedTemp.bytes &&
+            Date.now() - new java.io.File(secondaryManagedBackupPath).lastModified() < MANAGED_BACKUP_SECONDARY_ROTATION_MS) {
+            try {
+                var petOriginal = inspectJsonRecoveryFile(path);
+                if (petOriginal.bytes === verifiedTemp.bytes && petOriginal.hash === verifiedTemp.hash) {
+                    var petBackup = inspectJsonRecoveryFile(managedBackupPath);
+                    if (petBackup.bytes === verifiedTemp.bytes && petBackup.hash === verifiedTemp.hash) return;
+                }
+            } catch (petCompareError) {} // 추가 비교만 실패하면 아래 기존 필수 검증·백업·저장을 그대로 수행
+        }
+
         if (managedBackupPath && skipManagedBackup !== true) {
             if (targetFile.exists()) {
                 var reuseMemberBackup = verifiedMemberBackup && verifiedMemberBackup.path === path && path === resolveActiveDataPath(filePath); // 같은 저장 잠금에서 방금 읽고 검증한 회원 원문만 재사용
@@ -35071,7 +35097,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
 }
 
 // JSON 파일 저장 함수
-function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
+function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText, allowUnchangedPetCheck) {
     if (data === null || (typeof data !== "object" && typeof data !== "function")) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
@@ -35181,7 +35207,7 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                     writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName), adventureRecordContext.store);
                 }
                 if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].value);
-                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup, splitPlan ? { path: path, text: currentMemberSplitText, data: currentMemberSplitData } : null);
+                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup, splitPlan ? { path: path, text: currentMemberSplitText, data: currentMemberSplitData } : null, allowUnchangedPetCheck);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
                 if (splitPlan) {
                     data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = splitPlan.marker;
@@ -65700,9 +65726,13 @@ function recordDollTiming(rows, label, startedAt) {
 }
 
 // 기존 디버깅 모드에서만 전송할 인형 단계별 시간 안내를 구성하는 함수
-function buildDollTimingMessage(rows, totalMs) {
+function buildDollTimingMessage(rows, totalMs, commonRows) {
     var lines = ["[인형 처리 시간] ver_" + HoiBotVersion, "전체(진단 전송 제외): " + totalMs + "ms"];
     for (var i = 0; i < rows.length; i++) lines.push(rows[i].label + ": " + rows[i].ms + "ms");
+    if (commonRows && commonRows.length) {
+        lines.push("공통 세부(일부 구간 중첩)");
+        for (var j = 0; j < commonRows.length; j++) lines.push(commonRows[j].label + ": " + commonRows[j].ms + "ms");
+    }
     return lines.join("\n");
 }
 

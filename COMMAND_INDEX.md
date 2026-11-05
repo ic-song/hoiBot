@@ -656,6 +656,8 @@ Status: VERIFIED
 - `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
 - A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
+- Main 기본 종료부의 펫 저장만 선택적으로 불변 비교를 허용한다. 검증·동기화한 임시 파일과 현재 펫 원본 및 직전 백업의 크기/SHA256이 모두 같고 2세대 백업이 존재하며 5분 갱신 기한 전일 때만 동일 백업 재기록·원본 교체를 생략한다. 누락·불일치·추가 비교 실패·백업 갱신 기한·강제 복원·기존 인수 호출은 기존 전체 저장으로 처리한다. 임시 파일 생성·검증은 유지하고 회원 저장은 생략하지 않는다.
+- Main 응답 종료는 컨텍스트·트랜잭션 정리 예외에도 데이터/응답 흐름 잠금을 중첩 finally에서 해제한다. 예외를 숨기거나 일반 명령의 tryLock 실패 반환 정책을 바꾸지 않는다.
 - `writeVerifiedJsonFile(...)` reuses an already verified write only inside the same healthy response transaction, with backup rotation already skipped and identical serialized text rechecked against the current target under its path lock. The first save, changed/missing/different target, explicit backup rotation, and rollback still write normally. Reuse state ends with the transaction; member files, split stores, and recovery journals are excluded. `tools/test_command_save_reuse*.js` covers parity, failures, restart, DEV/PROD, Java threads, and actual-file timing.
 - `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
 - `/데이터상태` reads the original and both backup generations for all four managed JSON files without modifying them; `/데이터복구 [파일] [1|2]` restores only the selected file from the explicitly selected validated backup generation.
@@ -8306,7 +8308,7 @@ Status: VERIFIED
 - 이용권 부족은 회원·펫·재화 검증 후 인형 전용 파일·복구 원문을 읽기 전에 안내한다. 추첨 계산은 메모리에서 진행하고, 파일 게시 전에 회원·펫·인덱스·해당 기록 원문 4개를 기존 형식의 dollPending.json에 보관한다.
 - 명령 트랜잭션 안에서 변경된 기록→대표 인형이 달라진 인덱스→변경된 펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 정상 실패는 불변 기록·순위 저장을 건너뛰며, 펫은 디스크 원본의 JSON 값과 직접 비교해 공통 처리 변경도 보존한다. 실패 경로에 추가됐던 전체 SHA256 직렬화 2회는 제거하고 변경 발견 시 비교를 종료한다. 기존 자동·수동 복구 원문·저장 경로와 중단 후 원상복구 절차는 유지한다.
 - 저장 완료 뒤 전송 실패는 재추첨·재지급·소모 취소를 하지 않는다. Info는 복구 대기 상태를 표시하지 않는다. DEV 사용자 저장 경로는 분리한다.
-- 기존 `/디버깅모드` ON 상태에서 정상 뽑기 결과 전송 후 테스트방에 `[인형 처리 시간]`을 보낸다. 실제 명령 진입부터 공통 처리·목록/기록 읽기·추첨·원문 검증/펫 비교·각 파일 저장·기존 결과/디버그 전송을 구분한다. 진단 전송 자체는 총시간에서 제외하며 진단 실패로 완료된 저장을 취소하지 않는다. OFF에서는 진단 메시지를 보내지 않는다.
+- 기존 `/디버깅모드` ON 상태에서 정상 뽑기 결과 전송 후 테스트방에 `[인형 처리 시간]`을 보낸다. 실제 명령 진입부터 공통 처리·목록/기록 읽기·추첨·원문 검증/펫 비교·각 파일 저장·기존 결과/디버그 전송을 구분한다. 진단 전송 자체는 총시간에서 제외하며 같은 요청에서 기존 공통 처리 세부 시간도 함께 출력한다(일부 측정 구간 중첩). 진단 실패로 완료된 저장을 취소하지 않는다. OFF에서는 진단 메시지를 보내지 않는다.
 - `/계삭진행`, `/계정잠수삭제`, `/데이터정리`의 기존 삭제 정리와 연결해 인형 도감·순위 잔여 데이터를 함께 제거한다. 재가입은 새 기록이다. 닉네임 변경 기록 이전은 사용자 지시로 제외됐다.
 - 최초 설치 자료와 운영자 확인 절차: docs/DOLL_CONTENT_DEPLOYMENT.md. 누락·손상 파일을 빈 데이터로 바꾸지 않는다.
 
