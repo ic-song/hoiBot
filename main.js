@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.770"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.771"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -5880,14 +5880,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply(buildDollDrawMessage(data, petData, guildData, null, sender, dollLackResult));
                 return;
             }
+            var dollStepStartedAt = Date.now();
+            var dollTimingRows = [{ label: "진입·대기·공통 처리", ms: dollStepStartedAt - miniGameRequestAt }];
             if (dollCatalogCache === null) dollCatalogCache = validateDollCatalog(loadJsonFile(DATA_ROOT_PATH + "dollCatalog.json"));
             var dollIndex = requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json"));
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "목록·순위 읽기", dollStepStartedAt);
             if (dollRequest.kind === "rank") {
                 replier.reply(buildDollRankingMessage(data, petData, guildData, dollCatalogCache, dollIndex, sender));
                 return;
             }
             var dollShardName = "dollRecords_" + getDollShard(sender) + ".json";
             var dollStore = requireDollStore(loadJsonFile(DATA_ROOT_PATH + dollShardName));
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "개인 인형 기록 읽기", dollStepStartedAt);
             if (dollRequest.kind === "collection") {
                 var dollUserRecord = Object.prototype.hasOwnProperty.call(dollStore.users, sender) ? dollStore.users[sender] : undefined;
                 replier.reply(buildDollCollectionMessage(data, petData, guildData, dollCatalogCache, dollUserRecord, sender, dollRequest));
@@ -5899,6 +5903,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var dollResult = dollRequest.kind === "box" ?
                 applyDollBoxOpen(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText, dollRequest) :
                 applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText);
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "추첨·보상 계산", dollStepStartedAt);
             if (!dollResult.ok) {
                 if (isDebuggerFlag && dollRequest.kind !== "box") { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} }
                 replier.reply(dollRequest.kind === "box" ? buildDollBoxErrorMessage(data, petData, guildData, sender, dollResult) : buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
@@ -5912,16 +5917,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
                 var dollSnapshotText = FileStream.read(resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName), "utf-8");
                 var dollSnapshotData = parseJsonContent(dollSnapshotText, dollSnapshotName);
-                if (dollSnapshotName === "member_pet.json" && !dollPetChanged) dollPetChanged = getJsonValueFingerprint(dollSnapshotData) !== getJsonValueFingerprint(petData);
+                if (dollSnapshotName === "member_pet.json" && !dollPetChanged) dollPetChanged = !isDollPetDataUnchanged(dollSnapshotData, petData);
                 dollSnapshotData = null; // 검증한 대용량 원본 객체는 다음 파일을 읽기 전에 해제
                 dollSnapshots.push(defineJsonFileText({ name: dollSnapshotName }, "text", resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName)));
             }
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 원문 검증·펫 비교", dollStepStartedAt);
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 기록 저장", dollStepStartedAt);
             if (dollRequest.kind === "box" || dollResult.success) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "개인 인형 기록 저장", dollStepStartedAt);
             if (JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "대표 순위 저장", dollStepStartedAt);
             if (dollPetChanged) saveJsonFile(petData, memberPetPath);
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "펫 저장", dollStepStartedAt);
             saveJsonFile(data, filePath);
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "회원·분리 데이터 저장", dollStepStartedAt);
             saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
+            dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 완료 저장", dollStepStartedAt);
+            var dollReplyStartedAt = Date.now();
             if (isDebuggerFlag && dollRequest.kind !== "box") { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} } // 로그 전송 실패는 완료된 소모·보상을 되돌리지 않음
             // 전송 실패는 이미 완료된 소모·보상을 되돌리거나 재추첨하지 않는다.
             try {
@@ -5942,6 +5955,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
             } catch (dollReplyError) { debuggerLog("[인형 전송 오류] " + dollReplyError); }
+            recordDollTiming(dollTimingRows, "결과·기존 디버그 전송", dollReplyStartedAt);
+            if (isDebuggerFlag) { try { debuggerLog(buildDollTimingMessage(dollTimingRows, Date.now() - miniGameRequestAt)); } catch (dollTimingLogError) {} }
             return;
         }
         if (msg === "/펫무쌍준비") {
@@ -65656,6 +65671,36 @@ function applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,
     Object.defineProperty(index.users,user,{value:buildDollRepresentative(catalog,record,user),writable:true,enumerable:true,configurable:true});
     return { success:true, doll:doll, length:length, size:size, fresh:count===0, charm:charm, sale:sale, experience:experience, oldMax:old ? old.max : null, record:record };
 }
+// 인형 처리 한 단계의 소요 시간을 메모리에 기록하고 다음 기준 시각을 반환하는 함수
+function recordDollTiming(rows, label, startedAt) {
+    var finishedAt = Date.now();
+    rows.push({ label: label, ms: finishedAt - startedAt });
+    return finishedAt;
+}
+
+// 기존 디버깅 모드에서만 전송할 인형 단계별 시간 안내를 구성하는 함수
+function buildDollTimingMessage(rows, totalMs) {
+    var lines = ["[인형 처리 시간] ver_" + HoiBotVersion, "전체(진단 전송 제외): " + totalMs + "ms"];
+    for (var i = 0; i < rows.length; i++) lines.push(rows[i].label + ": " + rows[i].ms + "ms");
+    return lines.join("\n");
+}
+
+// 인형 실패 전후 JSON 펫 값을 직렬화·해시 없이 비교해 공통 처리 변경도 보존하는 함수
+function isDollPetDataUnchanged(original, current) {
+    if (original === current) return true;
+    if (!original || !current || typeof original !== "object" || typeof current !== "object") return false;
+    if (Array.isArray(original) !== Array.isArray(current)) return false;
+    if (Array.isArray(original) && original.length !== current.length) return false;
+    if (Object.prototype.toString.call(original) !== Object.prototype.toString.call(current) || typeof current.toJSON === "function") return false;
+    var originalKeys = Object.keys(original), currentKeys = Object.keys(current);
+    if (originalKeys.length !== currentKeys.length) return false;
+    for (var i = 0; i < originalKeys.length; i++) {
+        var key = originalKeys[i];
+        if (!Object.prototype.hasOwnProperty.call(current, key) || !isDollPetDataUnchanged(original[key], current[key])) return false;
+    }
+    return true;
+}
+
 // 인형뽑기의 회원·펫·재화 유효성을 확인하고 이용권 수량을 반환하는 함수
 function getDollDrawTicketCount(data, petData, user) {
     var member = data.member[user], pet = petData[user];

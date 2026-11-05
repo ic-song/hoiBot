@@ -8278,7 +8278,7 @@ Status: VERIFIED
 
 ## Files / Helpers
 
-- main.js: getDollRequest, getDollDrawTicketCount, applyDollDraw, applyDollAcquisition, getDollBoxRequest, applyDollBoxOpen, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
+- main.js: getDollRequest, getDollDrawTicketCount, isDollPetDataUnchanged, recordDollTiming, buildDollTimingMessage, applyDollDraw, applyDollAcquisition, getDollBoxRequest, applyDollBoxOpen, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
 - MAIN·Info의 캐슬·레이드 기본 매력에 `member_pet.json`의 `dollCharm / 2`를 합산한 뒤 기존 퍼센트를 적용한다. 종합매력·진단도 같은 기본값을 사용한다. 원본 종합매력은 정수로 누적하므로 각 모드 +12.5도 누적 과정에서 보존한다.
 
 ## Commands / Policy
@@ -8303,8 +8303,9 @@ Status: VERIFIED
 - ver_2.699: `getDollGradeRows`는 활성 `dollCatalogCache`와 동일한 검증 목록만 등급별 원래 순서로 재사용한다. 반환 배열은 매번 복사하여 도감 정렬이 다음 추첨에 영향을 주지 않는다. 다른 목록 객체·비숫자 등급은 기존 엄격 비교 필터로 처리하고, 카탈로그 객체 교체 시 캐시를 다시 만든다. 사용자 기록·확률·난수 호출 순서·소모·보상·저장 경로는 변경하지 않는다.
 - dollRecords_0.json–dollRecords_15.json: 이름 해시로 분리한 도감·최초일·횟수·최대 크기. dollIndex.json: 순위 대표 기록. 회원 파일에 도감 원본을 넣지 않는다.
 - 이용권 부족은 회원·펫·재화 검증 후 인형 전용 파일·복구 원문을 읽기 전에 안내한다. 추첨 계산은 메모리에서 진행하고, 파일 게시 전에 회원·펫·인덱스·해당 기록 원문 4개를 기존 형식의 dollPending.json에 보관한다.
-- 명령 트랜잭션 안에서 변경된 기록→대표 인형이 달라진 인덱스→변경된 펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 정상 실패는 불변 기록·순위 저장을 건너뛰며, 펫은 디스크 원본과 전체 JSON 지문을 비교해 공통 처리 변경도 보존한다. 기존 자동·수동 복구 원문·저장 경로와 중단 후 원상복구 절차는 유지한다.
+- 명령 트랜잭션 안에서 변경된 기록→대표 인형이 달라진 인덱스→변경된 펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 정상 실패는 불변 기록·순위 저장을 건너뛰며, 펫은 디스크 원본의 JSON 값과 직접 비교해 공통 처리 변경도 보존한다. 실패 경로에 추가됐던 전체 SHA256 직렬화 2회는 제거하고 변경 발견 시 비교를 종료한다. 기존 자동·수동 복구 원문·저장 경로와 중단 후 원상복구 절차는 유지한다.
 - 저장 완료 뒤 전송 실패는 재추첨·재지급·소모 취소를 하지 않는다. Info는 복구 대기 상태를 표시하지 않는다. DEV 사용자 저장 경로는 분리한다.
+- 기존 `/디버깅모드` ON 상태에서 정상 뽑기 결과 전송 후 테스트방에 `[인형 처리 시간]`을 보낸다. 실제 명령 진입부터 공통 처리·목록/기록 읽기·추첨·원문 검증/펫 비교·각 파일 저장·기존 결과/디버그 전송을 구분한다. 진단 전송 자체는 총시간에서 제외하며 진단 실패로 완료된 저장을 취소하지 않는다. OFF에서는 진단 메시지를 보내지 않는다.
 - `/계삭진행`, `/계정잠수삭제`, `/데이터정리`의 기존 삭제 정리와 연결해 인형 도감·순위 잔여 데이터를 함께 제거한다. 재가입은 새 기록이다. 닉네임 변경 기록 이전은 사용자 지시로 제외됐다.
 - 최초 설치 자료와 운영자 확인 절차: docs/DOLL_CONTENT_DEPLOYMENT.md. 누락·손상 파일을 빈 데이터로 바꾸지 않는다.
 
