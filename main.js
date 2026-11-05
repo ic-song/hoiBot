@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.769"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.770"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -5873,6 +5873,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply((isHoiPassPremiumActive(data, sender) ? "[👑호이패스 프리미엄👑]\n" : "") + buildDollGuideMessage());
                 return;
             }
+            // 이용권이 없으면 추첨·복구 자료를 읽지 않고 기존 부족 안내를 반환한다.
+            if (dollRequest.kind === "draw" && getDollDrawTicketCount(data, petData, sender) < 1) {
+                var dollLackResult = { ok: false, lack: true };
+                if (isDebuggerFlag) { try { debuggerLog(buildDollDrawDebugMessage(dollLackResult)); } catch (dollLackDebugError) {} }
+                replier.reply(buildDollDrawMessage(data, petData, guildData, null, sender, dollLackResult));
+                return;
+            }
             if (dollCatalogCache === null) dollCatalogCache = validateDollCatalog(loadJsonFile(DATA_ROOT_PATH + "dollCatalog.json"));
             var dollIndex = requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json"));
             if (dollRequest.kind === "rank") {
@@ -5886,14 +5893,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply(buildDollCollectionMessage(data, petData, guildData, dollCatalogCache, dollUserRecord, sender, dollRequest));
                 return;
             }
-            var dollSnapshotNames = ["member.json", "member_pet.json", "dollIndex.json", dollShardName];
-            var dollSnapshots = [];
-            for (var dollSnapshotIndex = 0; dollSnapshotIndex < dollSnapshotNames.length; dollSnapshotIndex++) {
-                var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
-                var dollSnapshotText = FileStream.read(resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName), "utf-8");
-                parseJsonContent(dollSnapshotText, dollSnapshotName);
-                dollSnapshots.push(defineJsonFileText({ name: dollSnapshotName }, "text", resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName)));
-            }
+            var dollIndexBefore = JSON.stringify(dollIndex.users[sender]); // 대표 인형이 그대로면 순위 파일 저장을 생략
             var dollDateKey = getAttendanceKstDateKey();
             var dollDateText = dollDateKey.substring(0, 4) + "." + dollDateKey.substring(4, 6) + "." + dollDateKey.substring(6, 8);
             var dollResult = dollRequest.kind === "box" ?
@@ -5904,10 +5904,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply(dollRequest.kind === "box" ? buildDollBoxErrorMessage(data, petData, guildData, sender, dollResult) : buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 return;
             }
+            // 추첨은 메모리에서만 계산하며, 게시 전 디스크 원문 네 개를 기존 형식으로 보존한다.
+            var dollSnapshotNames = ["member.json", "member_pet.json", "dollIndex.json", dollShardName];
+            var dollSnapshots = [];
+            var dollPetChanged = dollRequest.kind === "box" || dollResult.success; // 성공 시 매력이 바뀌며, 실패 시 공통 처리의 펫 변경도 확인
+            for (var dollSnapshotIndex = 0; dollSnapshotIndex < dollSnapshotNames.length; dollSnapshotIndex++) {
+                var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
+                var dollSnapshotText = FileStream.read(resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName), "utf-8");
+                var dollSnapshotData = parseJsonContent(dollSnapshotText, dollSnapshotName);
+                if (dollSnapshotName === "member_pet.json" && !dollPetChanged) dollPetChanged = getJsonValueFingerprint(dollSnapshotData) !== getJsonValueFingerprint(petData);
+                dollSnapshotData = null; // 검증한 대용량 원본 객체는 다음 파일을 읽기 전에 해제
+                dollSnapshots.push(defineJsonFileText({ name: dollSnapshotName }, "text", resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName)));
+            }
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
-            saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
-            saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
-            saveJsonFile(petData, memberPetPath);
+            if (dollRequest.kind === "box" || dollResult.success) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
+            if (JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
+            if (dollPetChanged) saveJsonFile(petData, memberPetPath);
             saveJsonFile(data, filePath);
             saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
             if (isDebuggerFlag && dollRequest.kind !== "box") { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} } // 로그 전송 실패는 완료된 소모·보상을 되돌리지 않음
@@ -65644,12 +65656,19 @@ function applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,
     Object.defineProperty(index.users,user,{value:buildDollRepresentative(catalog,record,user),writable:true,enumerable:true,configurable:true});
     return { success:true, doll:doll, length:length, size:size, fresh:count===0, charm:charm, sale:sale, experience:experience, oldMax:old ? old.max : null, record:record };
 }
+// 인형뽑기의 회원·펫·재화 유효성을 확인하고 이용권 수량을 반환하는 함수
+function getDollDrawTicketCount(data, petData, user) {
+    var member = data.member[user], pet = petData[user];
+    if (!member || !pet) throw new Error("인형뽑기 회원·펫 데이터 없음");
+    var bag = member.bag, tickets = bag && bag[GLOBAL_CONFIG.doll.ticketName] !== undefined ? bag[GLOBAL_CONFIG.doll.ticketName] : 0;
+    if (!isSearchAuthenticationCount(tickets) || !isSearchAuthenticationCount(member.point)) throw new Error("인형뽑기 재화 값 오류");
+    return tickets;
+}
+
 // 인형 뽑기 1회의 소모·보상·기록 변경을 계산하는 함수
 function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValue) {
     var config=GLOBAL_CONFIG.doll, member=data.member[user], pet=petData[user];
-    if (!member || !pet) throw new Error("인형뽑기 회원·펫 데이터 없음");
-    var bag=member.bag, tickets=bag && bag[config.ticketName] !== undefined ? bag[config.ticketName] : 0;
-    if (!isSearchAuthenticationCount(tickets) || !isSearchAuthenticationCount(member.point)) throw new Error("인형뽑기 재화 값 오류");
+    var tickets=getDollDrawTicketCount(data,petData,user), bag=member.bag;
     if (tickets < 1) return { ok:false, lack:true };
     var random=randomValue || Math.random;
     var drawTier=member.rank ? member.rank.tier : "새싹";
