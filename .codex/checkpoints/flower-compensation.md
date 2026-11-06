@@ -1,9 +1,9 @@
 # 꽃집 대장장이 일회 보상
 
 - 작업 키: flower-compensation
-- 작업 상태: 진행 중
-- 정리 후보: 아니요
-- 체크포인트 버전: 3
+- 작업 상태: 완료
+- 정리 후보: 예
+- 체크포인트 버전: 4
 - 마지막 갱신: 2026-11-06 KST
 - 승인: Notion READY 757393bdd7aa8260898881f3d4ae4c22 기획대로 개발·검증·source push·feature/prod 원격 반영·Notion 상태/운영일/버전·PlayMCP 버전 알림까지. Codex 운영 기기 접속·실제 지급 실행 금지.
 - 위치/범위: C:/Users/user/Desktop/hoiBot, codex/flower-compensation. 최신 local/origin feature/prod 3e54c89f/ver_2.780에서 생성. main.js, 명령 인덱스/레지스트리, 개발자노트/버전, 본 체크포인트만 기본 변경. 필요시 Info.js. 사용자 미추적 체크포인트7개 보존.
@@ -17,4 +17,7 @@
 - 버전/문서: ver_2.781, 2026-11-06 개발자노트와 명령 인덱스/레지스트리 동기화. Notion 문서 재확인 시 READY 및 본문 변경 없음.
 - 최종 검증: 버전/문서 반영 후 Node main/Info 구문 검사, Node·Rhino 실제 helper 60시나리오/176단언 각각 재통과, Rhino 1.7.15 언어200 최적화-1·128MiB 전체 main/Info 컴파일 통과. UTF-8 엄격 디코딩, JSON 버전/일자, git diff --check 통과. 실제 카카오 전송·Android 운영 런타임 검증은 운영자 영역이다.
 - 임시자료 정리: 작업 소유 임시 fixture·테스트·JAR·class·실제 파일 자료를 명시 경로로 삭제했고 작업 임시 폴더가 없음을 확인했다. 사용자 미추적7개 보존.
-- 다음: source push/PR/prod → Notion3속성/본문보존 → 정확버전카카오알림.
+- 운영 반영 완료: source 798fac0a76aa03950ec3ea5bcfa3ed20cbc6cc92를 origin/codex/flower-compensation에 push한 뒤 PR #238(https://github.com/ic-song/hoiBot/pull/238)을 feature/prod로 merge. 원격 feature/prod b12780d656d925af6df375577f006c2dd42b7079에서 source 포함·main/Info/명령문서/개발자노트 동일·버전 ver_2.781을 확인했다. 별도 local prod worktree도 fast-forward 완료.
+- 후속 동기화 완료: Notion 757393bdd7aa8260898881f3d4ae4c22의 상태 🧪 DEV·운영반영일 2026-11-06·운영반영버전 ver_2.781을 SQL로 확인. 기획 본문 보존 비교 통과. PlayMCP 나에게 보내기로 정확히 ver_2.781만 1회 전송하고 성공 응답 확인.
+- 운영자 실행: Codex 기기 접속·실제 보상 지급 없음. 운영자가 봇 소스 적용·컴파일 후 MASTER /꽃집보상지급 실행, /꽃집보상현황 확인. 최초 실행 직전 기준 고정. 미지급·공지 실패는 원인 확인 후 같은 명령 재실행. 전송 여부 미확인 방은 실제 방 확인 후 공지확정 명령 사용.
+- 완료 체크포인트는 source 브랜치에만 추가 push한다. 런타임 코드는 검증된 prod와 동일하며 추가 운영 반영·중복 버전 알림은 필요하지 않다. 사용자 미추적 체크포인트7개 유지, 후속 작업 없음.
