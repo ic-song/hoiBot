@@ -1,9 +1,10 @@
 # 길드전쟁 확정 정책 개발
 
 - 작업 키: guild-war-beta
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 4
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: 운영 3e54c89f6f35bbd66db3ccfe7d904b46778e1d54 / 검증 소스 bddb104009ddb4bbc2fd2f8eec6a8fff46563481
+- 체크포인트 버전: 5
 - 마지막 갱신: 2026-11-06 KST
 - 목표/승인: 수정된 Notion READY 401393bdd7aa821ab7d281d767c2fb6b의 Q1~Q13·51검수에 따라 레거시 개발·검증·소스 push·feature/prod 원격 반영·Notion 세 속성·정확 버전 카카오 알림까지 수행. 운영 기기 접속 금지.
 - 선언 파일: main.js, 필요 시 Info.js, COMMAND_INDEX.md, COMMAND_REGISTRY.md, ERROR_FIX_LOG.md, data/hoiBotChangeLog.json, 본 체크포인트. 테스트·합성자료는 %TEMP%/hoiBot/guild-war-beta에만 생성하고 완료 후 제거.
@@ -17,4 +18,7 @@
 - 반영준비: HoiBotVersion/개발자노트2.780·2026-11-06 동기화. 명령인덱스/레지스트리/오류기록갱신. 최신origin/prod460cdfb1유지, 소스는2388159+이번개발. Notion본문이시작시점과동일함을재확인했으며운영후본문추가수정금지.
 - 임시자료: 검증150파일/JAR/합성자료와빈디렉터리10개를커밋전에전부정리완료. 일괄계산경로삭제가자동검토에서거부되어검증한절대경로의명시파일목록과빈폴더만각각삭제했고성공확인. 다른작업자료·사용자미추적7개보존. 영구테스트파일미추가.
 - 검증소스: main.js SHA256=95ffe326f7fc3e728973484ebe54ecf8ebdf0f130ab022014df1376d3e451630. Info.js는기준prod와동일.
-- 다음 행동: 한국어커밋/source push→PR/prod원격검증→Notion상태/날짜/버전3종→PlayMCP정확ver_2.780알림. 아직prod미반영·Notion속성미갱신·알림미전송.
+- 운영완료: 검증소스 bddb104009ddb4bbc2fd2f8eec6a8fff46563481을codex/guild-war-beta에푸시·원격SHA확인, PR237(https://github.com/ic-song/hoiBot/pull/237)병합. origin/feature/prod=3e54c89f6f35bbd66db3ccfe7d904b46778e1d54. 소스ancestor·Main/Info/노트/명령문서/오류기록전체동일성·원격ver_2.780/2026-11-06 재검증. 별도prod작업트리도ff-only동기화.
+- 외부완료: 해당Notion상태🧪DEV·운영반영일2026-11-06(KST)·운영반영버전ver_2.780을DB쿼리로확인. 본문은시작시점과완전히동일. PlayMCP나에게보내기로정확히ver_2.780한번전송성공. 스킬수정없음.
+- 완료기록: 본체크포인트최종상태는소스브랜치에보존한다. 운영코드추가변경없으며동일버전알림을다시보내지않는다. PR본문임시파일도제거했다.
+- 다음 행동: 사용자 요청 범위의 개발·검증·운영Git반영 완료. 실제 MessengerBot 파일 적용·컴파일·재시작과 실제 길드톡 전송/시간 지연 확인은 운영자가 수행한다. Codex는운영기기에접속하지않는다.
