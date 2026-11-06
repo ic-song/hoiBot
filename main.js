@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.780"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.781"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1959,6 +1959,11 @@ const GLOBAL_CONFIG = {
             "/마블중단확인",
             "└ 길드마스터의 중단 요청에 동의"
         ]
+    },
+    flowerCompensation: {
+        id: "flower-blacksmith-20261106", ledgerKey: "flowerBlacksmithCompensation20261106", skillName: "꽃집 대장장이",
+        pointPerCopy: 5000000000, summaryLimit: 20, errorMaxLength: 160,
+        notice: "[📢전체알림] 꽃집 대장장이📙 보상 지급 완료\n━━━━━━━━━━━━\n꽃집 대장장이📙 장착 및 보유 유저를 대상으로\n보상 지급이 완료되었습니다.\n\n⚒️ 장착 유저\n└ 펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호) ×1 + 50억 포인트\n🎒 가방 보유 유저\n└ 소지 1개당 50억 포인트\n\n✅ 장착과 가방에 모두 보유한 경우\n   보상이 각각 합산 지급됩니다.\n\n📦 지급된 아이템과 포인트를 확인해 주세요."
     },
     spiritRetirement: {
         version: 1,
@@ -4372,6 +4377,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var initialMemberLoadStartMs = Date.now();
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
+        if (runFlowerCompensationEntry(ctx, sender, msg, replier, data)) return;
         if (dataCleanupAction) {
             if (!memberStorageCleanupAllowed) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("⛔ 사용 권한이 없습니다."); return; }
             if (dataCleanupAction === "cancel" || dataCleanupAction === "confirm" && (!dataCleanupSessions[dataCleanupKey] || Date.now() >= dataCleanupSessions[dataCleanupKey].expiresAt)) {
@@ -33269,6 +33275,7 @@ function isAutoDailyEntryCommandMessage(msg) {
 // 홈뱃지 오픈처럼 회원·활동 데이터를 함께 바꾸는 명령인지 확인하는 함수
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
+    if (getFlowerCompensationRequest(isDevCommandMessage(command) ? stripDevCommandPrefix(command) : command)) return true;
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
@@ -53309,6 +53316,210 @@ function buildTierPetSkillInfoLine(skillData) {
         "\n티어전용 펫스킬 중복 장착은 불가합니다." +
         "\n일반 종합매력 무기 펫스킬과는 중복 장착할 수 있습니다.";
 }
+
+// ── 꽃집 대장장이 일회 보상: 기준 시점·지급·공지 기록을 같은 회원 원본에서 관리한다. ──
+// 꽃집 보상 명령을 전체 문법 일치로 구분하는 함수
+function getFlowerCompensationRequest(msg) {
+    if (msg === "/꽃집보상지급") return { kind: "pay" };
+    if (msg === "/꽃집보상현황") return { kind: "status" };
+    var match = /^\/꽃집보상공지확정[ \t]+(\d+)[ \t]+([12])$/.exec(msg);
+    if (match && match[0] === msg) return { kind: "notice", index: Number(match[1]) - 1, sent: match[2] === "1" };
+    if (typeof msg === "string" && /^\/꽃집보상(?:지급|현황|공지확정)(?:\s|$)/.test(msg)) return { kind: "invalid" };
+    return null;
+}
+
+// 원본을 보정하지 않고 장착 여부와 별칭을 합친 가방 수량만 읽는 함수
+function inspectFlowerCompensationHoldings(skillMember) {
+    if (skillMember === undefined) return { equipped: false, bagCount: 0 };
+    if (!skillMember || typeof skillMember !== "object" || Array.isArray(skillMember)) throw new Error("펫스킬 회원 원본 형식 확인 필요");
+    var skills = skillMember.petSkills;
+    if (skills === undefined) return { equipped: false, bagCount: 0 };
+    if (!skills || typeof skills !== "object" || Array.isArray(skills)) throw new Error("펫스킬 보유 원본 형식 확인 필요");
+    var equipped = skills.equipped === undefined ? [] : skills.equipped;
+    var bag = skills.bag === undefined ? {} : skills.bag;
+    if (!Array.isArray(equipped) || !bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("펫스킬 장착·가방 원본 형식 확인 필요");
+    var found = false, count = 0; // 장착은 계정당 1회, 가방 별칭 수량은 합산
+    for (var i = 0; i < equipped.length; i++) {
+        if (typeof equipped[i] !== "string") throw new Error("장착 펫스킬 이름 확인 필요");
+        if (normalizePetSkillName(equipped[i]) === GLOBAL_CONFIG.flowerCompensation.skillName) found = true;
+    }
+    for (var name in bag) if (Object.prototype.hasOwnProperty.call(bag, name) && normalizePetSkillName(name) === GLOBAL_CONFIG.flowerCompensation.skillName) {
+        if (!isPointShopSafeCount(bag[name]) || !isPointShopSafeCount(count + bag[name])) throw new Error("꽃집 대장장이 가방 수량 확인 필요");
+        count += bag[name];
+    }
+    return { equipped: found, bagCount: count };
+}
+
+// 고정된 보상 대상·산정·지급 결과·방별 공지 기록을 검증하는 함수
+function requireFlowerCompensation(state) {
+    var config = GLOBAL_CONFIG.flowerCompensation;
+    if (!state || state.version !== 1 || state.id !== config.id || typeof state.at !== "string" || !isFinite(Date.parse(state.at)) || !Array.isArray(state.rows) || !(state.deliveries === null || Array.isArray(state.deliveries))) throw new Error("꽃집 보상 고정 기록 형식 오류");
+    var seen = {}, allPaid = true, total = 0;
+    for (var i = 0; i < state.rows.length; i++) {
+        var row = state.rows[i], key = row && "$" + row.accountId;
+        if (!row || typeof row.accountId !== "string" || !/^[A-Za-z0-9_-]+$/.test(row.accountId) || seen[key] || typeof row.user !== "string" || !row.user || typeof row.equipped !== "boolean" || !isPointShopSafeCount(row.bagCount) || typeof row.error !== "string" || ["PENDING", "PAID", "FAILED"].indexOf(row.status) === -1) throw new Error("꽃집 보상 대상 기록 오류");
+        var expected = (Number(row.equipped) + row.bagCount) * config.pointPerCopy; // 기준 시점 수량으로 고정 산정
+        if (expected <= 0 || !isPointShopSafeAmount(expected) || row.point !== expected || !isPointShopSafeAmount(total + expected)) throw new Error("꽃집 보상 산정 기록 오류");
+        if (row.status === "PAID" ? typeof row.paidAt !== "string" || !isFinite(Date.parse(row.paidAt)) : row.paidAt !== null) throw new Error("꽃집 보상 지급 시각 오류");
+        seen[key] = true; total += expected; if (row.status !== "PAID") allPaid = false;
+    }
+    if (state.deliveries !== null) {
+        if (!allPaid || !state.rows.length && state.deliveries.length) throw new Error("꽃집 보상 미완료 전체알림 차단");
+        if (state.rows.length && !state.deliveries.length) throw new Error("꽃집 보상 전체알림 대상 기록 누락");
+        var rooms = {};
+        for (var n = 0; n < state.deliveries.length; n++) {
+            var delivery = state.deliveries[n];
+            if (!delivery || typeof delivery.room !== "string" || !delivery.room || rooms["$" + delivery.room] || ["PENDING", "SENDING", "SENT", "FAILED", "UNKNOWN"].indexOf(delivery.status) === -1) throw new Error("꽃집 보상 공지 기록 오류");
+            rooms["$" + delivery.room] = true;
+        }
+    }
+    return state;
+}
+
+// 작업 시작 시점의 보유량과 변하지 않는 계정 ID를 한 번 고정하는 함수
+function createFlowerCompensation(data, skillData, now, createId) {
+    if (!skillData || typeof skillData !== "object" || Array.isArray(skillData)) throw new Error("펫스킬 원본 확인 필요");
+    var config = GLOBAL_CONFIG.flowerCompensation, rows = [], identities = [];
+    var accounts = buildServerRaidAccountIndex(data); // 기존 계정 ID 중복을 먼저 검출
+    for (var user in data.member) if (Object.prototype.hasOwnProperty.call(data.member, user)) {
+        var held = inspectFlowerCompensationHoldings(skillData[user]);
+        if (!held.equipped && !held.bagCount) continue;
+        var member = data.member[user], account = member.serverRaidAccount;
+        if (account === undefined) {
+            account = { id: createId(), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+            identities.push({ member: member, account: account });
+            if (Object.prototype.hasOwnProperty.call(accounts, account.id)) throw new Error("꽃집 보상 신규 계정 ID 중복");
+            accounts[account.id] = { user: user, member: member, account: account };
+        }
+        if (!account || typeof account.id !== "string" || !/^[A-Za-z0-9_-]+$/.test(account.id)) throw new Error("꽃집 보상 계정 ID 확인 필요");
+        rows.push({ accountId: account.id, user: user, equipped: held.equipped, bagCount: held.bagCount, point: (Number(held.equipped) + held.bagCount) * config.pointPerCopy, status: "PENDING", paidAt: null, error: "" });
+    }
+    var state = requireFlowerCompensation({ version: 1, id: config.id, at: new Date(now).toISOString(), rows: rows, deliveries: null });
+    for (var i = 0; i < identities.length; i++) identities[i].member.serverRaidAccount = identities[i].account;
+    return state;
+}
+
+// 포인트·소멸권·지급 완료를 같은 회원 원본에서 변경하고 실패 대상만 남기는 함수
+function applyFlowerCompensation(data, state, now) {
+    requireFlowerCompensation(state);
+    var accounts = buildServerRaidAccountIndex(data), item = GLOBAL_CONFIG.petSkill.unbindItemName;
+    for (var i = 0; i < state.rows.length; i++) {
+        var row = state.rows[i];
+        if (row.status === "PAID") continue;
+        var account = accounts[row.accountId], member = account && account.member;
+        var oldPoint = member && member.point, oldBag = member && member.bag;
+        var hadItem = !!(oldBag && Object.prototype.hasOwnProperty.call(oldBag, item)), oldCount = hadItem ? oldBag[item] : 0;
+        try {
+            if (!member) throw new Error("고정 대상 계정을 찾을 수 없습니다. 새 계정에 대신 지급하지 않습니다.");
+            if (typeof member.point !== "number" || !isPointShopSafeAmount(Math.abs(member.point)) || !isPointShopSafeAmount(Math.abs(member.point + row.point))) throw new Error("포인트 잔고·지급 후 범위 확인 필요");
+            if (row.equipped) {
+                if (oldBag !== undefined && (!oldBag || typeof oldBag !== "object" || Array.isArray(oldBag))) throw new Error("소멸권 지급 가방 형식 확인 필요");
+                if (!isPointShopSafeCount(oldCount) || !isPointShopSafeCount(oldCount + 1)) throw new Error("소멸권 보유 수량 확인 필요");
+                if (oldBag === undefined) member.bag = {};
+                addItemToBag(member.bag, item, 1);
+            }
+            member.point += row.point;
+            row.status = "PAID"; row.paidAt = new Date(now).toISOString(); row.error = "";
+        } catch (error) {
+            if (member) {
+                member.point = oldPoint;
+                if (oldBag === undefined) delete member.bag;
+                else { member.bag = oldBag; if (row.equipped && oldBag && typeof oldBag === "object" && !Array.isArray(oldBag)) { if (hadItem) oldBag[item] = oldCount; else delete oldBag[item]; } }
+            }
+            row.status = "FAILED"; row.paidAt = null; row.error = String(error.message || error).slice(0, GLOBAL_CONFIG.flowerCompensation.errorMaxLength);
+        }
+    }
+    return requireFlowerCompensation(state);
+}
+
+// 전원 지급 완료 뒤에만 기존 전체알림 대상 방을 한 번 고정하는 함수
+function prepareFlowerCompensationNotices(state, rooms) {
+    requireFlowerCompensation(state);
+    if (state.deliveries !== null || state.rows.some(function (row) { return row.status !== "PAID"; })) return false;
+    var deliveries = [], seen = {};
+    for (var i = 0; state.rows.length && i < rooms.length; i++) {
+        if (typeof rooms[i] !== "string" || !rooms[i]) throw new Error("전체알림 대상 방 확인 필요");
+        if (!seen["$" + rooms[i]]) { seen["$" + rooms[i]] = true; deliveries.push({ room: rooms[i], status: "PENDING" }); }
+    }
+    if (state.rows.length && !deliveries.length) throw new Error("전체알림 대상 방이 없습니다.");
+    state.deliveries = deliveries;
+    return true;
+}
+
+// 전송 도중 중단돼 결과가 불명확한 방만 관리자 확인 결과로 확정하는 함수
+function confirmFlowerCompensationNotice(state, index, wasSent) {
+    requireFlowerCompensation(state);
+    var delivery = state.deliveries && state.deliveries[index];
+    if (!delivery || ["SENDING", "UNKNOWN"].indexOf(delivery.status) === -1) throw new Error("전송 여부 미확인 상태의 방 번호만 확정할 수 있습니다.");
+    delivery.status = wasSent ? "SENT" : "PENDING";
+}
+
+// 고정 시점·성공/실패 수와 방별 전송 상태를 관리자에게 표시하는 함수
+function buildFlowerCompensationSummary(state) {
+    if (!state) return "📙 꽃집 대장장이 보상\n아직 지급 작업을 시작하지 않았습니다.\nMASTER 실행: /꽃집보상지급";
+    requireFlowerCompensation(state);
+    var paid = 0, failed = [], points = 0, itemCount = 0;
+    for (var i = 0; i < state.rows.length; i++) {
+        var row = state.rows[i]; points += row.point; if (row.equipped) itemCount++;
+        if (row.status === "PAID") paid++; else if (row.status === "FAILED") failed.push(row.user + ": " + row.error);
+    }
+    var lines = ["📙 꽃집 대장장이 보상 지급 현황", "━━━━━━━━━━━━", "기준 시점: " + formatDateTime(new Date(state.at)), "고정 대상: " + state.rows.length + "명", "지급 성공: " + paid + "명 · 실패: " + failed.length + "명 · 대기: " + (state.rows.length - paid - failed.length) + "명", "산정 포인트 합계: 🅟" + numberWithCommas(points), "산정 소멸권 합계: " + itemCount + "개"];
+    if (!state.rows.length) lines.push("지급 대상 없음 · 전체알림 발송 없음");
+    if (failed.length) lines.push("❌ 미지급 대상 (원인 확인 후 /꽃집보상지급 재실행)", failed.slice(0, GLOBAL_CONFIG.flowerCompensation.summaryLimit).join("\n"));
+    if (failed.length > GLOBAL_CONFIG.flowerCompensation.summaryLimit) lines.push("외 " + (failed.length - GLOBAL_CONFIG.flowerCompensation.summaryLimit) + "명 · 고정 지급 기록 보존");
+    if (state.deliveries === null) lines.push("🔒 전원 지급 완료 전 전체알림 미발송");
+    else {
+        lines.push("🔔 전체알림 방별 상태");
+        var labels = { PENDING: "대기", FAILED: "실패·재실행 가능", SENDING: "전송 여부 미확인", UNKNOWN: "전송 여부 미확인", SENT: "전송 완료" };
+        for (var n = 0; n < state.deliveries.length; n++) lines.push((n + 1) + ". " + state.deliveries[n].room + " · " + labels[state.deliveries[n].status]);
+        if (state.deliveries.some(function (d) { return d.status === "SENDING" || d.status === "UNKNOWN"; })) lines.push("방에서 실제 공지를 확인한 뒤", "/꽃집보상공지확정 방번호 1 (발송됨)", "/꽃집보상공지확정 방번호 2 (미발송·재시도 허용)");
+    }
+    lines.push("📋 조회: /꽃집보상현황", "↪️ 이미 지급한 계정은 재지급하지 않습니다.");
+    return lines.join("\n");
+}
+
+// MASTER 지급 진입에서만 원본을 읽고 보상·공지 단계별 저장을 확정하는 함수
+function runFlowerCompensationEntry(ctx, sender, msg, replier, data) {
+    var request = getFlowerCompensationRequest(msg);
+    if (!request) return false;
+    if (!isMasterIdentity(sender)) { replier.reply("⛔ MASTER 전용 보상 명령입니다."); return true; }
+    if (request.kind === "invalid") { replier.reply("/꽃집보상지급 또는 /꽃집보상현황\n전송 여부 미확인 방만: /꽃집보상공지확정 방번호 1(발송됨)·2(미발송)\n보상·공지 변경 없음"); return true; }
+    var config = GLOBAL_CONFIG.flowerCompensation, state = data[config.ledgerKey];
+    if (state !== undefined) requireFlowerCompensation(state);
+    if (request.kind === "status") { replier.reply(buildFlowerCompensationSummary(state)); return true; }
+    if (request.kind === "notice") {
+        if (!state) { replier.reply("아직 시작된 꽃집 보상 작업이 없습니다."); return true; }
+        try { confirmFlowerCompensationNotice(state, request.index, request.sent); }
+        catch (error) { replier.reply("❌ " + error.message); return true; }
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+        replier.reply(buildFlowerCompensationSummary(state)); return true;
+    }
+    if (state === undefined) {
+        var skills = loadJsonFile(petSkillDataPath); // 최초 기준 시점에 한 번만 장착·가방 원본 읽기
+        state = createFlowerCompensation(data, skills, Date.now(), function () { return String(java.util.UUID.randomUUID()); });
+        data[config.ledgerKey] = state;
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 기준 시점을 지급보다 먼저 영속화
+    }
+    if (state.rows.some(function (row) { return row.status !== "PAID"; })) {
+        applyFlowerCompensation(data, state, Date.now());
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 포인트·아이템·지급 결과를 한 원본으로 확정
+    }
+    if (prepareFlowerCompensationNotices(state, getNoticeTargetRooms(ctx))) {
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+    }
+    for (var i = 0; state.deliveries && i < state.deliveries.length; i++) {
+        var delivery = state.deliveries[i];
+        if (delivery.status !== "PENDING" && delivery.status !== "FAILED") continue;
+        delivery.status = "SENDING";
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 전송 전 기록해 재시작 시 자동 중복 공지 차단
+        try { delivery.status = noticeMsg(config.notice, [delivery.room]) === false ? "FAILED" : "SENT"; }
+        catch (sendError) { delivery.status = "UNKNOWN"; }
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 전송 실패가 확정 지급을 되돌리지 않게 분리
+    }
+    replier.reply(buildFlowerCompensationSummary(state));
+    return true;
+}
+
 
 // 펫 스킬 이름에서 불필요한 접두사나 이모지를 제거하여 정규화된 형태로 반환
 function normalizePetSkillName(skillName) {
