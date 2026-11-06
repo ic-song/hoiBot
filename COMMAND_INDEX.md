@@ -13,6 +13,18 @@ Status: VERIFIED
 - 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`는 `GLOBAL_CONFIG`와 저장 잠금 초기화 이후, 지급 복구·최초 회원 로드 이전에 실행한다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조한다.
 - `loadJsonFile`·`saveJsonFile`·DEV/PROD 경로 선택과 저장 실패 전파 방식은 유지한다.
 
+## /꽃집보상지급 · /꽃집보상현황 · /꽃집보상공지확정
+
+Status: VERIFIED
+
+- 파일: `main.js`. MASTER 전용 일회 보상. `getFlowerCompensationRequest`가 인수 없는 지급·현황 명령을 정확히 일치시키고, 공지확정은 `방번호 1|2` 전체 문법으로 판별한다. 추가 문구는 지급·공지 변경 없이 안내한다.
+- `runFlowerCompensationEntry`는 최초 회원 로드 직후 처리한다. 기존 배타 쓰기 잠금과 DEV/PROD 경로를 사용한다. 현황은 읽기만 한다.
+- 최초 지급 직전 `petSkillData`의 장착 여부와 가방 별칭 수량을 `inspectFlowerCompensationHoldings`로 읽는다. `createFlowerCompensation`이 회원의 공통 `serverRaidAccount.id`와 기준 수량을 고정한다. 장착은 계정당 50억+기존 소멸권1개, 가방은 개당50억, 중복 합산. 잠금·컬렉션·거래등록 수량은 제외한다. 스킬 회수·강제 해제·판매 변경 없음.
+- 원본: 환경별 `member.json` 루트의 `flowerBlacksmithCompensation20261106`. 고정 시점을 먼저 저장하고 `applyFlowerCompensation`의 포인트·가방·지급 기록을 같은 회원 원본 저장으로 확정한다. 기존 회원 분리 저장 계획은 이 루트 값을 보존한다. 실패 계정만 재처리하며 닉변은 공통 ID로 추적하고 탈퇴 후 새 계정에 대신 지급하지 않는다. 누락·손상된 펫스킬 로드 오류는 전파한다.
+- 전원 지급 성공 후 `prepareFlowerCompensationNotices`가 기존 `getNoticeTargetRooms`의 방 목록을 고정하고 `noticeMsg`로 공지한다. 지급 대상0명은 공지하지 않는다. 지급과 공지 저장 경계를 분리해 공지 실패로 확정 지급을 취소하지 않는다.
+- 방별 상태: PENDING/FAILED만 발송. 전송 직전 SENDING 저장, 결과는 SENT/FAILED/UNKNOWN 저장. SENDING/UNKNOWN은 자동 재전송하지 않는다. 실제 방을 확인한 뒤 `/꽃집보상공지확정 방번호 1`로 발송됨, `2`로 미발송을 기록하고 `/꽃집보상지급`으로 해당 방만 재시도한다. SENT는 미발송으로 되돌릴 수 없다.
+- 관련 helper: `requireFlowerCompensation`, `confirmFlowerCompensationNotice`, `buildFlowerCompensationSummary`. 새 파일·저널이나 별도 저장/로드 helper는 추가하지 않았다.
+
 ## 패스 관리 MASTER 권한
 
 Status: VERIFIED
