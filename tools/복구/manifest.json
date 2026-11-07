@@ -1,0 +1,195 @@
+{
+  "version": 1,
+  "targetBotVersion": "2.782",
+  "sourceSnapshotCommit": "19e1b774007ecff2c878c105d045346483658a8a",
+  "expected": [
+    {
+      "name": "member.json",
+      "exists": true,
+      "bytes": 1444872,
+      "sha256": "b929a00e20192df25e35dbc7f6b36f17c0304a5ea68aa0e955b70fa4d97354e6"
+    },
+    {
+      "name": "member_back.json",
+      "exists": true,
+      "bytes": 1444872,
+      "sha256": "328c88457548a3c6ebb6539edd7f10e6d65edf47e90318a3dcd539b39e46ce7c"
+    },
+    {
+      "name": "member_back2.json",
+      "exists": true,
+      "bytes": 1444872,
+      "sha256": "328c88457548a3c6ebb6539edd7f10e6d65edf47e90318a3dcd539b39e46ce7c",
+      "alternatives": [
+        {
+          "bytes": 1447422,
+          "sha256": "fb3d6e9bef9ade095c6a46b6e884784995075a1d1fafb899ee6849a015a236cb"
+        }
+      ]
+    },
+    {
+      "name": "guildData.json",
+      "exists": true,
+      "bytes": 872965,
+      "sha256": "cf385a1b9bfe11dff8f0747cab4757cc175c29fc44397767efe736a2404eb679"
+    },
+    {
+      "name": "guildData_back.json",
+      "exists": true,
+      "bytes": 872965,
+      "sha256": "458f78a9bef8df69d78509da23278bbc6cccbee3c9a7e69626d84048662254f4"
+    },
+    {
+      "name": "guildData_back2.json",
+      "exists": true,
+      "bytes": 872965,
+      "sha256": "c127b369f06653aade4e23f996187c4afe0d9b6ddce06e21826e2d5ba9bad3bb"
+    },
+    {
+      "name": "serverRaidData.json",
+      "exists": true,
+      "bytes": 6814780,
+      "sha256": "28f922c56ae936da67f863169caa86942e699f05ef834b9f451fb5c819c3baef"
+    },
+    {
+      "name": "serverRaidData_next.json",
+      "exists": true,
+      "bytes": 6814808,
+      "sha256": "639132f1a392be6d3cd16377f304b5cfcc33fbd03a6bbea22d407f3fecb06ab9"
+    },
+    {
+      "name": "serverRaidData_back.json",
+      "exists": true,
+      "bytes": 6814780,
+      "sha256": "28f922c56ae936da67f863169caa86942e699f05ef834b9f451fb5c819c3baef"
+    },
+    {
+      "name": "serverRaidData_back2.json",
+      "exists": true,
+      "bytes": 6814780,
+      "sha256": "28f922c56ae936da67f863169caa86942e699f05ef834b9f451fb5c819c3baef"
+    },
+    {
+      "name": "memberOperationLogs.json",
+      "exists": false
+    },
+    {
+      "name": "memberOperationLogs_next.json",
+      "exists": true,
+      "bytes": 171800,
+      "sha256": "f0a3bd1a488534d0ce62993f5e45c8c2b4976b83b7c6e4e7985a400f29344182"
+    },
+    {
+      "name": "memberOperationLogs_back.json",
+      "exists": true,
+      "bytes": 171800,
+      "sha256": "f0a3bd1a488534d0ce62993f5e45c8c2b4976b83b7c6e4e7985a400f29344182"
+    },
+    {
+      "name": "memberOperationLogs_back2.json",
+      "exists": true,
+      "bytes": 155168,
+      "sha256": "c77e6f769bfa6124b174a622cccfd38258dd18d216a3a338bc82bc95ff5cd3f2"
+    },
+    {
+      "name": "member.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 1444872,
+      "sha256": "b929a00e20192df25e35dbc7f6b36f17c0304a5ea68aa0e955b70fa4d97354e6"
+    },
+    {
+      "name": "member_back.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 1444872,
+      "sha256": "328c88457548a3c6ebb6539edd7f10e6d65edf47e90318a3dcd539b39e46ce7c"
+    },
+    {
+      "name": "member_back2.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 1447422,
+      "sha256": "fb3d6e9bef9ade095c6a46b6e884784995075a1d1fafb899ee6849a015a236cb"
+    },
+    {
+      "name": "guildData.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 872965,
+      "sha256": "cf385a1b9bfe11dff8f0747cab4757cc175c29fc44397767efe736a2404eb679"
+    },
+    {
+      "name": "guildData_back.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 872965,
+      "sha256": "458f78a9bef8df69d78509da23278bbc6cccbee3c9a7e69626d84048662254f4"
+    },
+    {
+      "name": "guildData_back2.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 872965,
+      "sha256": "c127b369f06653aade4e23f996187c4afe0d9b6ddce06e21826e2d5ba9bad3bb"
+    },
+    {
+      "name": "serverRaidData.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 6814780,
+      "sha256": "28f922c56ae936da67f863169caa86942e699f05ef834b9f451fb5c819c3baef"
+    },
+    {
+      "name": "serverRaidData_next.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 6814808,
+      "sha256": "639132f1a392be6d3cd16377f304b5cfcc33fbd03a6bbea22d407f3fecb06ab9"
+    },
+    {
+      "name": "serverRaidData_back.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 6814780,
+      "sha256": "28f922c56ae936da67f863169caa86942e699f05ef834b9f451fb5c819c3baef"
+    },
+    {
+      "name": "serverRaidData_back2.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 6814780,
+      "sha256": "28f922c56ae936da67f863169caa86942e699f05ef834b9f451fb5c819c3baef"
+    },
+    {
+      "name": "memberOperationLogs.json.guildwar-rollback",
+      "exists": false
+    },
+    {
+      "name": "memberOperationLogs_next.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 171800,
+      "sha256": "f0a3bd1a488534d0ce62993f5e45c8c2b4976b83b7c6e4e7985a400f29344182"
+    },
+    {
+      "name": "memberOperationLogs_back.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 171800,
+      "sha256": "f0a3bd1a488534d0ce62993f5e45c8c2b4976b83b7c6e4e7985a400f29344182"
+    },
+    {
+      "name": "memberOperationLogs_back2.json.guildwar-rollback",
+      "exists": true,
+      "bytes": 155168,
+      "sha256": "c77e6f769bfa6124b174a622cccfd38258dd18d216a3a338bc82bc95ff5cd3f2"
+    },
+    {
+      "name": "guildWarPending.json",
+      "exists": true,
+      "bytes": 1876,
+      "sha256": "a1c5a050cee317b262e8d1cfc674a33528baa43820e79b1eb9115d769b5e5e5a"
+    }
+  ],
+  "apply": [
+    {
+      "name": "member.json.guildwar-rollback",
+      "bytes": 1444872,
+      "sha256": "c09ec2ca47d13997b79089a2b4160b633dc97b123dbf4f1640b28945fd69ff74"
+    },
+    {
+      "name": "guildWarPending.json",
+      "bytes": 1876,
+      "sha256": "9153ead919dd90f683e36fcaf2a4a06d3f9fd98678596058b6198c021f4ccc27"
+    }
+  ]
+}
