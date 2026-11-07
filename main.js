@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.781"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.782"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -35054,15 +35054,18 @@ function rollbackDataSaveTransaction() {
     transaction.rollbackAttempted = true;
     transaction.failed = true;
     transaction.rollingBack = true;
-    var rollbackErrors = [];
+    var rollbackErrors = [], createdEntries = []; // 기존 원본 복원이 모두 끝난 뒤에만 신규 파일 삭제
+    var rollbackOrder = transaction.order.slice(), memberPath = resolveActiveDataPath(filePath);
+    var memberIndex = rollbackOrder.indexOf(memberPath);
+    // 회원 복원이 실패하면 현재 회원이 참조하는 슬롯·백업도 그대로 보존한다.
+    if (memberIndex !== -1) { rollbackOrder.splice(memberIndex, 1); rollbackOrder.push(memberPath); }
     try {
-        for (var i = transaction.order.length - 1; i >= 0; i--) {
-            var entry = transaction.entries[transaction.order[i]];
+        for (var i = rollbackOrder.length - 1; i >= 0; i--) {
+            var entry = transaction.entries[rollbackOrder[i]];
             if (!entry || !entry.saved) continue;
             try {
                 if (entry.created === true) {
-                    var createdFile = new java.io.File(entry.path);
-                    if (createdFile.exists() && !createdFile.delete()) throw new Error("새 분리 파일 롤백 삭제 실패: " + entry.path);
+                    createdEntries.push(entry);
                 } else if (entry.snapshotPath) {
                     writeVerifiedJsonFile(entry.path, FileStream.read(entry.snapshotPath, "utf-8"), true);
                 } else if (entry.snapshotText !== null) {
@@ -35073,6 +35076,17 @@ function rollbackDataSaveTransaction() {
                 }
             } catch (rollbackError) {
                 rollbackErrors.push(entry.path + ": " + rollbackError.toString());
+                if (entry.path === memberPath) break;
+            }
+        }
+        if (rollbackErrors.length === 0) {
+            for (var createdIndex = 0; createdIndex < createdEntries.length; createdIndex++) {
+                try {
+                    var createdFile = new java.io.File(createdEntries[createdIndex].path);
+                    if (createdFile.exists() && !createdFile.delete()) throw new Error("새 분리 파일 롤백 삭제 실패: " + createdEntries[createdIndex].path);
+                } catch (createdRollbackError) {
+                    rollbackErrors.push(createdEntries[createdIndex].path + ": " + createdRollbackError.toString());
+                }
             }
         }
     } finally {
@@ -68776,6 +68790,51 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
     return "✅ 길드전쟁 " + (request.kind === "attackFormation" ? "공격" : request.kind === "defenseFormation" ? "방어" : "정찰병") + " 편성 완료!\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 우선\n⚠️ 편성 변경으로 사용권 복구 불가";
 }
 
+// 복구 파일의 회원·분리 저장 참조만 남겨 큰 본문을 메모리에 함께 보관하지 않는 함수
+function getGuildWarRecoveryReference(name, value) {
+    if (/^member(?:_back2?)?\.json$/.test(name)) return getMemberSplitMarker(value);
+    if (/^(?:serverRaidData|memberOperationLogs)(?:_next|_back2?)?\.json$/.test(name)) return { version: value.version, id: value.id, revision: value.revision };
+    return null;
+}
+
+// 분리 파일은 작은 헤더만 읽어 복구점 준비 시 큰 레이드 본문의 중복 파싱을 피하는 함수
+function readGuildWarRecoveryReference(name, path) {
+    if (/^member(?:_back2?)?\.json$/.test(name)) return getGuildWarRecoveryReference(name, parseJsonContent(FileStream.read(path, "utf-8"), path));
+    if (!/^(?:serverRaidData|memberOperationLogs)(?:_next|_back2?)?\.json$/.test(name)) return null;
+    var reader = new java.io.InputStreamReader(new java.io.FileInputStream(path), "UTF-8");
+    try {
+        var buffer = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, GLOBAL_CONFIG.storage.pendingHeaderChars);
+        var count = reader.read(buffer), prefix = count > 0 ? String(new java.lang.String(buffer, 0, count)).replace(/^\uFEFF/, "") : "";
+        var header = prefix.match(/^\s*\{\s*"version"\s*:\s*(\d+)\s*,\s*"id"\s*:\s*("(?:[^"\\]|\\.)*")\s*,\s*"revision"\s*:\s*(\d+)\s*,\s*"data"\s*:/);
+        if (header) return JSON.parse('{"version":' + header[1] + ',"id":' + header[2] + ',"revision":' + header[3] + '}');
+    } finally { reader.close(); }
+    return getGuildWarRecoveryReference(name, parseManagedJsonContent(FileStream.read(path, "utf-8"), path));
+}
+
+// 현재 회원과 두 세대 백업이 참조하는 레이드·로그가 복구 범위 안에 있는지 검증하는 함수
+function validateGuildWarRecoveryReferences(references) {
+    for (var generation = 0; generation <= 2; generation++) {
+        var suffix = generation === 0 ? "" : generation === 1 ? "_back" : "_back2";
+        var marker = references["member" + suffix + ".json"];
+        if (!marker || marker.phase !== "COMPLETE") continue;
+        var kinds = ["raid", "logs"];
+        for (var kindIndex = 0; kindIndex < kinds.length; kindIndex++) {
+            var kind = kinds[kindIndex], base = kind === "raid" ? "serverRaidData" : "memberOperationLogs";
+            var revision = kind === "raid" ? marker.raidRevision : marker.logsRevision;
+            var name = base + (generation ? suffix : revision % 2 ? "_next" : "") + ".json";
+            var store = references[name], matches = !!store && store.version === marker.version && store.id === marker.id && store.revision === revision;
+            // 현재 슬롯이 존재할 때만 일반 로더와 같은 두 세대 백업 대체를 허용한다.
+            if (!generation && store && !matches) {
+                for (var backupGeneration = 1; backupGeneration <= 2; backupGeneration++) {
+                    var backup = references[base + (backupGeneration === 1 ? "_back" : "_back2") + ".json"];
+                    if (backup && backup.version === marker.version && backup.id === marker.id && backup.revision === revision) matches = true;
+                }
+            }
+            if (!matches) throw new Error("길드전쟁 복구 회원·분리 파일 참조 불일치: member" + suffix + ".json -> " + name + " (" + revision + ")");
+        }
+    }
+}
+
 // 회원·길드 원본의 고정 크기 복구 사본과 작은 저널을 준비하는 함수
 function prepareGuildWarPublication(memberChanged) {
     memberChanged = memberChanged !== false;
@@ -68790,6 +68849,12 @@ function prepareGuildWarPublication(memberChanged) {
     }
     if (new java.io.File(pendingPath).exists()) { var previous = parseJsonContent(FileStream.read(pendingPath, "utf-8"), pendingPath); if (!previous || previous.version !== 1 || previous.pending !== null) throw new Error("길드전쟁 복구 대기"); }
     else if (new java.io.File(pendingPath + ".rollback").exists()) throw new Error("길드전쟁 복구 대기");
+    var references = {};
+    for (var referenceIndex = 0; referenceIndex < names.length; referenceIndex++) {
+        var referencePath = resolveActiveDataPath(DATA_ROOT_PATH + names[referenceIndex]);
+        if (new java.io.File(referencePath).exists()) references[names[referenceIndex]] = readGuildWarRecoveryReference(names[referenceIndex], referencePath);
+    }
+    if (memberChanged) validateGuildWarRecoveryReferences(references);
     for (var i = 0; i < names.length; i++) {
         var path = resolveActiveDataPath(DATA_ROOT_PATH + names[i]), exists = new java.io.File(path).exists(), row = { name: names[i], exists: exists };
         if (!exists && (names[i] === "member.json" || names[i] === "guildData.json")) throw new Error("길드전쟁 필수 원본 누락");
@@ -68816,6 +68881,7 @@ function recoverGuildWarPublication() {
     }
     var names = journal.memberChanged === true ? config.recoveryNames : ["guildData.json", "guildData_back.json", "guildData_back2.json"];
     if (typeof journal.memberChanged !== "boolean" || !Array.isArray(journal.pending) || journal.pending.length !== names.length) throw new Error("길드전쟁 복구 범위 오류");
+    var references = {};
     for (var i = 0; i < journal.pending.length; i++) {
         var row = journal.pending[i];
         if (!row || row.name !== names[i] || typeof row.exists !== "boolean") throw new Error("길드전쟁 복구 경로 오류");
@@ -68825,8 +68891,10 @@ function recoverGuildWarPublication() {
             if (check.bytes !== row.bytes || check.hash !== row.hash) throw new Error("길드전쟁 복구 사본 손상");
             var value = parseManagedJsonContent(FileStream.read(snapshot, "utf-8"), resolveActiveDataPath(DATA_ROOT_PATH + row.name));
             if (row.name === "guildData.json" && value.war24) requireGuildWarState(value.war24);
+            references[row.name] = getGuildWarRecoveryReference(row.name, value);
         }
     }
+    if (journal.memberChanged) validateGuildWarRecoveryReferences(references);
     for (var r = journal.pending.length - 1; r >= 0; r--) {
         var saved = journal.pending[r], path = resolveActiveDataPath(DATA_ROOT_PATH + saved.name);
         if (saved.exists) writeVerifiedJsonFile(path, FileStream.read(path + config.snapshotSuffix, "utf-8"), true);
