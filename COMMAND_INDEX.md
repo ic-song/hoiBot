@@ -8696,7 +8696,8 @@ Status: VERIFIED
 
 ## Save and recovery
 - prepareGuildWarPublication → publishGuildWar → cleanupGuildWarPublication의 기존 저널·고정 사본을 재사용한다. 길드만 변경하면 원본/백업3개, 회원 변경은 회원/길드/레이드/로그14개 사본을 보존한다. helper 내부 load/save는 새로 추가하지 않는다.
-- recoverGuildWarPublication은 모든 사본의 해시/JSON을 먼저 검증하고 이전 원본으로 복구한다. 손상·누락·다른 콘텐츠 게시 충돌을 숨기지 않는다. 회원 분리·기존 백업·DEV/PROD 경로는 그대로다.
+- prepareGuildWarPublication과 recoverGuildWarPublication은 getGuildWarRecoveryReference → validateGuildWarRecoveryReferences로 현재 회원 및 두 세대 백업의 레이드·로그 식별자/버전을 확인한다. 준비 단계는 readGuildWarRecoveryReference의 작은 분리 헤더(비표준 형식은 전체 파싱)로 사본 생성 전에 검사하고, 재생 단계는 전체 해시/JSON 검증 후 첫 원본 교체 전에 불완전한 참조를 차단한다. 현재 슬롯이 존재하는 경우에만 일반 로더와 같은 정확한 버전의 백업 대체를 허용한다. 손상·누락·다른 콘텐츠 게시 충돌을 숨기지 않으며 DEV/PROD 경로는 유지한다.
+- rollbackDataSaveTransaction은 회원 원문을 먼저 복원하고 실패하면 나머지 롤백을 중단한다. 기존 파일 복원이 모두 성공한 뒤에만 신규 파일을 삭제하므로, 회원 복구 실패 시 현재 참조 중인 신규/덮어쓴 분리 슬롯을 보존한다.
 - flushGuildWarNotices는 확정 후 전송하고 첫 실패는 다음 예약에서1회만 추가 시도한다. 전송 재시도는 게임 정산을 재실행하지 않는다. scheduleGuildWarWork는 다음 단계 시각과 복구/미전송 알림만 예약한다.
 
 ## Linked UI and legacy pause
