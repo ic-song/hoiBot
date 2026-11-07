@@ -163,6 +163,7 @@ Status: VERIFIED
 - `/교육완료 아이디 챕터번호`: 마지막 정수 1~12와 그 앞의 전체 닉네임을 분리. 다음 챕터만 허용하며 재완료·순서 건너뛰기·추가 안내 문구는 지급하지 않는다. 계정당 총 12개 챕터, 챕터당 `다이아상자💎(소)` 1개, 수료 추가 보상 없음. 기존 10챕터 기록은 10/12로 유지하고 11·12만 추가 지급한다.
 - `/교육실적`, `/교육실적 GM아이디`, `/교육실적 전체` 뒤 선택적 `YYYY-MM`: 기본은 현재 KST 월, 지정 월은 최초 정상 완료 시각 기준으로 집계한다. `/교육실적전체 [YYYY-MM]`은 전체 조회 별칭이다. 담당 GM 교대·닉변에도 내부 계정 ID를 유지한다. 개수 내림차순·동률 1등/1등/3등·닉네임 정렬, 본문 최대 3명과 전체 순위/`👤` GM별 기록을 `allsee`로 표시한다. 각 기록은 대상자·챕터·KST `YYYY.MM.DD HH:mm:ss`를 한 줄로 출력한다. 시각 기록은 최신순, 날짜만 있는 기록은 시각을 만들지 않고 같은 날짜 안에서 원본 순서를 유지한다. 인원·수료 인원·금액은 표시하지 않는다. 미래·빈 달·형식 오류·없는 계정·예약어 충돌은 각각 안내하며 `/교육실적 초기화`는 과거 월 조회를 안내한다.
 - `/교육명령어`: 독립된 전체보기 명령 안내. 상단/상세의 지난달 예시는 KST 직전 월로 자동 변경한다. `/교육`에 새 명령 목록을 붙이지 않는다. 조회는 무저장이다.
+- 교육 2장은 `/레벨`·`/스탯` 조회와 힘=캐슬·집중=레이드·교감=실제 펫강화 설명을 추가한다. 8장은 평당 캐슬·레이드 각각75,000 및 `/가구정보` 확인 안내를 추가한다. 실제 투자·확장·구매는 교육 조건이 아니며 기존 수료·보상 처리와 나머지10챕터는 유지한다. 두 선행 기능과 해당 교육 문구를 함께 적용한다.
 - 실제 게임 명령·권한·소모 조건은 그대로다. 강화·구매·가입·거래를 강제하거나 자동으로 교육 완료하지 않는다. 교육 초기화·별도 타이머 없음.
 
 ## Helpers and Save Flow
@@ -2266,6 +2267,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `getPetHomeFurnitureCharm`, `getPetHomeVillageState`, `getPetHomeVillageLevelLimit`
+- `getPetHomeFloorCharm`: 현재 평수 × `GLOBAL_CONFIG.petHomeFloor.perMode`(각75,000). 기존 정수 문자열 평수도 원본 변경 없이 읽는다.
 - `buildPetHomeFurnitureInfoMessage`, `buildPetHomeFurnitureSkillMessage`, `getPlacedFurnitureList`
 
 ## Data Usage and Save Flow
@@ -2274,6 +2276,7 @@ Status: VERIFIED
 - No argument queries self; a nickname including spaces queries that owner. No Admin/Master restriction. Only self views show executable bag/registration guides.
 - Final charm/village above `allsee`; explanation and active skills precede the complete equipped list at the very bottom.
 - The final total, castle charm and raid charm each occupy a separate line.
+- 현재 전체 평수의 기본 추가분을 `castle`·`raid`·`total`에 포함하고, 상단 각 모드 아래 평수 보너스와 기존 `allsee` 아래 계산식을 표시한다. 평수분은 인테리어 장인·빌리지 %에서 제외하고 이후 레벨·스탯·퀘스트·큐브 보정은 기존 모드 계산을 따른다. `/펫홈` 화면 구성과 별채 규칙은 유지한다.
 - Castle/raid calculators in both scripts and Main diagnostics add the same scoped extra once before existing overall buffs. `/종합순위` reflects it; `/가구순위` retains individual base values.
 - Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds 10 percentage points to the grand+royal+arcana percent (10/20/30 percentage points per level), including level-zero homes; apply that combined percent once and floor per mode. Unequipped ownership gives no effect. The S-grade detail shows its existing actual 0.3% probability. Furniture/village totals and calculation UI include the skill in the combined buff without a separate additional-charm line.
 
@@ -8158,6 +8161,22 @@ Status: VERIFIED
 
 ---
 
+# /스탯 · /스탯포인트 · /집짓기 · 집뚝딱 · 생각해본다
+
+Status: VERIFIED
+
+- 파일: `main.js`, `Info.js`(공통 평수·스탯 계산 및 레벨 표시).
+- 설정: `GLOBAL_CONFIG.adventureStats`의 3계열 각100단계 이름·보상, 12호칭·11특별구간 대사. 힘·집중은 0.01%p 정수 단위의 개별 단계 보상, 교감은 실제 강화 정수다. 완료한 단계별 보상만 합산한다. Info는 계산에 필요한 같은 보상표만 사용한다.
+- `getAdventureStatRequest`: `/스탯`, `/스탯 힘|집중|교감`, 뒤에 양의 정수 개수, `/스탯포인트 횟수`의 전체 문법을 검증한다. 접미 설명·소수·음수·0·안전 범위 초과는 차감 없이 안내한다.
+- `runAdventureStatsEntry`: 기존 개인톡·정지·대전 보호 뒤 진입한다. 조회는 무저장. 투자 요청은 메모리 확인만 만들고, 숫자1에서 같은 환경·방·계정 ID·단계를 재검증한다. 숫자2 취소, 다른 입력·5분 경과·재컴파일 시 대기 소멸. 다른 초기화·데이터정리·드라마 숫자 확인과 소유권을 분리한다. 실제 투자·아이템 사용은 기존 출석 판정을 유지한다.
+- 회원 원본: `member.statPoints` 잔고와 `member.adventureStats.strength/focus/bond` 각각 `[완료 단계, 현재 투입량]` 총6정수. 미참여자는 0으로 읽고 조회 시 필드를 생성하지 않는다. 기존 소스에 잔고 필드가 없어 새 잔고를 사용하며 과거 레벨 소급 지급은 하지 않는다. 새 레벨업당1개는 기존 `processAdventureLevelUps` 저장 흐름에 합류한다.
+- 한 단계 비용은 단계 번호와 같고 각 계열 총5,050개다. 부분 투자에는 보상이 없으며 남은 필요량 초과는 자동 이월하지 않는다. 힘·집중은 `getAdventureStatBonus`의 완료 단계 합계를 기존 캐슬·레이드 %에 가산한다. 교감 완료는 `pet.upgrade`에 해당 단계 수량을 한 번 더한다(전체100단계2,290강). 기존 치명타확률300강 상한·이후 강화배율 계산은 유지하며 기본 강화 수치에 새 상한을 만들지 않는다.
+- 메인 `buildAdventureStatScreen`은 현재 단계만, 개별 화면은 현재·다음 및 전체보기100단계 전부를 표시한다. `buildAdventureStatConfirmation`·`buildAdventureStatCompletion`은 기획 원안의 줄바꿈·구분선·호칭·구간 대사를 사용한다. 짧은 확인·취소·실패·완료는 전체보기 없음. `/레벨`은 요약을 상단에, 퀘스트와 합산 성장 보너스를 기존 전체보기 아래에 표시한다.
+- `/집짓기`는 기존 재료·선택 메시지에 `buildPetHomeFloorExpansion`의 예상 정보만 추가한다. 제목 뒤 `allsee`1회, 40→41평 각3,075,000(+75,000). 0평은0, 현재 최고300평은 각22,500,000. 재료 부족·최고 단계 재조회 시 과거 대기를 취소한다.
+- `집뚝딱`(`/집뚝딱` 별칭 유지)은 `isPetHomeUpgradeCurrent`로 대기 당시 계정 ID·평수·현재 다음 단계·집 이름·기존 확장 보상·재료를 대조하고 보유 재료도 재검사한다. 조건 변경은 무차감 취소. `petHomeUpgradeSessions`는 환경·계정별 메모리 확인이므로 DEV 확정·보류가 운영 대기를 소비하지 않는다. 성공은 현재 다음 단계로1회, 기존 집·펫 매력 보상과 퀘스트 진행을 보존한다. `생각해본다`(`/생각해본다` 별칭)는 해당 환경의 대기만 취소한다.
+- 다파일 확정: `publishAdventureMutation` → 환경별 `adventureGrowthPending.json`에 최종 회원·펫·집(확장 시) 및 변경된 회원 분리 슬롯 원문 확보 → `recoverAdventurePublication` 게시 → 완료 마커. 교감 완료와 집 확장은 같은 확정 결과로 재게시하고 증분을 재적용하지 않는다. 단일 회원의 부분 투자·힘/집중·아이템은 기존 `saveJsonFile`로 한 번 저장한다.
+- 부팅·명령·자동 작업에서 회원 로드 전 복구한다. `assertAdventurePublicationReady`가 미완료 상태의 회원·펫·집 로드/저장을 차단하며 Info도 부분 조회를 보류한다. 게시 중 만든 분리 백업은 확정 원문 기준으로 유지해 명령 오류 롤백으로 백업 짝이 깨지지 않게 한다. 손상된 원본·복구 기록을 빈 데이터로 대체하지 않는다. 정상 저장 후에만 성공을 알리고 응답 실패로 확정 결과를 되돌리지 않는다.
+
 # /레벨 · /레벨순위 · 레벨 리뉴얼 전환
 
 Status: VERIFIED
@@ -8196,13 +8215,13 @@ Status: VERIFIED
 
 ## Save Flow
 
-- 일반 채팅을 제외한 정상 경험치 지급은 기본 EXP에 현재 티어의 고정 EXP를 한 번 더한 뒤 가호를 적용하고, 최종 EXP를 한 번만 누적한다. 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트를 지급한다.
+- 일반 채팅을 제외한 정상 경험치 지급은 기본 EXP에 현재 티어의 고정 EXP를 한 번 더한 뒤 가호를 적용하고, 최종 EXP를 한 번만 누적한다. 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트와 스탯 포인트1개를 기존 저장에 함께 반영한다.
 - 일반 채팅은 기본 1 EXP에만 가호를 적용하고 티어 보너스를 지급하지 않는다. 출석·캐슬대전·미니펫대전·일일/주간/프리미엄 퀘스트·펫탐험은 기본+티어 합계의 최대 2배를 가호 추가 EXP로 지급해 총 3배까지 적용한다. 가호는 실제 추가 EXP와 1:1로 차감하고 부족하면 남은 수량만큼만 부분 적용한다. 소진 안내에는 후원 링크를 표시하지 않는다.
 - 출석 후 채팅으로 실제 지급한 기본·가호 EXP는 계정별 한국시간 하루 1,000 EXP까지만 `member.chatExperienceDaily`에 누적한다. 경계에서는 남은 EXP만 지급하고 그에 해당하는 가호만 차감하며, 한도 도달 안내는 하루 한 번 출력한다. 이전 500 EXP 한도에서 저장된 알림 상태는 현재 누적량이 1,000 미만이면 다음 채팅에서 해제해 새 한도 도달 알림을 허용한다. 출석과 다른 활동의 EXP는 이 누적값에 포함하지 않는다.
 - `/리셋`의 `resetAttendance`는 한국시간 날짜를 한 번 계산하고, 정상적인 `YYYYMMDD` 달력 날짜이며 오늘보다 이전인 `chatExperienceDaily`만 제거한다. 오늘·미래·잘못된 날짜·날짜가 없는 기록은 유지한다. 같은 날 반복 리셋·자동 재출석 후에도 오늘 집계·한도 도달 안내 상태는 유지하며, 누적 EXP·레벨·가호는 이 정리로 바꾸지 않는다. 헬퍼에 파일 IO를 추가하지 않고 기존 `/리셋`의 `saveJsonFile(data, filePath)`로 함께 저장한다.
 - 레벨업 알림 전 `member.json`을 저장한다.
-- 일반 레벨업 알림은 다음 10레벨 단위 승급까지 남은 레벨을 표시하고, 상세에서는 기본·승급·대승급 증가분을 구분한다.
-- 레벨업 알림은 한 번에 여러 레벨과 승급을 통과해도 모든 처리가 끝난 실제 현재 레벨과 칭호를 상단에 표시한다. 현재 레벨과 칭호 사이에는 빈 줄을 두고, `📋 이번 레벨업 상세` 제목까지 기본 화면에 표시한 뒤 상세 행부터 `allsee`로 접는다.
+- 일반 레벨업 한 단계는 전후 레벨·현재 칭호·보상·스탯 포인트·다음 승급 거리를 표시하고 상세·전체보기를 생략한다. 승급·대승급은 가장 높은 알림1건으로 합산 보상을 보여주고 `📋 이번 레벨업 상세` 뒤에서 기본 성장과 승급 추가분만 구분한다.
+- 다중 레벨업은 전후 레벨·실제 최종 칭호·합산 포인트/스탯 포인트를 상단에1회 표시한다. 전체보기 아래는 각 레벨 기본 성장과 통과한 승급 구간의 산출 근거만 표시하며 상단 합계를 반복하지 않는다. 기존 다른 방 대승급 전체 알림은 유지하고 발생 방 중복을 제외한다.
 - `/레벨`은 채크랭크, 현재 칭호와 전체 승급 차수, 레벨·게이지·EXP와 소수 셋째 자리 진행률, 가호 수량, 캐슬·레이드 보너스, 다음 승급과 대승급까지 남은 레벨을 한 화면에 표시한다.
 - `/레벨`의 캐슬·레이드 누적 보너스는 소수 셋째 자리에서 반올림해 둘째 자리까지 보존하고, 끝의 불필요한 0은 표시하지 않는다. 예: `1.20% → 1.2%`, `1.85% → 1.85%`.
 - `/레벨수정 [아이디] [레벨]`은 `호이 남`만 실행할 수 있다. 대상의 레벨만 정확히 변경하고 기존 EXP·티어 경험치 잔여값을 유지한 채 저장을 재검증하며, 레벨·칭호·전체/일반/대승급·필요 EXP·캐슬/레이드 보너스의 전후 값과 상승·하락 수치를 표시한다.

@@ -8,6 +8,46 @@ const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
     storage: { pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
+    // Main과 같은 완료 단계 보상: 힘·집중은 0.01%p 단위, 교감은 실제 강화 정수다.
+    adventureStats: {
+        "maxStage": 100,
+        "confirmationTimeoutMs": 300000,
+        "maxSafe": 9007199254740991,
+        "itemName": "모험가 스탯포인트🆙(/스탯포인트 횟수)",
+        "tracks": [
+            {
+                "key": "strength",
+                "name": "힘",
+                "emoji": "💪",
+                "effect": "캐슬 보너스 증가",
+                "rewardEmoji": "⚔️",
+                "rewardName": "캐슬 보너스"
+            },
+            {
+                "key": "focus",
+                "name": "집중",
+                "emoji": "🎯",
+                "effect": "레이드 보너스 증가",
+                "rewardEmoji": "👾",
+                "rewardName": "레이드 보너스"
+            },
+            {
+                "key": "bond",
+                "name": "교감",
+                "emoji": "🐾",
+                "effect": "실제 펫강화 증가",
+                "rewardEmoji": "⭐",
+                "rewardName": "펫강화"
+            }
+        ],
+        "rewards": {
+            "strength": [60, 120, 230, 340, 450, 560, 670, 780, 890, 1100, 1150, 1200, 1250, 1300, 1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750, 1800, 1850, 1900, 1950, 2000, 2050, 2100, 2110, 2120, 2130, 2140, 2150, 2160, 2170, 2180, 2190, 2200, 2210, 2220, 2230, 2240, 2250, 2260, 2270, 2280, 2290, 2300, 2310, 2320, 2330, 2340, 2350, 2360, 2370, 2380, 2390, 2400, 2410, 2420, 2430, 2440, 2450, 2460, 2470, 2480, 2490, 2500, 2510, 2520, 2530, 2540, 2550, 2560, 2570, 2580, 2590, 2600, 2610, 2620, 2630, 2640, 2650, 2660, 2670, 2680, 2690, 2700, 2710, 2720, 2730, 2740, 2750, 2760, 2770, 2780, 2790, 2800],
+            "focus": [90, 180, 345, 510, 675, 840, 1005, 1170, 1335, 1650, 1725, 1800, 1875, 1950, 2025, 2100, 2175, 2250, 2325, 2400, 2475, 2550, 2625, 2700, 2775, 2850, 2925, 3000, 3075, 3150, 3165, 3180, 3195, 3210, 3225, 3240, 3255, 3270, 3285, 3300, 3315, 3330, 3345, 3360, 3375, 3390, 3405, 3420, 3435, 3450, 3465, 3480, 3495, 3510, 3525, 3540, 3555, 3570, 3585, 3600, 3615, 3630, 3645, 3660, 3675, 3690, 3705, 3720, 3735, 3750, 3765, 3780, 3795, 3810, 3825, 3840, 3855, 3870, 3885, 3900, 3915, 3930, 3945, 3960, 3975, 3990, 4005, 4020, 4035, 4050, 4065, 4080, 4095, 4110, 4125, 4140, 4155, 4170, 4185, 4200],
+            "bond": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 25, 25, 25, 25, 25, 26, 26, 26, 26, 26, 27, 27, 27, 27, 27, 28, 28, 28, 28, 28, 29, 29, 29, 29, 29, 30, 30, 30, 30, 30, 31, 31, 31, 31, 31, 32, 32, 32, 32, 32, 33, 33, 33, 33, 33, 34, 34, 34, 34, 34]
+        }
+    },
+    adventurePublication: { pendingName: "adventureGrowthPending.json" },
+    petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     howolDrama: { pendingName: "howolDramaPending.json" },
     halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
@@ -362,7 +402,45 @@ function applyInfoPercentWithExactFloor(value, percent) {
 	return baseValue + wholeUnits * thousandthPercent + Math.floor(remainder * thousandthPercent / 100000);
 }
 
-// Info에서 /레벨 출력 메시지를 만드는 함수
+// 저장하지 않고 기존 잔고와 세 계열의 완료·투입 정수 여섯 개를 읽는 함수
+function getAdventureStatState(member) {
+    var config = GLOBAL_CONFIG.adventureStats, state = { points: member && member.statPoints === undefined ? 0 : member && member.statPoints };
+    if (typeof state.points !== "number" || !isFinite(state.points) || state.points < 0 || Math.floor(state.points) !== state.points || state.points > config.maxSafe) throw new Error("스탯 포인트 잔고 확인 필요");
+    var stored = member.adventureStats;
+    if (stored !== undefined && (!stored || typeof stored !== "object" || Array.isArray(stored))) throw new Error("스탯트리 원본 확인 필요");
+    for (var i = 0; i < config.tracks.length; i++) {
+        var key = config.tracks[i].key, pair = stored === undefined ? [0, 0] : stored[key]; // 완료 단계·현재 단계 투입량
+        if (!Array.isArray(pair) || pair.length !== 2 || typeof pair[0] !== "number" || typeof pair[1] !== "number" || Math.floor(pair[0]) !== pair[0] || Math.floor(pair[1]) !== pair[1] || pair[0] < 0 || pair[0] > config.maxStage || pair[1] < 0 || pair[1] > pair[0] || pair[0] === config.maxStage && pair[1] !== 0) throw new Error("스탯트리 진행 기록 확인 필요");
+        state[key] = pair.slice();
+    }
+    return state;
+}
+
+// 완료한 단계의 보상만 합산하며 조회로 실제 보상을 변경하지 않는 함수
+function getAdventureStatBonus(member, key) {
+    var state = getAdventureStatState(member), rewards = GLOBAL_CONFIG.adventureStats.rewards[key], total = 0;
+    if (!rewards || !state[key]) throw new Error("스탯 이름 확인 필요");
+    for (var i = 0; i < state[key][0]; i++) total += rewards[i];
+    return key === "bond" ? total : total / 100;
+}
+
+// 메인·레벨 화면의 세 계열 현재 진행도를 같은 기준으로 표시하는 함수
+function buildAdventureStatProgress(member) {
+    var state = getAdventureStatState(member), tracks = GLOBAL_CONFIG.adventureStats.tracks, parts = [];
+    for (var i = 0; i < tracks.length; i++) {
+        var pair = state[tracks[i].key];
+        parts.push(tracks[i].emoji + " " + tracks[i].name + "(" + (pair[0] === GLOBAL_CONFIG.adventureStats.maxStage ? pair[0] : pair[1]) + "/" + (pair[0] === GLOBAL_CONFIG.adventureStats.maxStage ? pair[0] : pair[0] + 1) + ")");
+    }
+    return parts.join(" ");
+}
+
+// 포인트 잔고와 스탯트리 링크를 기존 레벨 화면에 삽입하는 함수
+function buildAdventureStatLevelSummary(member) {
+    var points = getAdventureStatState(member).points;
+    return "🌳 모험가 스탯트리\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(points) + "개\n" + buildAdventureStatProgress(member) + "\n" + (points ? "✨ 투자 가능한 스탯 포인트가 있습니다!\n" : "") + "👉 스탯트리 정보 /스탯\n\n";
+}
+
+// Info에서 기존 레벨 정보에 스탯 요약과 누적 성장 보너스를 표시하는 함수
 function buildInfoLevelMessage(data, petData, guildData, user) {
 	var member = data.member[user];
 	var quest = member.adventureQuest && typeof member.adventureQuest === "object" ? member.adventureQuest : null;
@@ -394,19 +472,21 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		"🌟 Lv." + numberWithCommas(level) + " [" + gauge + "]\n" +
 		"📊 EXP: " + formatInfoAdventureExperience(exp) + " / " + formatInfoAdventureExperience(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
 		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n\n" +
+		buildAdventureStatLevelSummary(member) +
 		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
 		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음\n" +
 		"━━━━━━━━━━━━\n" +
+		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
 		"🧭 모험가 퀘스트 · " + questCompleted + "/100단계 완료\n" +
 		questStatus + "\n\n" +
 		"👉 진행 안내 /모험가퀘스트\n" +
 		"👉 전체 기록 /퀘스트기록\n" +
 		"👉 타이틀 장착 /퀘스트타이틀\n" +
 		"━━━━━━━━━━━━\n" +
-		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
-		"🎒 모험가 레벨 보너스\n" +
-		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
-		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
+		"🎒 모험가 성장 보너스\n" +
+		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent + getAdventureStatBonus(member, "strength")) + "%\n" +
+		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent + getAdventureStatBonus(member, "focus")) + "%\n" +
+		"⭐ 모험가 펫강화 보너스: +" + getAdventureStatBonus(member, "bond") + "강\n" +
 		"━━━━━━━━━━━━\n" +
 		"🧭 모험가 퀘스트 보너스\n" +
 		"⚔️ 퀘스트 캐슬 보너스: +" + formatInfoAdventureQuestPercent(questCastlePercent) + "%\n" +
@@ -658,6 +738,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var dramaPending = readInfoPendingJson(dramaPendingPath);
 			if (!dramaPending || dramaPending.version !== 1 || !Object.prototype.hasOwnProperty.call(dramaPending, "pending") || dramaPending.pending !== null && !Array.isArray(dramaPending.pending)) throw new Error("호월드라마 게시 기록 오류");
 			if (dramaPending.pending !== null) return;
+		}
+		var growthPendingPath = ctx.rootPath + GLOBAL_CONFIG.adventurePublication.pendingName;
+		if (!new java.io.File(growthPendingPath).exists() && new java.io.File(growthPendingPath + ".rollback").exists()) return;
+		if (new java.io.File(growthPendingPath).exists()) {
+			var growthPending = readInfoPendingJson(growthPendingPath);
+			if (!growthPending || growthPending.version !== 1 || !Object.prototype.hasOwnProperty.call(growthPending, "pending") || growthPending.pending !== null && !Array.isArray(growthPending.pending)) throw new Error("모험가 성장 게시 기록 오류");
+			if (growthPending.pending !== null) return;
 		}
 		if (!runHalloweenInfoEntry("state", ctx)) return;
 		var plainCommands = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
@@ -2409,7 +2496,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
+	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 별채 추가분과 독립된 평수 기본분
+	homeExp += homeCharm.bonus + homeCharm.floor;
 
 	// 펫 스킬
 	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp", equippedSkillNames);
@@ -2428,6 +2516,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	castleCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
 	var castleQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
 	castleCubePercent += castleQuestState && castleQuestState.totals ? Number(castleQuestState.totals.castlePercent) || 0 : 0;
+	if (data && data.member && data.member[memberName]) castleCubePercent += getAdventureStatBonus(data.member[memberName], "strength");
 	var castleResult = applyInfoPercentWithExactFloor(castleTotal, castleCubePercent);
 	if (commonCalculation && !commonInputs) commonCalculation.inputs = { mode: "castle", user: memberName, data: data, petData: petData, homeData: homeData, itemInfo: rawItemInfo, miniPetExp: miniPetExp, homeExp: commonHomeExp };
 	return castleResult;
@@ -2448,7 +2537,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
-	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
+	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 별채 추가분과 독립된 평수 기본분
+	homeExp += homeCharm.bonus + homeCharm.floor;
 
 	// 펫스킬
 	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp", equippedSkillNames);
@@ -2467,6 +2557,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	raidCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
 	var raidQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
 	raidCubePercent += raidQuestState && raidQuestState.totals ? Number(raidQuestState.totals.raidPercent) || 0 : 0;
+	if (data && data.member && data.member[memberName]) raidCubePercent += getAdventureStatBonus(data.member[memberName], "focus");
 	var raidResult = applyInfoPercentWithExactFloor(raidTotal, raidCubePercent);
 	if (commonCalculation && !commonInputs) commonCalculation.inputs = { mode: "raid", user: memberName, data: data, petData: petData, homeData: homeData, itemInfo: rawItemInfo, miniPetExp: miniPetExp, homeExp: commonHomeExp };
 	return raidResult;
@@ -4293,7 +4384,15 @@ function getPetHomeVillageLevelLimit(userHome) {
     return Math.floor(Math.max(0, Number(userHome && userHome.floor) || 0) / GLOBAL_CONFIG.petHomeVillage.areaPerLevel);
 }
 
-// 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
+// 현재 평수에서 최종 전투 보정 전 한 모드의 기본 추가 매력을 구하는 함수
+function getPetHomeFloorCharm(home) {
+    var floor = home && home.floor !== undefined ? home.floor : 0;
+    if (typeof floor === "string" && /^\d+$/.test(floor)) floor = Number(floor); // 기존 운영 원본의 정수 문자열 평수도 무저장 계산
+    if (typeof floor !== "number" || !isFinite(floor) || floor < 0 || Math.floor(floor) !== floor || floor * GLOBAL_CONFIG.petHomeFloor.perMode * 2 > GLOBAL_CONFIG.petHomeFloor.maxSafe) throw new Error("펫홈 평수 확인 필요");
+    return floor * GLOBAL_CONFIG.petHomeFloor.perMode;
+}
+
+// 인테리어·별채 추가분과 독립된 평수 보너스를 함께 계산하는 함수
 function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNames) {
     var home = homeData && homeData[user] ? homeData[user] : {};
     var state = getPetHomeVillageState(home);
@@ -4307,8 +4406,9 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNam
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
-        castle: base + bonus + interior, raid: base + bonus + interior, total: (base + bonus + interior) * 2 };
+    var floorCharm = getPetHomeFloorCharm(home); // 현재 전체 평수의 기본 추가분, 인테리어·별채 버프 제외
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, floor: floorCharm, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
+        castle: base + bonus + interior + floorCharm, raid: base + bonus + interior + floorCharm, total: (base + bonus + interior + floorCharm) * 2 };
 }
 
 function getHomeTotalExp(homeData, username) {
