@@ -4048,7 +4048,7 @@ function isResponseAdmissionDenied(room, msg, sender, isGroupChat, event) {
     var isDev = isDevCommandMessage(msg), command = getServerRaidAdmissionCommand(msg);
     var ctx = createCommandContext(isDev, room), previous = enterCommandContext(ctx);
     try {
-        if (/^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(command) && !isMaster(sender)) return true;
+        if (/^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(command) && !isMaster(sender)) { Api.replyRoom(room, ctx.header(buildDiamondShopDirectHeader(sender) + "❌ Master 전용 명령어입니다.\n/다이아상점에서 일반 상품을 확인해주세요.")); return true; }
         if (isRetiredCarrotCommand(command)) { Api.replyRoom(room, "🥕 당근 개인거래와 신규 지급은 종료됐습니다. 자유시장을 이용해주세요."); return true; }
         if (/^\/자유시장전환(?:\s|$)/.test(command) && !isMaster(sender)) return true;
         if (isServerRaidCommand(command)) {
@@ -4619,6 +4619,14 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         updateResponseQueueStage(request, "회원 자료 로드");
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
+        if (!memberStorageCleanupAllowed && !dataCleanupAction && !getAutoDailyBatchContext()) {
+            var operatingField = ensureMatzangFieldData(data), operatingNew = operatingField.diamondShopV2 === undefined;
+            var operatingShop = ensureDiamondShopV2(operatingField, Date.now());
+            var operatingAdvanced = advanceDiamondShopDay(operatingShop, Date.now());
+            var operatingTouched = touchDiamondShopOperation(operatingShop); // 길드전쟁 등 조기 반환 명령도 운영 기록에 포함
+            operatingField.shop = operatingShop.products;
+            if (operatingNew || operatingAdvanced || operatingTouched) saveJsonFile(data, filePath);
+        }
         if (dataCleanupAction) {
             if (!memberStorageCleanupAllowed) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("⛔ 사용 권한이 없습니다."); return; }
             if (dataCleanupAction === "cancel" || dataCleanupAction === "confirm" && (!dataCleanupSessions[dataCleanupKey] || Date.now() >= dataCleanupSessions[dataCleanupKey].expiresAt)) {
@@ -6654,9 +6662,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(diaMsg.trim());
             return;
         }
+        if (msg === "/다이아조합법") { replier.reply(buildDiamondShopDirectHeader(sender) + buildDiamondCombineGuide()); return; }
         if (/^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|시세설정)(?:\s|$)/.test(msg)) {
             var diamondReplyBase = replier;
-            replier = { reply: function (text) { return diamondReplyBase.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n" + text); } };
+            replier = { reply: function (text) { return diamondReplyBase.reply(buildDiamondShopDirectHeader(sender) + text); } };
             var diamondManage = /^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(msg);
             if (diamondManage && !isMaster(sender)) { replier.reply("❌ Master 전용 명령어입니다."); return; }
             if (msg === "/다이아명령어") {
@@ -6664,7 +6673,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             }
             if (msg === "/다이아상점" || msg === "/다이아상점관리") {
                 if (msg === "/다이아상점" && recordAdventureQuestAction(data, sender, 13, "diamondShopViewed", 0)) saveJsonFile(data, filePath);
-                replyFreeMarketV2(replier, buildDiamondShopView(diamondShopV2, data.member[sender], diamondManage)); return;
+                replyFreeMarketV2(replier, buildDiamondShopView(diamondShopV2, data.member[sender], diamondManage, diamondManage ? ensureCurrencyLogData(loadJsonFile(currencyLogPath)) : null)); return;
             }
             var diamondMaintenance = msg.match(/^\/다이아상점관리\s+(점검|정상)\s+(\d{4}-\d{2}-\d{2})$/);
             if (diamondMaintenance) {
@@ -8046,6 +8055,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply("✅ 자유시장 2.0 전환 완료\n원본 반환 " + marketPlan.returned.length + "건 · 보상 🅟" + numberWithCommas(marketPlan.totalPoint) + "\n등록비 별도 확인: " + (marketPlan.manual.join(", ") || "없음") + "\n백업: " + marketBackup); return;
                     }
                     if (marketV2.version !== 2) { replier.reply("🏪 자유시장 전환 점검 중입니다. Master가 /자유시장전환을 확인해주세요."); return; }
+                    if (msg === "/자유시장검색") { replier.reply(buildFreeMarketSearchGuide()); return; }
                     if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
                         var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "");
                         if (msg === "/내판매") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
@@ -8063,7 +8073,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         if (!marketEdit || marketEdit.seller !== sender || !isPointShopSafeCount(marketNewPrice) || marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply("❌ 본인 매물과 10 이상의 정수 가격을 확인해주세요.\n/자유시장가격수정 거래번호 다이아가격"); return; }
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
                         marketEdit.price = marketNewPrice; saveJsonFile(marketV2, freeMarketPath);
-                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다."); return;
+                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice)); return;
                     }
                     if (msg === "/거래확인 1" || msg === "/거래확인 2") {
                         var marketPending = getFreeMarketConfirmState(sender);
@@ -27234,7 +27244,7 @@ replier.reply(
                     var diamondCombineMatch = msg.match(/^\/다이아조합(?:\s+(\d+))?$/);
                     var diamondCombineCount = diamondCombineMatch && diamondCombineMatch[1] ? parseInt(diamondCombineMatch[1], 10) : 1;
                     if (!isPointShopSafeCount(diamondCombineCount) || diamondCombineCount < 1 || !isPointShopSafeCount(diamondCombineCount * GLOBAL_CONFIG.diamondShop.combinePoint)) {
-                        replier.reply("사용법: /다이아조합 [숫자]\n예) /다이아조합 10");
+                        replier.reply(buildDiamondShopDirectHeader(sender) + "사용법: /다이아조합 [숫자]\n예) /다이아조합 10");
                         return;
                     }
 
@@ -27244,15 +27254,15 @@ replier.reply(
                     var pointHave = data.member[sender].point || 0;
 
                     if (stoneHave < stoneNeed || pointHave < pointNeed) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n❌ 다이아 조합 재료가 부족합니다.\n전설의 돌맹이🗿 보유 " + numberWithCommas(stoneHave) + " / 필요 " + numberWithCommas(stoneNeed) + "\n포인트 보유 🅟" + numberWithCommas(pointHave) + " / 필요 🅟" + numberWithCommas(pointNeed)); return;
+                        replier.reply(buildDiamondShopDirectHeader(sender) + buildDiamondCombineShortage(diamondCombineCount, stoneHave, pointHave)); return;
                     }
-                    if (!isPointShopSafeCount(((data.member[sender].bag || {})[GLOBAL_CONFIG.items.diamondBoxName] || 0) + diamondCombineCount)) { replier.reply("❌ 보관 수량을 확인해주세요."); return; }
+                    if (!isPointShopSafeCount(((data.member[sender].bag || {})[GLOBAL_CONFIG.items.diamondBoxName] || 0) + diamondCombineCount)) { replier.reply(buildDiamondShopDirectHeader(sender) + "❌ 보관 수량을 확인해주세요."); return; }
 
                     removeItem(data, sender, GLOBAL_CONFIG.items.legendStoneName, stoneNeed);
                     addPoint(data, sender, -pointNeed);
                     addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, diamondCombineCount);
                     saveJsonFile(data, filePath);
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n💎 다이아 조합 완료!\n\n소비: 전설의 돌맹이🗿 " + numberWithCommas(stoneNeed) + "개 / 🅟" + numberWithCommas(pointNeed) + "\n획득: 다이아상자💎(/다이아상자오픈) " + numberWithCommas(diamondCombineCount) + "개");
+                    replier.reply(buildDiamondShopDirectHeader(sender) + "💎 다이아 조합 완료!\n\n소비: 전설의 돌맹이🗿 " + numberWithCommas(stoneNeed) + "개 / 🅟" + numberWithCommas(pointNeed) + "\n획득: 다이아상자💎(/다이아상자오픈) " + numberWithCommas(diamondCombineCount) + "개");
                     return;
                 }
                 if (msg === "/포인트상자오픈" || /^\/포인트상자오픈\s+\d+$/.test(msg)) {
@@ -52450,6 +52460,63 @@ function formatMatzangRestRemainingTime(restUntil) {
 
 // 유저 다이아 보유량 필드를 보장하는 함수
 // 한국 시각 00:01을 경계로 다이아상점 운영일 번호를 계산하는 함수
+// 직접 명령 응답에서 실제 입력자 닉네임의 기존 대괄호를 보존하는 함수
+function buildDiamondShopDirectHeader(sender) {
+    return (/^\[[\s\S]*\]$/.test(sender) ? sender : "[" + sender + "]") + " 님\n";
+}
+// 다이아상자 개봉과 현재 조합 비용을 함께 안내하는 함수
+function buildDiamondCombineGuide() {
+    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondShop.combinePoint) + " → 다이아상자💎 1개\n└ /다이아상자오픈으로 실제 다이아를 획득해요.";
+}
+// 조합 요청의 두 재료 보유·필요·부족 또는 충족 상태를 표시하는 함수
+function buildDiamondCombineShortage(count, stoneHave, pointHave) {
+    var pointNeed = count * GLOBAL_CONFIG.diamondShop.combinePoint;
+    return "❌ 다이아조합 재료가 부족합니다.\n━━━━━━━━━━━━\n🔨 요청 조합: " + count + "회\n🎁 예정 보상: 다이아상자💎 ×" + count +
+        "\n\n🗿 전설의 돌맹이\n├ 보유: " + numberWithCommas(stoneHave) + " / 필요: " + numberWithCommas(count) +
+        "\n└ " + (stoneHave < count ? "❌ 부족: " + numberWithCommas(count - stoneHave) + "개" : "✅ 충족") +
+        "\n\n🅟 포인트\n├ 보유: " + numberWithCommas(pointHave) + "\n├ 필요: " + numberWithCommas(pointNeed) +
+        "\n└ " + (pointHave < pointNeed ? "❌ 부족: " + numberWithCommas(pointNeed - pointHave) : "✅ 충족");
+}
+// 기존 다이아상점 완료 구매 원문을 훼손하지 않고 신규 판매기록과 함께 읽는 함수
+function getDiamondShopSales(log) {
+    if (log.diamondShopSales !== undefined && !Array.isArray(log.diamondShopSales)) throw new Error("다이아상점 판매기록 원본 확인 필요");
+    var rows = (log.diamondShopSales || []).slice(0).reverse(), users = log.user || {};
+    for (var user in users) if (Object.prototype.hasOwnProperty.call(users, user)) {
+        var history = users[user].useHistory;
+        if (!Array.isArray(history)) continue;
+        for (var i = 0; i < history.length; i++) {
+            var old = history[i];
+            if (!old || old.type !== "구매" || old.shopSaleId) continue;
+            var match = String(old.at || "").match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?$/), at = match ? Date.parse(match[1] + "T" + match[2] + ":" + (match[3] || "00") + "+09:00") : NaN;
+            rows.push({ legacy: true, id: "legacy:" + user + ":" + i, user: user, product: old.memo || "상품 미기록", total: old.amount,
+                at: isFinite(at) ? at : null, day: isFinite(at) ? getDiamondShopDay(at) : null, atText: old.at || "시간 미기록" });
+        }
+    }
+    rows.sort(function (a, b) { return (b.at === null ? -1 : b.at) - (a.at === null ? -1 : a.at); });
+    return rows;
+}
+// 삭제된 상품을 포함해 해당 운영일의 완료 구매 통계를 합산하는 함수
+function getDiamondShopDailyTotals(log, day) {
+    var result = { completed: 0, actual: 0, effective: 0, diamonds: 0, legacy: 0 }, rows = getDiamondShopSales(log);
+    for (var i = 0; i < rows.length; i++) if (rows[i].day === day) {
+        result.completed++;
+        if (isPointShopSafeCount(rows[i].total)) result.diamonds += rows[i].total;
+        if (rows[i].legacy) result.legacy++;
+        else { result.actual += rows[i].bundles; result.effective += rows[i].effective; }
+    }
+    return result;
+}
+// 검색어를 입력하지 않은 시장 검색에서 종류·이름·좁히기 예시를 안내하는 함수
+function buildFreeMarketSearchGuide() {
+    return "🔎 호이월드 자유시장 검색\n━━━━━━━━━━━━\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지\n\n🔎 이름 검색\n/자유시장검색 카오스\n/자유시장검색 펜던트 강화석\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.";
+}
+// 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
+function buildFreeMarketExpectedSettlement(data, seller, price) {
+    var rate = getFreeMarketTradeFeeRate(data, seller), fee = Math.round(price * rate);
+    return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개\n※ 실제 정산은 판매 완료 시 회원권 상태를 적용해요.";
+}
+
+// 한국 시각 00:01을 경계로 다이아상점 운영일 번호를 계산하는 함수
 function getDiamondShopDay(now) {
     return Math.floor((now + GLOBAL_CONFIG.diamondShop.dayOffsetMs) / GLOBAL_CONFIG.diamondShop.dayMs);
 }
@@ -52506,6 +52573,7 @@ function advanceDiamondShopDay(shop, now) {
     for (var i = 0; i < shop.products.length; i++) {
         var product = shop.products[i];
         if (product.day >= today) continue;
+        var previousPrice = product.price, previousDay = product.day, previousEffective = product.effective; // 전날 가격·유효 판매량 보존
         if (product.on && (product.operated || shop.frozenDays[String(product.day)] === false) && !shop.frozenDays[String(product.day)]) product.percent = Math.max(-20, Math.min(60, product.percent + getDiamondShopCorrection(product.effective, product.baseSales)));
         if (product.pending) {
             if (!product.on || !product.pending.on) product.percent = 0;
@@ -52513,6 +52581,7 @@ function advanceDiamondShopDay(shop, now) {
         }
         if (!product.on) product.percent = 0;
         product.price = Math.max(1, Math.round(product.basePrice * (1 + product.percent / 100)));
+        product.previousDay = { day: today - 1, price: today - previousDay === 1 ? previousPrice : product.price, effective: today - previousDay === 1 ? previousEffective : 0 };
         product.day = today; product.accounts = {}; product.actual = 0; product.effective = 0; product.diamonds = 0; product.operated = false;
         changed = true;
     }
@@ -52566,7 +52635,7 @@ function planDiamondShopPurchase(member, product, accountId, bundles) {
     var account = product.accounts["$" + accountId] || { bought: 0, effective: 0 }, total = product.price * bundles, grant = getDiamondShopGrantItem(product, bundles);
     if (!isPointShopSafeCount(total) || !isPointShopSafeCount(grant.count) || !isPointShopSafeCount(member.diamond || 0)) throw new Error("결제·지급 수량 범위를 확인해주세요.");
     if (product.limit !== null && account.bought + bundles > product.limit) throw new Error("오늘 남은 구매 한도는 " + Math.max(0, product.limit - account.bought) + "묶음입니다. 요청 전체를 취소했습니다.");
-    if ((member.diamond || 0) < total) throw new Error("다이아가 부족합니다. 보유 💎" + numberWithCommas(member.diamond || 0) + " / 필요 💎" + numberWithCommas(total));
+    if ((member.diamond || 0) < total) throw new Error("다이아가 부족합니다.\n📦 상품: " + product.name + "\n🛍️ 요청: " + bundles + "묶음\n💎 현재 단가: " + numberWithCommas(product.price) + "개\n보유 💎" + numberWithCommas(member.diamond || 0) + " / 필요 💎" + numberWithCommas(total) + "\n❌ 부족: " + numberWithCommas(total - (member.diamond || 0)) + "개");
     if (!isPointShopSafeCount(((member.bag || {})[grant.name] || 0) + grant.count) || !isPointShopSafeCount(product.actual + bundles) || !isPointShopSafeCount(product.diamonds + total) || !isPointShopSafeCount(account.bought + bundles)) throw new Error("구매·보관 수량 범위를 확인해주세요.");
     return { account: { bought: account.bought + bundles, effective: account.effective + (product.on ? Math.min(bundles, Math.max(0, GLOBAL_CONFIG.diamondShop.accountEffectiveLimit - account.effective)) : 0) }, effectiveAdded: product.on ? Math.min(bundles, Math.max(0, GLOBAL_CONFIG.diamondShop.accountEffectiveLimit - account.effective)) : 0, total: total, grant: grant };
 }
@@ -52576,30 +52645,32 @@ function applyDiamondShopPurchase(data, log, user, accountId, product, bundles, 
     product.accounts["$" + accountId] = plan.account; product.actual += bundles; product.effective += plan.effectiveAdded; product.diamonds += plan.total;
     if (log.diamondShopSales === undefined) log.diamondShopSales = [];
     else if (!Array.isArray(log.diamondShopSales)) throw new Error("다이아상점 판매기록 원본 확인 필요");
-    log.diamondShopSales.push({ id: String(java.util.UUID.randomUUID()), productId: product.id, product: product.name, productCount: product.count,
-        bundles: bundles, granted: plan.grant.count, price: product.price, total: plan.total, accountId: accountId, user: user, day: product.day, at: now, effective: plan.effectiveAdded });
-    addUsedDiamond(log, user, plan.total, { type: "구매", memo: product.name + "x" + numberWithCommas(plan.grant.count) });
+    var sale = { id: String(java.util.UUID.randomUUID()), productId: product.id, product: product.name, productCount: product.count,
+        bundles: bundles, granted: plan.grant.count, price: product.price, total: plan.total, accountId: accountId, user: user, day: product.day, at: now, effective: plan.effectiveAdded };
+    log.diamondShopSales.push(sale);
+    addUsedDiamond(log, user, plan.total, { type: "구매", shopSaleId: sale.id, memo: product.name + "x" + numberWithCommas(plan.grant.count) });
 }
 // 일반 상점·관리자 상품 현황을 현재 적용 설정과 다음날 예약으로 구분해 표시하는 함수
-function buildDiamondShopView(shop, member, manage) {
+function buildDiamondShopView(shop, member, manage, log) {
+    var totals = manage ? getDiamondShopDailyTotals(log, shop.day) : null; // 삭제된 상품까지 포함한 당일 완료 통계
     var text = manage ? "💎 다이아상점 관리" : "💎 호이월드 다이아상점";
-    text += "\n운영일: " + formatDiamondShopDay(shop.day) + "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n" + allsee;
+    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n" + buildDiamondCombineGuide() + "\n운영일: " + formatDiamondShopDay(shop.day) + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
     if (!shop.products.length) text += "\n등록된 상품이 없습니다.";
     for (var i = 0; i < shop.products.length; i++) {
         var p = shop.products[i], identity = member.serverRaidAccount && member.serverRaidAccount.id, bought = identity && p.accounts["$" + identity] ? p.accounts["$" + identity].bought : 0;
-        text += "\n" + (i + 1) + ". " + p.name + " x" + numberWithCommas(p.count) + "\n💎 " + numberWithCommas(p.price) + "개 / 묶음 · " + (p.on ? "시세 " + (p.percent >= 0 ? "+" : "") + p.percent + "%" : "고정가") + "\n하루 구매: " + (p.limit === null ? "무제한" : bought + "/" + p.limit + "묶음 (남음 " + Math.max(0, p.limit - bought) + ")") + "\n";
-        if (manage) text += "등록 ID " + p.id + " · 기본가 💎" + p.basePrice + " · 기준 B " + p.baseSales + "\n오늘 실판매 " + p.actual + " / 유효 " + p.effective + " / 회수 💎" + p.diamonds + "\n다음 운영일: " + (p.pending ? (p.pending.on ? "ON · B " + p.pending.baseSales : "OFF · 기본가 복귀") : "변경 없음") + "\n";
+        text += "\n" + (i + 1) + ". " + p.name + " x" + numberWithCommas(p.count) + "\n💎 " + numberWithCommas(p.price) + "개 / 묶음 · " + (p.on ? "시세 " + (p.percent >= 0 ? "+" : "") + p.percent + "%" : "고정가") + " · 전일 대비 " + (p.previousDay ? (p.price - p.previousDay.price >= 0 ? "+" : "") + numberWithCommas(p.price - p.previousDay.price) : "신규 등록") + "\n하루 구매: " + (p.limit === null ? "무제한" : bought + "/" + p.limit + "묶음 (남음 " + Math.max(0, p.limit - bought) + ")") + "\n";
+        if (manage) text += "등록 ID " + p.id + " · 기본가 💎" + p.basePrice + " · 기준 B " + p.baseSales + "\n전날 유효 " + (p.previousDay ? p.previousDay.effective : "미기록") + " / 오늘 실판매 " + p.actual + " / 유효 " + p.effective + " / 회수 💎" + p.diamonds + "\n다음 운영일: " + (p.pending ? (p.pending.on ? "ON · B " + p.pending.baseSales : "OFF · 기본가 복귀") : "변경 없음") + "\n";
     }
     return text;
 }
 // 날짜별 100건 페이지와 최근 다섯 건 미리보기를 보존된 완료 거래에서 만드는 함수
 function buildDiamondShopSales(log, date, page) {
-    var rows = (log.diamondShopSales || []).slice(0).reverse().filter(function (row) { return !date || formatDiamondShopDay(row.day) === date; });
+    var rows = getDiamondShopSales(log).filter(function (row) { return !date || row.day !== null && formatDiamondShopDay(row.day) === date; });
     var totalPages = Math.max(1, Math.ceil(rows.length / GLOBAL_CONFIG.diamondShop.historyPageSize));
     if (!isPointShopSafeCount(page) || page < 1 || page > totalPages) throw new Error("판매기록 페이지를 확인해주세요. 전체 " + totalPages + "페이지");
     var selected = rows.slice((page - 1) * GLOBAL_CONFIG.diamondShop.historyPageSize, page * GLOBAL_CONFIG.diamondShop.historyPageSize);
     // 완료 당시 닉네임과 상품 이름을 보존해 삭제·재등록 뒤에도 원래 거래를 표시한다.
-    function line(row) { return formatDiamondShopDay(row.day) + " · " + new Date(row.at + 9 * 3600000).toISOString().substring(11, 19) + "\n[" + row.user + "] " + row.product + " x" + row.granted + " (" + row.bundles + "묶음) · 💎" + numberWithCommas(row.total) + " · ID " + row.productId; }
+    function line(row) { if (row.legacy) return "[이전 상점] " + row.atText + "\n[" + row.user + "] " + row.product + " · 결제 💎" + (isPointShopSafeCount(row.total) ? numberWithCommas(row.total) : "미기록") + "\n묶음 수·등록 ID 미기록"; return formatDiamondShopDay(row.day) + " · " + new Date(row.at + 9 * 3600000).toISOString().substring(11, 19) + "\n[" + row.user + "] " + row.product + " x" + row.granted + " (" + row.bundles + "묶음) · 💎" + numberWithCommas(row.total) + " · ID " + row.productId; }
     return "💎 다이아상점 판매기록\n" + (date || "전체 날짜") + " · " + page + "/" + totalPages + "페이지 · 완료 " + rows.length + "건\n" + selected.slice(0, 5).map(line).join("\n\n") + "\n전체 보기" + allsee + "\n" + selected.map(line).join("\n\n");
 }
 
@@ -53403,6 +53474,7 @@ function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender,
     msg += "물품: [" + itemName + "] x" + numberWithCommas(quantity) + "개\n";
     msg += "묶음 판매금액: 💎" + numberWithCommas(price) + "\n";
     msg += "등록비: 무료\n";
+    msg += buildFreeMarketExpectedSettlement(data, sender, price) + "\n";
     if (extraLine) msg += extraLine + "\n";
     msg += "\등록✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
     msg += "━━━━━━━━━━━━\n";
@@ -53418,6 +53490,7 @@ function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, list
     msg += "물품: [" + getFreeMarketItemText(listing) + "]\n";
     msg += "판매자: [" + checkRank(data, petData, guildData, listing.seller) + "]\n";
     msg += "묶음 판매금액: 💎" + numberWithCommas(listing.price) + "\n";
+    msg += "💎 보유: " + numberWithCommas(data.member[sender].diamond || 0) + "개\n💎 구매 후 잔액: " + numberWithCommas((data.member[sender].diamond || 0) - listing.price) + "개\n";
     msg += "\n구매✅ [/거래확인 1]\n취소❌ [/거래확인 2]\n";
     msg += "━━━━━━━━━━━━\n";
     msg += "※ [/거래확인 1 또는 /거래확인 2]\n명령어를 입력해주세요.";
