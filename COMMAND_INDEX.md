@@ -5,6 +5,18 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## MQ 접수 제약 · /MQ상태 · /mq상태
+
+Status: VERIFIED
+
+- `main.js`의 7인수 `response(...)`가 방·운영 명령 권한(`isResponseAdmissionDenied`), 레이드(`getServerRaidAdmissionBlock`), `/요청설정`의 시간·횟수·예외를 확인한 뒤 일반 요청을 메모리 `responseQueue`에 넣는다. 내부 자동 명령은 기존 현재 작업에서 실행한다. 회원·패스·길드 역할 등 데이터가 필요한 조건은 기존 실행 단계에서 확인한다.
+- 레이드 사전 검사는 기존 허용 명령·DEV 단축어·가입 및 확인 입력을 유지하고 차단 시 메시지를 보내지 않는다. 접수 후 레이드가 시작된 경우도 실행 단계에서 무응답 차단한다. 기한이 지난 회차는 기존 마감·정산 재개 경로로 전달한다.
+- `serverRaidAdmissionStates`는 환경별 회원 경로를 키로 쓰는 작은 문자열 캐시다. 실제 회원·분리 자료 로드 성공 또는 `writeVerifiedJsonFile` 원자 교체 성공 뒤 갱신한다. 미공개 자동일퀘 배치 객체·저장 실패는 공개하지 않으며, 기존 복구 쓰기도 같은 경로로 갱신한다. 접수 검사와 상태 조회는 파일 IO를 하지 않는다.
+- 요청 집계는 `responseQueueLock`으로 보호하며 접수 시 검사한 요청은 실행 시 다시 세지 않는다. 기준은 기존 감지와 같은 `시간 내 횟수 >= 설정 횟수`이며 설정된 예외 명령·방과 내부 자동 명령은 제외한다. 동일 명령 전용 별도 TTL은 없다.
+- Admin·Master 명단 또는 기존 주문기록방 봇은 제약 통과 후 MQ만 우회한다. `processResponse`의 기존 흐름·데이터 잠금과 저장 트랜잭션은 유지하므로 데이터 잠금 대기는 발생할 수 있다.
+- `/MQ상태`, `/mq상태`는 정확히 일치하는 두 별칭이며 관리자·MASTER 본인 명단으로 모든 방에서 MQ 밖 즉시 조회한다. 전체 테스트방 전용 모드는 유지한다. 메모리 저장, 대기/한도128, 최장 대기, 실제 작업자 상태·시작 오류, 진행 명령/단계/경과, 운영자 직접 처리 건수, 만료120초를 표시하며 명령 인수는 표시하지 않는다. 큐 잠금이 바쁘면 기다리지 않고 부분 상태를 표시한다.
+- `responseQueueWorker`는 실제 Java 작업자다. 종료된 작업자는 다음 일반 접수에서 재시작하며 살아 있는 작업자는 교체하지 않는다. 종료 정리에서 후속 작업자의 상태를 지우지 않는다. 큐와 상태는 재컴파일·재시작 시 초기화된다.
+
 ## 시작 단계의 요청 모니터링 설정 저장
 
 Status: VERIFIED
