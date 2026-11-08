@@ -5,6 +5,14 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 2026-11-09 운영 명령 제거 (ver_2.784)
+
+Status: VERIFIED
+
+- 삭제 명령: `/꽃집보상지급`, `/꽃집보상현황`, `/꽃집보상공지확정`, `/정령컨텐츠보상`, `/펫스킬북보상`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`, `/환생회수`, `/스타터중복확인`, `/스타터중복회수`, `/스타터중복회수 실행`, `/펫홈소셜뱃지마이그레이션`, `/펫홈피드마이그레이션`, `/펫홈패스개편정리`, `/장착가구동기화`. Main/Info 실행 분기·접수 권한 및 예외·안내 연결을 제거했다. 아래 해당 명령의 과거 구현 설명은 현재 실행 경로가 아니다.
+- `/데이터정리`, `/필터데이터정리`, 나머지 동기화·파일 생성·복구·정기 지급은 유지한다. 공용 저장·로드·자동 복구, 완료 표식과 기존 보상 원장은 삭제하지 않는다.
+- 꽃집 보상 호출·파서·명령 전용 요약과 스타터 회수 미리보기 함수도 제거했다. 기존 자료를 검증하는 헬퍼는 보존한다.
+
 ## MQ 접수 제약 · /MQ상태 · /mq상태
 
 Status: VERIFIED

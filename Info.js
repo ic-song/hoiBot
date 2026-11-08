@@ -612,7 +612,6 @@ function isInfoAttendanceFreeCommand(msg, sender) {
 	if (sender === "오픈채팅봇") return true;
 	if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
 	if (isGlobalInfoCommandAllowed(sender, msg)) return true;
-	if (msg === "/스타터중복확인") return isMaster(sender);
 	return (isAdmin(sender) || isMaster(sender)) && isMatzangInfoOperatorCommandMessage(msg);
 }
 
@@ -664,7 +663,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (!msg.startsWith("/") && plainCommands.indexOf(msg) === -1) {
 			return;
 		}
-		if (msg === "/스타터중복확인" && room !== testRoom) return;
 		var guildData = loadJsonFile(guildPath);
 		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, false)) return;
 		// 인형 저장 복구 전에는 부분 반영된 재화·매력 정보를 표시하지 않는다.
@@ -700,18 +698,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (data && data.member && data.member[sender] && !isInfoAttendanceFreeCommand(msg, sender)) {
 			var attendanceMember = data.member[sender];
 			if ((parseInt(attendanceMember.today, 10) || 0) <= 0) return;
-		}
-		if (msg === "/스타터중복확인") {
-			if (!isMaster(sender)) return;
-			if (!data || !data.member || typeof data.member !== "object") {
-				replier.reply("스타터 지급 기록을 확인할 수 없습니다. member.json을 확인해 주세요.");
-				return;
-			}
-			var starterAuditMessages = buildStarterDuplicateAuditMessages(data.member);
-			for (var auditIndex = 0; auditIndex < starterAuditMessages.length; auditIndex++) {
-				replier.reply(starterAuditMessages[auditIndex]);
-			}
-			return;
 		}
 		var isGlobalInfoCommand = isGlobalInfoCommandAllowed(sender, msg);
 		// 펫무쌍 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 차단합니다.
