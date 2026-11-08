@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.783"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.784"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1017,11 +1017,11 @@ const GLOBAL_CONFIG = {
     commandQueue: {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
         permissions: {
-            adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/장착가구동기화", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고기록전체", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
-            master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/레벨리뉴얼점검","/레벨리뉴얼적용","/환생회수","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/황금당근수정","/길드상점추가","/길드상점삭제", "/스타터중복확인", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
+            adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고기록전체", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
+            master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/황금당근수정","/길드상점추가","/길드상점삭제", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
             masterComma: ["/새해","/용돈돈","/용돈돈2","/용돈","/용돈2","/한가위","/한글","/국군","/슬롯초보","/슬롯초보2","/슬롯초보3","/슬롯초보4","/할로윈","/할로윈2","/시즌","/니가","/복","/메리","/과로","/레이드","/계엄령","/유닛뽑기","/크리스마스","/2주년","/광복","/한국"],
             admin: ["/당근게시판삭제", "/서버이동", "/마스터명단", "/마스터추가", "/마스터제거", "/가입인증"],
-            masterIdentity: ["/꽃집보상지급", "/꽃집보상현황", "/꽃집보상공지확정", "/관리자순위초기화", "/인증초기화", "/길드전쟁공격초기화"],
+            masterIdentity: ["/관리자순위초기화", "/인증초기화", "/길드전쟁공격초기화"],
             adminIdentity: ["/인증", "/검색인증", "/인증필요"],
             adminMasterIdentity: ["/미정", "/정보", "/인증순위", "/관리자순위", "/기록실", "/기록보관소1", "/기록"],
             operator: ["/글자수통계", "/캐슬스코어", "/캐슬대전횟수리셋", "/캐슬초기화", "/상점삭제", "/외형", "/좋아리셋", "/레벨수정", "/경험치수정", "/레벨초기화", "/r", "/매력", "/펫제거", "/이름", "/미니펫강화속성", "/판매금지아이템", "/당근금지아이템", "/판매금지아이템추가", "/당근금지아이템추가", "/판매금지아이템제거", "/당근금지아이템제거", "/미니펫대전횟수", "/펫데이터비교", "/펫데이터동기화", "/펫타이틀동기화", "/시련의탑동기화", "/반지정보", "/시련의탑수정", "/시련의탑시즌초기화", "/시련의탑시즌시작", "/시련의탑시즌종료", "/미니펫추가", "/미니펫삭제", "/미니펫해제", "/탐험알림", "/펫탐험이벤트활성화", "/펫탐험이벤트비활성화", "/레이드이벤트활성화", "/레이드이벤트비활성화"],
@@ -4059,7 +4059,6 @@ function isResponseAdmissionDenied(room, msg, sender, isGroupChat, event) {
         if (command === "/자동출첵" && !(isMaster(sender) || sender === "오픈채팅봇")) return true;
         if (command === "/주기리셋" || command === "/자동탐험시작") return !(isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")));
         if (command === "/개발자노트" || command === "/패스목록") return !(isAdmin(sender) || isMaster(sender));
-        if (command === "/스타터중복회수" || command === "/스타터중복회수 실행") return room !== testRoom || !isMaster(sender);
         var name = command.split(/[\s,]/)[0], permissions = GLOBAL_CONFIG.commandQueue.permissions;
         if (permissions.adminMaster.indexOf(name) !== -1 && !(isAdmin(sender) || isMaster(sender))) return true;
         if (permissions.master.indexOf(name) !== -1 && !isMaster(sender)) return true;
@@ -4605,7 +4604,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         updateResponseQueueStage(request, "회원 자료 로드");
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
-        if (runFlowerCompensationEntry(ctx, sender, msg, replier, data)) return;
         if (dataCleanupAction) {
             if (!memberStorageCleanupAllowed) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("⛔ 사용 권한이 없습니다."); return; }
             if (dataCleanupAction === "cancel" || dataCleanupAction === "confirm" && (!dataCleanupSessions[dataCleanupKey] || Date.now() >= dataCleanupSessions[dataCleanupKey].expiresAt)) {
@@ -4935,33 +4933,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
 
-        if (msg === "/스타터중복회수" || msg === "/스타터중복회수 실행") {
-            if (room !== testRoom || !isMaster(sender)) return;
-            var starterRecoveryData = loadJsonFile(filePath);
-            if (!starterRecoveryData || !starterRecoveryData.member || typeof starterRecoveryData.member !== "object") {
-                replier.reply("스타터 지급 기록을 확인할 수 없습니다. member.json을 확인해 주세요.");
-                return;
-            }
-            var starterRecoveryPlan = getAdventureStarterRecoveryPlan(starterRecoveryData.member);
-            if (msg === "/스타터중복회수") {
-                var starterPreviewMessages = buildAdventureStarterRecoveryPreviewMessages(starterRecoveryPlan);
-                for (var previewIndex = 0; previewIndex < starterPreviewMessages.length; previewIndex++) replier.reply(starterPreviewMessages[previewIndex]);
-                return;
-            }
-            if (starterRecoveryPlan.ready.length === 0) {
-                replier.reply("처리 가능한 인원이 없습니다. 데이터 오류 보류 명단을 확인해 주세요.");
-                return;
-            }
-            var starterRecoveredAt = formatDateTime(new Date());
-            for (var recoveryIndex = 0; recoveryIndex < starterRecoveryPlan.ready.length; recoveryIndex++) {
-                if (!applyAdventureStarterRecovery(starterRecoveryData.member[starterRecoveryPlan.ready[recoveryIndex]], starterRecoveredAt)) {
-                    throw new Error("스타터 회수 조건 재검사 실패: " + starterRecoveryPlan.ready[recoveryIndex]);
-                }
-            }
-            saveJsonFile(starterRecoveryData, filePath);
-            replier.reply("✅ 퀘스트 스타터 지급분 처리 완료: " + starterRecoveryPlan.ready.length + "명\n전액 회수: " + starterRecoveryPlan.full.length + "명\n부분 회수: " + starterRecoveryPlan.partial.length + "명\n보유량 0: " + starterRecoveryPlan.empty.length + "명\n데이터 오류 보류: " + starterRecoveryPlan.invalid.length + "명\n친밀도·퀘스트 진행 기록은 유지했습니다. /스타터중복확인으로 결과를 확인해 주세요.");
-            return;
-        }
 
         if (msg === "/데이터복구" || /^\/데이터복구\s+\S+\s+[12]$/.test(msg)) {
             if (!isAdmin(sender) && !isMaster(sender)) {
@@ -5271,11 +5242,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(gmSuccess); return;
         }
 
-        if (msg === "/정령컨텐츠보상") {
-            if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
-            replier.reply("종료된 일회성 보상입니다. 보상은 다시 지급하지 않습니다.");
-            return;
-        }
         var spiritCharmRequest = getSpiritCharmOpenRequest(msg);
         if (spiritCharmRequest) {
             var spiritCharmResult = openSpiritCharmItem(data, sender, spiritCharmRequest);
@@ -5359,7 +5325,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 var c2 = FileStream.read(activePath2, "utf-8");
                 var parsedPetHomeForStats = parseJsonContent(c2, activePath2);
                 out += "- 펫홈: " + numberWithCommas(c2.length) + "자 / " + numberWithCommas(Object.keys(parsedPetHomeForStats).length) + "명\n";
-                out += "  ↳ 동기화: /장착가구동기화\n";
                 c2 = null; parsedPetHomeForStats = null;
             }
 
@@ -5372,7 +5337,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 var placedFurnitureContent = FileStream.read(activePlacedFurniturePath, "utf-8");
                 var parsedPlacedFurnitureForStats = parseJsonContent(placedFurnitureContent, activePlacedFurniturePath);
                 out += "- 장착가구: " + numberWithCommas(placedFurnitureContent.length) + "자 / " + numberWithCommas(Object.keys(parsedPlacedFurnitureForStats).length) + "명\n";
-                out += "  ↳ 동기화: /장착가구동기화\n";
                 placedFurnitureContent = null; parsedPlacedFurnitureForStats = null;
             }
 
@@ -5636,133 +5600,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
 
-        if (msg === "/펫홈소셜뱃지마이그레이션" && (isAdmin(sender) || isMaster(sender))) {
-            var socialBadgeActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
-            if (socialBadgeActivityData.migrations.petHomeSocialBadges20260727 === true) {
-                replier.reply("ℹ️ 펫홈 소셜·뱃지 마이그레이션은 이미 완료되었습니다.");
-                return;
-            }
-            var socialBadgeBackupFile = new java.io.File(resolveActiveDataPath(petHomeSocialBadgeActivityBackupPath));
-            var socialBadgeBackupStatus = "기존 백업 유지";
-            if (socialBadgeBackupFile.exists()) {
-                requirePetHomeActivityData(loadJsonFile(petHomeSocialBadgeActivityBackupPath));
-            } else {
-                saveJsonFile(socialBadgeActivityData, petHomeSocialBadgeActivityBackupPath);
-                requirePetHomeActivityData(loadJsonFile(petHomeSocialBadgeActivityBackupPath));
-                socialBadgeBackupStatus = "새 백업 생성";
-            }
-            var socialBadgeMemberData = data || loadJsonFile(filePath);
-            var socialBadgeHomeData = loadJsonFile(homeDataFile);
-            var socialBadgeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
-            var socialBadgeMigrationResult = migratePetHomeSocialBadges(socialBadgeMemberData, socialBadgeHomeData, socialBadgeCommentsData, socialBadgeActivityData);
-            saveJsonFile(socialBadgeActivityData, petHomeActivityFile);
-            var verifiedSocialBadgeActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
-            if (verifiedSocialBadgeActivityData.migrations.petHomeSocialBadges20260727 !== true) {
-                throw new Error("펫홈 소셜·뱃지 마이그레이션 저장 확인 실패");
-            }
-            replier.reply(
-                "✅ 펫홈 소셜·뱃지 마이그레이션 완료\n" +
-                "처리 유저: " + numberWithCommas(socialBadgeMigrationResult.userCount) + "명\n" +
-                "기존 업적 지급: " + numberWithCommas(socialBadgeMigrationResult.badgeCount) + "개\n" +
-                "활동 파일 백업: " + socialBadgeBackupStatus
-            );
-            return;
-        }
 
-        if (msg === "/펫홈피드마이그레이션" && (isAdmin(sender) || isMaster(sender))) {
-            var feedMigrationHomeData = loadJsonFile(homeDataFile);
-            if (isPetHomeFeedMigrationComplete(feedMigrationHomeData)) {
-                replier.reply("ℹ️ 펫홈 피드 마이그레이션은 이미 완료되었습니다.");
-                return;
-            }
-            var feedMigrationBackupFile = new java.io.File(resolveActiveDataPath(petHomeFeedHomeBackupPath));
-            var feedMigrationBackupStatus = "기존 백업 유지";
-            if (feedMigrationBackupFile.exists()) {
-                loadJsonFile(petHomeFeedHomeBackupPath);
-            } else {
-                saveJsonFile(feedMigrationHomeData, petHomeFeedHomeBackupPath);
-                loadJsonFile(petHomeFeedHomeBackupPath);
-                feedMigrationBackupStatus = "새 백업 생성";
-            }
-            var feedMigrationResult = migratePetHomeFeeds(feedMigrationHomeData);
-            saveJsonFile(feedMigrationHomeData, homeDataFile);
-            var verifiedFeedMigrationHomeData = loadJsonFile(homeDataFile);
-            if (!isPetHomeFeedMigrationComplete(verifiedFeedMigrationHomeData)) throw new Error("펫홈 피드 마이그레이션 저장 확인 실패");
-            replier.reply(
-                "✅ 펫홈 피드 마이그레이션 완료\n" +
-                "처리 유저: " + numberWithCommas(feedMigrationResult.userCount) + "명\n" +
-                "이전 한줄평: " + numberWithCommas(feedMigrationResult.legacyFeedCount) + "개\n" +
-                "홈 데이터 백업: " + feedMigrationBackupStatus
-            );
-            return;
-        }
 
-        if (msg === "/펫홈패스개편정리" && (isAdmin(sender) || isMaster(sender))) {
-            var passBenefitHomeData = loadJsonFile(homeDataFile);
-            var passBenefitCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
-            if (passBenefitCommentsData.migrations && passBenefitCommentsData.migrations.passBenefits20260726 === true) {
-                replier.reply("✅ 펫홈 패스 혜택 개편 정리가 이미 완료되었습니다.");
-                return;
-            }
-
-            var passBenefitHomeBackupFile = new java.io.File(resolveActiveDataPath(petHomePassBenefitHomeBackupPath));
-            var passBenefitCommentsBackupFile = new java.io.File(resolveActiveDataPath(petHomePassBenefitCommentsBackupPath));
-            var homeBackupStatus = "기존 백업 유지";
-            var commentsBackupStatus = "기존 백업 유지";
-            if (passBenefitHomeBackupFile.exists()) {
-                loadJsonFile(petHomePassBenefitHomeBackupPath);
-            } else {
-                saveJsonFile(passBenefitHomeData, petHomePassBenefitHomeBackupPath);
-                loadJsonFile(petHomePassBenefitHomeBackupPath);
-                homeBackupStatus = "생성 완료";
-            }
-            if (passBenefitCommentsBackupFile.exists()) {
-                loadJsonFile(petHomePassBenefitCommentsBackupPath);
-            } else {
-                saveJsonFile(passBenefitCommentsData, petHomePassBenefitCommentsBackupPath);
-                loadJsonFile(petHomePassBenefitCommentsBackupPath);
-                commentsBackupStatus = "생성 완료";
-            }
-
-            var passBenefitCleanupResult = cleanupPetHomePassBenefitData(passBenefitHomeData, passBenefitCommentsData);
-            saveJsonFile(passBenefitHomeData, homeDataFile);
-            saveJsonFile(passBenefitCommentsData, petHomeCommentsFile);
-
-            var verifiedPassBenefitHomeData = loadJsonFile(homeDataFile);
-            var verifiedPassBenefitCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
-            if (!verifiedPassBenefitCommentsData.migrations || verifiedPassBenefitCommentsData.migrations.passBenefits20260726 !== true) {
-                throw new Error("펫홈 패스 혜택 개편 정리 플래그 저장 확인 실패");
-            }
-            if (Object.keys(verifiedPassBenefitCommentsData.comments).length > 0) {
-                throw new Error("펫홈 일반 댓글 정리 저장 확인 실패");
-            }
-            var verifiedPinnedCommentCount = 0; // 저장 후 유지된 댓글핀 총개수
-            for (var verifiedPinnedUser in verifiedPassBenefitCommentsData.pinnedComments) {
-                if (!verifiedPassBenefitCommentsData.pinnedComments.hasOwnProperty(verifiedPinnedUser)) continue;
-                if (verifiedPassBenefitCommentsData.pinnedComments[verifiedPinnedUser] instanceof Array) {
-                    verifiedPinnedCommentCount += verifiedPassBenefitCommentsData.pinnedComments[verifiedPinnedUser].length;
-                }
-            }
-            if (verifiedPinnedCommentCount !== passBenefitCleanupResult.preservedPinnedCount) {
-                throw new Error("펫홈 댓글핀 보존 저장 확인 실패");
-            }
-            for (var verifiedPassBenefitUser in verifiedPassBenefitHomeData) {
-                if (!verifiedPassBenefitHomeData.hasOwnProperty(verifiedPassBenefitUser)) continue;
-                if (verifiedPassBenefitHomeData[verifiedPassBenefitUser] && verifiedPassBenefitHomeData[verifiedPassBenefitUser].likeCnt !== undefined) {
-                    throw new Error("펫홈 좋아홈 정리 저장 확인 실패: " + verifiedPassBenefitUser);
-                }
-            }
-
-            replier.reply(
-                "✅ 펫홈 패스 혜택 개편 정리 완료\n\n" +
-                "일반 댓글 삭제: " + numberWithCommas(passBenefitCleanupResult.removedCommentCount) + "개\n" +
-                "댓글핀 유지: " + numberWithCommas(passBenefitCleanupResult.preservedPinnedCount) + "개\n" +
-                "좋아홈 초기화: " + numberWithCommas(passBenefitCleanupResult.resetLikeUserCount) + "명 / " + numberWithCommas(passBenefitCleanupResult.resetLikeCount) + "개\n\n" +
-                "펫홈 백업: " + homeBackupStatus + "\n" +
-                "댓글 백업: " + commentsBackupStatus
-            );
-            return;
-        }
 
         if (msg === "/요청횟수") {
             var requestCountAllowed = isAdmin(sender) || isMaster(sender);
@@ -6056,11 +5895,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             } else {
                 replier.reply(attendanceResult.message);
             }
-            return;
-        }
-        if (msg === "/펫스킬북보상") {
-            if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("❌ 관리자만 사용할 수 있습니다."); return; }
-            replier.reply("종료된 일회성 보상입니다. 보상은 다시 지급하지 않습니다.");
             return;
         }
         var shouldCleanupAllPremiumUsers = ((msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) ||
@@ -10890,7 +10724,7 @@ replier.reply(
                 }
                 if (msg === "/레벨초기화" && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     if (!data.migrations || !data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
-                        replier.reply("❌ 레벨 리뉴얼 적용이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
+                        replier.reply("❌ 레벨 리뉴얼 적용이 완료되지 않았습니다.\n일회성 전환 상태를 확인해 주세요.");
                         return;
                     }
                     var levelResetBackup = data; // 변경 전 원본은 검증된 디스크 백업을 재사용
@@ -10914,100 +10748,6 @@ replier.reply(
                         return;
                     }
                     replier.reply("✅ 리뉴얼 테스트 데이터 초기화 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelResetResult.memberCount) + "명\nLv.1 / EXP 0 초기화\n티어 EXP 잔여값·구 환생 기록 초기화\n" + GLOBAL_CONFIG.level.boosterName + " 0개 초기화\n기존 포인트·아이템 유지 / 보상 재지급 없음\n실행 횟수: " + numberWithCommas(levelResetResult.resetCount) + "회\n※ 필요하면 이 명령을 다시 실행할 수 있습니다.\n원본 백업: " + resolveActiveDataPath(levelResetBackupPath));
-                    return;
-                }
-                if (msg === "/레벨리뉴얼점검" && isMaster(sender)) {
-                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
-                        replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되어 기준 스냅샷을 다시 생성할 수 없습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
-                        return;
-                    }
-                    var levelRenewalInspection = inspectAdventureLevelRenewal(data);
-                    var levelRenewalCheckedAt = formatDateTime(new Date());
-                    var levelRenewalBoosterSnapshot = { checkedAt: levelRenewalCheckedAt, threshold: GLOBAL_CONFIG.level.highBoosterThreshold, accountCount: levelRenewalInspection.highBoosterUsers.length, totalCount: levelRenewalInspection.highBoosterTotal, plannedCompensationPerAccount: GLOBAL_CONFIG.level.plannedCompensationPoint, plannedCompensationTotal: levelRenewalInspection.highBoosterUsers.length * GLOBAL_CONFIG.level.plannedCompensationPoint, accounts: [] };
-                    for (var levelRenewalSnapshotIndex = 0; levelRenewalSnapshotIndex < levelRenewalInspection.highBoosterUsers.length; levelRenewalSnapshotIndex++) {
-                        var levelRenewalSnapshotUser = levelRenewalInspection.highBoosterUsers[levelRenewalSnapshotIndex];
-                        levelRenewalBoosterSnapshot.accounts.push({ id: levelRenewalSnapshotUser.user, checkRank: checkRank(data, petData, guildData, levelRenewalSnapshotUser.user), count: levelRenewalSnapshotUser.count, checkedAt: levelRenewalCheckedAt });
-                    }
-                    saveJsonFile(levelRenewalBoosterSnapshot, GLOBAL_CONFIG.level.boosterSnapshotPath, true);
-                    var verifiedLevelRenewalSnapshot = loadJsonFile(GLOBAL_CONFIG.level.boosterSnapshotPath);
-                    if (!isAdventureLevelRenewalSnapshotCurrent(verifiedLevelRenewalSnapshot, levelRenewalInspection)) {
-                        replier.reply("❌ " + GLOBAL_CONFIG.level.boosterName + " 보유자 스냅샷 저장 검증에 실패했습니다.");
-                        return;
-                    }
-                    replier.reply(buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, levelRenewalInspection) + "\n스냅샷: " + resolveActiveDataPath(GLOBAL_CONFIG.level.boosterSnapshotPath));
-                    return;
-                }
-                if (msg === "/레벨리뉴얼적용" && isMaster(sender)) {
-                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
-                        replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
-                        return;
-                    }
-                    var currentLevelRenewalInspection = inspectAdventureLevelRenewal(data);
-                    var savedLevelRenewalSnapshot = loadJsonFile(GLOBAL_CONFIG.level.boosterSnapshotPath);
-                    if (!isAdventureLevelRenewalSnapshotCurrent(savedLevelRenewalSnapshot, currentLevelRenewalInspection)) {
-                        replier.reply("❌ 개편 직전 " + GLOBAL_CONFIG.level.boosterName + " 보유량 스냅샷이 없거나 현재 데이터와 다릅니다.\n먼저 /레벨리뉴얼점검 을 실행해주세요.");
-                        return;
-                    }
-                    if (currentLevelRenewalInspection.unsafeBoosterCompensationUsers.length > 0) {
-                        replier.reply("❌ " + GLOBAL_CONFIG.level.boosterName + " 보상 후 포인트가 안전 정수 범위를 넘는 계정이 " + numberWithCommas(currentLevelRenewalInspection.unsafeBoosterCompensationUsers.length) + "명 있어 적용을 중단했습니다.");
-                        return;
-                    }
-                    var levelRenewalBackup = data; // 변경 전 원본은 검증된 디스크 백업을 재사용
-                    saveJsonFile(levelRenewalBackup, GLOBAL_CONFIG.level.migrationBackupPath, true);
-                    var verifiedLevelRenewalBackup = loadJsonFile(GLOBAL_CONFIG.level.migrationBackupPath);
-                    if (!isExactJsonSnapshot(levelRenewalBackup, verifiedLevelRenewalBackup)) {
-                        replier.reply("❌ 원본 백업 검증에 실패해 레벨 리뉴얼 적용을 중단했습니다.");
-                        return;
-                    }
-                    levelRenewalBackup = verifiedLevelRenewalBackup; verifiedLevelRenewalBackup = null;
-                    var levelRenewalResult = applyAdventureLevelRenewal(data);
-                    if (!levelRenewalResult.ok) {
-                        replier.reply("❌ " + levelRenewalResult.message);
-                        return;
-                    }
-                    saveJsonFile(data, filePath);
-                    var verifiedLevelRenewalData = loadJsonFile(filePath);
-                    if (!isAdventureLevelRenewalResultValid(levelRenewalBackup, verifiedLevelRenewalData)) {
-                        replier.reply("❌ 전환 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 운영 반영을 중단했습니다.");
-                        return;
-                    }
-                    replier.reply("✅ 레벨 리뉴얼 전환 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelRenewalResult.inspection.memberCount) + "명 Lv.1 / EXP 0 초기화\n환생 기록 폐기\n" + GLOBAL_CONFIG.level.boosterName + " 전체 초기화\n10만회 이상 " + numberWithCommas(levelRenewalResult.migration.compensationAccountCount) + "명에게 계정당 🅟" + numberWithCommas(GLOBAL_CONFIG.level.plannedCompensationPoint) + " 지급\n보상 합계: 🅟" + numberWithCommas(levelRenewalResult.migration.compensationPoint) + "\n환생버섯 보유 수량 보존\n환생버섯 회수·환급: /환생회수\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.migrationBackupPath));
-                    return;
-                }
-                if (msg === "/환생회수" && isMaster(sender)) {
-                    if (!data.migrations || !data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
-                        replier.reply("❌ 레벨 리뉴얼 전환이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
-                        return;
-                    }
-                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey]) {
-                        replier.reply("❌ 이미 환생버섯 회수·환급이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey].appliedAt);
-                        return;
-                    }
-                    var rebirthRecallPrecheck = inspectAdventureLevelRenewal(data);
-                    if (rebirthRecallPrecheck.unsafeRefundUsers.length > 0) {
-                        replier.reply("❌ 환급 후 포인트가 안전한 정수 범위를 넘는 계정이 " + numberWithCommas(rebirthRecallPrecheck.unsafeRefundUsers.length) + "명 있어 회수를 중단했습니다.\n먼저 해당 계정의 포인트를 점검해주세요.");
-                        return;
-                    }
-                    var rebirthRecallBackup = data; // 변경 전 원본은 검증된 디스크 백업을 재사용
-                    saveJsonFile(rebirthRecallBackup, GLOBAL_CONFIG.level.rebirthRecallBackupPath, true);
-                    var verifiedRebirthRecallBackup = loadJsonFile(GLOBAL_CONFIG.level.rebirthRecallBackupPath);
-                    if (!isExactJsonSnapshot(rebirthRecallBackup, verifiedRebirthRecallBackup)) {
-                        replier.reply("❌ 원본 백업 검증에 실패해 환생버섯 회수를 중단했습니다.");
-                        return;
-                    }
-                    rebirthRecallBackup = verifiedRebirthRecallBackup; verifiedRebirthRecallBackup = null;
-                    var rebirthRecallResult = applyRebirthMushroomRecall(data);
-                    if (!rebirthRecallResult.ok) {
-                        replier.reply("❌ " + rebirthRecallResult.message);
-                        return;
-                    }
-                    saveJsonFile(data, filePath);
-                    var verifiedRebirthRecallData = loadJsonFile(filePath);
-                    if (!isRebirthMushroomRecallResultValid(rebirthRecallBackup, verifiedRebirthRecallData)) {
-                        replier.reply("❌ 환생버섯 회수 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 작업을 중단했습니다.");
-                        return;
-                    }
-                    replier.reply("✅ 환생버섯 회수·환급 완료\n━━━━━━━━━━━━\n대상 " + numberWithCommas(rebirthRecallResult.inspection.mushroomUserCount) + "명\n회수 " + numberWithCommas(rebirthRecallResult.inspection.mushroomTotal) + "개\n환급 포인트: 🅟" + numberWithCommas(rebirthRecallResult.inspection.mushroomRefundTotal) + "\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.rebirthRecallBackupPath));
                     return;
                 }
                 if (msg === "/r" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
@@ -24932,80 +24672,6 @@ replier.reply(
                     replier.reply("🫂 펫스윗홈 방문자수 초기화 완료!\n" + "초기화된 유저 수: " + resetCount + "명");
                     return;
                 }
-                if (msg === "/장착가구동기화" && (isAdmin(sender) || isMaster(sender))) {
-                    var syncHomeData = loadJsonFile(homeDataFile);
-                    if (!syncHomeData || typeof syncHomeData !== "object" || Array.isArray(syncHomeData)) {
-                        replier.reply("❌ 펫홈 기본 데이터를 불러올 수 없습니다.");
-                        return;
-                    }
-
-                    var syncPlacedPath = resolveActiveDataPath(petHomePlacedFurniturePath);
-                    var syncPlacedFileExists = new java.io.File(syncPlacedPath).exists(); // 최초 분리와 상시 동기화 구분
-                    var syncPlacedData = syncPlacedFileExists ? loadJsonFile(petHomePlacedFurniturePath) : {};
-                    if (!syncPlacedData || typeof syncPlacedData !== "object" || Array.isArray(syncPlacedData)) {
-                        replier.reply("❌ 장착 가구 상세 데이터를 불러올 수 없습니다.");
-                        return;
-                    }
-                    syncPlacedData = requirePlacedFurnitureDataMap(syncPlacedData);
-                    if (!syncPlacedFileExists && !canCreatePlacedFurnitureData(syncHomeData)) {
-                        replier.reply("❌ 장착 상세 파일을 새로 만들 수 없습니다.\n기존 장착 목록은 없지만 장착 요약값이 남아 있어 관리자 확인이 필요합니다.");
-                        return;
-                    }
-
-                    var initialBackupStatus = "";
-                    if (!syncPlacedFileExists) {
-                        var initialBackupFile = new java.io.File(resolveActiveDataPath(petHomeBeforeSplitBackupPath));
-                        if (initialBackupFile.exists()) {
-                            loadJsonFile(petHomeBeforeSplitBackupPath); // 기존 최초 백업의 JSON 유효성 확인
-                            initialBackupStatus = "기존 백업 유지";
-                        } else {
-                            saveJsonFile(syncHomeData, petHomeBeforeSplitBackupPath);
-                            loadJsonFile(petHomeBeforeSplitBackupPath); // 저장 직후 재로딩 검증
-                            initialBackupStatus = "생성 완료";
-                        }
-                    }
-
-                    var syncResult = synchronizePlacedFurnitureData(syncHomeData, syncPlacedData);
-                    saveJsonFile(syncPlacedData, petHomePlacedFurniturePath);
-                    saveJsonFile(syncHomeData, homeDataFile);
-
-                    var verifiedHomeData = loadJsonFile(homeDataFile);
-                    var verifiedPlacedData = requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath));
-                    var verifyResult = validatePlacedFurnitureSync(verifiedHomeData, verifiedPlacedData);
-                    if (!verifyResult.ok) {
-                        replier.reply("❌ 장착 가구 동기화 검증 실패\n불일치 유저: " + numberWithCommas(verifyResult.mismatchUserCount) + "명");
-                        return;
-                    }
-
-                    replier.reply(
-                        "✅ 장착 가구 " +
-                            (syncPlacedFileExists ? "상시 동기화" : "최초 분리") +
-                            " 완료\n" +
-                            "━━━━━━━━━━━━━━━\n" +
-                            "동기화 유저: " +
-                            numberWithCommas(syncResult.userCount) +
-                            "명\n" +
-                            "장착 가구: " +
-                            numberWithCommas(syncResult.furnitureCount) +
-                            "개\n" +
-                            "기존 목록 병합: " +
-                            numberWithCommas(syncResult.mergedCount) +
-                            "개\n" +
-                            "요약값 수정: " +
-                            numberWithCommas(syncResult.summaryChangedCount) +
-                            "명\n" +
-                            "가방 중복 제거: " +
-                            numberWithCommas(syncResult.bagDuplicateRemovedCount) +
-                            "개\n" +
-                            "상세만 남은 유저: " +
-                            numberWithCommas(syncResult.orphanUserCount) +
-                            "명" +
-                            (syncPlacedFileExists
-                                ? ""
-                                : "\n최초 백업: " + initialBackupStatus + "\n백업 파일: petSweetHomeData_beforePlacedFurnitureSplit.json")
-                    );
-                    return;
-                }
                 var followCommandMatch = msg.match(/^\/(팔로우|언팔로우)\s+(.+)$/);
                 if (followCommandMatch) {
                     var followCommandName = followCommandMatch[1];
@@ -33509,7 +33175,6 @@ function isAutoDailyEntryCommandMessage(msg) {
 // 홈뱃지 오픈처럼 회원·활동 데이터를 함께 바꾸는 명령인지 확인하는 함수
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
-    if (getFlowerCompensationRequest(isDevCommandMessage(command) ? stripDevCommandPrefix(command) : command)) return true;
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
@@ -33527,7 +33192,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
         /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(command) ||
         getRaidSealCraftRequest(command) !== null ||
-        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
+        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "출발한다" || command === "다음에 한다" ||
         command === "/호월토벌대오픈" || /^\/펫스킬슬롯오픈\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
@@ -33541,7 +33206,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/교육완료(?:[ \t]|$)/.test(command) ||
-        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
+        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
         command === "/미니펫컬렉션전체등록" || command === "등록" || command === "ㄴㄴ" || command === "/등록" || command === "/ㄴㄴ" ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
@@ -33741,7 +33406,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -33750,8 +33415,8 @@ function isMatzangOperatorCommandMessage(msg) {
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
-        "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/홈뱃지큐브수정", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/호여", "/부스터수정", "/황금당근수정", "/개발자노트"
+        "/펫홈댓글파일생성", "/펫홈활동파일생성",
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/홈뱃지큐브수정", "/레벨수정", "/경험치수정", "/레벨초기화", "/호여", "/부스터수정", "/황금당근수정", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -41527,7 +41192,6 @@ function isAttendanceFreeCommand(msg, sender) {
     if (msg === "ㅊㅊ" || msg === "호월 봇 이용약관") return true;
     if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
     if (getAttendanceNoticeCommandPrefix(msg) && isMasterIdentity(sender)) return true;
-    if (msg === "/스타터중복확인" && isMaster(sender)) return true;
     if (isGlobalOperatorCommandAllowed(sender, msg)) return true;
     return (isAdmin(sender) || isMaster(sender)) && msg !== "/호여" && !/^\/호여\s+\d+$/.test(msg) && isMatzangOperatorCommandMessage(msg);
 }
@@ -53570,15 +53234,6 @@ function buildTierPetSkillInfoLine(skillData) {
 }
 
 // ── 꽃집 대장장이 일회 보상: 기준 시점·지급·공지 기록을 같은 회원 원본에서 관리한다. ──
-// 꽃집 보상 명령을 전체 문법 일치로 구분하는 함수
-function getFlowerCompensationRequest(msg) {
-    if (msg === "/꽃집보상지급") return { kind: "pay" };
-    if (msg === "/꽃집보상현황") return { kind: "status" };
-    var match = /^\/꽃집보상공지확정[ \t]+(\d+)[ \t]+([12])$/.exec(msg);
-    if (match && match[0] === msg) return { kind: "notice", index: Number(match[1]) - 1, sent: match[2] === "1" };
-    if (typeof msg === "string" && /^\/꽃집보상(?:지급|현황|공지확정)(?:\s|$)/.test(msg)) return { kind: "invalid" };
-    return null;
-}
 
 // 원본을 보정하지 않고 장착 여부와 별칭을 합친 가방 수량만 읽는 함수
 function inspectFlowerCompensationHoldings(skillMember) {
@@ -53706,71 +53361,7 @@ function confirmFlowerCompensationNotice(state, index, wasSent) {
     delivery.status = wasSent ? "SENT" : "PENDING";
 }
 
-// 고정 시점·성공/실패 수와 방별 전송 상태를 관리자에게 표시하는 함수
-function buildFlowerCompensationSummary(state) {
-    if (!state) return "📙 꽃집 대장장이 보상\n아직 지급 작업을 시작하지 않았습니다.\nMASTER 실행: /꽃집보상지급";
-    requireFlowerCompensation(state);
-    var paid = 0, failed = [], points = 0, itemCount = 0;
-    for (var i = 0; i < state.rows.length; i++) {
-        var row = state.rows[i]; points += row.point; if (row.equipped) itemCount++;
-        if (row.status === "PAID") paid++; else if (row.status === "FAILED") failed.push(row.user + ": " + row.error);
-    }
-    var lines = ["📙 꽃집 대장장이 보상 지급 현황", "━━━━━━━━━━━━", "기준 시점: " + formatDateTime(new Date(state.at)), "고정 대상: " + state.rows.length + "명", "지급 성공: " + paid + "명 · 실패: " + failed.length + "명 · 대기: " + (state.rows.length - paid - failed.length) + "명", "산정 포인트 합계: 🅟" + numberWithCommas(points), "산정 소멸권 합계: " + itemCount + "개"];
-    if (!state.rows.length) lines.push("지급 대상 없음 · 전체알림 발송 없음");
-    if (failed.length) lines.push("❌ 미지급 대상 (원인 확인 후 /꽃집보상지급 재실행)", failed.slice(0, GLOBAL_CONFIG.flowerCompensation.summaryLimit).join("\n"));
-    if (failed.length > GLOBAL_CONFIG.flowerCompensation.summaryLimit) lines.push("외 " + (failed.length - GLOBAL_CONFIG.flowerCompensation.summaryLimit) + "명 · 고정 지급 기록 보존");
-    if (state.deliveries === null) lines.push("🔒 전원 지급 완료 전 전체알림 미발송");
-    else {
-        lines.push("🔔 전체알림 방별 상태");
-        var labels = { PENDING: "대기", FAILED: "실패·재실행 가능", SENDING: "전송 여부 미확인", UNKNOWN: "전송 여부 미확인", SENT: "전송 완료" };
-        for (var n = 0; n < state.deliveries.length; n++) lines.push((n + 1) + ". " + state.deliveries[n].room + " · " + labels[state.deliveries[n].status]);
-        if (state.deliveries.some(function (d) { return d.status === "SENDING" || d.status === "UNKNOWN"; })) lines.push("방에서 실제 공지를 확인한 뒤", "/꽃집보상공지확정 방번호 1 (발송됨)", "/꽃집보상공지확정 방번호 2 (미발송·재시도 허용)");
-    }
-    lines.push("📋 조회: /꽃집보상현황", "↪️ 이미 지급한 계정은 재지급하지 않습니다.");
-    return lines.join("\n");
-}
 
-// MASTER 지급 진입에서만 원본을 읽고 보상·공지 단계별 저장을 확정하는 함수
-function runFlowerCompensationEntry(ctx, sender, msg, replier, data) {
-    var request = getFlowerCompensationRequest(msg);
-    if (!request) return false;
-    if (!isMasterIdentity(sender)) { replier.reply("⛔ MASTER 전용 보상 명령입니다."); return true; }
-    if (request.kind === "invalid") { replier.reply("/꽃집보상지급 또는 /꽃집보상현황\n전송 여부 미확인 방만: /꽃집보상공지확정 방번호 1(발송됨)·2(미발송)\n보상·공지 변경 없음"); return true; }
-    var config = GLOBAL_CONFIG.flowerCompensation, state = data[config.ledgerKey];
-    if (state !== undefined) requireFlowerCompensation(state);
-    if (request.kind === "status") { replier.reply(buildFlowerCompensationSummary(state)); return true; }
-    if (request.kind === "notice") {
-        if (!state) { replier.reply("아직 시작된 꽃집 보상 작업이 없습니다."); return true; }
-        try { confirmFlowerCompensationNotice(state, request.index, request.sent); }
-        catch (error) { replier.reply("❌ " + error.message); return true; }
-        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
-        replier.reply(buildFlowerCompensationSummary(state)); return true;
-    }
-    if (state === undefined) {
-        var skills = loadJsonFile(petSkillDataPath); // 최초 기준 시점에 한 번만 장착·가방 원본 읽기
-        state = createFlowerCompensation(data, skills, Date.now(), function () { return String(java.util.UUID.randomUUID()); });
-        data[config.ledgerKey] = state;
-        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 기준 시점을 지급보다 먼저 영속화
-    }
-    if (state.rows.some(function (row) { return row.status !== "PAID"; })) {
-        applyFlowerCompensation(data, state, Date.now());
-        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 포인트·아이템·지급 결과를 한 원본으로 확정
-    }
-    if (prepareFlowerCompensationNotices(state, getNoticeTargetRooms(ctx))) {
-        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
-    }
-    for (var i = 0; state.deliveries && i < state.deliveries.length; i++) {
-        var delivery = state.deliveries[i];
-        if (delivery.status !== "PENDING" && delivery.status !== "FAILED") continue;
-        delivery.status = "SENDING";
-        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 전송 전 기록해 재시작 시 자동 중복 공지 차단
-        try { delivery.status = noticeMsg(config.notice, [delivery.room]) === false ? "FAILED" : "SENT"; }
-        catch (sendError) { delivery.status = "UNKNOWN"; }
-        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); // 전송 실패가 확정 지급을 되돌리지 않게 분리
-    }
-    replier.reply(buildFlowerCompensationSummary(state));
-    return true;
-}
 
 
 // 펫 스킬 이름에서 불필요한 접두사나 이모지를 제거하여 정규화된 형태로 반환
@@ -59619,31 +59210,6 @@ function applyAdventureStarterRecovery(member, recoveredAt) {
     return true;
 }
 
-// 스타터팩 회수 대상·부족분·데이터 오류를 실행 전에 출력하는 함수
-function buildAdventureStarterRecoveryPreviewMessages(plan) {
-    var messages = ["📋 퀘스트 스타터 지급분 회수 미리보기\n지급 기록: " + (plan.pending.length + plan.recovered.length) + "명\n미회수: " + plan.pending.length + "명\n처리 가능: " + plan.ready.length + "명\n전액 회수: " + plan.full.length + "명\n부분 회수: " + plan.partial.length + "명\n보유량 0: " + plan.empty.length + "명\n데이터 오류 보류: " + plan.invalid.length + "명\n이미 회수: " + plan.recovered.length + "명\n※ 남아 있는 만큼만 회수하고 부족분은 기록합니다. 친밀도·퀘스트 진행 기록은 유지합니다."];
-    for (var start = 0; start < plan.ready.length; start += 30) {
-        messages.push("✅ 처리 가능 명단\n" + allsee + "\n" + plan.ready.slice(start, start + 30).join("\n"));
-    }
-    for (var partialStart = 0; partialStart < plan.partial.length; partialStart += 10) {
-        var partialLines = [];
-        for (var partialIndex = partialStart; partialIndex < Math.min(partialStart + 10, plan.partial.length); partialIndex++) {
-            var partial = plan.partial[partialIndex];
-            partialLines.push(partial.name + " — 부족 " + partial.missing.length + "항목: " + partial.missing.slice(0, 3).join(", ") + (partial.missing.length > 3 ? " 외" : ""));
-        }
-        messages.push("📦 부분 회수 예정\n" + allsee + "\n" + partialLines.join("\n"));
-    }
-    for (var blockedStart = 0; blockedStart < plan.invalid.length; blockedStart += 10) {
-        var lines = [];
-        for (var i = blockedStart; i < Math.min(blockedStart + 10, plan.invalid.length); i++) {
-            var blocked = plan.invalid[i];
-            lines.push(blocked.name + " — 비정상 수량: " + blocked.invalid.slice(0, 3).join(", ") + (blocked.invalid.length > 3 ? " 외" : ""));
-        }
-        messages.push("⚠️ 데이터 오류 보류 명단\n" + allsee + "\n" + lines.join("\n"));
-    }
-    if (plan.ready.length > 0) messages.push("대상과 수량을 확인한 뒤 팻 테스트방에서 입력해 주세요.\n/스타터중복회수 실행");
-    return messages;
-}
 
 // 신규 모험가의 펫·미니펫·펜던트 세팅을 한 번만 적용하는 함수
 function applyAdventureStarterPetSettings(petData, user) {
