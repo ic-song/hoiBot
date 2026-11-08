@@ -7,6 +7,8 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    adventurePublication: { pendingName: "adventureGrowthPending.json" },
+    petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     storage: { pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     howolDrama: { pendingName: "howolDramaPending.json" },
     halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
@@ -657,6 +659,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var dramaPending = readInfoPendingJson(dramaPendingPath);
 			if (!dramaPending || dramaPending.version !== 1 || !Object.prototype.hasOwnProperty.call(dramaPending, "pending") || dramaPending.pending !== null && !Array.isArray(dramaPending.pending)) throw new Error("호월드라마 게시 기록 오류");
 			if (dramaPending.pending !== null) return;
+		}
+		var growthPendingPath = ctx.rootPath + GLOBAL_CONFIG.adventurePublication.pendingName;
+		if (!new java.io.File(growthPendingPath).exists() && new java.io.File(growthPendingPath + ".rollback").exists()) return;
+		if (new java.io.File(growthPendingPath).exists()) {
+			var growthPending = readInfoPendingJson(growthPendingPath);
+			if (!growthPending || growthPending.version !== 1 || !Object.prototype.hasOwnProperty.call(growthPending, "pending") || growthPending.pending !== null && !Array.isArray(growthPending.pending)) throw new Error("모험가 성장 게시 기록 오류");
+			if (growthPending.pending !== null) return;
 		}
 		if (!runHalloweenInfoEntry("state", ctx)) return;
 		var plainCommands = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
@@ -2395,7 +2404,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
+	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 별채 추가분과 독립된 평수 기본분
+	homeExp += homeCharm.bonus + homeCharm.floor;
 
 	// 펫 스킬
 	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp", equippedSkillNames);
@@ -2434,7 +2444,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
-	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
+	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 별채 추가분과 독립된 평수 기본분
+	homeExp += homeCharm.bonus + homeCharm.floor;
 
 	// 펫스킬
 	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp", equippedSkillNames);
@@ -4279,7 +4290,15 @@ function getPetHomeVillageLevelLimit(userHome) {
     return Math.floor(Math.max(0, Number(userHome && userHome.floor) || 0) / GLOBAL_CONFIG.petHomeVillage.areaPerLevel);
 }
 
-// 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
+// 현재 평수에서 최종 전투 보정 전 한 모드의 기본 추가 매력을 구하는 함수
+function getPetHomeFloorCharm(home) {
+    var floor = home && home.floor !== undefined ? home.floor : 0;
+    if (typeof floor === "string" && /^\d+$/.test(floor)) floor = Number(floor); // 기존 운영 원본의 정수 문자열 평수도 무저장 계산
+    if (typeof floor !== "number" || !isFinite(floor) || floor < 0 || Math.floor(floor) !== floor || floor * GLOBAL_CONFIG.petHomeFloor.perMode * 2 > GLOBAL_CONFIG.petHomeFloor.maxSafe) throw new Error("펫홈 평수 확인 필요");
+    return floor * GLOBAL_CONFIG.petHomeFloor.perMode;
+}
+
+// 인테리어·별채 추가분과 독립된 평수 보너스를 함께 계산하는 함수
 function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNames) {
     var home = homeData && homeData[user] ? homeData[user] : {};
     var state = getPetHomeVillageState(home);
@@ -4293,8 +4312,9 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNam
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
-        castle: base + bonus + interior, raid: base + bonus + interior, total: (base + bonus + interior) * 2 };
+    var floorCharm = getPetHomeFloorCharm(home); // 현재 전체 평수의 기본 추가분, 인테리어·별채 버프 제외
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, floor: floorCharm, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
+        castle: base + bonus + interior + floorCharm, raid: base + bonus + interior + floorCharm, total: (base + bonus + interior + floorCharm) * 2 };
 }
 
 function getHomeTotalExp(homeData, username) {
