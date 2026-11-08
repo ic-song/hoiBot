@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.782"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.783"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -964,7 +964,12 @@ var dataTransactionLock = new java.util.concurrent.locks.ReentrantLock(); // 명
 var responseQueueLock = new java.util.concurrent.locks.ReentrantLock(); // 접수·작업자 전환만 짧게 보호
 var responseQueue = []; // 데이터 대신 원래 입력과 접수 정보만 보관
 var responseQueueRunning = false;
+var responseQueueWorker = null; // 살아 있는 작업자를 중복 시작하지 않기 위한 실제 스레드
+var responseQueueActiveState = new java.util.concurrent.atomic.AtomicReference(); // 관리자 조회용 현재 작업의 작은 불변 원문
+var responseQueueLastStartError = "";
+var responseQueueDirectOperators = new java.util.concurrent.atomic.AtomicInteger(); // MQ를 우회한 운영자 요청의 실행 중 건수
 var responseQueueThread = new java.lang.ThreadLocal(); // 내부 명령은 현재 작업에서 바로 실행
+var serverRaidAdmissionStates = new java.util.concurrent.ConcurrentHashMap(); // 공개된 회원의 레이드 상태만 MQ 진입 전에 확인
 var dataSaveTransactionThreadLocal = new java.lang.ThreadLocal(); // 명령별 최초 백업과 자동 롤백 상태
 var autoDailyBatchThreadLocal = new java.lang.ThreadLocal(); // 자동일퀘 스레드별 메모리 저장 배치
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
@@ -1009,7 +1014,22 @@ var howolDramaPublishingThread = new java.lang.ThreadLocal();
 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
-    commandQueue: { capacity: 128, maxWaitMs: 120000 },
+    commandQueue: {
+        capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
+        permissions: {
+            adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/장착가구동기화", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고기록전체", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
+            master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/레벨리뉴얼점검","/레벨리뉴얼적용","/환생회수","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/황금당근수정","/길드상점추가","/길드상점삭제", "/스타터중복확인", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
+            masterComma: ["/새해","/용돈돈","/용돈돈2","/용돈","/용돈2","/한가위","/한글","/국군","/슬롯초보","/슬롯초보2","/슬롯초보3","/슬롯초보4","/할로윈","/할로윈2","/시즌","/니가","/복","/메리","/과로","/레이드","/계엄령","/유닛뽑기","/크리스마스","/2주년","/광복","/한국"],
+            admin: ["/당근게시판삭제", "/서버이동", "/마스터명단", "/마스터추가", "/마스터제거", "/가입인증"],
+            masterIdentity: ["/꽃집보상지급", "/꽃집보상현황", "/꽃집보상공지확정", "/관리자순위초기화", "/인증초기화", "/길드전쟁공격초기화"],
+            adminIdentity: ["/인증", "/검색인증", "/인증필요"],
+            adminMasterIdentity: ["/미정", "/정보", "/인증순위", "/관리자순위", "/기록실", "/기록보관소1", "/기록"],
+            operator: ["/글자수통계", "/캐슬스코어", "/캐슬대전횟수리셋", "/캐슬초기화", "/상점삭제", "/외형", "/좋아리셋", "/레벨수정", "/경험치수정", "/레벨초기화", "/r", "/매력", "/펫제거", "/이름", "/미니펫강화속성", "/판매금지아이템", "/당근금지아이템", "/판매금지아이템추가", "/당근금지아이템추가", "/판매금지아이템제거", "/당근금지아이템제거", "/미니펫대전횟수", "/펫데이터비교", "/펫데이터동기화", "/펫타이틀동기화", "/시련의탑동기화", "/반지정보", "/시련의탑수정", "/시련의탑시즌초기화", "/시련의탑시즌시작", "/시련의탑시즌종료", "/미니펫추가", "/미니펫삭제", "/미니펫해제", "/탐험알림", "/펫탐험이벤트활성화", "/펫탐험이벤트비활성화", "/레이드이벤트활성화", "/레이드이벤트비활성화"],
+            operatorBot: ["/리셋", "/캐슬대전시즌시작", "/캐슬대전시즌종료", "/캐슬대전초기화", "/연금지급", "/티어보상지급", "/보상지급"],
+            operatorAdminMaster: ["/추석이벤트활성화", "/추석이벤트비활성화", "/달토끼상점추가", "/달토끼상점삭제"],
+            auctionOperators: ["칠가 남", "감자 여", "벨라 여", "티모 여", "진주 여"]
+        }
+    },
     howolMystery: { reward: 100000000, sessionLimit: 5000, suspects: ["호월이", "호동이", "봄봄이"], cases: [
         {"id":1,"title":"🍰 사라진 마지막 케이크","difficulty":"쉬움","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님이 카페 냉장고에 넣어 둔 케이크가 사라졌다. 케이크는 불투명한 상자에 담겨 있었다.\n\n🐱 호월이: “서재에서 책을 읽었어. 케이크는 보지도 않았어.”\n🐾 호동이: “부엌에서 생크림을 만들었어. 손에 크림이 묻었지.”\n💕 봄봄이: “딸기 한 알 올린 케이크는 원래 별로 안 좋아해요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 상자를 닫기 직전 올린 딸기 장식은 당신만 봤다.\n② 호동이가 만든 생크림에는 딸기가 들어가지 않았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"봄봄이는 볼 수 없던 딸기 장식을 알고 있었다. 호동이 손의 크림은 별도 요리에서 묻은 것이었다.","ending":"봄봄이는 케이크를 깜짝 파티용으로 옮겼다고 실토하고 새 접시를 꺼냈다."},
         {"id":2,"title":"📸 남아 있지 않은 사진","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 1/2\n━━━━━━━━━━━━\n저녁 8시 무렵, [채크랭크] 님의 카메라에서 메모리 카드가 사라졌다. 카메라는 7시 55분에 확인한 뒤 8시 5분에 다시 보니 카드가 없었다.\n\n🐱 호월이: “난 카메라를 만지지 않았어.”\n🐾 호동이: “난 그 시각에 정원에 있었어.”\n💕 봄봄이: “8시에 카메라에서 사진을 골라 봤어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 카메라 배터리는 7시 50분에 완전히 방전됐고 그날 교체하거나 외부 전원을 연결한 기록도 없었다.\n② 저녁 7시 55분부터 8시 5분까지 마당 영상에 호월이와 호동이가 함께 찍혀 있었다. 봄봄이만 카메라가 있던 방에 남았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"8시에 카메라에서 사진을 골라 봤다는 봄봄이의 진술은 방전된 기기의 상태와 맞지 않는다. 카드가 사라진 10분 동안 다른 두 사람은 마당 영상에 있었고 봄봄이만 카메라에 접근할 수 있었다.","ending":"봄봄이는 카드에 담긴 낮 사진을 깜짝 전시하려고 가져갔다고 밝혔다."},
@@ -3902,39 +3922,228 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     room = String(room);
     msg = String(msg);
     sender = String(sender);
+    if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
+    if (msg === "/MQ상태" || msg === "/mq상태") {
+        var statusContext = createCommandContext(false, room), statusPrevious = enterCommandContext(statusContext);
+        try { if (isAdminIdentity(sender) || isMasterIdentity(sender)) Api.replyRoom(room, buildResponseQueueStatusMessage()); }
+        finally { exitCommandContext(statusPrevious); }
+        return;
+    }
+    var callbackEvent = getServerRaidCallbackEvent(arguments, packageName);
+    if (!responseQueueThread.get()) {
+        if (isResponseAdmissionDenied(room, msg, sender, isGroupChat, callbackEvent)) return;
+        var raidAdmissionBlock = getServerRaidAdmissionBlock(room, msg, sender, isGroupChat);
+        if (raidAdmissionBlock) {
+            if (raidAdmissionBlock.command === "/펫탐험자동정산") exploreInterval = false;
+            return; // 기존 레이드 차단 입력은 안내 전송·MQ 접수·파일 IO 없이 종료
+        }
+    }
     var request = { room: room, msg: msg, sender: sender, isGroupChat: isGroupChat, replier: replier,
         imageDB: imageDB, packageName: packageName, receivedAt: Date.now(),
-        callbackEvent: getServerRaidCallbackEvent(arguments, packageName), // 실제 콜백의 확장 정보만 접수 시 보존
+        callbackEvent: callbackEvent, // 실제 콜백의 확장 정보만 접수 시 보존
         gameId: getMiniGameObservedVaultId(isDevCommandMessage(msg)) };
-    if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     if (responseQueueThread.get()) { executeResponseRequest(request); return; }
     request.replier = createQueuedResponseReplier(room); // 외부 콜백의 가변 응답 객체를 작업자에 넘기지 않는다.
-    var rejected = false;
+    var rejected = false, rateRejected = false, admitted = false, floodInfo = null;
+    var operatorContext = enterCommandContext(createCommandContext(isDevCommandMessage(msg), room));
+    var directOperator;
+    try { directOperator = isAdminIdentity(sender) || isMasterIdentity(sender); }
+    finally { exitCommandContext(operatorContext); }
     responseQueueLock.lock();
     try {
-        if (responseQueue.length >= GLOBAL_CONFIG.commandQueue.capacity) rejected = true;
-        else {
+        request.admissionRateChecked = true;
+        if (!isExcludedRequestMonitoring(room, getServerRaidAdmissionCommand(msg), false) && isRapidUserRequest(sender)) {
+            rateRejected = true;
+            floodInfo = getUserRequestInfo(sender);
+        } else if (!directOperator && responseQueue.length >= GLOBAL_CONFIG.commandQueue.capacity) rejected = true;
+        else if (!directOperator) {
             responseQueue.push(request);
-            if (!responseQueueRunning) {
-                try {
-                    var worker = new java.lang.Thread(new java.lang.Runnable({ run: drainResponseQueue }));
-                    worker.setDaemon(true);
-                    responseQueueRunning = true;
-                    worker.start();
-                } catch (startError) {
-                    responseQueueRunning = false;
-                    responseQueue.pop();
-                    rejected = true;
-                }
+            admitted = true;
+        }
+        if (!directOperator && responseQueue.length && (!responseQueueRunning || !responseQueueWorker || !responseQueueWorker.isAlive())) {
+            try {
+                var worker = new java.lang.Thread(new java.lang.Runnable({ run: drainResponseQueue }));
+                worker.setDaemon(true);
+                responseQueueWorker = worker;
+                responseQueueRunning = true;
+                worker.start();
+                responseQueueLastStartError = "";
+            } catch (startError) {
+                responseQueueRunning = false;
+                responseQueueWorker = null;
+                responseQueueLastStartError = String(startError);
+                if (admitted) responseQueue.pop();
+                rejected = true;
             }
         }
     } finally { responseQueueLock.unlock(); }
-    if (rejected) notifyResponseQueue(request, "⚠️ 요청이 몰려 접수하지 못했어요. 잠시 후 다시 입력해 주세요.");
+    if (rateRejected) {
+        if (floodInfo && floodInfo.isFirstDetect) notifyRequestFlood(request, floodInfo);
+        notifyResponseQueue(request, "[" + sender + "]" + getUserRequestBlockMessage());
+    } else if (rejected) notifyResponseQueue(request, "⚠️ 요청이 몰려 접수하지 못했어요. 잠시 후 다시 입력해 주세요.");
+    else if (directOperator) {
+        responseQueueDirectOperators.incrementAndGet();
+        try { responseQueueThread.set(true); executeResponseRequest(request); }
+        catch (directError) {
+            try { debuggerLog("[운영자 직접 실행 오류] " + directError); } catch (logError) {}
+            if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
+        }
+        finally { responseQueueDirectOperators.decrementAndGet(); responseQueueThread.remove(); }
+    }
+}
+
+// 기존 요청 감지 알림을 실행 대기 없이 운영자에게 전달하는 함수
+function notifyRequestFlood(request, info) {
+    try { Api.replyRoom(room90, "[요청 과부하 감지]\n방: " + request.room + "\n유저: " + request.sender + "\n기준: " + getUserRequestWindowSeconds() + "초 내 " + USER_REQUEST_LIMIT + "회\n현재: " + info.count + "회\n메시지: " + request.msg); }
+    catch (error) { try { debuggerLog("[요청 감지 알림 실패] " + error); } catch (ignored) {} }
+}
+
+// 현재 최상위 MQ 작업의 단계와 경과 기준만 개인정보 없이 공개하는 함수
+function updateResponseQueueStage(request, stage) {
+    if (!request.queueRoot) return;
+    var command = getServerRaidAdmissionCommand(request.msg);
+    var label = command.charAt(0) === "/" ? command.split(/[\s,]/)[0].substring(0, GLOBAL_CONFIG.commandQueue.statusCommandChars) : "일반 메시지/단축어";
+    responseQueueActiveState.set(JSON.stringify({ command: label, stage: stage, startedAt: request.queueStartedAt, receivedAt: request.receivedAt }));
+}
+
+// 데이터 잠금과 MQ 대기를 거치지 않고 메모리 대기열 상태를 표시하는 함수
+function buildResponseQueueStatusMessage() {
+    var now = Date.now(), count = null, oldestMs = 0, workerState = "접수 상태 확인 중", lastError = "";
+    var locked = responseQueueLock.tryLock();
+    if (locked) {
+        try {
+            count = responseQueue.length;
+            oldestMs = count ? Math.max(0, now - responseQueue[0].receivedAt) : 0;
+            workerState = responseQueueWorker ? (responseQueueWorker.isAlive() ? String(responseQueueWorker.getState()) : "종료됨") : "없음";
+            lastError = responseQueueLastStartError;
+        } finally { responseQueueLock.unlock(); }
+    }
+    var activeText = responseQueueActiveState.get(), active = activeText === null ? null : JSON.parse(String(activeText));
+    var lines = ["📬 명령 MQ 상태", "ver_" + HoiBotVersion, "저장 위치: 메모리", "대기: " + (count === null ? "접수 처리 중" : count + "/" + GLOBAL_CONFIG.commandQueue.capacity + "건"), "최장 대기: " + (oldestMs / 1000).toFixed(1) + "초", "작업자: " + workerState];
+    if (active) lines.push("진행 작업: " + active.command, "처리 단계: " + active.stage, "작업 경과: " + (Math.max(0, now - active.startedAt) / 1000).toFixed(1) + "초");
+    else lines.push("진행 작업: 없음");
+    lines.push("관리자·MASTER 직접 처리: " + responseQueueDirectOperators.get() + "건", "대기 만료 기준: " + (GLOBAL_CONFIG.commandQueue.maxWaitMs / 1000) + "초");
+    if (lastError) lines.push("작업자 시작 오류: " + lastError.substring(0, GLOBAL_CONFIG.commandQueue.statusErrorChars));
+    return lines.join("\n");
 }
 
 // 큐 외부 요청의 응답을 접수한 방 이름에 고정하는 함수
 function createQueuedResponseReplier(room) {
     return { reply: function (message) { return Api.replyRoom(room, message); } };
+}
+
+// 파일을 읽지 않고 기존 명령어방·운영자 권한 조건을 MQ 접수 전에 확인하는 함수
+function isResponseAdmissionDenied(room, msg, sender, isGroupChat, event) {
+    var isDev = isDevCommandMessage(msg), command = getServerRaidAdmissionCommand(msg);
+    var ctx = createCommandContext(isDev, room), previous = enterCommandContext(ctx);
+    try {
+        if (isServerRaidCommand(command)) {
+            if (!isServerRaidCommandRoom(room, isGroupChat, ctx, command)) return true;
+            if (command === "/서버대전전체초기화" && !isMasterIdentity(sender)) return true;
+            if ((command === "/서버대전시작" || command === "/서버대전종료") && !(isMasterIdentity(sender) || isServerRaidVerifiedOperator(event, isGroupChat))) return true;
+        }
+        if (GLOBAL_CONFIG.doll.allowedRoom && isDollTestRoomCommand(command) && room !== GLOBAL_CONFIG.doll.allowedRoom) return true;
+        if (isCarrotTradeCommand(command) && !isCarrotTradeRoomAllowed(room, isGroupChat)) return true;
+        if (/^\/펫무쌍공격\s+(?:10|[1-9])$/.test(command) && !(room === room8 || isDev)) return true;
+        if ((command === "/맞짱" || command === "ㅁㅁ" || command === "/맞짱시작") && room !== room8) return true;
+        if ((command === "/맞짱시작" || command === "/맞짱종료" || command === "/휴식") && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇" || isCastleSiegeRoomOperatorCommand(sender, command))) return true;
+        if (command === "/펫무쌍시작" && !isPetMusouStartOperator(sender)) return true;
+        if ((command === "/펫무쌍종료" || command === "/티켓이벤트시작" || command === "/티켓이벤트종료" || command === "/티켓전체회수") && !isPetMusouOperator(sender)) return true;
+        if (command === "/메인방제한" || command === "/메인방제한 ON" || command === "/메인방제한 OFF") return room !== testRoom || !isMasterIdentity(sender);
+        if (isDev && command === "/데이터백업" && !isMaster(sender)) return true;
+        var entry = getManualResetLegacyEntry(command);
+        if (entry && !entry.personal) {
+            var orderCleanup = command === "/글자수전체정리" && room === GLOBAL_CONFIG.permissions.orderLogRoom;
+            if (!(orderCleanup ? isMaster(sender) : isManualResetEntryAllowed(entry, sender, {}, {}))) return true;
+        }
+        if (command === "/자동출첵" && !(isMaster(sender) || sender === "오픈채팅봇")) return true;
+        if (command === "/주기리셋" || command === "/자동탐험시작") return !(isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")));
+        if (command === "/개발자노트" || command === "/패스목록") return !(isAdmin(sender) || isMaster(sender));
+        if (command === "/스타터중복회수" || command === "/스타터중복회수 실행") return room !== testRoom || !isMaster(sender);
+        var name = command.split(/[\s,]/)[0], permissions = GLOBAL_CONFIG.commandQueue.permissions;
+        if (permissions.adminMaster.indexOf(name) !== -1 && !(isAdmin(sender) || isMaster(sender))) return true;
+        if (permissions.master.indexOf(name) !== -1 && !isMaster(sender)) return true;
+        if (permissions.masterComma.indexOf(name) !== -1 && command.indexOf(name + ",") === 0 && !isMaster(sender)) return true;
+        if (permissions.admin.indexOf(name) !== -1 && !isAdmin(sender)) return true;
+        if (permissions.masterIdentity.indexOf(name) !== -1 && !isMasterIdentity(sender)) return true;
+        if (permissions.adminIdentity.indexOf(name) !== -1 && !isAdminIdentity(sender)) return true;
+        if (permissions.adminMasterIdentity.indexOf(name) !== -1 && !(isAdminIdentity(sender) || isMasterIdentity(sender))) return true;
+        var operator = sender === "호이 남" || isOrderLogRoomBot(sender);
+        if (permissions.operator.indexOf(name) !== -1 && !operator) return true;
+        if (permissions.operatorBot.indexOf(name) !== -1 && !(sender === "호이 남" || sender === "오픈채팅봇")) return true;
+        if (permissions.operatorAdminMaster.indexOf(name) !== -1 && !(operator || isAdmin(sender) || isMaster(sender))) return true;
+        if (name === "/경매등록" && !(isMaster(sender) || permissions.auctionOperators.indexOf(sender) !== -1)) return true;
+        if ((name === "/디버깅모드" || name === "/매력버프체크") && !(operator || sender === "쓱싹 여" || sender === "찰리 봇")) return true;
+        if (name === "/소지품저장" && !(operator || sender === "젤리 남")) return true;
+        if (name === "/명치한대" && !(operator || sender === "맹구 여")) return true;
+        if (name === "/길드영지종료" && !(sender === "오픈채팅봇" || sender === "호이 남" || sender === "티모 여" || sender === "벨라 여")) return true;
+        // /스킬정보는 인수가 있는 관리자 조회만 기존 권한을 적용한다.
+        if (command.indexOf("/스킬정보 ") === 0 && !(isAdmin(sender) || isMaster(sender))) return true;
+        return false;
+    } finally { exitCommandContext(previous); }
+}
+
+// MQ 앞에서 판별할 레이드 상태와 가입 입력 단계만 작은 불변 원문으로 만드는 함수
+function buildServerRaidAdmissionState(data) {
+    if (!isServerRaidLocked(data)) return "null";
+    var round = data.serverRaid.current;
+    var state = { serverRaid: { current: { state: round.state, autoEndAt: round.autoEndAt, durationBasis: round.durationBasis, durationMs: round.durationMs } }, member: Object.create(null) };
+    for (var user in data.member) if (Object.prototype.hasOwnProperty.call(data.member, user)) {
+        var member = data.member[user], stage = member && member.adventureOnboarding && member.adventureOnboarding.stage;
+        if (stage === "WAIT_PET_NAME" || stage === "WAIT_REFERRAL") state.member[user] = { adventureOnboarding: { stage: stage } };
+    }
+    return JSON.stringify(state);
+}
+
+// 기존 전처리와 같은 DEV·단축어·레이드 조회 입력을 접수 판정용으로만 정규화하는 함수
+function getServerRaidAdmissionCommand(msg) {
+    var command = msg, isDev = isDevCommandMessage(msg);
+    if (isDev) {
+        command = stripDevCommandPrefix(msg);
+        if (command === "/ㅊㅊ" || command === "/ㅍㅍㅍ" || command === "/등록한다" || command === "/등록안한다") command = command.substring(1);
+        if (/^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ|ㅎㅈ|ㅊㄹ)$/.test(command)) command = command.substring(1);
+    }
+    if (getHowolDramaRequest(command)) command = String(command).replace(/^[ \t]+|[ \t]+$/g, "");
+    if (command.trim() === "ㅎㅈ") command = "/호월주사위";
+    if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) command = "ㅁㄱ";
+    if (command === "ㅁㅂ") command = "/마블굴리기";
+    else if (command === "ㅁㄱ") command = "/마블구매";
+    else if (command === "ㅁㅌ") command = "/마블통과";
+    var turnInput = command.trim(); // 남은 턴 조회만 기존과 같이 앞뒤 공백 허용
+    if (isDev && turnInput === "/ㄹㄹ") turnInput = "ㄹㄹ";
+    return isServerRaidTurnQueryCommand(turnInput) ? turnInput : command;
+}
+
+// 기존 레이드 제한보다 먼저 처리되던 운영 명령은 기존 진입 흐름으로 전달하는 함수
+function isServerRaidAdmissionEarlyCommand(command, isDev, sessionKey) {
+    var resetSession = manualResetSessions[sessionKey];
+    var manualInput = isManualResetInput(command) && (!/^\d+(?:[ \t]+[^\r\n]+)?$/.test(command) || !!resetSession);
+    return manualInput || (isDev && resetSession && /^\/(?:1삭제|2취소|\d+(?:[ \t]+[^\r\n]+)?)$/.test(command)) ||
+        !!getDataCleanupAction(command, dataCleanupSessions[sessionKey]) || (isDev && command === "/데이터백업") ||
+        command === "/메인방제한" || command === "/메인방제한 ON" || command === "/메인방제한 OFF" ||
+        command === "/필터리스트" || command === "/필터데이터정리" || !!getMessageFilterRequest(command);
+}
+
+// 파일 IO나 데이터 잠금 없이 기존 레이드 차단 대상만 MQ 접수 전에 판별하는 함수
+function getServerRaidAdmissionBlock(room, msg, sender, isGroupChat) {
+    var isDev = isDevCommandMessage(msg), command = getServerRaidAdmissionCommand(msg);
+    var path = isDev ? DEV_DATA_ROOT_PATH + "member.json" : filePath;
+    var text = serverRaidAdmissionStates.get(String(path));
+    if (text === null || String(text) === "null") return null;
+    var state = JSON.parse(String(text)), round = state.serverRaid.current;
+    if (isServerRaidAutoEndDue(round, Date.now())) return null; // 마감·정산 재개는 기존 실행 경로에서 처리
+    var ctx = createCommandContext(isDev, room), previous = enterCommandContext(ctx);
+    try {
+        var sessionKey = getManualResetSessionKey(sender, room, isGroupChat, isDev);
+        if (isServerRaidCommand(command)) {
+            if (!isServerRaidCommandRoom(room, isGroupChat, ctx, command)) return { command: command, round: round };
+            if (command !== "/서버대전시작") return null;
+        }
+        if (isServerRaidAdditionalCommand(command)) return null;
+        if (isServerRaidAdmissionEarlyCommand(command, isDev, sessionKey)) return null;
+        if (isServerRaidGameInput(state, sender, room, command) || (howolDramaSessions[sessionKey] && /^[ \t]*[12][ \t]*$/.test(command))) return { command: command, round: round };
+        return null;
+    } finally { exitCommandContext(previous); }
 }
 
 // 큐 접수 실패·만료·실행 오류를 원래 요청의 응답 대상으로 안내하는 함수
@@ -3945,15 +4154,20 @@ function notifyResponseQueue(request, message) {
 
 // 한 작업자가 접수 순서대로 실행하고 오류 후에도 다음 요청을 처리하는 함수
 function drainResponseQueue() {
+    try {
     while (true) {
         var request;
         responseQueueLock.lock();
         try {
-            if (!responseQueue.length) { responseQueueRunning = false; return; }
+            if (!responseQueue.length) { responseQueueRunning = false; responseQueueWorker = null; return; }
             request = responseQueue.shift();
         } finally { responseQueueLock.unlock(); }
         try {
+            request.queueRoot = true;
+            request.queueStartedAt = Date.now();
+            updateResponseQueueStage(request, "실행 전 확인");
             if (Date.now() - request.receivedAt > GLOBAL_CONFIG.commandQueue.maxWaitMs) {
+                updateResponseQueueStage(request, "대기 만료 안내");
                 notifyResponseQueue(request, "⚠️ 대기가 길어 실행하지 않았어요. 명령어를 다시 입력해 주세요.");
                 continue;
             }
@@ -3962,7 +4176,17 @@ function drainResponseQueue() {
         } catch (queueError) {
             try { debuggerLog("[명령 큐 실행 오류] " + queueError); } catch (logError) {}
             if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
-        } finally { responseQueueThread.remove(); }
+        } finally { responseQueueActiveState.set(null); responseQueueThread.remove(); }
+    }
+    } finally {
+        responseQueueLock.lock();
+        try {
+            if (responseQueueWorker && responseQueueWorker.equals(java.lang.Thread.currentThread())) {
+                responseQueueWorker = null;
+                responseQueueRunning = false;
+                responseQueueActiveState.set(null);
+            }
+        } finally { responseQueueLock.unlock(); }
     }
 }
 
@@ -4017,9 +4241,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
     var commandContextEntered = false;
     var ctx = null;
     var prevCtx = null;
+    updateResponseQueueStage(request, "명령 흐름 잠금 대기");
     responseDataLock.lock();
     //데이터 검사
     try {
+        updateResponseQueueStage(request, "데이터 잠금 대기");
         dataTransactionLock.lock(); // 자동 작업이 보유한 잠금도 기다린 뒤 최신 데이터를 읽는다.
         responseTransactionAcquired = true;
         var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
@@ -4036,6 +4262,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             request.operatorReadDiagnostic.stage = "초기 복구 검사";
         }
         var responseRecoveryStartMs = Date.now();
+        updateResponseQueueStage(request, "초기 복구 검사");
         recoverGuildWarPublication();
         recoverInterruptedMemberWrite();
         recoverHowolDramaPending();
@@ -4375,6 +4602,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "회원 데이터 로드";
         var initialMemberLoadStartMs = Date.now();
+        updateResponseQueueStage(request, "회원 자료 로드");
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
         if (runFlowerCompensationEntry(ctx, sender, msg, replier, data)) return;
@@ -4581,8 +4809,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     clearServerRaidWorkTimer(ctx);
                     scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
                 }
-                replyServerRaidSafely(replier, buildServerRaidLockMessage(raidNick, data.serverRaid.current));
-                return;
+                return; // 접수 뒤 레이드가 시작된 요청도 무응답으로 차단
             }
             if (msg === "/서버대전전체초기화") {
                 resetServerRaid(data, String(java.util.UUID.randomUUID()));
@@ -5058,7 +5285,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
 
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "공통 명령 전처리";
-        if (!isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
+        updateResponseQueueStage(request, "공통 명령 전처리");
+        if (!request.admissionRateChecked && !isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
             let requestInfo = getUserRequestInfo(sender);
             if (requestInfo.isFirstDetect) {
                 Api.replyRoom(
@@ -33225,6 +33453,8 @@ function isCastleSiegeRoomOperatorCommand(sender, msg) {
 
 // 유저 요청이 과부하 기준을 넘었는지 확인하는 함수
 function isRapidUserRequest(sender) {
+    responseQueueLock.lock();
+    try {
     let now = Date.now();
     let history = userRequestTracker[sender] || [];
 
@@ -33236,10 +33466,13 @@ function isRapidUserRequest(sender) {
     userRequestTracker[sender] = history;
 
     return history.length >= USER_REQUEST_LIMIT;
+    } finally { responseQueueLock.unlock(); }
 }
 
 // 유저 요청 감지 상태 정보를 반환하는 함수
 function getUserRequestInfo(sender) {
+    responseQueueLock.lock();
+    try {
     let now = Date.now();
     let history = userRequestTracker[sender] || [];
 
@@ -33253,6 +33486,7 @@ function getUserRequestInfo(sender) {
         isFlood: history.length >= USER_REQUEST_LIMIT,
         isFirstDetect: history.length === USER_REQUEST_LIMIT
     };
+    } finally { responseQueueLock.unlock(); }
 }
 
 // 유저의 최근 요청 횟수를 반환하는 함수
@@ -33548,8 +33782,8 @@ function isDevGuildTerritoryWarActive() {
 }
 
 // 요청 모니터링 제외 대상 여부를 확인하는 함수
-function isExcludedRequestMonitoring(room, msg) {
-    if (autoDailyQuestInternalDepth > 0) {
+function isExcludedRequestMonitoring(room, msg, internalRequest) {
+    if (internalRequest === true || (internalRequest === undefined && autoDailyQuestInternalDepth > 0)) {
         return true;
     }
 
@@ -34697,6 +34931,7 @@ function loadJsonFile(path, memberStoreMode) {
                     }
                 } catch (splitLoadError) { splitLoadError.memberStorageFailure = true; throw splitLoadError; }
             }
+            if (path === resolveActiveDataPath(filePath)) serverRaidAdmissionStates.put(String(path), buildServerRaidAdmissionState(loadedData));
             if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = loadedData;
             return loadedData;
         }
@@ -35154,7 +35389,9 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         writer = null;
         outputStream = null;
 
-        parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
+        var raidAdmissionState = null; // 기존 임시 파일 검증 결과에서 작은 접수 상태만 보관
+        if (path === resolveActiveDataPath(filePath)) raidAdmissionState = buildServerRaidAdmissionState(parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path));
+        else parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
         var seedManagedBackup = false;
         var managedBackupPath = getManagedJsonBackupPath(path);
@@ -35207,6 +35444,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         if (typeof serverRaidNoticeMemberRevisions !== "undefined" && path === resolveActiveDataPath(filePath)) serverRaidNoticeMemberRevisions[path] = (serverRaidNoticeMemberRevisions[path] || 0) + 1;
         var publishedTransaction = getDataSaveTransaction();
         if (publishedTransaction && !publishedTransaction.rollingBack && publishedTransaction.entries[path]) publishedTransaction.entries[path].saved = true; // 교체 직후 등록해 후속 정리 실패도 원본 복구 대상에 포함
+        if (raidAdmissionState !== null) serverRaidAdmissionStates.put(String(path), raidAdmissionState);
         if (rollbackFile.exists() && !rollbackFile.delete()) {
             try { debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath()); } catch (cleanupLogError) {} // 완료된 저장은 로그 전송 실패로 취소하지 않음
         }
