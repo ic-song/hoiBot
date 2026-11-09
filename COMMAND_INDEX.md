@@ -5,6 +5,12 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 2026-11-09 다이아상점 UI 정리 (ver_2.789)
+
+Status: VERIFIED
+
+- 사용자 후속 요청으로 `/다이아상점` 조회만 직접 닉네임 헤더를 생략한다. 구매·관리·기타 직접 응답은 기존 헤더를 유지한다. `buildDiamondShopView`는 보유량 뒤와 시세 안내 뒤에 구분선을 표시한다. `buildDiamondCombineGuide`는 기존 `formatKoreanShort`로 조합 비용을 표시하고 상자 획득 줄을 분리한다. 상품·구매 한도·시세·조합 비용 계산과 상자 개봉 안내는 유지한다.
+
 ## 2026-11-09 지도 UI 정합성 보완 (ver_2.788)
 
 Status: VERIFIED
