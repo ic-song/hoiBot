@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.795"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.796"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3995,14 +3995,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     } finally { responseQueueLock.unlock(); }
     if (rateRejected) {
         if (floodInfo && floodInfo.isFirstDetect) notifyRequestFlood(request, floodInfo);
-        notifyResponseQueue(request, "[" + sender + "]" + getUserRequestBlockMessage());
-    } else if (rejected) notifyResponseQueue(request, "⚠️ 요청이 몰려 접수하지 못했어요. 잠시 후 다시 입력해 주세요.");
-    else if (directOperator) {
+        // 임시 안내 중지: notifyResponseQueue(request, "[" + sender + "]" + getUserRequestBlockMessage());
+    } else if (rejected) {
+        // 임시 안내 중지: notifyResponseQueue(request, "⚠️ 요청이 몰려 접수하지 못했어요. 잠시 후 다시 입력해 주세요.");
+    } else if (directOperator) {
         responseQueueDirectOperators.incrementAndGet();
         try { responseQueueThread.set(true); executeResponseRequest(request); }
         catch (directError) {
             try { debuggerLog("[운영자 직접 실행 오류] " + directError); } catch (logError) {}
-            if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
+            // 임시 안내 중지: if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
         }
         finally { responseQueueDirectOperators.decrementAndGet(); responseQueueThread.remove(); }
     }
@@ -4187,14 +4188,14 @@ function drainResponseQueue() {
             updateResponseQueueStage(request, "실행 전 확인");
             if (!request.petExploreTick && Date.now() - request.receivedAt > GLOBAL_CONFIG.commandQueue.maxWaitMs) {
                 updateResponseQueueStage(request, "대기 만료 안내");
-                notifyResponseQueue(request, "⚠️ 대기가 길어 실행하지 않았어요. 명령어를 다시 입력해 주세요.");
+                // 임시 안내 중지: notifyResponseQueue(request, "⚠️ 대기가 길어 실행하지 않았어요. 명령어를 다시 입력해 주세요.");
                 continue;
             }
             responseQueueThread.set(true);
             executeResponseRequest(request);
         } catch (queueError) {
             try { debuggerLog("[명령 큐 실행 오류] " + queueError); } catch (logError) {}
-            if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
+            // 임시 안내 중지: if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
         } finally { responseQueueActiveState.set(null); responseQueueThread.remove(); }
     }
     } finally {

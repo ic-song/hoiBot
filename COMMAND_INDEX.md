@@ -755,7 +755,7 @@ Status: VERIFIED
 - 큐 접수 전 `room`, `msg`, `sender`를 `String(...)`으로 변환한다. Java 문자열 객체와 원시 문자열을 같은 명령·방·권한 비교에 사용하며, 공백 제거·별칭 추가·권한 확대는 하지 않는다.
 - `response(...)`는 실제 콜백의 `arguments`를 `getServerRaidCallbackEvent`로 접수 시 해석하고 `request.callbackEvent`에 보관한다. `processResponse`는 그 값을 사용하며 내부 8번째 인수인 큐 요청을 신뢰된 이벤트로 해석하지 않는다. 기본 7인수는 `null` 이벤트를 유지해 레이드 공격 진입에서 호출별 UUID를 생성하고, 기존 신뢰 어댑터 8번째 객체·선택적 네이티브 11인수의 메시지/방/운영자 식별값은 이전 규칙 그대로 보존한다. 확장 인수는 필수가 아니다.
 - `drainResponseQueue` → `executeResponseRequest` → `processResponse` 순으로 기존 데이터 흐름 잠금과 `dataTransactionLock.lock()`을 얻은 뒤 최신 데이터를 읽는다. Main 일반 채팅도 기존 글자수·경험치 처리를 위해 같은 큐를 사용한다. Info.js 콜백은 변경하지 않는다.
-- `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않고 안내한다. 초과 접수·작업자 시작 실패도 안내한다. 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다.
+- `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않는다. 공통 반복 요청 차단·접수 실패·대기 만료·실행 오류의 사용자 안내 전송 5곳은 임시 주석 처리되어 있다. 접수 제한·만료 폐기·운영자 과부하 알림·오류 로그는 유지하며, 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다. 개별 콘텐츠 안내와 운영 조회 전용 진단은 변경하지 않는다.
 - `responseQueueThread`가 설정된 현재 작업자의 내부 `response(...)` 재호출은 바로 실행한다. 자동일퀘의 캡처 응답·중첩 트랜잭션·DEV 컨텍스트를 유지하며 자기 큐를 기다리지 않는다.
 - 큐는 메모리에만 존재한다. 같은 명령도 입력마다 실행되며, 재시작 후 미실행 요청은 자동 재생하지 않는다. 실행에 들어간 명령은 기존 저장·백업·자동·수동 복구를 사용한다. 실제 MessengerBot의 지연 `replier` 응답과 재컴파일 동작은 운영자 적용 후 확인이 필요하다.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
