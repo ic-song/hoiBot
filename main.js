@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.787"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.788"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -64497,27 +64497,36 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     var key = store.userBet[sender] ? String(store.userBet[sender]) : null;
     var p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, key, guildData);
     var fixed = store.autoFixedDungeon[sender], recent = store.recentResults[sender] || [], bag = data.member[sender].bag || {};
-    var lines = ["🗺️ 펫탐험 지도🗺️", getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "🎯 탐험 성공률: " + formatPercent1(p.totalP) + "%", "현재 탐험지⛰️: " + (key ? getExploreDungeonName(key, store) : "없음"), "자동탐험 고정⛰️: " + (fixed ? getExploreDungeonName(fixed, store) : "없음"), "최근 탐험: " + (recent.length ? recent.slice(0, GLOBAL_CONFIG.petExplore.rework.historyLimit).join(" ") : "최근 탐험 기록 없음"), "━━━━━━━━━━━━"];
+    var lines = ["🗺️ 펫탐험 지도🗺️", "⏱ 자동탐험: 시작 후 " + setint + "분마다 정산", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "🎯 탐험 성공률: " + formatPercent1(p.totalP) + "%", "⛰️ 현재 탐험지: " + (key ? getExploreDungeonName(key, store) : "없음"), "🔁 자동탐험 고정: " + (fixed ? getExploreDungeonName(fixed, store) : "없음"), "━━━━━━━━━━━━", "📜 내 최근 탐험 (최근 5회)", recent.length ? recent.slice(0, GLOBAL_CONFIG.petExplore.rework.historyLimit).join(" ") : "최근 탐험 기록 없음", "━━━━━━━━━━━━"];
     if (store.notice) lines.push(normalizeOperationNoticeText(store.notice));
     if (store.reworkVersion === 1) lines.push("기존 참가 회차는 기존 기준으로 마무리한 뒤 새 지역을 선택할 수 있어요.");
     if (store.reworkResetUsers && store.reworkResetUsers[sender]) lines.push("삭제 지역 자동고정이 해제됐어요. /자동탐고정 1~6으로 다시 선택해주세요.");
+    if (store.notice || store.reworkVersion === 1 || store.reworkResetUsers && store.reworkResetUsers[sender]) lines.push("━━━━━━━━━━━━");
     var keys = GLOBAL_CONFIG.petExplore.rework.regionKeys;
     for (var i = 0; i < keys.length; i++) {
-        if (i % 2 === 0) lines.push((i === 0 ? "⛏️ 광산 · 성공 -5%" : i === 2 ? "🌋 던전 · 성공 -15%" : "🕋 미궁 · 성공 -45%"));
+        if (i % 2 === 0) {
+            if (i > 0) lines.push("━━━━━━━━━━━━");
+            lines.push(i === 0 ? "⛰️ 광산【/탐 1~2】 성공 -5%" : i === 2 ? "🌋 던전【/탐 3~4】 성공 -15%" : "🕋 미궁【/탐 5~6】 성공 -45%");
+        }
         lines.push("【" + (i + 1) + "】 " + getExploreDungeonName(keys[i], store) + ": " + (store.bet[keys[i]] || []).length + "명");
     }
-    lines.push("└ 6번 미궁: /종합순위 1~20등 입장 가능");
+    lines.push("※ 6번: 종합순위 1~20등 입장 가능");
     if (isPetExploreEventMineActive(store)) lines.push("【0】 " + getExploreDungeonName("0", store) + ": " + (store.bet["0"] || []).length + "명");
     if (isGuildRaidExploreEventActive(store)) lines.push("【10】 " + getExploreDungeonName("10", store) + ": " + (store.bet["10"] || []).length + "명");
     lines.push("━━━━━━━━━━━━", "(내 탐험 상세보기..👈)" + allsee, "🎯 내 탐험 성공률 상세");
-    var labels = [["기본", "baseP"], ["티어", "tierP"], ["매력", "expP"], ["영주", "lordP"], ["펫스킬", "traitP"], ["펜던트", "pendantP"], ["호프", "premiumP"], ["홈뱃지", "homeBadgeP"], ["확률UP", "itemP"]], terms = [];
+    var labels = [["기본", "baseP"], ["티어", "tierP"], ["매력", "expP"], ["영주", "lordP"], ["펫스킬", "traitP"], ["펜던트", "pendantP"], ["호프", "premiumP"], ["홈뱃지", "homeBadgeP"]], terms = [];
     for (var j = 0; j < labels.length; j++) if (p[labels[j][1]]) terms.push(labels[j][0] + " +" + formatPercent1(p[labels[j][1]]) + "%");
-    if (p.penaltyP) terms.push("디버프 -" + p.penaltyP + "%");
-    lines.push(terms.join(" / ") + " = " + formatPercent1(p.totalP) + "%", "━━━━━━━━━━━━", "🎫 자동탐험 설정", "/자동탐고정 1~6 : 탐험지 고정", "/자동탐고정해제 : 고정 해제", "━━━━━━━━━━━━", "🛍️ 아이템 보유 현황", "보물지도🗺️: " + ((bag["보물지도🗺️"] || 0) > 0 ? numberWithCommas(bag["보물지도🗺️"]) + "개" : "X"));
+    var probabilityLines = []; // 실제 확률 항목을 한 줄에 최대 3개씩 배치
+    for (var probabilityIndex = 0; probabilityIndex < terms.length; probabilityIndex += 3) probabilityLines.push(terms.slice(probabilityIndex, probabilityIndex + 3).join(" / "));
+    var finalProbabilityTerms = []; // 확률UP·디버프는 합계 바로 앞에서 표시
+    if (p.itemP) finalProbabilityTerms.push("확률UP +" + formatPercent1(p.itemP) + "%");
+    if (p.penaltyP) finalProbabilityTerms.push("디버프 -" + p.penaltyP + "%");
+    if (finalProbabilityTerms.length) probabilityLines.push(finalProbabilityTerms.join(" / "));
+    lines.push(probabilityLines.join("\n") + " = " + formatPercent1(p.totalP) + "%", "━━━━━━━━━━━━", "🎫 자동탐험 설정", "/자동탐고정 1~6 : 탐험지 고정", "/자동탐고정해제 : 고정 해제", "━━━━━━━━━━━━", "🛍️ 아이템 보유 현황", "보물지도🗺️: " + ((bag["보물지도🗺️"] || 0) > 0 ? numberWithCommas(bag["보물지도🗺️"]) + "개" : "X"));
     for (var u = 0; u < GLOBAL_CONFIG.petExplore.boostItemNames.length; u++) { var item = GLOBAL_CONFIG.petExplore.boostItemNames[u]; if (bag[item] > 0) lines.push(item + ": " + numberWithCommas(bag[item]) + "개"); }
     lines.push("펫던전 입장권🌋: " + numberWithCommas(bag["펫던전 입장권🌋"] || 0) + "개", GLOBAL_CONFIG.petExplore.maze.ticketItemName + ": " + numberWithCommas(bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName] || 0) + "개", "━━━━━━━━━━━━", "📈 내 탐험 전적");
     var record = store.record && store.record[sender] || { win: 0, lose: 0 }, count = record.win + record.lose;
-    lines.push(numberWithCommas(record.win) + "승 " + numberWithCommas(record.lose) + "패 (승률 " + (count ? record.win / count * 100 : 0).toFixed(1) + "%)", "━━━━━━━━━━━━", "※ 확률UP·보물지도·입장권은 실제 탐험 정산 시 다시 확인됩니다.");
+    lines.push(numberWithCommas(record.win) + "승 " + numberWithCommas(record.lose) + "패 (승률 " + (count ? record.win / count * 100 : 0).toFixed(1) + "%)", "━━━━━━━━━━━━", "※ 확률UP·보물지도·입장권은", "실제 탐험 정산 시 다시 확인됩니다.");
     return lines.join("\n");
 }
 
