@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.792"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.793"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -24705,7 +24705,7 @@ replier.reply(
                             "🏡 다음 평수로 업그레이드 하기 위해선 다음 재료가 필요합니다.\n\n" +
                             lines.join("\n") +
                             "\n━━━━━━━━━━━━━━━\n" +
-                            "※ 모든 재료를 충족해야 업그레이드가 가능합니다." + buildPetHomeFloorExpansion(homeData[sender].floor, nextInfo.floor, false)
+                            "※ 모든 재료를 충족해야 업그레이드가 가능합니다." + buildPetHomeFloorExpansion(homeData[sender].floor, nextInfo.floor, false, homeData, petSkillData, sender)
                         );
                         return;
                     }
@@ -24726,7 +24726,7 @@ replier.reply(
                         "👉 [집뚝딱] / [생각해본다]\n\n" +
                         lines.join("\n") +
                         "\n━━━━━━━━━━━━━━━\n" +
-                        "※ [집뚝딱]을 입력하면 즉시 재료를 소모하고 집을 업그레이드 합니다." + buildPetHomeFloorExpansion(homeData[sender].floor, nextInfo.floor, false)
+                        "※ [집뚝딱]을 입력하면 즉시 재료를 소모하고 집을 업그레이드 합니다." + buildPetHomeFloorExpansion(homeData[sender].floor, nextInfo.floor, false, homeData, petSkillData, sender)
                     );
                     return;
                 }
@@ -24791,7 +24791,7 @@ replier.reply(
                         throw homeSaveError;
                     }
                     replier.reply(
-                        "✅ 성공 [" + nickName + "] 님\n" + "펫스윗홈이 업그레이드되었습니다.\n" + homeData[sender].houseName + "[+" + homeData[sender].floor + "평] 집으로 이사를 가게되었습니다." + buildPetHomeFloorExpansion(previousFloor, homeData[sender].floor, true)
+                        "✅ 성공 [" + nickName + "] 님\n" + "펫스윗홈이 업그레이드되었습니다.\n" + homeData[sender].houseName + "[+" + homeData[sender].floor + "평] 집으로 이사를 가게되었습니다." + buildPetHomeFloorExpansion(previousFloor, homeData[sender].floor, true, homeData, petSkillData, sender)
                     );
                     return;
                 }
@@ -51167,6 +51167,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData);
     let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
     var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
+    homeExp += getPetHomeFloorCharm(homeData && homeData[memberName]);
     var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
     if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
@@ -51175,8 +51176,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
     var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-    var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 별채 추가분과 독립된 평수 기본분
-    homeExp += homeCharm.bonus + homeCharm.floor;
+    var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 평수를 포함해 계산한 별채 추가분
+    homeExp += homeCharm.bonus;
 
     // 펫 스킬
     var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp", equippedSkillNames);
@@ -51206,13 +51207,14 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
     let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
     var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
+    homeExp += getPetHomeFloorCharm(homeData && homeData[memberName]);
     var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
     if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
     }
 
-    var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 별채 추가분과 독립된 평수 기본분
-    homeExp += homeCharm.bonus + homeCharm.floor;
+    var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 평수를 포함해 계산한 별채 추가분
+    homeExp += homeCharm.bonus;
 
     // 펫스킬
     let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp", equippedSkillNames);
@@ -52550,9 +52552,9 @@ function formatMatzangRestRemainingTime(restUntil) {
 function buildDiamondShopDirectHeader(sender) {
     return (/^\[[\s\S]*\]$/.test(sender) ? sender : "[" + sender + "]") + " 님\n";
 }
-// 다이아상자 개봉과 현재 조합 비용을 함께 안내하는 함수
+// 다이아 획득 방법과 현재 조합 비용을 안내하는 함수
 function buildDiamondCombineGuide() {
-    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + formatKoreanShort(GLOBAL_CONFIG.diamondShop.combinePoint) + "\n → 다이아상자💎 1개\n└ /다이아상자오픈으로 실제 다이아를 획득해요.";
+    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + formatKoreanShort(GLOBAL_CONFIG.diamondShop.combinePoint) + "\n → 다이아상자💎 1개";
 }
 // 조합 요청의 두 재료 보유·필요·부족 또는 충족 상태를 표시하는 함수
 function buildDiamondCombineShortage(count, stoneHave, pointHave) {
@@ -52740,13 +52742,22 @@ function applyDiamondShopPurchase(data, log, user, accountId, product, bundles, 
 function buildDiamondShopView(shop, member, manage, log) {
     var totals = manage ? getDiamondShopDailyTotals(log, shop.day) : null; // 삭제된 상품까지 포함한 당일 완료 통계
     var text = manage ? "💎 다이아상점 관리" : "💎 호이월드 다이아상점";
-    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide() + "\n운영일: " + formatDiamondShopDay(shop.day) + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
+    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide() + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
     if (!shop.products.length) text += "\n등록된 상품이 없습니다.";
     for (var i = 0; i < shop.products.length; i++) {
         var p = shop.products[i], identity = member.serverRaidAccount && member.serverRaidAccount.id, bought = identity && p.accounts["$" + identity] ? p.accounts["$" + identity].bought : 0;
-        text += "\n" + (i + 1) + ". " + p.name + " x" + numberWithCommas(p.count) + "\n💎 " + numberWithCommas(p.price) + "개 / 묶음 · " + (p.on ? "시세 " + (p.percent >= 0 ? "+" : "") + p.percent + "%" : "고정가") + " · 전일 대비 " + (p.previousDay ? (p.price - p.previousDay.price >= 0 ? "+" : "") + numberWithCommas(p.price - p.previousDay.price) : "신규 등록") + "\n하루 구매: " + (p.limit === null ? "무제한" : bought + "/" + p.limit + "묶음 (남음 " + Math.max(0, p.limit - bought) + ")") + "\n";
+        var priceDifference = p.previousDay ? p.price - p.previousDay.price : null; // 전날 가격 기록이 있을 때 실제 가격 차이 계산
+        text += "\n" + (i + 1) + ". " + p.name + " ×" + numberWithCommas(p.count) + "\n💎 " + numberWithCommas(p.price) + "개";
+        if (p.on) {
+            if (priceDifference !== null) text += " " + (priceDifference < 0 ? "📉" : "📈") + " 전일 대비 " + (priceDifference >= 0 ? "+" : "") + numberWithCommas(priceDifference);
+            text += "\n└ " + (p.percent < 0 ? "📉" : "📈") + " 기본가 대비 " + (p.percent >= 0 ? "+" : "") + p.percent + "%";
+        } else {
+            text += " 🔒 고정가";
+        }
+        text += "\n└ 📅 " + (p.limit === null ? "구매제한 없음" : "오늘 구매 " + bought + "/" + p.limit + "회") + "\n";
         if (manage) text += "등록 ID " + p.id + " · 기본가 💎" + p.basePrice + " · 기준 B " + p.baseSales + "\n전날 유효 " + (p.previousDay ? p.previousDay.effective : "미기록") + " / 오늘 실판매 " + p.actual + " / 유효 " + p.effective + " / 회수 💎" + p.diamonds + "\n다음 운영일: " + (p.pending ? (p.pending.on ? "ON · B " + p.pending.baseSales : "OFF · 기본가 복귀") : "변경 없음") + "\n";
     }
+    if (!manage && shop.products.length) text += "\n━━━━━━━━━━━━\n📊 변동 범위: -20% ~ +60%\n※ 상품별 시세 ON/OFF가 다릅니다.\n※ 갯수는 상품 묶음의 구매 수량입니다.\n※ 구매 한도는 계정별 하루 기준입니다.";
     return text;
 }
 // 날짜별 100건 페이지와 최근 다섯 건 미리보기를 보존된 완료 거래에서 만드는 함수
@@ -54077,8 +54088,15 @@ function getPetHomeFloorCharm(home) {
 }
 
 // 평수 확장 예상과 완료 정보를 표시하는 함수
-function buildPetHomeFloorExpansion(before, after, completed) {
-    var charm = getPetHomeFloorCharm({ floor: after }), delta = charm - getPetHomeFloorCharm({ floor: before }); // 누적 기본 추가분과 이번 확장 증가분
+function buildPetHomeFloorExpansion(before, after, completed, homeData, petSkillData, user) {
+    var beforeHome = {}, afterHome = {}, source = homeData[user]; // 현재 가구·별채·스킬 조건을 보존한 평수별 계산 사본
+    for (var key in source) if (Object.prototype.hasOwnProperty.call(source, key)) { beforeHome[key] = source[key]; afterHome[key] = source[key]; }
+    beforeHome.floor = before; afterHome.floor = after;
+    var beforeData = {}, afterData = {};
+    beforeData[user] = beforeHome; afterData[user] = afterHome;
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var charm = getPetHomeFurnitureCharm(afterData, petSkillData, user, equipped).floorApplied; // 현재 버프를 포함한 확장 후 평수 매력
+    var delta = charm - getPetHomeFurnitureCharm(beforeData, petSkillData, user, equipped).floorApplied; // 같은 버프 기준의 확장 증가분
     return (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + (completed ? "확장 완료" : "예상 평수") + ": " + before + "평 → " + after + "평\n├ ⚔️ 캐슬매력 +" + numberWithCommas(charm) + " (+" + numberWithCommas(delta) + ")\n├ 👾 레이드매력 +" + numberWithCommas(charm) + " (+" + numberWithCommas(delta) + ")\n└ 💞 평수 누적매력 +" + numberWithCommas(charm * 2);
 }
 
@@ -56423,7 +56441,7 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("펫 매력: " + numberWithCommas(pet.petexp || 0) + " (캐슬·레이드 각각 반영)");
     lines.push("미니펫: 캐슬 " + numberWithCommas(getMiniPetModeCharm(user, petData)) + " / 레이드 " + numberWithCommas(getMiniPetModeCharm(user, petData)));
     lines.push("가구: " + numberWithCommas(rawHomeExp) + (appliedHomeExp !== rawHomeExp ? " → " + numberWithCommas(appliedHomeExp) + " (인테리어 장인)" : ""));
-    lines.push("평수 기본 추가: 캐슬·레이드 각각 +" + numberWithCommas(getPetHomeFloorCharm(homeData && homeData[user])) + " (인테리어·빌리지 제외)");
+    lines.push("평수 기본 추가: 캐슬·레이드 각각 +" + numberWithCommas(getPetHomeFloorCharm(homeData && homeData[user])) + " (인테리어·빌리지 적용 전)");
     lines.push("펫강화: " + baseUpgradeLevel + "강 → " + actualUpgradeLevel + "강 / 종합매력 +" + numberWithCommas(upgradeCharm));
     lines.push("");
     lines.push("[퍼센트 적용 전 상세]");
@@ -57729,15 +57747,15 @@ function buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData
     var home = homeData[user], charm = getPetHomeFurnitureCharm(homeData, petSkillData, user);
     var limit = getFurnitureMaxSlots(data, petData, user, home.floor || 0, petSkillData);
     var out = "🪑 [" + checkRank(data, petData, guildData, user) + "] 님의 가구정보\n━━━━━━ ✦ ━━━━━━\n🏡 " + (home.houseName || "서울역 4번출구🚉") + " [+" + (home.floor || 0) + "평]\n🪑 가구 장착 " + placed.length + "/" + limit + "\n\n";
-    out += "💞 가구 종합매력 +" + numberWithCommas(charm.total) + "\n⚔️ 캐슬매력 +" + numberWithCommas(charm.castle) + "\n└ 평수 보너스 +" + numberWithCommas(charm.floor) + "\n👾 레이드매력 +" + numberWithCommas(charm.raid) + "\n└ 평수 보너스 +" + numberWithCommas(charm.floor) + "\n────── ✧ ──────\n";
+    out += "💞 가구 종합매력 +" + numberWithCommas(charm.total) + "\n⚔️ 캐슬매력 +" + numberWithCommas(charm.castle) + "\n└ 평수 보너스 +" + numberWithCommas(charm.floorApplied) + "\n👾 레이드매력 +" + numberWithCommas(charm.raid) + "\n└ 평수 보너스 +" + numberWithCommas(charm.floorApplied) + "\n────── ✧ ──────\n";
     out += buildPetHomeVillageStatus(homeData, petSkillData, user, true, charm) + "\n━━━━━━ ✦ ━━━━━━\n📖 계산·스킬·장착 상세\n" + allsee + "\n📊 종매 계산\n💡 가구 매력은 캐슬·레이드에 각각 적용돼요.\n예) 가구 매력 10만\n⚔️ 캐슬 +10만 · 👾 레이드 +10만\n└ 💞 가구 종매 +20만\n\n";
     out += "🪑 장착 가구 종매 +" + numberWithCommas(charm.furniture * 2) + "💞\n📙 가구스킬 종매 +" + numberWithCommas((charm.royal + charm.arcana) * 2) + "💞\n└ 기본 합계 " + numberWithCommas(charm.base * 2) + "💞\n🏛️ 기본 합계의 " + charm.percent + "% 추가 → +" + numberWithCommas(charm.villageBonus * 2) + "💞\n";
     if (charm.interior) out += "📙 인테리어 장인 추가 +" + numberWithCommas(charm.interior * 2) + "💞 · 별채 버프 제외\n";
-    out += "📐 펫홈 평수 보너스\n보유 평수: " + (home.floor || 0) + "평\n⚔️ 캐슬매력: " + (home.floor || 0) + " × " + numberWithCommas(GLOBAL_CONFIG.petHomeFloor.perMode) + " = +" + numberWithCommas(charm.floor) + "\n👾 레이드매력: " + (home.floor || 0) + " × " + numberWithCommas(GLOBAL_CONFIG.petHomeFloor.perMode) + " = +" + numberWithCommas(charm.floor) + "\n💞 평수 보너스 합계: +" + numberWithCommas(charm.floor * 2) + "\n※ 빌리지 퍼센트 버프를 적용하지 않습니다.\n";
+    out += "📐 펫홈 평수 보너스\n보유 평수: " + (home.floor || 0) + "평\n⚔️ 캐슬매력: " + (home.floor || 0) + " × " + numberWithCommas(GLOBAL_CONFIG.petHomeFloor.perMode) + " = +" + numberWithCommas(charm.floor) + " → +" + numberWithCommas(charm.floorApplied) + "\n👾 레이드매력: " + (home.floor || 0) + " × " + numberWithCommas(GLOBAL_CONFIG.petHomeFloor.perMode) + " = +" + numberWithCommas(charm.floor) + " → +" + numberWithCommas(charm.floorApplied) + "\n💞 평수 보너스 합계: +" + numberWithCommas(charm.floorApplied * 2) + "\n";
     out += "💞 최종 가구 종합매력 +" + numberWithCommas(charm.total) + "\n━━━━━━ ✦ ━━━━━━\n";
     out += buildPetHomeFurnitureSkillMessage(petSkillData, homeData, user, charm);
     var villageConfig = GLOBAL_CONFIG.petHomeVillage;
-    out += "📦 별채 성장 안내\n🏠 그랑 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.grandPercent + "%p\n🏰 로열 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.royalPercent + "%p\n👑 아르카나 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.arcanaPercent + "%p\n📐 집 " + villageConfig.areaPerLevel + "평당 성장 가능 레벨 +1\n\n※ 버프는 장착 가구 종매와 가구스킬 종매의 합계에 적용됩니다.\n※ 인테리어 장인 추가분은 별채 버프에서 제외됩니다.\n※ 별채 레벨·%는 유지되며, 추가 매력은 현재 가구·스킬에 따라 달라집니다.\n";
+    out += "📦 별채 성장 안내\n🏠 그랑 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.grandPercent + "%p\n🏰 로열 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.royalPercent + "%p\n👑 아르카나 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.arcanaPercent + "%p\n📐 집 " + villageConfig.areaPerLevel + "평당 성장 가능 레벨 +1\n\n※ 버프는 평수·장착 가구·가구스킬 종매의 합계에 적용됩니다.\n※ 인테리어 장인 추가분은 별채 버프에서 제외됩니다.\n※ 별채 레벨·%는 유지되며, 추가 매력은 현재 가구·스킬에 따라 달라집니다.\n";
     if (viewer === user) out += "────── ✧ ──────\n🎒 가구 확인: /가구가방\n📥 /별채등록 [가구가방번호] …\n미장착 그랑·로열·아르카나 가구 최대 10개\n";
     out += "━━━━━━ ✦ ━━━━━━\n🪑 전체 장착 가구 (" + placed.length + "/" + limit + ")\n💞 기본 수치 · 캐슬·레이드에 각각 적용\n※ 빌리지 버프 적용 전 가구 자체 수치입니다.\n────── ✧ ──────\n";
     if (placed.length === 0) out += "🪑 아직 장착한 가구가 없어요.\n";
@@ -58351,7 +58369,7 @@ function getPetHomeVillageLevelLimit(userHome) {
     return Math.floor(Math.max(0, Number(userHome && userHome.floor) || 0) / GLOBAL_CONFIG.petHomeVillage.areaPerLevel);
 }
 
-// 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
+// 평수·가구·하우스 스킬의 별채 버프와 인테리어 추가분을 계산하는 함수
 function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNames) {
     var home = homeData && homeData[user] ? homeData[user] : {};
     var state = getPetHomeVillageState(home);
@@ -58359,15 +58377,17 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNam
     var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
     var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
-    var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
+    var floorCharm = getPetHomeFloorCharm(home); // 평수 기본 매력도 빌리지·인테리어 계산에 포함
+    var base = furniture + royal + arcana + floorCharm; // 별채 버프 대상인 한 모드의 기본 합계
     var percent = state.grand.level * GLOBAL_CONFIG.petHomeVillage.grandPercent + state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
     if (equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1) percent += GLOBAL_CONFIG.petHomeVillage.dreamPercent; // 스킬 10%p를 레벨 버프에 합산
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
-    var oldHome = Number(home.exp || 0) + furniture;
+    var oldHome = Number(home.exp || 0) + furniture + floorCharm;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    var floorCharm = getPetHomeFloorCharm(home); // 현재 전체 평수의 기본 추가분, 인테리어·별채 버프 제외
-    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, floor: floorCharm, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
-        castle: base + bonus + interior + floorCharm, raid: base + bonus + interior + floorCharm, total: (base + bonus + interior + floorCharm) * 2 };
+    var floorApplied = floorCharm + bonus - Math.floor((base - floorCharm) * percent / 100); // 평수가 늘린 기본·별채 매력
+    if (equipped.indexOf("인테리어 장인") !== -1) floorApplied += interior - (Math.floor((oldHome - floorCharm) * 1.1) - (oldHome - floorCharm)); // 평수가 늘린 인테리어 매력
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, floor: floorCharm, floorApplied: floorApplied, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
+        castle: base + bonus + interior, raid: base + bonus + interior, total: (base + bonus + interior) * 2 };
 }
 
 // 범용 포맷터
@@ -59013,12 +59033,11 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return getMiniPetModeCharm(sender, petData);
     });
     var castleHomeExp = measure("캐슬-홈/가구", function () {
-        var homeExp = getHomeTotalExp(homeData, sender) || 0;
+        var homeExp = (getHomeTotalExp(homeData, sender) || 0) + getPetHomeFloorCharm(homeData && homeData[sender]);
         if (hasPetSkill(petSkillData, sender, "인테리어 장인")) homeExp = Math.floor(homeExp * 1.1);
         return homeExp;
     });
     castleHomeExp += measure("캐슬-빌리지", function () { return getPetHomeFurnitureCharm(homeData, petSkillData, sender).bonus; });
-    castleHomeExp += measure("캐슬-평수", function () { return getPetHomeFloorCharm(homeData && homeData[sender]); });
     var castleIntimacyExp = measure("캐슬-친밀도", function () {
         return getIntimacyExpFromBag(bagItems);
     });
@@ -59038,12 +59057,11 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return getMiniPetModeCharm(sender, petData);
     });
     var raidHomeExp = measure("레이드-홈/가구", function () {
-        var homeExp = getHomeTotalExp(homeData, sender) || 0;
+        var homeExp = (getHomeTotalExp(homeData, sender) || 0) + getPetHomeFloorCharm(homeData && homeData[sender]);
         if (hasPetSkill(petSkillData, sender, "인테리어 장인")) homeExp = Math.floor(homeExp * 1.1);
         return homeExp;
     });
     raidHomeExp += measure("레이드-빌리지", function () { return getPetHomeFurnitureCharm(homeData, petSkillData, sender).bonus; });
-    raidHomeExp += measure("레이드-평수", function () { return getPetHomeFloorCharm(homeData && homeData[sender]); });
     var raidSkillExp = measure("레이드-펫스킬", function () {
         return calcSkillExp(homeData, "raidExp");
     });
@@ -64562,10 +64580,9 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     var p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, key, guildData);
     var fixed = store.autoFixedDungeon[sender], recent = store.recentResults[sender] || [], bag = data.member[sender].bag || {};
     var lines = ["🗺️ 펫탐험 지도🗺️", "⏱ 자동탐험: 시작 후 " + setint + "분마다 정산", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "🎯 탐험 성공률: " + formatPercent1(p.totalP) + "%", "⛰️ 현재 탐험지: " + (key ? getExploreDungeonName(key, store) : "없음"), "🔁 자동탐험 고정: " + (fixed ? getExploreDungeonName(fixed, store) : "없음"), "━━━━━━━━━━━━", "📜 내 최근 탐험 (최근 5회)", recent.length ? recent.slice(0, GLOBAL_CONFIG.petExplore.rework.historyLimit).join(" ") : "최근 탐험 기록 없음", "━━━━━━━━━━━━"];
-    if (store.notice) lines.push(normalizeOperationNoticeText(store.notice));
     if (store.reworkVersion === 1) lines.push("기존 참가 회차는 기존 기준으로 마무리한 뒤 새 지역을 선택할 수 있어요.");
     if (store.reworkResetUsers && store.reworkResetUsers[sender]) lines.push("삭제 지역 자동고정이 해제됐어요. /자동탐고정 1~6으로 다시 선택해주세요.");
-    if (store.notice || store.reworkVersion === 1 || store.reworkResetUsers && store.reworkResetUsers[sender]) lines.push("━━━━━━━━━━━━");
+    if (store.reworkVersion === 1 || store.reworkResetUsers && store.reworkResetUsers[sender]) lines.push("━━━━━━━━━━━━");
     var keys = GLOBAL_CONFIG.petExplore.rework.regionKeys;
     for (var i = 0; i < keys.length; i++) {
         if (i % 2 === 0) {
