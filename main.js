@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.788"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.789"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -6681,7 +6681,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         if (msg === "/다이아조합법") { replier.reply(buildDiamondShopDirectHeader(sender) + buildDiamondCombineGuide()); return; }
         if (/^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|시세설정)(?:\s|$)/.test(msg)) {
             var diamondReplyBase = replier;
-            replier = { reply: function (text) { return diamondReplyBase.reply(buildDiamondShopDirectHeader(sender) + text); } };
+            replier = { reply: function (text) { return diamondReplyBase.reply((msg === "/다이아상점" ? "" : buildDiamondShopDirectHeader(sender)) + text); } };
             var diamondManage = /^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(msg);
             if (diamondManage && !isMaster(sender)) { replier.reply("❌ Master 전용 명령어입니다."); return; }
             if (msg === "/다이아명령어") {
@@ -52539,7 +52539,7 @@ function buildDiamondShopDirectHeader(sender) {
 }
 // 다이아상자 개봉과 현재 조합 비용을 함께 안내하는 함수
 function buildDiamondCombineGuide() {
-    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondShop.combinePoint) + " → 다이아상자💎 1개\n└ /다이아상자오픈으로 실제 다이아를 획득해요.";
+    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + formatKoreanShort(GLOBAL_CONFIG.diamondShop.combinePoint) + "\n → 다이아상자💎 1개\n└ /다이아상자오픈으로 실제 다이아를 획득해요.";
 }
 // 조합 요청의 두 재료 보유·필요·부족 또는 충족 상태를 표시하는 함수
 function buildDiamondCombineShortage(count, stoneHave, pointHave) {
@@ -52727,7 +52727,7 @@ function applyDiamondShopPurchase(data, log, user, accountId, product, bundles, 
 function buildDiamondShopView(shop, member, manage, log) {
     var totals = manage ? getDiamondShopDailyTotals(log, shop.day) : null; // 삭제된 상품까지 포함한 당일 완료 통계
     var text = manage ? "💎 다이아상점 관리" : "💎 호이월드 다이아상점";
-    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n" + buildDiamondCombineGuide() + "\n운영일: " + formatDiamondShopDay(shop.day) + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
+    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide() + "\n운영일: " + formatDiamondShopDay(shop.day) + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
     if (!shop.products.length) text += "\n등록된 상품이 없습니다.";
     for (var i = 0; i < shop.products.length; i++) {
         var p = shop.products[i], identity = member.serverRaidAccount && member.serverRaidAccount.id, bought = identity && p.accounts["$" + identity] ? p.accounts["$" + identity].bought : 0;
