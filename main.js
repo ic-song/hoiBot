@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.785"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.786"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1017,6 +1017,7 @@ var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 �
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
+    premiumExtension: { itemName: "호이패스 프리미엄 30일👑(/호패프리미엄오픈)", days: 30 },
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     commandQueue: {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
@@ -1157,6 +1158,7 @@ const GLOBAL_CONFIG = {
     ],
     "rewardPolicy": 3,
     "dailyTickets": 5,
+    "personalDailyLimit": 2,
     "scoutLimit": 2,
     "scoutChangeLimit": 2,
     "bombLimit": 2,
@@ -1170,7 +1172,9 @@ const GLOBAL_CONFIG = {
     "captureReward": 300000000,
     "defenseReward": 100000000,
     "legacyProduction": { "amount": 2500000, "seconds": 1800 },
-    "prepareMs": 180000,
+    "prepareMs": 120000,
+    "legacyPrepareMs": 180000,
+    "rewards": { "capture": 500000000, "goldCapture": 800000000, "defense": 200000000, "goldDefense": 300000000, "loss": 100000000 },
     "retryMs": 5000,
     "recordLimit": 30,
     "defaultTaxRate": 12,
@@ -1192,9 +1196,9 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back.json",
         "memberOperationLogs_back2.json"
     ],
-    "commandGuide": "/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
-    "publicRules": "🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 3분 준비 → 3:00 선봉 · 3:15 중견 · 3:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 점령 기본🅟3억 · 방어 기본🅟1억 (길드큐브3 추가) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 다이아상자 +1개\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 기존 7인과 겸직 가능\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 길드전쟁 · 점령지 6곳\n🎯 하루 역할별 공격권 5회\n🔭 정찰병도 전쟁선포 가능\n⏳ 3분 뒤 선봉전 · 이후 15초 간격\n🎁 점령 기본🅟3억 · 방어 기본🅟1억 (길드큐브3 추가)\n💣 자폭 하루 2회 · 성공 확률 30%\n📚 길드전쟁 참여 방법 전체보기" + allsee + "\n【1. 길드톡 등록과 편성】\n길드톡 이름은 마크를 제외한 정확한 길드명\n길마·부길마가 /전쟁톡등록 → /전쟁톡확인\n공격3명은 소드마스터 필수, 방어3명은 일반 길드원, 정찰병1명은 선택\n기존7인 중복 금지 · 자폭병1명은 기존7인과 겸직 가능\n편성 번호는 /길드정보 기준\n전쟁 중 기본 변경 불가 · 편성초기화는 정찰·자폭·공격·방어 8칸 해제, 모든사용량 유지\n\n【2. 전쟁선포와 지역】\n[1] 호월킹덤🏰 [2] 동부 금광🪙 [3] 중앙 금광🪙 [4] 서부 금광🪙 [5] 펫스킬 광산📕 [6] 다이아광산💎\n자기 등록 길드톡에서 현재 권한 보유자만 선포\n길드의 여러 지역 동시 공격 · 다른 길드의 같은 지역 동시 공격 가능 · 같은 길드·같은 지역 중복 불가 · 공격 쿨타임/점령보호 없음\n\n【3. 정찰·침공 감지】\n선포 순간 정찰병 개인 종합매력 비교, 동률은 방어 승리\n방어톡 침공 감지는 항상 통보 · 감지와 진형변경 권한은 별개\n공격 정찰 승리: 상대 정찰병·기본 방어3명 닉네임/캐슬 공개, 공격 순서변경 가능\n방어 정찰 승리: 적 정찰병 닉네임/종합매력 공개, 방어 순서변경 및 선봉+5%\n방어 정찰병 없음(0:0 포함): 변경권/정찰버프 없음\n3분 안에 기존3명 순서만 변경 · 동시 방어전은 영지번호 지정\n단독 정찰은 등록정찰병 본인만 길드당2회/일, 정찰병 변경2회/일(최초무료)\n단독 정찰에는 전쟁·선봉버프 없음 · 실패 시 정찰병 정보 역공개\n\n【4. 전투·점령·자폭】\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 3분 준비 → 3:00 선봉 · 3:15 중견 · 3:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 점령 기본🅟3억 · 방어 기본🅟1억 (길드큐브3 추가) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 다이아상자 +1개\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 기존 7인과 겸직 가능\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식\n\n【5. 주요 명령어】\n/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
+    "commandGuide": "/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
+    "publicRules": "🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 길드전쟁 · 점령지 6곳\n🎯 하루 역할별 공격권 5회\n🔭 정찰병도 전쟁선포 가능\n⏳ 2분 뒤 선봉전 · 이후 15초 간격\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외)\n💣 자폭 하루 2회 · 성공 확률 30%\n📚 길드전쟁 참여 방법 전체보기" + allsee + "\n【1. 길드톡 등록과 편성】\n길드톡 이름은 마크를 제외한 정확한 길드명\n길마·부길마가 /전쟁톡등록 → /전쟁톡확인\n공격3명은 소드마스터 필수, 방어3명은 공격 역할이 없는 길드원, 정찰병1명은 선택\n최대 2개 역할 겸직 · 공격/방어 중복 불가\n편성 번호는 /길드정보 기준\n전쟁 중 기본 변경 불가 · 편성초기화는 8칸 해제 · 정찰/자폭 변경 횟수 소모 · 사용권 복구 없음\n\n【2. 전쟁선포와 지역】\n[1] 호월킹덤🏰 [2] 동부 금광🪙 [3] 중앙 금광🪙 [4] 서부 금광🪙 [5] 펫스킬 광산📕 [6] 다이아광산💎\n자기 등록 길드톡에서 현재 권한 보유자만 선포\n길드의 여러 지역 동시 공격 · 다른 길드의 같은 지역 동시 공격 가능 · 같은 길드·같은 지역 중복 불가 · 공격 쿨타임/점령보호 없음\n\n【3. 정찰·침공 감지】\n선포 순간 정찰병 개인 종합매력 비교, 동률은 방어 승리\n방어톡 침공 감지는 항상 통보 · 감지와 진형변경 권한은 별개\n공격 정찰 승리: 상대 정찰병·기본 방어3명 닉네임/캐슬 공개, 공격 순서변경 가능\n방어 정찰 승리: 적 정찰병 닉네임/종합매력 공개, 방어 순서변경 및 선봉+5%\n방어 정찰병 없음(0:0 포함): 변경권/정찰버프 없음\n2분 안에 기존3명 순서만 변경 · 동시 방어전은 영지번호 지정\n단독 정찰은 등록정찰병 본인만 길드당2회/일, 정찰병 변경2회/일(최초무료)\n단독 정찰에는 전쟁·선봉버프 없음 · 실패 시 정찰병 정보 역공개\n\n【4. 전투·점령·자폭】\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식\n\n【5. 주요 명령어】\n/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -1626,7 +1630,7 @@ const GLOBAL_CONFIG = {
             { title: "미니펫", emoji: "🐣", intro: "미니펫의 장착과 성장 방법을 알아봐요!", learn: ["주력·보조 장착과 보유 미니펫을 구분해요.", "강화 전 소모 재화와 안내를 먼저 확인해요."], commands: ["/미니펫정보", "/미니펫가방"], check: "장착 상태와 강화 전 확인 사항을 알고 있나요?", note: "선택 실습: /미니펫장착 가방번호, /미니펫보조장착 가방번호. /미니펫강화 0 횟수는 대표, 00 횟수는 보조, 양수는 가방 번호예요. 강화는 필수가 아니에요." },
             { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
             { title: "펫홈·가구", emoji: "🏡", intro: "내 펫홈과 가구 효과를 한눈에 확인해요!", learn: ["보유 가구와 장착 가구를 구분해요.", "집 면적·장착칸·가구 효과를 구분해요.", "가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.", "루미에르 빌리지와 별채의 역할을 알아봐요."], commands: ["/펫홈", "/가구정보"], check: "장착 상태와 가구 효과를 어디서 확인하나요?", note: "현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요." },
-            { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 6개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "3분 뒤 선봉전부터 15초 간격으로 3경기를 모두 진행해요. 점령3억·방어1억, 펫스킬 광산은 점령·방어 성공마다 조각1개, 다이아광산은 상자1개를 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공30%·변경하루1회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
+            { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 6개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령8억·방어3억, 기타 점령5억·방어2억, 공격 실패1억이에요. 특수광산 승리 시 조각1개 또는 길드창고 다이아1개를 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공30%·변경하루1회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
             { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매. 개인 당근거래는 종료됐어요. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
             { title: "홈뱃지·큐브", emoji: "💟", intro: "홈뱃지 옵션과 큐브 사용 전 확인 사항을 알아봐요!", learn: ["/홈뱃지에서 보유 목록과 장착 상태를, /홈뱃지정보 이름에서 옵션·효과를 확인해요.", "/홈뱃지장착 번호와 /홈뱃지해제 뱃지번호의 안내·확인 절차를 알아봐요.", "/홈뱃지큐브 안내에서 슬롯·옵션 번호·사용 횟수와 보유량·소모량·확률·보호 조건을 확인해요.", "수치와 적용 조건은 교육 시점의 실제 홈뱃지·큐브 안내를 기준으로 설명해요."], commands: ["/홈뱃지", "/홈뱃지정보 이름", "/홈뱃지큐브", "/큐브확률"], check: "내 홈뱃지 옵션과 큐브 대상·소모량·확률을 어디에서 확인하나요?", note: "선택 안내: /홈뱃지큐브 슬롯 옵션 사용횟수. 현재 화면의 슬롯·옵션 번호를 먼저 확인해요. 뱃지·큐브가 없으면 GM 예시로 배우며 실제 큐브 사용은 완료 조건이 아니에요." },
             { title: "패키지 상품 확인", emoji: "📘", intro: "보유 중인 패키지를 확인하는 방법을 알아봐요!", learn: ["/패키지가방에서 보유 중인 패키지 상품을 확인할 수 있어요.", "패키지 상품의 이름과 보유 수량을 확인하는 방법을 알아봐요."], commands: ["/패키지가방"], check: "보유 중인 패키지 상품의 이름과 수량을 어디에서 확인하나요?", note: "후원은 선택 사항이며 실제 후원·결제·후원 이력 없이 설명만으로 교육을 완료할 수 있어요." }
@@ -2963,6 +2967,7 @@ blockedNicknameTerms: [
         promotionGrade: "창조"
     },
     petExplore: { // 펫탐험 설정
+        rework: { mineCount: 2, commonCount: 1, regionKeys: ["1", "2", "4", "5", "8", "9"], icons: ["⭐️", "🐾", "🗿", "🐓", "💎", "📙"], historyLimit: 5, commonItem: "1억포인트상자🪙(/포인트상자오픈)" },
         boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"], // 확률UP 아이템 후보(높은 것부터)
         experienceRewards: {
             mine: 3,
@@ -5810,6 +5815,18 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         territoryEntryGuildData = null;
         if (msg === "/스케줄") {
             replier.reply(buildDailyScheduleMessage(data, petData, guildData, sender));
+            return;
+        }
+        if (/^\/호패프리미엄오픈(?:\s|$)/.test(msg)) {
+            var premiumUseActivity = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+            var premiumUse = applyPremiumExtension(data, petSkillData, premiumUseActivity, sender, msg, getTodaySupportPassDateValue());
+            var premiumUseHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님\n\n";
+            if (!premiumUse.ok) { replier.reply(premiumUseHeader + premiumUse.message); return; }
+            var premiumUseReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier, [petHomeActivityFile]);
+            saveJsonFile(data, filePath);
+            saveJsonFile(petSkillData, petSkillDataPath);
+            saveJsonFile(premiumUseActivity, petHomeActivityFile);
+            premiumUseReply.reply(premiumUseHeader + premiumUse.message);
             return;
         }
         var halloweenRequest = getHalloweenRequest(msg);
@@ -9712,6 +9729,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
+                    if (!isManualPetExploreSettlement && petExploreData.lastRoundAt && Date.now() - petExploreData.lastRoundAt < setint * 60000 - 1000) return;
+                    beginFreeMarketMutation(request, data, petData, petSkillData, replier, [petExplorePath]);
                     if (msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
                         petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동 정산은 새로운 탐험 회차로 실행
                     }
@@ -9736,6 +9755,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     //  doPetExploreInterval에 petExploreData 전달
                     var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
 
+                    if (out) {
+                        petExploreData.lastRoundAt = Date.now();
+                        saveJsonFile(petExploreData, petExplorePath);
+                    }
+                    finishFreeMarketMutation(request);
                     var manualPetExploreSettlementMessage = "";
                     if (isManualPetExploreSettlement) {
                         stopAllIntervals(data);
@@ -27799,6 +27823,9 @@ replier.reply(
                     cleanupInvalidPetExploreUsers(petExploreData, data);
                     savePetExploreMigrationIfNeeded(petExploreData);
 
+                    if (petExploreData.reworkVersion === 1 && !isChuseokExploreEventActive(petExploreData)) {
+                        replier.reply("기존 탐험 회차 정산 후 새 지역으로 참가해주세요. 현재 참가와 보상은 유지됩니다."); return;
+                    }
                     var parts = msg.trim().split(/\s+/);
                     var dungeonNo = null;
 
@@ -27822,10 +27849,11 @@ replier.reply(
                     if (!dungeonNo && parts.length === 1) {
                         dungeonNo = getRandomRegularMineExploreSlot();
                     } else if (!dungeonNo) {
-                        var n = parseInt(parts[1], 10);
+                        var regionKey = getExploreRegionKey(parts[1]);
+                        var n = regionKey === null ? NaN : Number(regionKey);
                         var isGuildRaidInput = n === 10 && isGuildRaidExploreEventActive(petExploreData);
                         if (isNaN(n) || n < 0 || (n > GLOBAL_CONFIG.petExplore.slots.regularMax && !isGuildRaidInput) || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
-                            var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0~9" : "사용법: /탐 또는 /탐 1~9";
+                            var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0, 1~6" : "사용법: /탐 또는 /탐 1~6";
                             if (isGuildRaidExploreEventActive(petExploreData)) exploreUsage += "\n길드레이드: /탐 10";
                             exploreUsage += "\n예) /탐 2";
                             replier.reply(exploreUsage);
@@ -27841,11 +27869,11 @@ replier.reply(
                     if (dungeonNo === "9") {
                         var homeData = loadJsonFile(homeDataFile);
                         if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit, guildData)) {
-                            replier.reply("❌ 입장 실패\n\n【9】 잊혀진 대마법사의 유적📙은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
+                            replier.reply("❌ 입장 실패\n\n【6】 잊혀진 대마법사의 유적📙은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
                             return;
                         }
                         if (!hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
-                            replier.reply("❌ 입장 실패\n\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족합니다.\n【9】 잊혀진 대마법사의 유적📙 탐험에는 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요합니다.");
+                            replier.reply("❌ 입장 실패\n\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족합니다.\n【6】 잊혀진 대마법사의 유적📙 탐험에는 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요합니다.");
                             return;
                         }
                     }
@@ -27867,7 +27895,7 @@ replier.reply(
                     if (prevDungeon && prevDungeon === dungeonNo) {
                         if (parts.length === 2 && recordAdventureQuestExploreSelection(data, sender, dungeonNo)) saveJsonFile(data, filePath);
                         replier.reply(
-                            "✅[" + checkRank(data, petData, guildData, sender) + "]님, 이미 " + dungeonNo + "번 탐험지로 설정되어 있어요.\n" + "(동일 탐험지 재선택은 아이템이 소모되지 않습니다.)"
+                            "✅[" + checkRank(data, petData, guildData, sender) + "]님, 이미 " + getExplorePublicNumber(dungeonNo) + "번 탐험지로 설정되어 있어요.\n" + "(동일 탐험지 재선택은 아이템이 소모되지 않습니다.)"
                         );
                         return;
                     }
@@ -27903,6 +27931,7 @@ replier.reply(
                     });
 
                     petExploreData.userBet[sender] = dungeonNo;
+                    if (petExploreData.reworkResetUsers) delete petExploreData.reworkResetUsers[sender];
                     if (parts.length === 2) recordAdventureQuestExploreSelection(data, sender, dungeonNo);
 
                     // 저장
@@ -28258,7 +28287,7 @@ replier.reply(
                     out += "길드원 정보 및 길드자금창고 ℹ️ 더보기\n" + allsee;
                     out += "👑 Master : 길드마스터\n";
                     out += "🛡️ SubMaster : 부길드마스터\n";
-                    out += "⚔️ SwordMaster : 소드마스터\n🎯 Attack : 공격 · ⚒️ Defense : 방어\n🔭 Scout : 정찰병 · 💣 Bomber : 자폭병\n";
+                    out += "⚔️ SwordMaster : 소드마스터\n";
                     out += "━━━━━━━━━━━━━━━\n";
 
                     for (var k = 0; k < memberKeys.length; k++) {
@@ -28275,7 +28304,6 @@ replier.reply(
                         out += "길드공헌 [" + numberWithCommas(c) + "🌟]" + (contribCnt > 0 ? "[✅]" : "[❌]") + " ";
                         out += "부스터공헌 [" + numberWithCommas(boosterContribution) + "🔮]" + (boosterContribCnt > 0 ? "[✅]" : "[❌]") + "\n";
                         out += "└ 길드공헌패스🎖️ " + (isSupportPassActive(data, name, "contribution") ? "사용중[✅]" : "미사용중[❌]") + "\n";
-                        out += buildGuildWarMemberRole(guildData, myGid, name);
                     }
                     out += "━━━━━━━━━━━━\n";
                     out += buildGuildResourceDisplay(g);
@@ -46851,6 +46879,36 @@ function parseHoiPassPremiumCommand(msg) {
 }
 
 // 검증된 유저에게 호이패스 프리미엄과 필요한 자동탐험권을 적용하는 함수
+// 프리미엄 이용권의 KST 달력 기간과 차감을 검증해 기존 자격에 적용하는 함수
+function applyPremiumExtension(data, skills, activity, user, message, today) {
+    var config = GLOBAL_CONFIG.premiumExtension;
+    var match = /^\/호패프리미엄오픈(?:\s+(\d+))?$/.exec(message);
+    var count = match ? (match[1] === undefined ? 1 : Number(match[1])) : 0;
+    if (!isPointShopSafeCount(count) || count < 1 || count * config.days > 9007199254740991) return { ok: false, message: "❌ 올바른 사용 개수를 입력해주세요.\n━━━━━━━━━━━━\n📌 1개 사용: /호패프리미엄오픈\n📌 여러 개 사용: /호패프리미엄오픈 [개수]" };
+    var member = data.member && data.member[user];
+    if (!member) return { ok: false, message: "❌ 가입 상태를 확인해주세요." };
+    var stock = member.bag && member.bag[config.itemName] || 0;
+    if (!isPointShopSafeCount(stock) || stock < count) return { ok: false, message: "❌ 호이패스 프리미엄 연장 실패!\n━━━━━━━━━━━━\n🎟️ 아이템: " + config.itemName + "\n📦 보유: " + stock + "개 / 요청: " + count + "개\n\n📌 사용법: /호패프리미엄오픈 [개수]" };
+    var previous = member.pass && member.pass.premium;
+    var oldText = previous ? previous.endDate : "";
+    var oldDate = previous ? getSupportPassDateValue(oldText) : null;
+    if (previous && (previous.permanent === true || oldDate === null)) return { ok: false, message: "❌ 기존 프리미엄 종료일을 확인해주세요. 아이템은 사용하지 않았습니다." };
+    var active = !!(previous && previous.enabled === true && oldDate >= today);
+    var base = active ? oldDate : today; // 미가입·만료는 당일을 첫날로 포함
+    var year = Math.floor(base / 10000), month = Math.floor(base / 100) % 100, day = base % 100;
+    var end = new Date(Date.UTC(year, month - 1, day + count * config.days - (active ? 0 : 1)));
+    if (!isFinite(end.getTime()) || end.getUTCFullYear() < 2000 || end.getUTCFullYear() > 2099) return { ok: false, message: "❌ 적용 가능한 기간을 초과했습니다. 아이템은 사용하지 않았습니다." };
+    var endText = String(end.getUTCFullYear()).slice(-2) + "." + ("0" + (end.getUTCMonth() + 1)).slice(-2) + "." + ("0" + end.getUTCDate()).slice(-2);
+    if (active) previous.endDate = endText;
+    else addHoiPassPremium(data, skills, activity, user, endText, user);
+    removeItem(data, user, config.itemName, count);
+    var text = "👑 호이패스 프리미엄 " + (active ? "연장" : "활성화") + " 완료!\n━━━━━━━━━━━━\n🎟️ 사용: " + config.itemName + " ×" + count;
+    text += active ? "\n📅 기존 종료일: " + oldText + "\n➕ 추가 기간: " + count * config.days + "일" : "\n📅 적용 기간: " + count * config.days + "일";
+    text += "\n✅ " + (active ? "변경 종료일: " : "종료 예정일: ") + endText + (active ? "\n\n기존 프리미엄 혜택은 그대로 유지됩니다." : "\n\n🐹 호월패스 사용 현황에 반영되었습니다.");
+    return { ok: true, message: text };
+}
+
+// 검증된 유저에게 프리미엄 자격·홈뱃지·잠금 스킬을 적용하는 함수
 function addHoiPassPremium(data, petSkillData, activityData, user, endDate, operator) {
     var passStore = ensureSupportPassStore(data, user);
     var previous = passStore.premium || {};
@@ -53858,7 +53916,7 @@ function validateAdventurePublication(journal) {
     var seen = {};
     for (var i = 0; i < journal.pending.length; i++) {
         var row = journal.pending[i];
-        if (!row || typeof row.name !== "string" || !/^(?:member|member_pet|petSweetHomeData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
+        if (!row || typeof row.name !== "string" || !/^(?:member|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
         seen[row.name] = true;
         var parsed = parseJsonContent(row.text, row.name);
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("모험가 성장 원본 형식 오류");
@@ -60414,6 +60472,53 @@ function migratePetExploreContentSlots(petExploreData) {
 }
 
 // 펫탐험 데이터 구조 보장 및 초기화
+// 기존 지역 식별자를 유지하면서 사용자 번호 1~6을 같은 지역으로 연결하는 함수
+function getExplorePublicNumber(key) {
+    var index = GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(key));
+    return index === -1 ? String(key) : String(index + 1);
+}
+// 사용자 입력의 신규 번호를 보상·전적이 연결된 기존 지역 식별자로 해석하는 함수
+function getExploreRegionKey(number) {
+    if (!/^\d+$/.test(String(number))) return null;
+    var value = Number(number);
+    return value >= 1 && value <= GLOBAL_CONFIG.petExplore.rework.regionKeys.length ? GLOBAL_CONFIG.petExplore.rework.regionKeys[value - 1] : value === 0 || value === 10 || value === 11 ? String(value) : null;
+}
+// 기존 참가 회차의 종료 여부를 확인하고 삭제 지역의 고정 설정만 한 번 해제하는 함수
+function advanceExploreRework(store, completed) {
+    var pending = false;
+    for (var n = 1; n <= 9; n++) if (store.bet[String(n)] && store.bet[String(n)].length) pending = true;
+    if (store.reworkVersion === undefined) {
+        store.reworkVersion = pending ? 1 : 2;
+        store._migrationSaveRequired = true;
+    }
+    if (store.reworkVersion !== 1 && store.reworkVersion !== 2) throw new Error("펫탐험 전환 상태 오류");
+    if ((completed || !pending) && store.reworkVersion === 1) { store.reworkVersion = 2; store._migrationSaveRequired = true; }
+    if (store.reworkVersion === 2 && !store.reworkFixedComplete) {
+        store.reworkResetUsers = store.reworkResetUsers || {};
+        for (var user in store.autoFixedDungeon) if (Object.prototype.hasOwnProperty.call(store.autoFixedDungeon, user) && ["3", "6", "7"].indexOf(String(store.autoFixedDungeon[user])) !== -1) {
+            delete store.autoFixedDungeon[user]; store.reworkResetUsers[user] = true;
+        }
+        for (var selected in store.userBet) if (Object.prototype.hasOwnProperty.call(store.userBet, selected) && ["3", "6", "7"].indexOf(String(store.userBet[selected])) !== -1) {
+            delete store.userBet[selected]; store.reworkResetUsers[selected] = true;
+        }
+        store.reworkFixedComplete = true; store._migrationSaveRequired = true;
+    }
+    if (store.recentResults === undefined) store.recentResults = {};
+    if (!store.recentResults || typeof store.recentResults !== "object" || Array.isArray(store.recentResults)) throw new Error("펫탐험 최근 기록 형식 오류");
+    return store;
+}
+// 신규 기본 탐험의 확정 결과와 공통 상자를 한 번 추가하는 함수
+function applyExploreCommonReward(data, store, user, key, success) {
+    if (store.reworkVersion !== 2 || GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(key)) === -1) return false;
+    var held = data.member[user].bag && data.member[user].bag[GLOBAL_CONFIG.petExplore.rework.commonItem] || 0;
+    if (!isPointShopSafeCount(held) || !isPointShopSafeCount(held + GLOBAL_CONFIG.petExplore.rework.commonCount)) throw new Error("펫탐험 공통 보상 수량 범위 오류");
+    addItem(data, user, GLOBAL_CONFIG.petExplore.rework.commonItem, GLOBAL_CONFIG.petExplore.rework.commonCount);
+    if (!Array.isArray(store.recentResults[user])) store.recentResults[user] = [];
+    var index = GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(key));
+    store.recentResults[user].unshift(GLOBAL_CONFIG.petExplore.rework.icons[index] + (success ? "✅" : "❌"));
+    store.recentResults[user] = store.recentResults[user].slice(0, GLOBAL_CONFIG.petExplore.rework.historyLimit);
+    return true;
+}
 function initPetExploreData(petExploreData) {
     if (!petExploreData) petExploreData = {};
 
@@ -60503,7 +60608,7 @@ function initPetExploreData(petExploreData) {
     var nextChuseokShopId = parseInt(chuseokEvent.nextShopId, 10);
     if (isNaN(nextChuseokShopId) || nextChuseokShopId < 1) chuseokEvent.nextShopId = getNextChuseokShopId(chuseokEvent.shop);
 
-    return petExploreData;
+    return advanceExploreRework(petExploreData, false);
 }
 
 // 펫탐험 다이아광산 이벤트 설정을 적용하는 함수
@@ -61357,9 +61462,8 @@ function isRegularMineExploreSlot(dungeonKey) {
 }
 
 // 일반 광산 범위에서 무작위 탐험 번호 반환
-function getRandomRegularMineExploreSlot() {
-    var mineSlotCount = GLOBAL_CONFIG.petExplore.slots.mineMax - GLOBAL_CONFIG.petExplore.slots.mineMin + 1;
-    return String(Math.floor(Math.random() * mineSlotCount) + GLOBAL_CONFIG.petExplore.slots.mineMin);
+function getRandomRegularMineExploreSlot(legacy) {
+    return String(Math.floor(Math.random() * (legacy ? GLOBAL_CONFIG.petExplore.slots.mineMax : GLOBAL_CONFIG.petExplore.rework.mineCount)) + 1);
 }
 
 // 펫던전 입장권이 필요한 일반 던전 번호 여부 반환
@@ -61414,6 +61518,9 @@ function grantPetExploreExperience(data, petData, guildData, user, baseExperienc
     var boosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, user, boosterResult);
     return {
         message: experienceMessage,
+        totalExperience: experienceResult.total,
+        boosterUsed: boosterResult.usedBooster,
+        boosterRequired: boosterResult.requiredBooster,
         boosterDepletionMessage: boosterDepletionMessage,
         levelUps: experienceResult.levelUps,
         levelUpMessage: experienceResult.levelUps.length > 0 ? buildAdventureLevelUpMessage(data, petData, guildData, user, experienceResult.levelUps) : ""
@@ -61422,8 +61529,9 @@ function grantPetExploreExperience(data, petData, guildData, user, baseExperienc
 
 // 펫탐험 보고서의 접히지 않는 영역에 레벨 상승 안내를 모아 표시하는 함수
 function buildPetExploreLevelUpSummary(levelUpMessages) {
-    if (!(levelUpMessages instanceof Array) || levelUpMessages.length < 1) return "";
-    return "🌟 펫탐험 레벨 상승 안내\n" + levelUpMessages.join("\n━━━━━━━━━━━━\n");
+    if (!Array.isArray(levelUpMessages) || levelUpMessages.length < 1) return "";
+    if (typeof levelUpMessages[0] === "string") return "🌟 펫탐험 레벨 상승 안내\n" + levelUpMessages.join("\n━━━━━━━━━━━━\n");
+    return "🌟 펫탐험 레벨 상승 안내\n" + levelUpMessages.map(function (row) { return "[" + row.name + "] Lv." + row.before + " → Lv." + row.after; }).join("\n");
 }
 
 /** 정산 1회 실행 */
@@ -61447,6 +61555,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
     if (isGuildRaidExploreEventActive(petExploreData)) {
         exploreDungeonKeys.push("10");
     }
+    if (petExploreData.reworkVersion === 2) exploreDungeonKeys = exploreDungeonKeys.filter(function (key) { return ["3", "6", "7"].indexOf(key) === -1; });
     for (var d = 0; d < exploreDungeonKeys.length; d++) {
         var dk = exploreDungeonKeys[d];
 
@@ -61486,7 +61595,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                     removeItem(data, user, "펫던전 입장권🌋", 1);
                     usedTicket = true;
                 } else {
-                    finalDungeon = getRandomRegularMineExploreSlot();
+                    finalDungeon = getRandomRegularMineExploreSlot(petExploreData.reworkVersion === 1);
                 }
             }
             if (dk === "8") {
@@ -61575,10 +61684,11 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                         rewardText = "펫먹이🍼 2개";
                     }
                 }
-            } else {
+            } else if (petExploreData.reworkVersion !== 2 || GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(successDungeon)) === -1) {
                 addItem(data, user, "펫먹이🍼", 2);
                 rewardText = "펫먹이🍼 2개";
             }
+            if (applyExploreCommonReward(data, petExploreData, user, successDungeon, success)) rewardText += (rewardText ? " + " : "") + GLOBAL_CONFIG.petExplore.rework.commonItem + " 1개";
 
             var exploreBaseExperience = getPetExploreBaseExperience(finalDungeon); // 최종 실제 탐험지의 기본 경험치
             var exploreExperienceReward = grantPetExploreExperience(data, petData, guildData, user, exploreBaseExperience);
@@ -61587,7 +61697,8 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             var memberFormat = checkRank(data, petData, guildData, user);
             var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon, petExploreData) + (success ? "성공(✅)" : "실패(❌)");
             line += "\n획득: " + rewardText;
-            line += "\n" + exploreExperienceReward.message;
+            line += "\n📊 총 획득 경험치: +" + formatAdventureExperience(exploreExperienceReward.totalExperience) + "exp";
+            if (exploreExperienceReward.boosterUsed > 0) line += "\n✨ 가호 " + numberWithCommas(exploreExperienceReward.boosterUsed) + "개 사용" + (exploreExperienceReward.boosterUsed < exploreExperienceReward.boosterRequired ? " · 보유량만 부분 적용" : "");
             if (exploreExperienceReward.boosterDepletionMessage) line += "\n\n" + exploreExperienceReward.boosterDepletionMessage;
             if (bonusRewardText) {
                 line += "\n" + bonusRewardText;
@@ -61599,7 +61710,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             if (usedTreasure && treasureDrop) {
                 line += " 보물🗺️:주간🦋";
             }
-            if (exploreExperienceReward.levelUpMessage) levelUpMessages.push(exploreExperienceReward.levelUpMessage);
+            if (exploreExperienceReward.levelUpMessage) levelUpMessages.push({ name: memberFormat, before: exploreExperienceReward.levelUps[0].level - 1, after: exploreExperienceReward.levelUps[exploreExperienceReward.levelUps.length - 1].level, message: exploreExperienceReward.levelUpMessage });
 
             if (success) {
                 successLines.push(line);
@@ -61618,11 +61729,16 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
     }
 
     //  라운드 리셋은 petExploreData에서
+    petExploreData = advanceExploreRework(petExploreData, true);
     petExploreData = resetPetExploreBet(petExploreData);
     petExploreData = autoExploreBetting(data, petExploreData);
 
     //  저장 2개
     clearPetExploreTransientSaveFlags(petExploreData);
+    petExploreData.lastRoundAt = Date.now();
+    var completedRounds = petExploreData.completedRounds === undefined ? 0 : petExploreData.completedRounds;
+    if (!isPointShopSafeCount(completedRounds) || !isPointShopSafeCount(completedRounds + 1)) throw new Error("펫탐험 완료 회차 범위 오류");
+    petExploreData.completedRounds = completedRounds + 1;
     saveJsonFile(data, filePath); // 아이템/보상 반영
     saveJsonFile(petExploreData, petExplorePath); // 전적/베팅 상태 반영
 
@@ -61637,6 +61753,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
     out += "[탐험 결과 눌러서 확인하기..👈]\n";
     out += allsee + "\n";
     out += lines.join("\n━━━━━━━━━━━━\n");
+    if (levelUpMessages.length) out += "\n\n🌟 레벨 상승 상세\n" + levelUpMessages.map(function (row) { return row.message; }).join("\n━━━━━━━━━━━━\n");
 
     return out;
 }
@@ -61743,7 +61860,7 @@ function autoExploreBetting(data, petExploreData) {
         } else {
             if (currentBet) continue;
             var fixedNo = parseInt(fixed, 10);
-            var isFixedValid = (fixedNo >= GLOBAL_CONFIG.petExplore.slots.mineMin && fixedNo <= GLOBAL_CONFIG.petExplore.slots.regularMax) || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
+            var isFixedValid = (GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(fixed)) !== -1) || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
             dungeonNo = isFixedValid ? String(fixed) : getRandomRegularMineExploreSlot();
         }
 
@@ -64271,8 +64388,11 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 // 펫탐험 참여자 현황을 조회 전용으로 출력하는 함수
 function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, msg) {
     var parts = String(msg || "").trim().split(/\s+/);
-    var targetDungeon = parts.length >= 2 ? String(parts[1]) : null;
+    var legacy = petExploreData && petExploreData.reworkVersion === 1;
+    var targetDungeon = parts.length >= 2 ? (legacy ? String(parts[1]) : getExploreRegionKey(parts[1])) : null;
+    if (parts.length >= 2 && targetDungeon === null) return "사용법: /탐험유저확인 1~6 (별도 이벤트: 0·10·11)";
     var dungeonKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"];
+    if (!legacy) dungeonKeys = ["0"].concat(GLOBAL_CONFIG.petExplore.rework.regionKeys, ["10", "11"]);
     var dungeonNameMap = {
         0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
         1: "펫강화 광산⭐️",
@@ -64296,13 +64416,14 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
 
     if (!targetDungeon) {
         var summary = "🧭 펫탐험 유저 확인\n";
-        summary += "상세조회: /탐험유저확인 번호\n예) /탐험유저확인 9\n";
+        summary += "상세조회: /탐험유저확인 번호\n예) /탐험유저확인 6\n";
+        if (legacy) summary += "기존 참가 회차 · 전환 전 번호 기준\n";
         summary += "━━━━━━━━━━━━\n";
         for (var s = 0; s < dungeonKeys.length; s++) {
             var summaryKey = dungeonKeys[s];
             var summaryArr = petExploreData.bet[summaryKey];
             if (!Array.isArray(summaryArr)) summaryArr = [];
-            summary += "【" + summaryKey + "】 " + (dungeonNameMap[summaryKey] || summaryKey + "번") + ": " + summaryArr.length + "명\n";
+            summary += "【" + (legacy ? summaryKey : getExplorePublicNumber(summaryKey)) + "】 " + (dungeonNameMap[summaryKey] || summaryKey + "번") + ": " + summaryArr.length + "명\n";
         }
         return summary.trim();
     }
@@ -64318,7 +64439,7 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
     fixedUsers.sort();
 
     var out = "🧭 펫탐험 유저 확인\n";
-    out += "대상: 【" + targetDungeon + "】 " + (dungeonNameMap[targetDungeon] || targetDungeon + "번") + "\n";
+    out += "대상: 【" + (legacy ? targetDungeon : getExplorePublicNumber(targetDungeon)) + "】 " + (dungeonNameMap[targetDungeon] || targetDungeon + "번") + "\n";
     out += "현재 참여: " + targetArr.length + "명\n";
     out += "자동탐고정: " + fixedUsers.length + "명\n";
     out += "━━━━━━━━━━━━\n";
@@ -64350,190 +64471,34 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
 
 //지도
 function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender) {
-    var petExploreData = loadJsonFile(petExplorePath);
-    petExploreData = initPetExploreData(petExploreData);
-    cleanupInvalidPetExploreUsers(petExploreData, data);
-    savePetExploreMigrationIfNeeded(petExploreData);
-
-    if (isChuseokExploreEventActive(petExploreData)) return buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender);
-
-    var LINE = "━━━━━━━━━━━━";
-    var out = "";
-
-    out += "🗺️ 펫탐험 지도🗺️\n";
-    if (petExploreData.notice) {
-        out += normalizeOperationNoticeText(petExploreData.notice) + "\n";
+    var store = initPetExploreData(loadJsonFile(petExplorePath));
+    cleanupInvalidPetExploreUsers(store, data); savePetExploreMigrationIfNeeded(store);
+    if (isChuseokExploreEventActive(store)) return buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, store, sender);
+    var key = store.userBet[sender] ? String(store.userBet[sender]) : null;
+    var p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, key, guildData);
+    var fixed = store.autoFixedDungeon[sender], recent = store.recentResults[sender] || [], bag = data.member[sender].bag || {};
+    var lines = ["🗺️ 펫탐험 지도🗺️", getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "🎯 탐험 성공률: " + formatPercent1(p.totalP) + "%", "현재 탐험지⛰️: " + (key ? getExploreDungeonName(key, store) : "없음"), "자동탐험 고정⛰️: " + (fixed ? getExploreDungeonName(fixed, store) : "없음"), "최근 탐험: " + (recent.length ? recent.slice(0, GLOBAL_CONFIG.petExplore.rework.historyLimit).join(" ") : "최근 탐험 기록 없음"), "━━━━━━━━━━━━"];
+    if (store.notice) lines.push(normalizeOperationNoticeText(store.notice));
+    if (store.reworkVersion === 1) lines.push("기존 참가 회차는 기존 기준으로 마무리한 뒤 새 지역을 선택할 수 있어요.");
+    if (store.reworkResetUsers && store.reworkResetUsers[sender]) lines.push("삭제 지역 자동고정이 해제됐어요. /자동탐고정 1~6으로 다시 선택해주세요.");
+    var keys = GLOBAL_CONFIG.petExplore.rework.regionKeys;
+    for (var i = 0; i < keys.length; i++) {
+        if (i % 2 === 0) lines.push((i === 0 ? "⛏️ 광산 · 성공 -5%" : i === 2 ? "🌋 던전 · 성공 -15%" : "🕋 미궁 · 성공 -45%"));
+        lines.push("【" + (i + 1) + "】 " + getExploreDungeonName(keys[i], store) + ": " + (store.bet[keys[i]] || []).length + "명");
     }
-    out += getNextIntervalTime(data, setint) + "\n";
-    out += LINE + "\n";
-
-    var myBet = petExploreData.userBet && petExploreData.userBet[sender] ? String(petExploreData.userBet[sender]) : null;
-
-    var p = null;
-    try {
-        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, myBet, guildData);
-    } catch (e) {
-        p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, pendantP: 0, premiumP: 0, homeBadgeP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
-    }
-
-    var dungeonNameMap = {
-        0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
-        1: "펫강화 광산⭐️",
-        2: "친밀도 광산🐾",
-        3: "행운의 광산🍀",
-        4: "전도르 던전🗿",
-        5: "양계장 던전🐓",
-        6: "땅문서 던전📜",
-        7: "샵오픈 던전🏡",
-        8: "보물수호자 벨카르💎",
-        9: "잊혀진 대마법사의 유적📙",
-        10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
-        E: "이벤트 던전✡️"
-    };
-
-    var myDungeonName = myBet ? dungeonNameMap[myBet] || myBet + "번" : "없음";
-    out += "[" + checkRank(data, petData, guildData, sender) + "] 님의 성공률(" + formatPercent1(p.totalP) + "%)\n";
-    out += "현재 내 탐험지⛰️: " + myDungeonName + "\n";
-
-    var total = 0;
-    var autoCount = 0;
-    var cnt = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0 };
-
-    for (var d = 0; d <= GLOBAL_CONFIG.petExplore.slots.regularMax; d++) {
-        var dk = String(d);
-        var arr = petExploreData.bet && petExploreData.bet[dk] ? petExploreData.bet[dk] : [];
-        if (!Array.isArray(arr)) arr = [];
-
-        cnt[dk] = arr.length;
-        total += arr.length;
-
-        for (var i = 0; i < arr.length; i++) {
-            if (arr[i] && arr[i].auto) autoCount++;
-        }
-    }
-    var raidArr = petExploreData.bet && petExploreData.bet["10"] ? petExploreData.bet["10"] : [];
-    if (!Array.isArray(raidArr)) raidArr = [];
-    cnt["10"] = raidArr.length;
-    total += raidArr.length;
-    for (var raidIdx = 0; raidIdx < raidArr.length; raidIdx++) {
-        if (raidArr[raidIdx] && raidArr[raidIdx].auto) autoCount++;
-    }
-
-    var myFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[sender] ? String(petExploreData.autoFixedDungeon[sender]) : null;
-    var myFixedName = myFixed ? dungeonNameMap[myFixed] || myFixed + "번" : "없음";
-
-    out += LINE + "\n";
-
-    if (isPetExploreEventMineActive(petExploreData)) {
-        out += GLOBAL_CONFIG.petExplore.diamondMineEvent.label + "【/탐 0】\n";
-        out += "【0】 " + GLOBAL_CONFIG.petExplore.diamondMineEvent.name + ": " + cnt["0"] + "명\n";
-        out += LINE + "\n";
-    }
-
-    if (isGuildRaidExploreEventActive(petExploreData)) {
-        out += GLOBAL_CONFIG.petExplore.guildRaidEvent.label + "【/탐 10】\n";
-        out += "【10】 " + GLOBAL_CONFIG.petExplore.guildRaidEvent.name + ": " + cnt["10"] + "명\n";
-        out += "※ 길드/펫던전 입장권🌋 필요\n";
-        out += LINE + "\n";
-    }
-
-    out += "광산⛰️【/탐 1~3, /탐(랜덤)】\n";
-    out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.mineSuccessPenalty + "% 디버프\n";
-    out += "【1】 펫강화 광산⭐️: " + cnt["1"] + "명\n";
-    out += "【2】 친밀도 광산🐾: " + cnt["2"] + "명\n";
-    out += "【3】 행운의 광산🍀: " + cnt["3"] + "명\n";
-    out += LINE + "\n";
-
-    out += "던전🌋【/탐 4~7】 펫던전 입장권🌋\n";
-    out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty + "% 디버프\n";
-    out += "【4】 전도르 던전🗿: " + cnt["4"] + "명\n";
-    out += "【5】 양계장 던전🐓: " + cnt["5"] + "명\n";
-    out += "【6】 땅문서 던전📜: " + cnt["6"] + "명\n";
-    out += "【7】 샵오픈 던전🏡: " + cnt["7"] + "명\n";
-    out += LINE + "\n";
-
-    out += "미궁🕋【/탐 8~9】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
-    out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
-    out += "【8】 보물수호자 벨카르💎: " + cnt["8"] + "명\n";
-    out += "【9】 잊혀진 대마법사의 유적📙: " + cnt["9"] + "명\n";
-    out += "*【9】 /종합순위 1등~20등만 입장 가능\n";
-    out += LINE + "\n";
-
-    var appliedUpItem = getMyAppliedUpItem(petExploreData, sender, myBet);
-    var upP = appliedUpItem ? parseExploreUpPercent(appliedUpItem) : 0;
-
-    out += "(내 탐험 아이템 상세보기..👈)\n";
-    out += allsee + "\n";
-    out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 펜던트" + formatPendantPercent(p.pendantP) + "% + 호프" + p.premiumP + "% + 홈뱃지" + p.homeBadgeP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + formatPercent1(p.totalP) + "%\n";
-
-    var bagUpHas = null;
-    for (var u = 0; u < GLOBAL_CONFIG.petExplore.boostItemNames.length; u++) {
-        var upName = GLOBAL_CONFIG.petExplore.boostItemNames[u];
-        if (hasItem(data, sender, upName, 1)) {
-            bagUpHas = upName;
-            break;
-        }
-    }
-
-    var upHas = appliedUpItem ? appliedUpItem : bagUpHas;
-
-    out += "확률UP 보유🗻: " + (upHas ? upHas : "없음") + "\n";
-    out += LINE + "\n";
-
-    out += "[자동탐험권 고정⛰️: " + myFixedName + "]\n";
-    var autoFixGuide = isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9";
-    if (isGuildRaidExploreEventActive(petExploreData)) autoFixGuide += ", 10";
-    out += "[/자동탐고정 " + autoFixGuide + " 입력시 고정]\n";
-    out += "[/자동탐고정해제 입력시 해제]\n";
-    out += LINE + "\n";
-
-    out += "아이템 보유 현황🛍️\n";
-
-    var treasureCnt = 0;
-    if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag["보물지도🗺️"]) {
-        treasureCnt = data.member[sender].bag["보물지도🗺️"];
-    }
-    var treasureStatus = treasureCnt > 0 ? treasureCnt + "개" : "X";
-    if (treasureCnt > 0 && hasPetSkill(petSkillData, sender, "도굴꾼")) {
-        out += "보물지도🗺️: " + treasureStatus + " (도굴꾼📙 적용 시 소모 없이 효과 적용)\n";
-    } else {
-        out += "보물지도🗺️: " + treasureStatus + " (정산 시 보유하면 소모/적용)\n";
-    }
-
-    var exploreBoostItems = ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"];
-
-    for (var i2 = 0; i2 < exploreBoostItems.length; i2++) {
-        var itemName = exploreBoostItems[i2];
-        var c2 = 0;
-        if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag[itemName]) {
-            c2 = data.member[sender].bag[itemName];
-        }
-        out += itemName + ": " + (c2 > 0 ? c2 + "개" : "X") + "\n";
-    }
-
-    var ticketCnt = 0;
-    if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag["펫던전 입장권🌋"]) {
-        ticketCnt = data.member[sender].bag["펫던전 입장권🌋"];
-    }
-    var ticketScope = isGuildRaidExploreEventActive(petExploreData) ? "탐10, 탐4~7 정산 시 재확인" : "탐4~7 정산 시 재확인";
-    out += "펫탐험 입장권🌋: " + (ticketCnt > 0 ? ticketCnt + "개" : "X") + " (" + ticketScope + ")\n";
-    var mazeTicketCnt = 0;
-    if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName]) {
-        mazeTicketCnt = data.member[sender].bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName];
-    }
-    out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + ": " + (mazeTicketCnt > 0 ? mazeTicketCnt + "개" : "X") + " (탐8~9 정산 시 재확인)\n";
-    out += LINE + "\n";
-
-    var rec = petExploreData.record && petExploreData.record[sender] ? petExploreData.record[sender] : null;
-    var win = rec && typeof rec.win === "number" ? rec.win : 0;
-    var lose = rec && typeof rec.lose === "number" ? rec.lose : 0;
-    var totalGame = win + lose;
-    var winRate = totalGame > 0 ? ((win / totalGame) * 100).toFixed(1) : "0.0";
-
-    out += "내 전적📈: " + win + "승 " + lose + "패 (승률 " + winRate + "%)\n";
-    out += "※ 확률은 현재 보유 기준이며, 확률UP/보물지도/입장권은 실제 탐험 정산 시 다시 확인됩니다.\n";
-
-    return out;
+    lines.push("└ 6번 미궁: /종합순위 1~20등 입장 가능");
+    if (isPetExploreEventMineActive(store)) lines.push("【0】 " + getExploreDungeonName("0", store) + ": " + (store.bet["0"] || []).length + "명");
+    if (isGuildRaidExploreEventActive(store)) lines.push("【10】 " + getExploreDungeonName("10", store) + ": " + (store.bet["10"] || []).length + "명");
+    lines.push("━━━━━━━━━━━━", "(내 탐험 상세보기..👈)" + allsee, "🎯 내 탐험 성공률 상세");
+    var labels = [["기본", "baseP"], ["티어", "tierP"], ["매력", "expP"], ["영주", "lordP"], ["펫스킬", "traitP"], ["펜던트", "pendantP"], ["호프", "premiumP"], ["홈뱃지", "homeBadgeP"], ["확률UP", "itemP"]], terms = [];
+    for (var j = 0; j < labels.length; j++) if (p[labels[j][1]]) terms.push(labels[j][0] + " +" + formatPercent1(p[labels[j][1]]) + "%");
+    if (p.penaltyP) terms.push("디버프 -" + p.penaltyP + "%");
+    lines.push(terms.join(" / ") + " = " + formatPercent1(p.totalP) + "%", "━━━━━━━━━━━━", "🎫 자동탐험 설정", "/자동탐고정 1~6 : 탐험지 고정", "/자동탐고정해제 : 고정 해제", "━━━━━━━━━━━━", "🛍️ 아이템 보유 현황", "보물지도🗺️: " + ((bag["보물지도🗺️"] || 0) > 0 ? numberWithCommas(bag["보물지도🗺️"]) + "개" : "X"));
+    for (var u = 0; u < GLOBAL_CONFIG.petExplore.boostItemNames.length; u++) { var item = GLOBAL_CONFIG.petExplore.boostItemNames[u]; if (bag[item] > 0) lines.push(item + ": " + numberWithCommas(bag[item]) + "개"); }
+    lines.push("펫던전 입장권🌋: " + numberWithCommas(bag["펫던전 입장권🌋"] || 0) + "개", GLOBAL_CONFIG.petExplore.maze.ticketItemName + ": " + numberWithCommas(bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName] || 0) + "개", "━━━━━━━━━━━━", "📈 내 탐험 전적");
+    var record = store.record && store.record[sender] || { win: 0, lose: 0 }, count = record.win + record.lose;
+    lines.push(numberWithCommas(record.win) + "승 " + numberWithCommas(record.lose) + "패 (승률 " + (count ? record.win / count * 100 : 0).toFixed(1) + "%)", "━━━━━━━━━━━━", "※ 확률UP·보물지도·입장권은 실제 탐험 정산 시 다시 확인됩니다.");
+    return lines.join("\n");
 }
 
 // 추석 이벤트 전용 탐험 지도를 만드는 함수
@@ -64653,18 +64618,20 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
     var parts = msg.trim().split(/\s+/);
     if (parts.length < 2) {
-        var usageRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9");
+        var usageRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0, 1~6" : "1~6");
         if (!isChuseokExploreEventActive(petExploreData) && isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
         var usageExample = isChuseokExploreEventActive(petExploreData) ? "11" : (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4"));
         var usageText = "사용법: /자동탐고정 " + usageRange + "\n(예: /자동탐고정 " + usageExample + ")";
         return { text: usageText, petExploreData: petExploreData, data: data };
     }
 
-    var n = String(parts[1]);
+    if (parts.length !== 2 || !/^\d+$/.test(parts[1])) return { text: "사용법: /자동탐고정 1~6", petExploreData: petExploreData, data: data };
+    if (petExploreData.reworkVersion === 1 && !isChuseokExploreEventActive(petExploreData)) return { text: "기존 탐험 회차 정산 후 새 지역으로 고정해주세요.", petExploreData: petExploreData, data: data };
+    var n = getExploreRegionKey(parts[1]);
     var fixedNo = parseInt(n, 10);
-    var isValid = isChuseokExploreEventActive(petExploreData) ? n === GLOBAL_CONFIG.petExplore.chuseokEvent.slot : (fixedNo >= GLOBAL_CONFIG.petExplore.slots.mineMin && fixedNo <= GLOBAL_CONFIG.petExplore.slots.regularMax) || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
+    var isValid = isChuseokExploreEventActive(petExploreData) ? n === GLOBAL_CONFIG.petExplore.chuseokEvent.slot : (GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(n) !== -1) || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
     if (!isValid) {
-        var validRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9");
+        var validRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0, 1~6" : "1~6");
         if (!isChuseokExploreEventActive(petExploreData) && isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
         var validExample = isChuseokExploreEventActive(petExploreData) ? "11" : (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2"));
         var validText = validRange + " 중 하나만 입력해줘!\n예) /자동탐고정 " + validExample;
@@ -64690,7 +64657,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
     var prevFixed = petExploreData.autoFixedDungeon[sender] ? String(petExploreData.autoFixedDungeon[sender]) : null;
     if (prevFixed && prevFixed === n) {
         return {
-            text: "✅ 이미 자동탐험지가 " + nameMap[n] + " (탐" + n + ") 로 고정되어 있어!",
+            text: "✅ 이미 자동탐험지가 " + nameMap[n] + " (탐" + getExplorePublicNumber(n) + ") 로 고정되어 있어!",
             petExploreData: petExploreData,
             data: data
         };
@@ -64698,6 +64665,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
     // 고정 저장만 (티켓/아이템 검증 및 소모는 하지 않음)
     petExploreData.autoFixedDungeon[sender] = n;
+    if (petExploreData.reworkResetUsers) delete petExploreData.reworkResetUsers[sender];
 
     // (선택) 안내 문구: 던전/미궁은 입장권 필요하다는 정보를 제공(소모X)
     if (isRegularDungeonExploreSlot(n) || isMazeExploreSlot(n) || n === "10" || n === "11") {
@@ -64708,16 +64676,16 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
             ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
         } else if (isMazeExploreSlot(n)) {
             ticketGuide = "※ 탐" + n + " 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
-            if (n === "9") ticketGuide += "\n탐9는 /종합순위 20등 안에 들어가야 입장할 수 있습니다.";
+            if (n === "9") ticketGuide += "\n탐6은 /종합순위 20등 안에 들어가야 입장할 수 있습니다.";
         } else {
-            ticketGuide = "※ 탐4~7 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~3으로 이동합니다.";
+            ticketGuide = "※ 탐3~4 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~2으로 이동합니다.";
         }
         return {
             text:
                 "✅ 자동탐험 고정 완료!\n내 자동탐험지: " +
                 nameMap[n] +
                 " (탐" +
-                n +
+                getExplorePublicNumber(n) +
                 ")\n" +
                 ticketGuide +
                 "\n\n자동탐험권🌄(호이패스,초보패스,호이패스 프리미엄) 구독자만 이용가능합니다.",
@@ -64727,7 +64695,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
     }
 
     return {
-        text: "✅ 자동탐험 고정 완료!\n내 자동탐험지: " + nameMap[n] + " (탐" + n + ")\n\n*탐험고정은 자동탐험권🌄이 필요하며 호이패스, 초보패스, 호이패스 프리미엄 구독자가 이용할 수 있습니다.",
+        text: "✅ 자동탐험 고정 완료!\n내 자동탐험지: " + nameMap[n] + " (탐" + getExplorePublicNumber(n) + ")\n\n*탐험고정은 자동탐험권🌄이 필요하며 호이패스, 초보패스, 호이패스 프리미엄 구독자가 이용할 수 있습니다.",
         petExploreData: petExploreData,
         data: data
     };
@@ -68757,6 +68725,42 @@ function initializeGuildWarExpansion(data, guildData, now) {
     return true;
 }
 // 일괄 편성의 여덟 자리를 모두 검증한 뒤 변경 횟수와 함께 적용하는 함수
+// 전쟁 역할의 최대 겸직 수와 공격·방어 중복을 검사하는 함수
+function validateGuildWarRoles(entry) {
+    var counts = {}, groups = [entry.attack, entry.defense];
+    for (var g = 0; g < groups.length; g++) for (var i = 0; i < groups[g].length; i++) {
+        var name = groups[g][i];
+        if (!name) continue;
+        if (groups[g].indexOf(name) !== i || g === 1 && entry.attack.indexOf(name) !== -1) throw guildWarInputError("공격·방어 중복 또는 같은 진형의 중복 인원은 편성할 수 없습니다.");
+        counts["$" + name] = (counts["$" + name] || 0) + 1;
+    }
+    var special = [entry.scout, entry.bomber];
+    for (var j = 0; j < special.length; j++) if (special[j]) counts["$" + special[j]] = (counts["$" + special[j]] || 0) + 1;
+    for (var key in counts) if (Object.prototype.hasOwnProperty.call(counts, key) && counts[key] > 2) throw guildWarInputError("최대 2개 역할만 맡을 수 있습니다. /전쟁정찰해제 또는 /전쟁자폭해제 후 다시 편성해주세요.");
+}
+// 후보 편성의 자격·변경 제한을 모두 검사한 뒤 실제 편성을 한 번 반영하는 함수
+function commitGuildWarRoster(entry, candidate, swords) {
+    validateGuildWarRoles(candidate);
+    if (candidate.attack.some(function (name) { return name && swords.indexOf(name) === -1; })) throw guildWarInputError("공격 진형은 현재 소드마스터만 편성할 수 있습니다. 길드 직책은 자동 변경하지 않습니다.");
+    var config = GLOBAL_CONFIG.guildWar, roles = ["scout", "bomber"];
+    for (var i = 0; i < roles.length; i++) {
+        var role = roles[i], changed = entry[role] !== candidate[role], limit = role === "scout" ? config.scoutChangeLimit : config.bomberChangeLimit;
+        if (changed && (entry[role + "Assigned"] || !candidate[role]) && entry[role + "Changes"] >= limit) throw guildWarInputError("남은 " + (role === "scout" ? "정찰병" : "자폭병") + " 변경 횟수가 없습니다. 기존 편성을 유지합니다.");
+    }
+    for (var j = 0; j < roles.length; j++) {
+        var r = roles[j];
+        if (entry[r] !== candidate[r] && (entry[r + "Assigned"] || !candidate[r])) entry[r + "Changes"]++;
+        entry[r + "Assigned"] = entry[r + "Assigned"] || !!candidate[r];
+        entry[r] = candidate[r];
+    }
+    entry.attack = candidate.attack.slice(0); entry.defense = candidate.defense.slice(0);
+    return "✅ 길드전쟁 편성 완료!\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가";
+}
+// 선포 당시 전쟁 규칙에 따른 준비시간을 반환하는 함수
+function getGuildWarPrepareMs(war) {
+    if (war.rulesVersion !== undefined && war.rulesVersion !== 2) throw new Error("길드전쟁 적용 규칙 오류");
+    return war.rulesVersion === 2 ? GLOBAL_CONFIG.guildWar.prepareMs : GLOBAL_CONFIG.guildWar.legacyPrepareMs;
+}
 function setGuildWarBulkFormation(state, guildData, gid, request, skills) {
     var guild = guildData.guilds[gid], entry = getGuildWarEntry(state, gid), ordered = getGuildOrderedMemberKeys(guild, skills), config = GLOBAL_CONFIG.guildWar;
     if (getGuildWarBattles(state, gid).length) throw guildWarInputError("진행 중 공격·방어 전쟁이 있어 일괄 편성을 변경할 수 없습니다.");
@@ -68764,19 +68768,9 @@ function setGuildWarBulkFormation(state, guildData, gid, request, skills) {
         if (!isPointShopSafeCount(no) || no < 0 || (index >= 2 && index <= 4 && no === 0) || no > ordered.length) throw guildWarInputError("편성 번호를 확인해주세요. 공격 3인은 0을 입력할 수 없습니다.");
         return no ? ordered[no - 1] : "";
     });
-    var oldSeven = [picked[0]].concat(picked.slice(2)).filter(function (name) { return !!name; });
-    if (oldSeven.some(function (name, index) { return oldSeven.indexOf(name) !== index; })) throw guildWarInputError("정찰·공격·방어 7인은 중복 편성할 수 없습니다. 자폭병은 겸직 가능합니다.");
-    var swords = ensureGuildSwordMasters(guild, skills);
-    if (picked.slice(2, 5).some(function (name) { return swords.indexOf(name) === -1; })) throw guildWarInputError("공격 3인은 현재 소드마스터만 편성할 수 있습니다.");
-    if (picked.slice(5).some(function (name) { return name && swords.indexOf(name) !== -1; })) throw guildWarInputError("방어는 소드마스터가 아닌 일반 길드원만 편성할 수 있습니다.");
-    var scoutChanged = entry.scout !== picked[0], bomberChanged = entry.bomber !== picked[1];
-    if (scoutChanged && entry.scoutAssigned && entry.scoutChanges >= config.scoutChangeLimit) throw guildWarInputError("정찰병 변경 횟수를 모두 사용했습니다. 기존 8칸을 유지합니다.");
-    if (bomberChanged && entry.bomberAssigned && entry.bomberChanges >= config.bomberChangeLimit) throw guildWarInputError("자폭병 변경 횟수를 모두 사용했습니다. 기존 8칸을 유지합니다.");
-    if (scoutChanged && entry.scoutAssigned) entry.scoutChanges++;
-    if (bomberChanged && entry.bomberAssigned) entry.bomberChanges++;
-    entry.scout = picked[0]; entry.bomber = picked[1]; entry.attack = picked.slice(2, 5); entry.defense = picked.slice(5);
-    entry.scoutAssigned = entry.scoutAssigned || !!entry.scout; entry.bomberAssigned = entry.bomberAssigned || !!entry.bomber;
-    return "✅ 길드전쟁 일괄편성 완료!";
+    var candidate = cloneFreeMarketObject(entry);
+    candidate.scout = picked[0]; candidate.bomber = picked[1]; candidate.attack = picked.slice(2, 5); candidate.defense = picked.slice(5);
+    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills));
 }
 // 중단된 대진의 실제 소모품만 별도로 남겨 재정찰 뒤에도 사용 이력을 보존하는 함수
 function archiveGuildWarMatchup(war, now) {
@@ -68797,11 +68791,11 @@ function retargetGuildWar(data, guildData, war, owner, now, sources) {
     if (!war.originalAttack) war.originalAttack = cloneFreeMarketObject(war.attack);
     war.attack = cloneFreeMarketObject(war.originalAttack); war.defenseId = owner; war.defenseName = nextGuild ? formatGuildDisplay(nextGuild) : "미점령";
     war.attackScout = attacker; war.defenseScout = defender; war.defenseScoutWin = !(attacker.charm > defender.charm);
-    war.declaredAt = war.declaredAt || war.at; war.at = now; war.due = now + GLOBAL_CONFIG.guildWar.prepareMs;
+    war.declaredAt = war.declaredAt || war.at; war.at = now; war.due = now + getGuildWarPrepareMs(war);
     war.matches = []; war.wins = 0; war.retargetPending = false;
     queueGuildWarNotice(state, guildData, previous, "⚔️ " + oldName + " 길드전쟁\n" + guildWarRegion(war.no) + "\n점령자 변경으로 기존 대진 중단 · 방어전 종료 · 보상 없음");
-    queueGuildWarNotice(state, guildData, war.attackId, "⚔️ " + war.attackName + " 길드전쟁\n" + guildWarRegion(war.no) + "\n점령자 변경으로 기존 대진 중단\n상대: " + oldName + " → " + war.defenseName + "\n이전 승패 초기화 · 새 준비시간 3분\n" + buildGuildWarScoutNotice("declare", war.attackName, war.defenseName, war.no, !war.defenseScoutWin, attacker, defender, war.defense, 0));
-    queueGuildWarNotice(state, guildData, owner, buildGuildWarScoutReverse("declare", war.attackName, war.defenseName, war.no, attacker, true, war.defenseScoutWin && !!defender.name));
+    queueGuildWarNotice(state, guildData, war.attackId, "⚔️ " + war.attackName + " 길드전쟁\n" + guildWarRegion(war.no) + "\n점령자 변경으로 기존 대진 중단\n상대: " + oldName + " → " + war.defenseName + "\n이전 승패 초기화 · 새 준비시간 " + (getGuildWarPrepareMs(war) / 60000) + "분\n" + buildGuildWarScoutNotice("declare", war.attackName, war.defenseName, war.no, !war.defenseScoutWin, attacker, defender, war.defense, 0, getGuildWarPrepareMs(war) / 60000));
+    queueGuildWarNotice(state, guildData, owner, buildGuildWarScoutReverse("declare", war.attackName, war.defenseName, war.no, attacker, true, war.defenseScoutWin && !!defender.name, getGuildWarPrepareMs(war) / 60000));
 }
 // 직접 명령 응답에 입력자 전체 닉네임을 한 번만 붙이는 함수
 function buildGuildWarDirectHeader(sender) {
@@ -68828,6 +68822,26 @@ function createGuildWarRights() {
 }
 
 // 길드원에게 현재 배정된 선포권을 길마 기본권 우선으로 반환하는 함수
+// 당일 개인 선포 사용량을 확정 기록에서 복원해 겸직·편성 이동의 추가 사용을 막는 함수
+function getGuildWarPersonalUsage(state, guild, entry, gid) {
+    if (entry.personalDeclarations !== undefined) {
+        if (!entry.personalDeclarations || typeof entry.personalDeclarations !== "object" || Array.isArray(entry.personalDeclarations)) throw new Error("길드전쟁 개인 사용량 오류");
+        for (var user in entry.personalDeclarations) if (Object.prototype.hasOwnProperty.call(entry.personalDeclarations, user) && !isPointShopSafeCount(entry.personalDeclarations[user])) throw new Error("길드전쟁 개인 횟수 오류");
+        return cloneFreeMarketObject(entry.personalDeclarations);
+    }
+    var usage = {}, seen = {}, rows = state.active.concat(state.records[gid] || []);
+    for (var i = 0; i < rows.length; i++) {
+        var war = rows[i];
+        if (war.attackId !== gid || war.day !== state.day || war.ticketEpoch !== entry.ticketEpoch || war.refunded || seen[war.id]) continue;
+        seen[war.id] = true;
+        var name = war.declaredBy;
+        if (!name && war.right === "master") name = guild.master;
+        else if (!name && war.right === "scout") name = war.attackScout && war.attackScout.name;
+        else if (!name && /^attack[012]$/.test(war.right)) { var fighters = war.originalAttack || war.attack; name = fighters && fighters[Number(war.right.slice(-1))] && fighters[Number(war.right.slice(-1))].name; }
+        if (name) usage[name] = (usage[name] || 0) + 1;
+    }
+    return usage;
+}
 function getGuildWarUserRights(guild, entry, user) {
     var keys = [];
     if (guild.master === user) keys.push("master");
@@ -68854,6 +68868,7 @@ function refundGuildWarTicket(state, war) {
     var entry = getGuildWarEntry(state, war.attackId);
     if (war.right && war.ticketEpoch === entry.ticketEpoch && entry.rights[war.right]) {
         entry.rights[war.right] = false;
+        if (war.declaredBy && entry.personalDeclarations && entry.personalDeclarations[war.declaredBy] > 0) entry.personalDeclarations[war.declaredBy]--;
         entry.tickets = Math.min(GLOBAL_CONFIG.guildWar.dailyTickets, entry.tickets + 1);
     }
 }
@@ -68879,7 +68894,14 @@ function restoreGuildWarBattleItems(data, war) {
 function occupyGuildWarTerritory(data, guildData, war, now) {
     var state = guildData.war24;
     transferGuildWarTerritory(state, war.no, war.attackId, now);
-    if (war.no !== 1) return;
+    if (war.no !== 1) {
+        if (war.rulesVersion === 2) {
+            var targets = getNoticeTargetRooms(getCurrentContext());
+            var message = "[🏰전체알림]\n━━━━━━━━━━━━\n" + guildWarRegion(war.no) + " 점령!\n\n🎯 " + war.attackName + " 길드가\n" + GLOBAL_CONFIG.guildWar.regionLabels[war.no - 1] + " 점령에 성공했습니다!\n━━━━━━━━━━━━\n⚔️ 길드전쟁 현황: /길드전쟁";
+            for (var t = 0; t < targets.length; t++) state.notices.push({ room: targets[t], text: message, attempts: 0, gid: null, eventId: "war:" + war.id + ":" + targets[t] });
+        }
+        return;
+    }
     if (!data.HoiCastle) throw new Error("호월킹덤 영주 원본 확인 필요");
     data.HoiCastle.lord = war.attack[2].name; data.HoiCastle.taxRate = GLOBAL_CONFIG.guildWar.defaultTaxRate;
     data.HoiCastle.earnings = 0; data.HoiCastle.defenseCount = 0;
@@ -68923,7 +68945,31 @@ function buildGuildWarMemberRole(guildData, gid, user) {
 }
 
 // 기본 여덟 역할칸과 공용 공격권·위치별 방어 버프를 표시하는 함수
-function buildGuildWarFormation(data, petData, guildData, gid) {
+// 캐슬·종합 매력을 동일한 반올림 단위로 줄여 표시하는 함수
+function formatGuildWarCharm(value) {
+    if (value >= 100000000) return (Math.round(value / 10000000) / 10) + "억";
+    if (value >= 10000) return numberWithCommas(Math.round(value / 10000)) + "만";
+    return numberWithCommas(Math.round(value));
+}
+// 길드정보와 같은 번호를 유지해 배정·미배정 인원의 현재 매력을 만드는 함수
+function buildGuildWarRosterDetails(data, pets, guildData, gid, home, skills) {
+    var guild = guildData.guilds[gid], entry = getGuildWarEntry(guildData.war24, gid), ordered = getGuildOrderedMemberKeys(guild, skills), assigned = [], free = [];
+    for (var i = 0; i < ordered.length; i++) {
+        var name = ordered[i], roles = [];
+        if (entry.scout === name) roles.push("└ 🔭 정찰병");
+        if (entry.bomber === name) roles.push("└ 💣 자폭병");
+        for (var p = 0; p < 3; p++) {
+            if (entry.attack[p] === name) roles.push("└ 🎯 공격 [" + (p + 1) + "] " + ["선봉", "중견", "대장"][p]);
+            if (entry.defense[p] === name) roles.push("└ ⚒️ 방어 [" + (p + 1) + "] " + ["선봉", "중견", "대장"][p]);
+        }
+        var castle = pets[name] ? calculateCastleExp(name, data, pets, home, skills, false, guildData) : 0;
+        var total = pets[name] ? calculateTotalExp(name, data, pets, home, skills, guildData) : 0;
+        var row = (i + 1) + ". [" + checkRank(data, pets, guildData, name) + "] " + getGuildMemberRoleEmoji(guild, name, skills) + "\n" + (roles.length ? roles.join("\n") : "└ ❌ 전쟁 포지션 없음") + "\n└ ⚔️ 캐슬 " + formatGuildWarCharm(castle) + " · 💞 종합 " + formatGuildWarCharm(total);
+        (roles.length ? assigned : free).push(row);
+    }
+    return "📋 길드원 전쟁 포지션 현황\n━━━━━━━━━━━━\n✅ 포지션 배정 [" + assigned.length + "명]\n\n" + assigned.join("\n\n") + "\n\n━━━━━━━━━━━━\n🆓 미편성 길드원 [" + free.length + "명]\n\n" + free.join("\n\n");
+}
+function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills) {
     var guild = guildData.guilds[gid], entry = getGuildWarEntry(guildData.war24, gid), fighters = entry.attack.concat(entry.defense);
     var text = "⚔️ " + formatGuildDisplay(guild) + " 길드전쟁 편성\n━━━━━━━━━━━━\n👥 전쟁 편성: " + fighters.concat([entry.scout, entry.bomber]).filter(function (n) { return !!n; }).length + "/8칸\n🎯 남은 공격권: " + entry.tickets + "/5회\n\n";
     text += "🔭 정찰병 [전체 길드원 가능]\n└ [" + (entry.scout ? checkRank(data, petData, guildData, entry.scout) : "미편성") + "]\n└ 🔭 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2 · 🔄 변경 " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2\n\n";
@@ -68932,7 +68978,7 @@ function buildGuildWarFormation(data, petData, guildData, gid) {
         if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [소드마스터 전용]" : "⚒️ 방어 진형\n└ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n━━━━━━━━━━━━\n";
         text += ["🥇 1번 선봉", "🥈 2번 중견", "🥉 3번 대장"][i % 3] + ": [" + (fighters[i] ? checkRank(data, petData, guildData, fighters[i]) : "미편성") + "]\n";
     }
-    return text + "\n⚠️ 기본 7인 중복 금지 · 자폭병은 겸직 가능\n📚 진형 편성 방법 전체보기" + allsee + "\n" + GLOBAL_CONFIG.guildWar.commandGuide;
+    return text + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n📚 진형 편성 방법 전체보기" + allsee + "\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n📚 전쟁 명령어 안내\n" + GLOBAL_CONFIG.guildWar.commandGuide;
 }
 
 // 유효한 자폭 한 번의 소유권·횟수·양쪽 통보를 함께 변경하는 함수
@@ -68963,7 +69009,7 @@ function applyGuildWarBomb(data, petData, guildData, gid, sender, no, now, rando
 
 // 정확한 실행 문법과 삭제한 상세 조회를 구분하는 함수
 function getGuildWarRequest(msg) {
-    var simple = { "/길드전쟁": "main", "/길드전쟁가이드": "guide", "/전쟁편성": "formation", "/전쟁정찰": "scout", "/전쟁기록": "records", "/전쟁톡등록": "register", "/전쟁톡확인": "room", "/전쟁톡해제": "unregister", "/전쟁편성초기화": "clearFormation", "/길드전쟁공격초기화": "resetTickets" };
+    var simple = { "/길드전쟁": "main", "/길드전쟁가이드": "guide", "/전쟁편성": "formation", "/전쟁정찰": "scout", "/전쟁기록": "records", "/전쟁톡등록": "register", "/전쟁톡확인": "room", "/전쟁톡해제": "unregister", "/전쟁편성초기화": "clearFormation", "/길드전쟁공격초기화": "resetTickets", "/전쟁정찰해제": "clearScout", "/전쟁자폭해제": "clearBomber" };
     if (Object.prototype.hasOwnProperty.call(simple, msg)) return { kind: simple[msg], args: [] };
     var match = /^\/(전쟁공격편성|전쟁방어편성)[ \t]+(\d+)[ \t]+(\d+)[ \t]+(\d+)(?:[ \t]+(\d+))?$/.exec(msg);
     if (match && match[0] === msg ) return { kind: match[1] === "전쟁공격편성" ? "attackFormation" : "defenseFormation", args: match.slice(2).filter(function (v) { return v !== undefined; }).map(Number) };
@@ -69040,7 +69086,7 @@ function requireGuildWarState(state) {
     var targets = {}, attackers = {}, previousId = 0;
     for (var i = 0; i < state.active.length; i++) {
         var war = state.active[i];
-        if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + GLOBAL_CONFIG.guildWar.prepareMs || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
+        if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
         if (war.reward !== undefined || war.rewardPolicy !== undefined) throw new Error("이미 정산된 전쟁이 진행 목록에 남아 있습니다.");
         if (state.version === 2 && (!Array.isArray(war.matches) || war.matches.length > 2 || !isPointShopSafeCount(war.wins) || war.wins > war.matches.length || typeof war.right !== "string" || !isPointShopSafeCount(war.ticketEpoch))) throw new Error("길드전쟁 경기 단계 오류");
         if (state.version === 2) {
@@ -69209,6 +69255,8 @@ function buildGuildWarResult(war, recipientId) {
     }
     if (war.occupied && war.no === 1) text += "👑 신임 영주: [" + war.attack[2].display + "]\n";
     if (war.reward && war.reward.guildId === recipientId) text += "🎁 길드자금 +🅟" + numberWithCommas(war.reward.amount) + " (큐브3 +" + (war.reward.cubePercent || 0) + "%)\n" + (war.reward.boxes ? "💎 다이아상자💎(/다이아상자오픈) +1개 (길드창고)\n" : "") + (war.reward.pieces ? "📙 펫스킬조각 +1개 (길드창고)\n" : "");
+    if (war.reward && war.reward.guildId === recipientId && war.reward.diamonds) text += "💎 길드창고 다이아 +" + war.reward.diamonds + "\n";
+    if (war.lossReward && war.lossReward.guildId === recipientId) text += "🎁 길드자금 +🅟" + numberWithCommas(war.lossReward.amount) + "\n";
     if (war.bloodless) return text;
     var pairs = [], details = [];
     for (var i = 0; i < war.matches.length; i++) { pairs.push(buildGuildWarPair(war.matches[i], defense, ["🥇", "🥈", "🥉"][i])); details.push(buildGuildWarMatchDetail(war.matches[i])); }
@@ -69356,12 +69404,14 @@ function processGuildWars(data, guildData, now, random, disbandId, sources) {
 
 function creditGuildWarVictory(guildData, war) {
     if (war.reward !== undefined || war.rewardPolicy !== undefined) throw new Error("길드전쟁 승리 보상 중복 정산");
+    var modern = war.rulesVersion === 2, rates = GLOBAL_CONFIG.guildWar.rewards;
     var gid = !war.cancelled ? war.occupied ? war.attackId : war.wins < 2 ? war.defenseId : null : null;
     var amount = war.occupied ? GLOBAL_CONFIG.guildWar.captureReward : GLOBAL_CONFIG.guildWar.defenseReward;
     var guild = gid && getGuildByIdSafe(guildData, gid), pieces = gid && war.no === 5 ? GLOBAL_CONFIG.guildWar.mineReward : 0;
     var cube = guild ? getGuildContributionCubeData(guild, false).options.territoryPoint / 10 : 0;
+    if (modern) amount = war.occupied ? (war.no >= 2 && war.no <= 4 ? rates.goldCapture : rates.capture) : (war.no >= 2 && war.no <= 4 ? rates.goldDefense : rates.defense);
     amount = Math.floor(amount * (1 + cube / 100));
-    var boxes = gid && war.no === 6 ? GLOBAL_CONFIG.guildWar.mineReward : 0;
+    var boxes = !modern && gid && war.no === 6 ? GLOBAL_CONFIG.guildWar.mineReward : 0;
     if (gid && !guild) throw new Error("길드전쟁 보상 길드 확인 필요");
     if (guild) {
         if (guild.warehouse === undefined) guild.warehouse = { fund: 0 };
@@ -69373,10 +69423,24 @@ function creditGuildWarVictory(guildData, war) {
         if (boxes && (!isPointShopSafeCount(heldBoxes) || !isPointShopSafeCount(heldBoxes + boxes))) throw new Error("길드전쟁 다이아상자 보상 잔고 오류");
         guild.warehouse.fund = fund + amount;
         if (boxes) guild.warehouse.diamondBox = heldBoxes + boxes;
+        if (modern && war.no === 6) {
+            var diamonds = guild.warehouse.diamond === undefined ? 0 : guild.warehouse.diamond;
+            if (!isPointShopSafeCount(diamonds) || !isPointShopSafeCount(diamonds + GLOBAL_CONFIG.guildWar.mineReward)) throw new Error("길드창고 다이아 보상 범위 오류");
+            guild.warehouse.diamond = diamonds + GLOBAL_CONFIG.guildWar.mineReward;
+        }
         if (pieces) guild.warehouse.petSkillBook = held + pieces;
     }
+    if (modern && !war.cancelled && !war.occupied && war.wins < 2) {
+        var loser = getGuildByIdSafe(guildData, war.attackId);
+        if (!loser) throw new Error("길드전쟁 공격 실패 보상 길드 확인 필요");
+        if (!loser.warehouse) loser.warehouse = { fund: 0 };
+        var before = loser.warehouse.fund === undefined ? 0 : loser.warehouse.fund;
+        if (!isPointShopSafeAmount(before) || !isPointShopSafeAmount(before + rates.loss)) throw new Error("공격 실패 보상 범위 오류");
+        loser.warehouse.fund = before + rates.loss;
+        war.lossReward = { guildId: war.attackId, amount: rates.loss };
+    }
     war.rewardPolicy = GLOBAL_CONFIG.guildWar.rewardPolicy;
-    war.reward = guild ? { guildId: gid, amount: amount, pieces: pieces, boxes: boxes, cubePercent: cube, kind: war.occupied ? "capture" : "defense" } : null;
+    war.reward = guild ? { guildId: gid, amount: amount, pieces: pieces, boxes: boxes, diamonds: modern && war.no === 6 ? GLOBAL_CONFIG.guildWar.mineReward : 0, cubePercent: cube, kind: war.occupied ? "capture" : "defense" } : null;
 }
 
 // 길드원이 탈퇴하면 진행 중 전쟁에서는 재가입하더라도 0매력으로 유지하는 함수
@@ -69405,7 +69469,7 @@ function resetGuildWarDay(guildData, now) {
     state.day = day;
     for (var gid in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, gid)) {
         var entry = state.guilds[gid];
-        entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.rights = createGuildWarRights(); entry.carryUsed = 0; entry.ticketEpoch++;
+        entry.personalDeclarations = {}; entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.rights = createGuildWarRights(); entry.carryUsed = 0; entry.ticketEpoch++;
         entry.scoutAssigned = !!entry.scout; entry.bomberAssigned = !!entry.bomber;
         entry.scoutUsed = 0; entry.scoutChanges = 0; entry.bombUsed = 0; entry.bomberChanges = 0;
     }
@@ -69423,7 +69487,7 @@ function buildGuildWarMain(data, guildData, gid, now) {
         if (guild && territory.owner === gid) owned.push(GLOBAL_CONFIG.guildWar.regionLabels[no - 1]);
     }
     if (!guild) return text + "\n🏴 길드에 가입하면 길드전쟁에 참여할 수 있습니다.\n📖 가이드: /길드전쟁가이드";
-    return text + "\n🎯 오늘의 공격권: " + entry.tickets + "/5회\n🏴 우리 길드 점령: " + (owned.join("·") || "없음") + "\n🔭 정찰병: " + (entry.scout ? "편성 완료 · 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회" : "미편성") + "\n💣 자폭병: " + (entry.bomber ? "편성 완료 · 자폭 " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2회" : "미편성") + "\n🔔 전쟁톡: " + (isGuildWarRoomValid(state, guildData, gid) ? "등록 완료" : "미등록/무효") + "\n\n🎁 점령 성공: 길드자금 🅟3억\n⚒️ 방어 성공: 길드자금 🅟1억\n📕 펫스킬 광산 점령·방어 성공: 📙 +1개\n💎 다이아광산 점령·방어 성공: 다이아상자 +1개\n\n👉 전쟁선포: /전쟁선포 번호\n📖 가이드: /길드전쟁가이드\n📚 길드전쟁 상세정보" + allsee + "\n" + GLOBAL_CONFIG.guildWar.publicRules + "\n\n" + GLOBAL_CONFIG.guildWar.commandGuide;
+    return text + "\n🎯 오늘의 공격권: " + entry.tickets + "/5회\n🏴 우리 길드 점령: " + (owned.join("·") || "없음") + "\n🔭 정찰병: " + (entry.scout ? "편성 완료 · 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회" : "미편성") + "\n💣 자폭병: " + (entry.bomber ? "편성 완료 · 자폭 " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2회" : "미편성") + "\n🔔 전쟁톡: " + (isGuildWarRoomValid(state, guildData, gid) ? "등록 완료" : "미등록/무효") + "\n\n🎁 점령 성공: 🪙 금광 🅟8억 · 기타 🅟5억\n⚒️ 방어 성공: 🪙 금광 🅟3억 · 기타 🅟2억\n💔 공격 실패: 전 지역 길드자금 🅟1억\n📕 펫스킬 광산 점령·방어 성공: 📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n\n👉 전쟁선포: /전쟁선포 번호\n📖 가이드: /길드전쟁가이드\n📚 길드전쟁 상세정보" + allsee + "\n" + GLOBAL_CONFIG.guildWar.publicRules + "\n\n" + GLOBAL_CONFIG.guildWar.commandGuide;
 }
 
 // 방어 진형 정보는 정찰에 성공한 등록 길드톡에만 표시하는 함수
@@ -69440,8 +69504,10 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
     if (request.kind === "bulkFormation") return setGuildWarBulkFormation(state, guildData, gid, request, skills);
     if (request.kind === "clearFormation") {
         if (wars.length) throw guildWarInputError("전쟁 중에는 기본 진형을 초기화할 수 없습니다.");
-        entry.attack = ["", "", ""]; entry.defense = ["", "", ""]; entry.scout = ""; entry.bomber = "";
-        return "✅ 정찰·자폭·공격·방어 8칸을 모두 초기화했습니다.\n모든 권한 사용량과 변경 횟수는 유지됩니다.";
+        var cleared = cloneFreeMarketObject(entry);
+        cleared.attack = ["", "", ""]; cleared.defense = ["", "", ""]; cleared.scout = ""; cleared.bomber = "";
+        commitGuildWarRoster(entry, cleared, ensureGuildSwordMasters(guild, skills));
+        return "✅ 정찰·자폭·공격·방어 8칸을 모두 초기화했습니다.\n해제한 정찰·자폭의 변경 횟수를 사용했으며 전쟁선포권은 복구되지 않습니다.";
     }
     var ordered = getGuildOrderedMemberKeys(guild, skills), targetNo = (request.kind === "defenseFormation" || request.kind === "attackFormation") && args.length === 4 ? args.shift() : null;
     var picked = args.map(function (no) { return ordered[no - 1]; });
@@ -69452,7 +69518,7 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         var targets = wars.filter(function (war) { return (defense ? war.defenseId === gid : war.attackId === gid) && (targetNo === null || war.no === targetNo); });
         if (targets.length !== 1) throw guildWarInputError("변경할 전쟁의 영지번호를 지정해 주세요.\n/전쟁공격편성 영지번호 선봉번호 중견번호 대장번호\n/전쟁방어편성 영지번호 선봉번호 중견번호 대장번호");
         var war = targets[0], current = defense ? war.defense : war.attack;
-        if (now >= war.due) throw guildWarInputError("3분 준비시간이 끝나 진형 순서를 변경할 수 없습니다.");
+        if (now >= war.due) throw guildWarInputError("준비시간이 끝나 진형 순서를 변경할 수 없습니다.");
         if (defense ? !war.defenseScoutWin || !war.defenseScout.name : war.defenseScoutWin) throw guildWarInputError(defense ? "침공 감지와 변경 권한은 별개입니다. 정찰 방어 실패로 변경 불가 · 기존 순서 유지" : "공격 정찰 실패로 순서 변경 불가 · 기존 순서 유지");
         if (picked.length !== 3 || picked.some(function (name) { return !current.some(function (f) { return f.name === name; }); })) throw guildWarInputError("해당 전쟁의 기존 3명 순서만 바꿀 수 있습니다.");
         var rearranged = picked.map(function (name) { return current.filter(function (f) { return f.name === name; })[0]; });
@@ -69460,27 +69526,15 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         return "✅ 해당 전쟁의 진형 순서를 변경했습니다. 기본 진형은 유지됩니다.";
     }
     if (targetNo !== null) throw guildWarInputError("진행 중인 해당 전쟁이 없습니다.");
-    if (request.kind === "bomberFormation") {
-        if (entry.bomber === picked[0]) return "이미 같은 자폭병입니다.";
-        if (entry.bomberAssigned && entry.bomberChanges >= config.bomberChangeLimit) throw guildWarInputError("🔄 남은 자폭병 변경 0/1회 · 기존 자폭병 유지 · 자폭권 복구 없음");
-        if (entry.bomberAssigned) entry.bomberChanges++;
-        entry.bomber = picked[0]; entry.bomberAssigned = true;
-        return "✅ 자폭병 편성 완료! · 기존 역할 겸직 가능\n💣 자폭권과 변경 횟수는 실제 남은 값으로 유지됩니다.";
+    var candidate = cloneFreeMarketObject(entry);
+    if (request.kind === "scoutFormation") candidate.scout = picked[0];
+    else if (request.kind === "bomberFormation") candidate.bomber = picked[0];
+    else {
+        var target = request.kind === "attackFormation" ? "attack" : "defense", opposite = target === "attack" ? "defense" : "attack";
+        candidate[target] = picked;
+        candidate[opposite] = candidate[opposite].map(function (name) { return picked.indexOf(name) === -1 ? name : ""; });
     }
-    if (request.kind === "scoutFormation") {
-        if (entry.scout === picked[0]) return "이미 같은 정찰병입니다.";
-        if (entry.scoutAssigned && entry.scoutChanges >= config.scoutChangeLimit) throw guildWarInputError("🔄 남은 정찰병 변경 0/2회 · 기존 편성 유지");
-        if (entry.scoutAssigned) entry.scoutChanges++;
-    }
-    if (request.kind === "defenseFormation" && picked.some(function (name) { return ensureGuildSwordMasters(guild, skills).indexOf(name) !== -1; })) throw guildWarInputError("방어 진형은 소드마스터가 아닌 일반 길드원만 편성할 수 있습니다.");
-    // 유효한 새 배치에 한해서 이전 역할만 해제하며 소모 권한은 유지한다.
-    entry.attack = entry.attack.map(function (name) { return picked.indexOf(name) !== -1 ? "" : name; });
-    entry.defense = entry.defense.map(function (name) { return picked.indexOf(name) !== -1 ? "" : name; });
-    if (picked.indexOf(entry.scout) !== -1) entry.scout = "";
-    if (request.kind === "scoutFormation") { entry.scout = picked[0]; entry.scoutAssigned = true; }
-    else if (request.kind === "attackFormation") { entry.attack = picked; guild.swordMasters = picked.slice(0); }
-    else entry.defense = picked;
-    return "✅ 길드전쟁 " + (request.kind === "attackFormation" ? "공격" : request.kind === "defenseFormation" ? "방어" : "정찰병") + " 편성 완료!\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 우선\n⚠️ 편성 변경으로 사용권 복구 불가";
+    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills));
 }
 
 // 복구 파일의 회원·분리 저장 참조만 남겨 큰 본문을 메모리에 함께 보관하지 않는 함수
@@ -69632,13 +69686,19 @@ function flushGuildWarNotices(guildData, ctx) {
         var notice = state.notices[i];
         if (notice.gid && !isGuildWarRoomValid(state, guildData, notice.gid)) { notice.attempts = 2; continue; }
         if (notice.gid) notice.room = state.guilds[notice.gid].room; // 재등록 후에는 현재 등록 이름으로만 발송
+        if (notice.inFlight) { notice.attempts = 2; debuggerLog("[길드전쟁 알림 전송 결과 미확인] " + (notice.eventId || notice.room)); }
         if (notice.attempts < 2) {
-            notice.attempts++;
+            notice.attempts++; notice.inFlight = true;
             // 전송 전 횟수를 보관해 재시작 때문에 무제한 재전송하지 않는다.
             writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData);
             endDataSaveTransaction(); beginDataSaveTransaction();
-            try { if (Api.replyRoom(ctx.isDev ? testRoom : notice.room, ctx.header(notice.text)) !== false) { notice.attempts = 2; writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData); endDataSaveTransaction(); beginDataSaveTransaction(); } }
-            catch (sendError) { debuggerLog("[길드전쟁 알림 전송 실패] " + sendError); }
+            try {
+                var sent = Api.replyRoom(ctx.isDev ? testRoom : notice.room, ctx.header(notice.text));
+                notice.inFlight = false;
+                if (sent !== false) notice.attempts = 2;
+                writeMemberSplitSlot(resolveActiveDataPath(guildPath), guildData); endDataSaveTransaction(); beginDataSaveTransaction();
+            }
+            catch (sendError) { notice.attempts = 2; debuggerLog("[길드전쟁 알림 전송 실패] " + sendError); }
         }
         if (notice.attempts < 2) pending.push(notice);
     }
@@ -69685,12 +69745,14 @@ function scheduleGuildWarWork(ctx, retryNotBefore) {
 function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     var request = getGuildWarRequest(msg);
     if (!request) return false;
+    var guildData = loadJsonFile(guildPath);
     var directReply = replier;
-    replier = { reply: function (text) { return directReply.reply(buildGuildWarDirectHeader(sender) + text); } };
+    var directNickname = data && data.member && data.member[sender] ? checkRank(data, null, guildData, sender) : sender;
+    replier = { reply: function (text) { return directReply.reply(buildGuildWarDirectHeader(directNickname) + text); } };
     if (request.kind !== "main" && request.kind !== "guide" && !getCurrentContext().guildWarGroupChat) { replier.reply("길드전쟁 내부 명령은 등록 길드톡에서만 사용할 수 있습니다."); return true; }
     if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~6예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/전쟁기록은 번호 없이 조회해요.\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
     if (request.kind === "guide") { replier.reply(GLOBAL_CONFIG.guildWar.guide); return true; }
-    var guildData = loadJsonFile(guildPath), initialized = initializeGuildWar(data, guildData, now), state = guildData.war24;
+    var initialized = initializeGuildWar(data, guildData, now), state = guildData.war24;
     var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
     if (guild && (!guild.members || !guild.members[sender])) { gid = null; guild = null; }
     if (initialized) { publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); }
@@ -69723,7 +69785,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         }
         if (request.kind === "resetTickets") {
             if (!isMasterIdentity(sender)) throw guildWarInputError("MASTER 전용 명령입니다.");
-            entry.rights = createGuildWarRights(); entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.carryUsed = 0; entry.ticketEpoch++;
+            entry.personalDeclarations = {}; entry.rights = createGuildWarRights(); entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.carryUsed = 0; entry.ticketEpoch++;
             publishGuildWar(data, guildData, false); replier.reply("✅ 해당 길드의 공격권만 5회로 초기화했습니다. 진행 전쟁·점령·기록·보상 유지"); return true;
         }
         if (request.kind === "records") {
@@ -69731,7 +69793,15 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         }
         var petData = loadJsonFile(memberPetPath), homeData = loadJsonFile(homeDataFile), skills = loadJsonFile(petSkillDataPath);
         if (reconcileGuildWarRoster(state, guildData, gid, skills)) publishGuildWar(data, guildData, false);
-        if (request.kind === "formation") { replier.reply(buildGuildWarFormation(data, petData, guildData, gid)); return true; }
+        if (request.kind === "clearScout" || request.kind === "clearBomber") {
+            if (getGuildWarBattles(state, gid).length) throw guildWarInputError("전쟁 중에는 기본 편성을 해제할 수 없습니다.");
+            if (!isGuildLeader(guild, sender)) throw guildWarInputError("길마·부길마만 편성을 변경할 수 있습니다.");
+            var candidate = cloneFreeMarketObject(entry);
+            candidate[request.kind === "clearScout" ? "scout" : "bomber"] = "";
+            var released = commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills));
+            publishGuildWar(data, guildData, false); replier.reply(released); return true;
+        }
+        if (request.kind === "formation") { replier.reply(buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true; }
         if (request.kind === "bomb") {
             applyGuildWarBomb(data, petData, guildData, gid, sender, request.args[0], now, Math.random);
             publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); return true;
@@ -69745,7 +69815,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             var formationMessage = setGuildWarFormation(state, guildData, gid, sender, request, skills, Date.now());
             if (request.kind === "scoutFormation") formationMessage += "\n🔭 정찰병: [" + checkRank(data, petData, guildData, entry.scout) + "]\n🎯 남은 정찰병 전쟁선포권: " + (entry.tickets > 0 && !entry.rights.scout ? 1 : 0) + "/1회";
             if (request.kind === "bomberFormation") formationMessage += "\n💣 자폭병: [" + checkRank(data, petData, guildData, entry.bomber) + "]\n🎯 자폭 성공 확률: 30%";
-            publishGuildWar(data, guildData, false); replier.reply(formationMessage + "\n\n" + buildGuildWarFormation(data, petData, guildData, gid)); return true;
+            publishGuildWar(data, guildData, false); replier.reply(formationMessage + "\n\n" + buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true;
         }
         if (request.kind === "declare" || request.kind === "recon") {
             var targetNo = request.kind === "declare" ? request.args[0] : null;
@@ -69756,6 +69826,8 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             if (defenseId === gid) throw guildWarInputError("자기 길드가 점령한 지역 또는 자기 길드는 정찰·공격할 수 없습니다.");
             var defenseEntry = defenseId ? getGuildWarEntry(state, defenseId) : { scout: "", defense: ["", "", ""] };
             if (request.kind === "declare") {
+                var personalUsage = getGuildWarPersonalUsage(state, guild, entry, gid);
+                if ((personalUsage[sender] || 0) >= GLOBAL_CONFIG.guildWar.personalDailyLimit) throw guildWarInputError("개인 전쟁선포는 하루 최대 2회입니다. 편성 이동으로 사용량은 초기화되지 않습니다.");
                 var personalRights = getGuildWarUserRights(guild, entry, sender);
                 if (!personalRights.length) throw guildWarInputError("길드마스터·정찰병·공격 선봉/중견/대장만 선포할 수 있습니다.");
                 var right = personalRights.filter(function (key) { return !entry.rights[key]; })[0];
@@ -69776,8 +69848,9 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
                 entry.scoutUsed++; entry.recon = { at: now, target: defenseId, success: success, scout: success ? defenseScout : null, defense: success ? defense : null };
             } else {
                 if (state.nextId >= GLOBAL_CONFIG.pointShop.limits.maxSafeNumber) throw guildWarInputError("전쟁 식별자 범위를 확인해주세요.");
+                personalUsage[sender] = (personalUsage[sender] || 0) + 1; entry.personalDeclarations = personalUsage;
                 entry.tickets--; entry.rights[right] = true;
-                var war = { id: state.nextId++, no: targetNo, attackId: gid, defenseId: defenseId || null, attackName: formatGuildDisplay(guild), defenseName: defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", at: now, day: getVaultRobberyDay(now), due: now + GLOBAL_CONFIG.guildWar.prepareMs, matches: [], wins: 0, right: right, ticketEpoch: entry.ticketEpoch, attackScout: attackScout, defenseScout: defenseScout, defenseScoutWin: !success, attack: entry.attack.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, name); }), defense: defense };
+                var war = { declaredBy: sender, rulesVersion: 2, id: state.nextId++, no: targetNo, attackId: gid, defenseId: defenseId || null, attackName: formatGuildDisplay(guild), defenseName: defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", at: now, day: getVaultRobberyDay(now), due: now + GLOBAL_CONFIG.guildWar.prepareMs, matches: [], wins: 0, right: right, ticketEpoch: entry.ticketEpoch, attackScout: attackScout, defenseScout: defenseScout, defenseScoutWin: !success, attack: entry.attack.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, name); }), defense: defense };
                 war.originalAttack = cloneFreeMarketObject(war.attack); war.initialDefenseId = war.defenseId; war.declaredAt = now;
                 if (!defenseId) {
                     war.bloodless = true; war.wins = 3; war.occupied = true; war.finished = now;
@@ -69823,7 +69896,7 @@ function initializeGuildWarStartup() {
 }
 
 // 선포·단독 정찰의 성공과 실패를 확정 UI에 맞춰 표시하는 함수
-function buildGuildWarScoutNotice(kind, attackName, defenseName, no, success, attackScout, defenseScout, defense, remaining) {
+function buildGuildWarScoutNotice(kind, attackName, defenseName, no, success, attackScout, defenseScout, defense, remaining, minutes) {
     var detail = "\n🔭 상대 정찰병: [" + defenseScout.display + "]\n💞 상대 정찰매력: " + numberWithCommas(defenseScout.charm) + "\n" + buildGuildWarFormationDetail(defense);
     if (kind === "recon") {
         var header = "🔭 " + attackName + " 단독 정찰\n━━━━━━━━━━━━\n🎯 정찰 대상: " + defenseName + "\n\n";
@@ -69833,15 +69906,15 @@ function buildGuildWarScoutNotice(kind, attackName, defenseName, no, success, at
     var region = guildWarRegion(no);
     var text = "[⚔️ 길드전쟁 선포 ⚔️]\n━━━━━━━━━━━━\n" + region + "\n🎯 공격: " + attackName + "\n⚒️ 방어: " + defenseName + "\n\n";
     text += success ? "🏆 공격 정찰 성공!\n✅ 상대 방어 진형 정보 획득\n✅ 공격 진형 변경 가능" : "❌ 공격 정찰 실패!\n🛡️ 상대 정찰병·방어 진형 정보 비공개";
-    text += "\n\n⏳ 전투 결과까지 3분\n🔒 정찰병 변경 불가";
+    text += "\n\n⏳ 전투 결과까지 " + (minutes || 2) + "분\n🔒 정찰병 변경 불가";
     return text + (success ? "\n\n👉 /전쟁공격편성 번호 번호 번호\n📚 상대 방어 진형 전체보기" + allsee + detail : "");
 }
 
 // 방어 정찰병이 실제 감지한 경우에만 역정보·선봉 보너스를 안내하는 함수
-function buildGuildWarScoutReverse(kind, attackName, defenseName, no, scout, multipleDefenses, defenseWin) {
+function buildGuildWarScoutReverse(kind, attackName, defenseName, no, scout, multipleDefenses, defenseWin, minutes) {
     if (kind === "recon") return "[🚨 적군 정찰 감지 🚨]\n━━━━━━━━━━━━\n🛡️ " + defenseName + "\n\n🔭 " + attackName + " 길드의\n정찰 활동을 발견했습니다!\n\n🏆 정찰 방어 성공!\n━━━━━━━━━━━━\n🔎 적군 정찰 정보 확보\n\n⚔️ 정찰 시도 길드: " + attackName + "\n🔭 적군 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n\n✅ 적군 정찰 정보 공개!\n🛡️ 우리 방어 진형 정보 보호 성공!";
-    if (!defenseWin) return "🚨 " + attackName + " 침공 감지!\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ 우리: " + defenseName + "\n❌ 정찰 방어 혜택 없음\n🔒 방어 진형 변경 불가\n⚒️ 기존 방어 진형 · 선봉 기본 +3% · 중견 +10%\n⏳ 전투 결과까지 3분";
-    return "[🚨 길드전쟁 침공 감지 🚨]\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n\n🎯 침공: " + attackName + "\n⚒️ 수비: " + defenseName + "\n\n🏆 정찰 방어 성공!\n━━━━━━━━━━━━\n🔭 적군 정찰병: [" + scout.display + "]\n💞 종합매력: " + numberWithCommas(scout.charm) + "\n\n✅ 적군 침공 사전 감지\n✅ 방어 선봉 캐슬매력 +5%\n\n⏳ 전투 결과까지 3분\n🛡️ 기존 방어 진형 자동 적용\n\n💡 필요 시 전투 개시 전\n방어 진형을 변경할 수 있습니다.\n\n👉 현재 진형: /전쟁편성\n👉 진형 변경: /전쟁방어편성 " + (multipleDefenses ? "영지번호 " : "") + "번호 번호 번호";
+    if (!defenseWin) return "🚨 " + attackName + " 침공 감지!\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ 우리: " + defenseName + "\n❌ 정찰 방어 혜택 없음\n🔒 방어 진형 변경 불가\n⚒️ 기존 방어 진형 · 선봉 기본 +3% · 중견 +10%\n⏳ 전투 결과까지 " + (minutes || 2) + "분";
+    return "[🚨 길드전쟁 침공 감지 🚨]\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n\n🎯 침공: " + attackName + "\n⚒️ 수비: " + defenseName + "\n\n🏆 정찰 방어 성공!\n━━━━━━━━━━━━\n🔭 적군 정찰병: [" + scout.display + "]\n💞 종합매력: " + numberWithCommas(scout.charm) + "\n\n✅ 적군 침공 사전 감지\n✅ 방어 선봉 캐슬매력 +5%\n\n⏳ 전투 결과까지 " + (minutes || 2) + "분\n🛡️ 기존 방어 진형 자동 적용\n\n💡 필요 시 전투 개시 전\n방어 진형을 변경할 수 있습니다.\n\n👉 현재 진형: /전쟁편성\n👉 진형 변경: /전쟁방어편성 " + (multipleDefenses ? "영지번호 " : "") + "번호 번호 번호";
 }
 
 // 실제 판정 정보로 allsee 아래 경기별 아이템·패시브·크리티컬 상세를 만드는 함수
@@ -69867,7 +69940,7 @@ function reconcileGuildWarRoster(state, guildData, gid, skills) {
     var changed = false, swords = ensureGuildSwordMasters(guild, skills);
     for (var i = 0; i < 3; i++) {
         if (entry.attack[i] && (!guild.members[entry.attack[i]] || swords.indexOf(entry.attack[i]) === -1)) { entry.attack[i] = ""; changed = true; }
-        if (entry.defense[i] && (!guild.members[entry.defense[i]] || swords.indexOf(entry.defense[i]) !== -1)) { entry.defense[i] = ""; changed = true; }
+        if (entry.defense[i] && !guild.members[entry.defense[i]]) { entry.defense[i] = ""; changed = true; }
     }
     if (entry.bomber && !guild.members[entry.bomber]) { entry.bomber = ""; changed = true; }
     if (entry.scout && !guild.members[entry.scout]) { entry.scout = ""; changed = true; }
