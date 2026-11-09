@@ -53088,7 +53088,7 @@ function validateFreeMarketReturns(data, petData, skills, home, market) {
         }
         returnFreeMarketItemToOwner(members, pets, skillCopy, homeCopy, rows[i], user);
         if (rows[i].type === "bag" && !isPointShopSafeCount(members.member[user].bag[rows[i].itemName])) throw new Error("매물 반환 후 가방 수량 범위 초과: " + rows[i].id);
-        if (rows[i].type === "skill" && !isPointShopSafeCount(skillCopy[user].bag[normalizePetSkillName(rows[i].itemName)])) throw new Error("매물 반환 후 스킬 수량 범위 초과: " + rows[i].id);
+        if (rows[i].type === "skill" && !isPointShopSafeCount(skillCopy[user].petSkills.bag[normalizePetSkillName(rows[i].itemName)])) throw new Error("매물 반환 후 스킬 수량 범위 초과: " + rows[i].id);
     }
 }
 // 전환 원문과 회원 분리 저장소를 고유한 운영 백업 폴더에 검증 복사하는 함수
