@@ -5,6 +5,15 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 2026-11-09 후속 보완 (ver_2.787 후보)
+
+Status: VERIFIED
+
+- 자동탐험: 기존 시작 후 60분 간격을 유지한다. 수동 정산은 완료 후 예약을 새로 만들고 60분 뒤부터 실행한다. `capturePetExploreTick`이 내부 타이머의 예약 ID·회차·접수 시각만 요청에 고정하므로 다른 채팅은 자동 정산을 실행하지 않는다. `isPetExploreTickPending`은 현재 예약 및 확정된 마지막 회차를 비교하며 완료 시각의 경과 시간은 차단 기준으로 사용하지 않는다.
+- MQ/중단: 내부 예약 요청은 일반 요청의 120초 대기 만료 대상에서 제외하되 기존 접수 제약은 유지한다. `stopAllIntervals`는 예약 식별자도 지워 이미 접수된 이전 예약을 무효화한다. 자동 정산의 회차 표식과 회원 보상은 기존 확정 게시로 함께 저장하고 빈 회차도 기록한다. 이벤트 탐험도 자동 예약 회차를 중복 기준으로 사용한다.
+- 안내/경험치: 지도·스케줄·이벤트 안내의 정각 고정 문구를 실제 60분 주기로 맞췄다. `grantPetExploreExperience`가 실제 지급한 기본·티어·가호 추가 EXP를 반환하며 기본 탐험 보고서는 총합·내역·가호 사용량을 표시한다.
+- 길마 전환: `getGuildWarPersonalUsage`는 선포자 미확인 구기록을 현재 길마에게 추정 귀속하지 않는다. `prepareGuildWarPersonalTransition`이 당일 미확인 길마권 사용을 감지해 편성 제한을 저장한다. 정찰·공격을 바꾸는 후보는 반영 전 거절하며 순수 방어·자폭 변경은 기존 조건으로 허용한다. 기록 삭제·길마 변경·관리자 선포권 초기화 뒤에도 제한을 유지하고 실제 다음 KST 일일 초기화에서만 해제한다.
+
 ## 2026-11-09 신규 READY 3건 개발 (ver_2.786)
 
 Status: VERIFIED

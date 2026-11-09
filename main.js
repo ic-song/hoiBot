@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.786"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.787"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1271,7 +1271,7 @@ const GLOBAL_CONFIG = {
     },
     scheduleGuide: { // 조회용 시간표. 실제 시작·정산 타이머를 변경하지 않는다.
         passPayoutTime: "01:10",
-        petExploreWindow: "08:00 ~ 24:00 (매 정각)",
+        petExploreWindow: "시작 후 60분 간격 · 수동 정산 후 60분 재예약",
         guildTerritoryWindow: "21:05 ~ 21:25",
         serverRaidStartTime: "22:00"
     },
@@ -3844,7 +3844,7 @@ const MASTER_MINIPET_COMBINATION_REWARDS = [
     }
 ];
 // 펫탐험
-let exploreInterval = false;
+var petExploreTickThreadLocal = new java.lang.ThreadLocal(); // 자동 예약 회차를 접수 요청에만 전달
 
 //인터벌
 const setint = 60; //인터벌 주기 1시간
@@ -3950,12 +3950,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (isResponseAdmissionDenied(room, msg, sender, isGroupChat, callbackEvent)) return;
         var raidAdmissionBlock = getServerRaidAdmissionBlock(room, msg, sender, isGroupChat);
         if (raidAdmissionBlock) {
-            if (raidAdmissionBlock.command === "/펫탐험자동정산") exploreInterval = false;
             return; // 기존 레이드 차단 입력은 안내 전송·MQ 접수·파일 IO 없이 종료
         }
     }
     var request = { room: room, msg: msg, sender: sender, isGroupChat: isGroupChat, replier: replier,
         imageDB: imageDB, packageName: packageName, receivedAt: Date.now(),
+        petExploreTick: capturePetExploreTick(msg, sender), // 접수 당시의 내부 예약만 고정해 다른 채팅의 정산 실행을 방지
         callbackEvent: callbackEvent, // 실제 콜백의 확장 정보만 접수 시 보존
         gameId: getMiniGameObservedVaultId(isDevCommandMessage(msg)) };
     if (responseQueueThread.get()) { executeResponseRequest(request); return; }
@@ -4185,7 +4185,7 @@ function drainResponseQueue() {
             request.queueRoot = true;
             request.queueStartedAt = Date.now();
             updateResponseQueueStage(request, "실행 전 확인");
-            if (Date.now() - request.receivedAt > GLOBAL_CONFIG.commandQueue.maxWaitMs) {
+            if (!request.petExploreTick && Date.now() - request.receivedAt > GLOBAL_CONFIG.commandQueue.maxWaitMs) {
                 updateResponseQueueStage(request, "대기 만료 안내");
                 notifyResponseQueue(request, "⚠️ 대기가 길어 실행하지 않았어요. 명령어를 다시 입력해 주세요.");
                 continue;
@@ -4814,7 +4814,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
-        if (raidLocked && msg === "/펫탐험자동정산") exploreInterval = false; // 차단된 자동 탐험이 다음 허용 명령에서 실행되지 않도록 예약 표시 정리
         // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
         if (!raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
         if (raidCommand || (raidLocked && (isServerRaidGameInput(data, sender, room, msg) || howolDramaSessions[dramaSessionKey] && /^[ \t]*[12][ \t]*$/.test(msg)) && !isServerRaidAdditionalCommand(msg))) {
@@ -9716,20 +9715,17 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
-                if (exploreInterval == true || (msg == "/펫탐험정산" && (isMaster(sender) || sender == "오픈채팅봇" || (room === room90 && isAdmin(sender))))) {
-                    exploreInterval = false;
+                if ((msg === "/펫탐험자동정산" && request.petExploreTick) || (msg == "/펫탐험정산" && (isMaster(sender) || sender == "오픈채팅봇" || (room === room90 && isAdmin(sender))))) {
 
                     var homeData = loadJsonFile(homeDataFile);
 
                     var isManualPetExploreSettlement = msg == "/펫탐험정산"; // 관리자 즉시 정산 여부
-                    if (!isManualPetExploreSettlement) {
-                        data.previnterval = new Date().getTime();
-                    }
 
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
-                    if (!isManualPetExploreSettlement && petExploreData.lastRoundAt && Date.now() - petExploreData.lastRoundAt < setint * 60000 - 1000) return;
+                    if (!isManualPetExploreSettlement && !isPetExploreTickPending(data, petExploreData, request.petExploreTick)) return;
+                    if (!isManualPetExploreSettlement) data.previnterval = request.petExploreTick.triggeredAt;
                     beginFreeMarketMutation(request, data, petData, petSkillData, replier, [petExplorePath]);
                     if (msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
                         petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동 정산은 새로운 탐험 회차로 실행
@@ -9753,8 +9749,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (!isChuseokExploreEventActive(petExploreData)) incrementDailyExploreCountForParticipants(data, petExploreData);
 
                     //  doPetExploreInterval에 petExploreData 전달
-                    var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
+                    var automaticRoundKey = isManualPetExploreSettlement ? null : request.petExploreTick.scheduleId + ":" + request.petExploreTick.sequence;
+                    var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData, automaticRoundKey);
 
+                    if (!isManualPetExploreSettlement) {
+                        petExploreData.automaticSettlement = { scheduleId: request.petExploreTick.scheduleId, sequence: request.petExploreTick.sequence };
+                        saveJsonFile(data, filePath); saveJsonFile(petExploreData, petExplorePath);
+                    }
                     if (out) {
                         petExploreData.lastRoundAt = Date.now();
                         saveJsonFile(petExploreData, petExplorePath);
@@ -27582,7 +27583,7 @@ replier.reply(
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     petExploreData.chuseokEvent.active = true;
                     saveJsonFile(petExploreData, petExplorePath);
-                    replier.reply("✅ 추석 이벤트가 활성화되었습니다.\n\n🌕 기간: " + GLOBAL_CONFIG.petExplore.chuseokEvent.periodText + "\n🏰 참여 대상: 길드 가입 유저\n🐰 이벤트 탐험: /탐 11\n⏰ 탐험 시간: 24시간 / 매시간 정각\n💰 참가비: 탐험 1회당 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "\n🌕 성공 보상: 황금당근 1~3개\n⛰️ 자동 참여: 자동탐험권 보유 후 /자동탐고정 11\n🛍️ 이벤트 상점: /달토끼상점\n\n※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.");
+                    replier.reply("✅ 추석 이벤트가 활성화되었습니다.\n\n🌕 기간: " + GLOBAL_CONFIG.petExplore.chuseokEvent.periodText + "\n🏰 참여 대상: 길드 가입 유저\n🐰 이벤트 탐험: /탐 11\n⏰ 탐험 주기: 시작 후 60분 간격\n💰 참가비: 탐험 1회당 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "\n🌕 성공 보상: 황금당근 1~3개\n⛰️ 자동 참여: 자동탐험권 보유 후 /자동탐고정 11\n🛍️ 이벤트 상점: /달토끼상점\n\n※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.");
                     return;
                 }
 
@@ -42207,16 +42208,29 @@ function intervalWithMinutes(minute, func) {
 function intervalWithHours(hour, func) {
     return intervalWithMinutes(60 * hour, func);
 }
+// 신뢰된 자동탐험 예약만 일반 콜백의 접수 정보에 복사하는 함수
+function capturePetExploreTick(message, sender) {
+    var tick = petExploreTickThreadLocal.get();
+    if (sender !== "오픈채팅봇" || message !== "/펫탐험자동정산" && message !== "dev/펫탐험자동정산" || !tick) return null;
+    return { scheduleId: tick.scheduleId, sequence: tick.sequence, triggeredAt: tick.triggeredAt };
+}
+// 완료 시각과 무관하게 현재 예약의 미처리 회차인지 검사하는 함수
+function isPetExploreTickPending(data, store, tick) {
+    if (!tick || typeof tick.scheduleId !== "string" || tick.scheduleId !== data.exploreScheduleId || !isPointShopSafeCount(tick.sequence) || tick.sequence < 1 || !isPointShopSafeCount(tick.triggeredAt)) return false;
+    var previous = store.automaticSettlement;
+    if (previous !== undefined && (!previous || typeof previous.scheduleId !== "string" || !isPointShopSafeCount(previous.sequence))) throw new Error("자동탐험 회차 기록 오류");
+    return !previous || previous.scheduleId !== tick.scheduleId || previous.sequence < tick.sequence;
+}
 function startInterval(data, room, replier, intervalMinutes, isDev) {
-    const previousValTime = new Date().getTime();
-    data.previnterval = previousValTime;
-    let newInterval = intervalWithMinutes(intervalMinutes, function () {
-        exploreInterval = true;
-        response(room, isDev ? "dev/펫탐험자동정산" : "/펫탐험자동정산", "오픈채팅봇", true, replier, null, null);
+    var scheduleId = String(java.util.UUID.randomUUID()), sequence = 0; // 시작·수동 정산마다 이전 예약과 구분
+    data.previnterval = Date.now(); data.exploreScheduleId = scheduleId;
+    var newInterval = intervalWithMinutes(intervalMinutes, function () {
+        var previous = petExploreTickThreadLocal.get();
+        petExploreTickThreadLocal.set({ scheduleId: scheduleId, sequence: ++sequence, triggeredAt: Date.now() });
+        try { response(room, isDev ? "dev/펫탐험자동정산" : "/펫탐험자동정산", "오픈채팅봇", true, replier, null, null); }
+        finally { petExploreTickThreadLocal.set(previous); }
     });
-    if (!data.intervalIDs) {
-        data.intervalIDs = [];
-    }
+    if (!data.intervalIDs) data.intervalIDs = [];
     data.intervalIDs.push(newInterval);
 }
 // 수동 펫탐험 정산 완료와 다음 자동 정산 시간을 안내하는 함수
@@ -42224,6 +42238,7 @@ function buildManualPetExploreSettlementMessage(intervalMinutes) {
     return "✅ 펫탐험 정산을 완료했습니다.\n⏱️ 다음 자동 정산까지: " + intervalMinutes + "분";
 }
 function stopAllIntervals(data) {
+    delete data.exploreScheduleId; // 이미 접수된 이전 예약도 실행되지 않도록 무효화
     if (Array.isArray(data.intervalIDs) && data.intervalIDs.length > 0) {
         for (let i = 0; i < data.intervalIDs.length; i++) {
             stopInterval(data.intervalIDs[i]);
@@ -42233,12 +42248,12 @@ function stopAllIntervals(data) {
 }
 function getNextIntervalTime(data, intervalMinutes) {
     if (!data.previnterval) {
-        return "⏱탐험 시간: 08AM ~ 12AM / 정각";
+        return "⏱ 자동탐험: 시작 후 " + intervalMinutes + "분 간격";
     } else {
         const nextIntervalStart = data.previnterval + intervalMinutes * 60 * 1000;
         const timeDiff = nextIntervalStart - new Date().getTime();
         if (isNaN(timeDiff) || timeDiff <= 0) {
-            return "⏱탐험 시간: 08AM ~ 12AM / 정각";
+            return "⏱ 자동탐험: 시작 후 " + intervalMinutes + "분 간격";
         }
         const remainingMinutes = Math.floor(timeDiff / (1000 * 60));
         const remainingSeconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
@@ -60896,12 +60911,12 @@ function clearPetExploreAutoFixedDungeons(petExploreData) {
 }
 
 // 추석 이벤트 정각 탐험을 처리하는 함수
-function doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
+function doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData, automaticRoundKey) {
     petExploreData = autoExploreBetting(data, petExploreData);
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr) || arr.length < 1) return null;
-    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 같은 정각 중복 처리 판정 키
+    var hourKey = automaticRoundKey || getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 자동 예약 회차 또는 수동 시간대의 중복 처리 판정 키
     var successLines = [];
     var failLines = [];
     var levelUpMessages = [];
@@ -60979,7 +60994,7 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     if (nonGuildCount > 0) nonParticipationUsers += "\n[길드미가입유저: " + nonGuildUsers.join(", ") + "]";
     if (insufficientPointCount > 0) nonParticipationUsers += "\n[포인트부족유저: " + insufficientPointUsers.join(", ") + "]";
     if (participated < 1) {
-        return resultHeader + nonParticipationUsers + "\n\n※ 자동탐험권 보유 후 /자동탐고정 11을 설정하면 다음 정각에 자동 등록됩니다.\n※ 수동 참여는 정산 후 초기화됩니다.\n\n🛍️ 아이템 교환: /달토끼상점";
+        return resultHeader + nonParticipationUsers + "\n\n※ 자동탐험권 보유 후 /자동탐고정 11을 설정하면 다음 자동 정산에 등록됩니다.\n※ 수동 참여는 정산 후 초기화됩니다.\n\n🛍️ 아이템 교환: /달토끼상점";
     }
     return resultHeader + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + nonParticipationUsers + "\n" + allsee + "\n" + lines.join("\n━━━━━━━━━━━━\n") + "\n\n🛍️ 아이템 교환: /달토끼상점";
 }
@@ -61519,6 +61534,9 @@ function grantPetExploreExperience(data, petData, guildData, user, baseExperienc
     return {
         message: experienceMessage,
         totalExperience: experienceResult.total,
+        baseExperience: experienceResult.base,
+        tierExperience: experienceResult.bonus,
+        boosterExperience: boosterResult.extraExperience,
         boosterUsed: boosterResult.usedBooster,
         boosterRequired: boosterResult.requiredBooster,
         boosterDepletionMessage: boosterDepletionMessage,
@@ -61535,12 +61553,12 @@ function buildPetExploreLevelUpSummary(levelUpMessages) {
 }
 
 /** 정산 1회 실행 */
-function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
+function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData, automaticRoundKey) {
     if (!data || !data.member) return null;
 
     petExploreData = initPetExploreData(petExploreData);
     cleanupInvalidPetExploreUsers(petExploreData, data);
-    if (isChuseokExploreEventActive(petExploreData)) return doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
+    if (isChuseokExploreEventActive(petExploreData)) return doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData, automaticRoundKey);
     if (!petExploreData.bet) return null;
 
     var successLines = [];
@@ -61698,6 +61716,8 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon, petExploreData) + (success ? "성공(✅)" : "실패(❌)");
             line += "\n획득: " + rewardText;
             line += "\n📊 총 획득 경험치: +" + formatAdventureExperience(exploreExperienceReward.totalExperience) + "exp";
+            line += "\n└ 기본 +" + formatAdventureExperience(exploreExperienceReward.baseExperience) + " · 티어 +" + formatAdventureExperience(exploreExperienceReward.tierExperience);
+            if (exploreExperienceReward.boosterExperience > 0) line += " · 가호 +" + formatAdventureExperience(exploreExperienceReward.boosterExperience);
             if (exploreExperienceReward.boosterUsed > 0) line += "\n✨ 가호 " + numberWithCommas(exploreExperienceReward.boosterUsed) + "개 사용" + (exploreExperienceReward.boosterUsed < exploreExperienceReward.boosterRequired ? " · 보유량만 부분 적용" : "");
             if (exploreExperienceReward.boosterDepletionMessage) line += "\n\n" + exploreExperienceReward.boosterDepletionMessage;
             if (bonusRewardText) {
@@ -64318,9 +64338,9 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         var eventOut = "🐰 [" + nickName + "] 님이\n" + targetName + " 준비를 마쳤어요.\n";
         if (prevDungeon && String(prevDungeon) !== String(dungeonNo)) eventOut += "\n(탐험 변경: " + (dungeonNameMap[prevDungeon] || prevDungeon + "번") + " → " + targetName + ")\n";
         eventOut += "\n⛰️ 탐험 성공확률: " + formatPercent1(p.totalP) + "%\n";
-        eventOut += "💰 정각 참가비: 🅟" + numberWithCommas(eventConfig.participationFee) + "\n";
+        eventOut += "💰 회차 참가비: 🅟" + numberWithCommas(eventConfig.participationFee) + "\n";
         eventOut += "🌕 성공 보상: 황금당근 " + eventConfig.rewardMin + "~" + eventConfig.rewardMax + "개\n";
-        eventOut += "⏰ 매시간 정각 자동 탐색\n";
+        eventOut += "⏰ 시작 후 60분 간격 자동 탐색\n";
         eventOut += eventNextUpItem ? "확률UP🗻: 1개 사용 예정(" + eventNextUpItem + ")\n" : "확률UP🗻 이(가) 없습니다.\n";
         eventOut += "🛍️ 보유 당근·상품 확인: /달토끼상점\n\n";
         eventOut += "(상세 성공확률 보기..👈)\n" + allsee + "\n\n";
@@ -68739,7 +68759,8 @@ function validateGuildWarRoles(entry) {
     for (var key in counts) if (Object.prototype.hasOwnProperty.call(counts, key) && counts[key] > 2) throw guildWarInputError("최대 2개 역할만 맡을 수 있습니다. /전쟁정찰해제 또는 /전쟁자폭해제 후 다시 편성해주세요.");
 }
 // 후보 편성의 자격·변경 제한을 모두 검사한 뒤 실제 편성을 한 번 반영하는 함수
-function commitGuildWarRoster(entry, candidate, swords) {
+function commitGuildWarRoster(entry, candidate, swords, day) {
+    if (entry.personalTransitionDay === day && day !== undefined && (entry.scout !== candidate.scout || candidate.attack.some(function (name, index) { return name !== entry.attack[index]; }))) throw guildWarInputError("이전 길마권의 선포자를 확인할 수 없어 다음 일일 초기화까지 정찰·공격 편성을 유지합니다. 기존 선포권과 진행 전쟁은 유지됩니다.");
     validateGuildWarRoles(candidate);
     if (candidate.attack.some(function (name) { return name && swords.indexOf(name) === -1; })) throw guildWarInputError("공격 진형은 현재 소드마스터만 편성할 수 있습니다. 길드 직책은 자동 변경하지 않습니다.");
     var config = GLOBAL_CONFIG.guildWar, roles = ["scout", "bomber"];
@@ -68770,7 +68791,7 @@ function setGuildWarBulkFormation(state, guildData, gid, request, skills) {
     });
     var candidate = cloneFreeMarketObject(entry);
     candidate.scout = picked[0]; candidate.bomber = picked[1]; candidate.attack = picked.slice(2, 5); candidate.defense = picked.slice(5);
-    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills));
+    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills), state.day);
 }
 // 중단된 대진의 실제 소모품만 별도로 남겨 재정찰 뒤에도 사용 이력을 보존하는 함수
 function archiveGuildWarMatchup(war, now) {
@@ -68823,6 +68844,19 @@ function createGuildWarRights() {
 
 // 길드원에게 현재 배정된 선포권을 길마 기본권 우선으로 반환하는 함수
 // 당일 개인 선포 사용량을 확정 기록에서 복원해 겸직·편성 이동의 추가 사용을 막는 함수
+// 선포자 미확인 구기록이 있는 길드의 당일 편성 전환 제한을 보존하는 함수
+function prepareGuildWarPersonalTransition(state, entry, gid) {
+    if (entry.personalTransitionDay !== undefined && (!isPointShopSafeCount(entry.personalTransitionDay) || entry.personalTransitionDay > state.day)) throw new Error("길드전쟁 개인 전환 날짜 오류");
+    if (entry.personalTransitionDay === state.day || !entry.rights.master || entry.personalDeclarations !== undefined) return false;
+    var rows = state.active.concat(state.records[gid] || []), known = false;
+    for (var i = 0; i < rows.length; i++) {
+        var war = rows[i];
+        if (war.attackId === gid && war.day === state.day && war.ticketEpoch === entry.ticketEpoch && war.right === "master" && !war.refunded && typeof war.declaredBy === "string" && war.declaredBy) known = true;
+    }
+    if (known) return false;
+    entry.personalTransitionDay = state.day;
+    return true;
+}
 function getGuildWarPersonalUsage(state, guild, entry, gid) {
     if (entry.personalDeclarations !== undefined) {
         if (!entry.personalDeclarations || typeof entry.personalDeclarations !== "object" || Array.isArray(entry.personalDeclarations)) throw new Error("길드전쟁 개인 사용량 오류");
@@ -68835,8 +68869,7 @@ function getGuildWarPersonalUsage(state, guild, entry, gid) {
         if (war.attackId !== gid || war.day !== state.day || war.ticketEpoch !== entry.ticketEpoch || war.refunded || seen[war.id]) continue;
         seen[war.id] = true;
         var name = war.declaredBy;
-        if (!name && war.right === "master") name = guild.master;
-        else if (!name && war.right === "scout") name = war.attackScout && war.attackScout.name;
+        if (!name && war.right === "scout") name = war.attackScout && war.attackScout.name;
         else if (!name && /^attack[012]$/.test(war.right)) { var fighters = war.originalAttack || war.attack; name = fighters && fighters[Number(war.right.slice(-1))] && fighters[Number(war.right.slice(-1))].name; }
         if (name) usage[name] = (usage[name] || 0) + 1;
     }
@@ -68978,6 +69011,7 @@ function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)
         if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [소드마스터 전용]" : "⚒️ 방어 진형\n└ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n━━━━━━━━━━━━\n";
         text += ["🥇 1번 선봉", "🥈 2번 중견", "🥉 3번 대장"][i % 3] + ": [" + (fighters[i] ? checkRank(data, petData, guildData, fighters[i]) : "미편성") + "]\n";
     }
+    if (entry.personalTransitionDay === guildData.war24.day) text += "\n⏳ 이전 선포자 확인 불가 · 정찰/공격 편성 변경은 다음 일일 초기화 후 가능\n";
     return text + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n📚 진형 편성 방법 전체보기" + allsee + "\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n📚 전쟁 명령어 안내\n" + GLOBAL_CONFIG.guildWar.commandGuide;
 }
 
@@ -69029,7 +69063,11 @@ function initializeGuildWar(data, guildData, now) {
     var state = guildData.war24, day = getVaultRobberyDay(now), config = GLOBAL_CONFIG.guildWar;
     if (state !== undefined) {
         requireGuildWarState(state);
-        if (state.version === 2) return initializeGuildWarExpansion(data, guildData, now);
+        if (state.version === 2) {
+            var expanded = initializeGuildWarExpansion(data, guildData, now);
+            for (var personalGid in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, personalGid) && prepareGuildWarPersonalTransition(state, state.guilds[personalGid], personalGid)) expanded = true;
+            return expanded;
+        }
         if (state.day > day) throw new Error("길드전쟁 전환 날짜가 저장된 날짜보다 이전입니다.");
         if (!data || !data.member) throw new Error("길드전쟁 전환 회원 원본 확인 필요");
         for (var gid in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, gid)) {
@@ -69469,6 +69507,7 @@ function resetGuildWarDay(guildData, now) {
     state.day = day;
     for (var gid in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, gid)) {
         var entry = state.guilds[gid];
+        delete entry.personalTransitionDay;
         entry.personalDeclarations = {}; entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.rights = createGuildWarRights(); entry.carryUsed = 0; entry.ticketEpoch++;
         entry.scoutAssigned = !!entry.scout; entry.bomberAssigned = !!entry.bomber;
         entry.scoutUsed = 0; entry.scoutChanges = 0; entry.bombUsed = 0; entry.bomberChanges = 0;
@@ -69506,7 +69545,7 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         if (wars.length) throw guildWarInputError("전쟁 중에는 기본 진형을 초기화할 수 없습니다.");
         var cleared = cloneFreeMarketObject(entry);
         cleared.attack = ["", "", ""]; cleared.defense = ["", "", ""]; cleared.scout = ""; cleared.bomber = "";
-        commitGuildWarRoster(entry, cleared, ensureGuildSwordMasters(guild, skills));
+        commitGuildWarRoster(entry, cleared, ensureGuildSwordMasters(guild, skills), state.day);
         return "✅ 정찰·자폭·공격·방어 8칸을 모두 초기화했습니다.\n해제한 정찰·자폭의 변경 횟수를 사용했으며 전쟁선포권은 복구되지 않습니다.";
     }
     var ordered = getGuildOrderedMemberKeys(guild, skills), targetNo = (request.kind === "defenseFormation" || request.kind === "attackFormation") && args.length === 4 ? args.shift() : null;
@@ -69534,7 +69573,7 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         candidate[target] = picked;
         candidate[opposite] = candidate[opposite].map(function (name) { return picked.indexOf(name) === -1 ? name : ""; });
     }
-    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills));
+    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills), state.day);
 }
 
 // 복구 파일의 회원·분리 저장 참조만 남겨 큰 본문을 메모리에 함께 보관하지 않는 함수
@@ -69798,7 +69837,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             if (!isGuildLeader(guild, sender)) throw guildWarInputError("길마·부길마만 편성을 변경할 수 있습니다.");
             var candidate = cloneFreeMarketObject(entry);
             candidate[request.kind === "clearScout" ? "scout" : "bomber"] = "";
-            var released = commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills));
+            var released = commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills), state.day);
             publishGuildWar(data, guildData, false); replier.reply(released); return true;
         }
         if (request.kind === "formation") { replier.reply(buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true; }
