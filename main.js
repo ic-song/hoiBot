@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.798"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.799"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3089,6 +3089,7 @@ blockedNicknameTerms: [
         memberFeeTag: "자회원🏪(수수료 10%)",
         minPrice: 10, messageChars: 12000, carrotCompensation: 50000000,
         furnitureGrades: ["리브", "쁘띠", "부띠끄", "시그니엘", "그랑 루미에르", "로열 루미에르", "아르카나 루미에르"],
+        searchGradeAliases: { "로열": "로열 루미에르", "아르카나": "아르카나 루미에르" },
         searchCategories: { "일반아이템": "bag", "아이템": "bag", "미니펫": "miniPet", "펜던트": "pendant", "가구": "furniture", "펫스킬": "skill", "패키지": "package" },
         categoryLabels: { bag: "일반 아이템", furniture: "가구", miniPet: "미니펫", package: "패키지", pendant: "펜던트", skill: "펫스킬" },
         blockedItems: ["자동탐험권🌄", "자동일퀘권📝", "자유시장회원권🏪", "티어 승급티켓🎟", "고급 티어 승급티켓🎫", "펫 친밀도🐾", "다이아상자💎", "1억포인트상자🪙", "럭키박스🍀", "다이아상자💎(소)", "다이아상자💎(중)", "다이아상자💎(대)"],
@@ -8657,7 +8658,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         return;
                     }
                     var freeMarketTradeFeeRate = getFreeMarketTradeFeeRate(data, buyListing.seller);
-                    var marketFee = Math.round(buyPrice * freeMarketTradeFeeRate);
+                    var marketFee = calculateFreeMarketTradeFee(buyPrice, freeMarketTradeFeeRate);
                     var sellerReceive = buyPrice - marketFee;
                     if (!isPointShopSafeCount((data.member[buyListing.seller].diamond || 0) + sellerReceive)) { replier.reply("❌ 판매자 다이아 보유량을 확인해주세요."); return; }
                     data.member[sender].diamond = (data.member[sender].diamond || 0) - buyPrice;
@@ -52652,9 +52653,15 @@ function getDiamondShopDailyTotals(log, day) {
 function buildFreeMarketSearchGuide() {
     return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지\n\n🔎 이름 검색\n/자유시장검색 카오스\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.\n\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n\n입력: /자유시장검색 검색어";
 }
+// 안전 정수 가격의 정수 퍼센트 수수료를 곱셈 오차 없이 기존 반올림 규칙대로 계산하는 함수
+function calculateFreeMarketTradeFee(price, rate) {
+    var percent = Math.round(rate * 100);
+    if (!isPointShopSafeCount(price) || typeof rate !== "number" || !isPointShopSafeCount(percent) || percent > 100 || rate !== percent / 100) throw new Error("시장 수수료 계산 범위 오류");
+    return Math.floor(price / 100) * percent + Math.round((price % 100) * percent / 100);
+}
 // 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
 function buildFreeMarketExpectedSettlement(data, seller, price) {
-    var rate = getFreeMarketTradeFeeRate(data, seller), fee = Math.round(price * rate);
+    var rate = getFreeMarketTradeFeeRate(data, seller), fee = calculateFreeMarketTradeFee(price, rate);
     return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개\n※ 실제 정산은 판매 완료 시 회원권 상태를 적용해요.";
 }
 
@@ -53034,11 +53041,19 @@ function getFreeMarketSearchGrade(listing) {
     var skill = listing.type === "skill" ? getPetSkillData(listing.itemName) : null;
     return normalizeFreeMarketSearchText(skill ? skill.grade : row.grade);
 }
+// 해당 거래 유형에 실제로 존재하는 등급과 가구 등급 약칭인지 확인하는 함수
+function isFreeMarketSearchGradeForCategory(word, category) {
+    var grade = GLOBAL_CONFIG.freeMarket.searchGradeAliases[word] || word;
+    var grades = category === "miniPet" ? miniPetData.gradeTable : category === "pendant" ? PENDANT_GRADE_TABLE : category === "furniture" ? GLOBAL_CONFIG.freeMarket.furnitureGrades : category === "skill" ? GLOBAL_CONFIG.petSkillCollection.gradeOrder : [];
+    return grades.some(function (entry) {
+        return normalizeFreeMarketSearchText(typeof entry === "string" ? entry : entry.grade) === normalizeFreeMarketSearchText(grade);
+    });
+}
 // 현재 게임 등급과 기획서의 가구 등급 약칭만 검색어에서 분리하는 함수
 function parseFreeMarketSearch(query) {
     var original = String(query || "").trim(), text = normalizeFreeMarketSearchText(original), remaining = text; // 공백 정규화 후 아직 분리하지 않은 검색 조건
     var inputWords = original.split(/\s+/).map(normalizeFreeMarketSearchText);
-    var words = ["로열", "아르카나"], tables = [miniPetData.gradeTable, PENDANT_GRADE_TABLE];
+    var words = Object.keys(GLOBAL_CONFIG.freeMarket.searchGradeAliases), tables = [miniPetData.gradeTable, PENDANT_GRADE_TABLE];
     for (var t = 0; t < tables.length; t++) for (var g = 0; g < tables[t].length; g++) words.push(tables[t][g].grade);
     words = words.concat(GLOBAL_CONFIG.freeMarket.furnitureGrades, GLOBAL_CONFIG.petSkillCollection.gradeOrder).map(normalizeFreeMarketSearchText);
     words = words.filter(function (word, index) { return word && words.indexOf(word) === index; }).sort(function (a, b) { return b.length - a.length; });
@@ -53047,10 +53062,11 @@ function parseFreeMarketSearch(query) {
     // '일반 아이템'의 '일반'을 장비 등급으로 오인하지 않도록 명시한 가방 분류를 먼저 분리한다.
     for (var bagIndex = 0; bagIndex < categoryWords.length; bagIndex++) {
         var bagLabel = categoryWords[bagIndex];
-        if (categories[bagLabel] === "bag" && (remaining.indexOf(bagLabel) === 0 || remaining.slice(-bagLabel.length) === bagLabel)) {
-            category = "bag"; remaining = remaining.indexOf(bagLabel) === 0 ? remaining.substring(bagLabel.length) : remaining.substring(0, remaining.length - bagLabel.length); break;
+        if (categories[bagLabel] === "bag" && (bagLabel === "일반아이템" && remaining.indexOf(bagLabel) !== -1 || inputWords.indexOf(bagLabel) !== -1 || remaining.indexOf(bagLabel) === 0 || remaining.slice(-bagLabel.length) === bagLabel)) {
+            category = "bag"; remaining = remaining.replace(bagLabel, ""); break;
         }
     }
+    var categoryText = remaining; // 등급 후보가 상품명인 경우 원래 이름 순서를 복원할 기준
     for (var i = 0; i < words.length; i++) {
         var word = words[i];
         if (/^[A-Z]+$/.test(word) && text !== word && original.split(/\s+/).indexOf(word) === -1) {
@@ -53067,7 +53083,12 @@ function parseFreeMarketSearch(query) {
         if (!explicit && !grades.length) continue;
         if (explicit ? remaining.indexOf(key) === -1 : remaining.indexOf(key) !== 0 && remaining.slice(-key.length) !== key) continue;
         if (key === "펫스킬" && remaining.indexOf("펫스킬북") === 0) continue;
-        category = categories[key]; remaining = remaining.replace(key, ""); break;
+        category = categories[key]; remaining = remaining.replace(key, ""); categoryText = categoryText.replace(key, ""); break;
+    }
+    if (category && category !== "bag" && category !== "package") {
+        grades = grades.filter(function (word) { return isFreeMarketSearchGradeForCategory(word, category); });
+        remaining = categoryText;
+        for (var gradeIndex = 0; gradeIndex < grades.length; gradeIndex++) remaining = remaining.split(grades[gradeIndex]).join("");
     }
     return { text: text, category: category, grades: grades, name: remaining };
 }
@@ -53091,7 +53112,9 @@ function searchFreeMarketV2(market, query) {
         if (search.category && getFreeMarketCategory(row) !== search.category) return false;
         var name = normalizeFreeMarketSearchText(row.itemName), grade = getFreeMarketSearchGrade(row);
         if (search.grades.length && !search.grades.some(function (word) {
-            return grade ? grade === word || (word === "로열" || word === "아르카나") && grade.indexOf(word) === 0 : name.indexOf(word) !== -1;
+            var alias = GLOBAL_CONFIG.freeMarket.searchGradeAliases[word];
+            if (grade && (grade === word || alias && grade === normalizeFreeMarketSearchText(alias))) return true;
+            return (!grade || !isFreeMarketSearchGradeForCategory(word, getFreeMarketCategory(row))) && name.indexOf(word) !== -1;
         })) return false;
         return !search.name || name.indexOf(search.name) !== -1;
     }).sort(function (a, b) {
@@ -53453,7 +53476,9 @@ function formatFreeMarketPoint(price) {
 
 // 표시용 개당 가격을 반올림한 정수와 천 단위 쉼표로 반환하는 함수
 function formatFreeMarketUnitPrice(price, quantity) {
-    return numberWithCommas(Math.round(price / quantity));
+    if (!isPointShopSafeCount(price) || !isPointShopSafeCount(quantity) || quantity < 1) throw new Error("시장 개당 가격 표시 수량 오류");
+    var rounded = Math.floor(price / quantity) + (price % quantity >= Math.ceil(quantity / 2) ? 1 : 0); // 정수 몫·나머지로 반올림 경계 판정
+    return numberWithCommas(rounded);
 }
 
 // 자유시장 목록에 표시할 개당 가격 문자열 반환 함수
@@ -69177,6 +69202,12 @@ function getGuildWarUserRights(guild, entry, user) {
     return keys;
 }
 
+// 정찰병 역할권과 공용·개인 잔여 한도를 함께 반영한 선포 가능 횟수를 반환하는 함수
+function getGuildWarScoutRightCount(state, guild, entry, gid) {
+    if (!entry.scout || !guild.members[entry.scout] || entry.tickets < 1 || entry.rights.scout) return 0;
+    var usage = getGuildWarPersonalUsage(state, guild, entry, gid);
+    return getGuildWarPersonalUseCount(entry, usage, entry.scout) < GLOBAL_CONFIG.guildWar.personalDailyLimit ? 1 : 0;
+}
 // 소진 안내에 실제 선포 가능한 길드원·역할·잔여량을 표시하는 함수
 function buildGuildWarTicketHelp(data, petData, guildData, gid, sender) {
     var guild = guildData.guilds[gid], entry = getGuildWarEntry(guildData.war24, gid);
@@ -70234,12 +70265,12 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         }
         if (request.kind === "scout") {
             var scout = snapshotGuildWarScout(data, petData, homeData, skills, guildData, guild, entry.scout);
-            replier.reply("🔭 " + formatGuildDisplay(guild) + " 전쟁정찰\n━━━━━━━━━━━━\n🔭 현재 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n🔄 오늘 남은 정찰병 변경: " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2회\n🔎 오늘 남은 단독 정찰: " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회\n🎯 정찰병 전쟁선포권: " + (entry.tickets > 0 && !entry.rights.scout ? 1 : 0) + "/1회\n\n👉 정찰병 편성: /전쟁정찰편성 번호\n👉 단독 정찰: /정찰 길드명"); return true;
+            replier.reply("🔭 " + formatGuildDisplay(guild) + " 전쟁정찰\n━━━━━━━━━━━━\n🔭 현재 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n🔄 오늘 남은 정찰병 변경: " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2회\n🔎 오늘 남은 단독 정찰: " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회\n🎯 정찰병 전쟁선포권: " + getGuildWarScoutRightCount(state, guild, entry, gid) + "/1회\n\n👉 정찰병 편성: /전쟁정찰편성 번호\n👉 단독 정찰: /정찰 길드명"); return true;
         }
         if (request.kind === "attackFormation" || request.kind === "defenseFormation" || request.kind === "scoutFormation" || request.kind === "bomberFormation" || request.kind === "clearFormation" || request.kind === "bulkFormation") {
             if (guildData.territoryWar && guildData.territoryWar.active && guildData.territoryWar.readyGuilds && guildData.territoryWar.readyGuilds[gid] && request.kind === "attackFormation") throw guildWarInputError("기존 길드 영지전 진행 중에는 소드마스터를 변경할 수 없습니다.");
             var formationMessage = setGuildWarFormation(state, guildData, gid, sender, request, skills, Date.now());
-            if (request.kind === "scoutFormation") formationMessage += "\n🔭 정찰병: [" + checkRank(data, petData, guildData, entry.scout) + "]\n🎯 남은 정찰병 전쟁선포권: " + (entry.tickets > 0 && !entry.rights.scout ? 1 : 0) + "/1회";
+            if (request.kind === "scoutFormation") formationMessage += "\n🔭 정찰병: [" + checkRank(data, petData, guildData, entry.scout) + "]\n🎯 남은 정찰병 전쟁선포권: " + getGuildWarScoutRightCount(state, guild, entry, gid) + "/1회";
             if (request.kind === "bomberFormation") formationMessage += "\n💣 자폭병: [" + checkRank(data, petData, guildData, entry.bomber) + "]\n🎯 자폭 성공 확률: 30%";
             publishGuildWar(data, guildData, false); replier.reply(formationMessage + "\n\n" + buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true;
         }
