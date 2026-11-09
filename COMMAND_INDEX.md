@@ -40,7 +40,7 @@ Status: VERIFIED
 - 길드전쟁: 신규 선포는 `rulesVersion=2`로 준비120초·15초 중계, 금광 점령8억/방어3억·기타 점령5억/방어2억·공격 정상 패배1억. 승리만 큐브3 적용, 패배 위로금은 별도 수혜 길드에 한 번 지급한다. 기존 진행 건은 표식 없는 구규칙180초·점령3억/방어1억·광산상자를 유지하며 재정찰도 당시 시간으로 진행한다.
 - 길드창고: 신규 다이아광산 승리만 기존 `warehouse.diamond` +1. 기존 `diamondBox` 보유량·분배와 구규칙 진행 전쟁의 상자 보상은 유지한다. 양측 보상과 점령은 기존 전쟁 복구 게시로 함께 확정한다.
 - 길드 편성: `validateGuildWarRoles`/`commitGuildWarRoster`는 최대2역·공방 중복/동일진형 중복 금지와 후보 전체 검증을 적용한다. 공격은 현재 소드마스터, 방어는 공격 역할 없는 길드원이며 직책은 자동 변경하지 않는다. `/전쟁정찰해제`/`/전쟁자폭해제`는 길마·부길마·등록 길드톡·진행전쟁 잠금과 변경 횟수를 검사한다. 해제 후 재지정도 이력을 유지하고 동일 입력은 무료다. 전체초기화도 실제 해제되는 정찰·자폭 변경 횟수를 소모하며 잔여 부족 시 전체 유지한다. 일괄 편성 실패는 전체 유지한다.
-- 개인 선포: `getGuildWarPersonalUsage`와 `declaredBy`로 최대2회 제한을 겸직/이동 뒤에도 유지하며 일일/관리자 초기화 회차와 원래 선포 환급만 반영한다.
+- 개인 선포: `getGuildWarPersonalUsage`·`getGuildWarPersonalUseCount`로 최대2회 제한을 겸직/이동 뒤에도 유지한다. 공용 소모량과 확정 개인 이력의 차이는 모든 개인 한도에서 보수적으로 예약하며 실제 기록에는 중복 적립하지 않는다. 일일/관리자 초기화와 같은 회차 환급만 반영하고, `getGuildWarDeclaredUser`로 복원한 과거 선포자도 환급 시 개인 이력을 차감한다.
 - 길드 UI/알림: `/길드정보`의 전쟁 역할 행·범례를 제거하고 일반 직책은 유지한다. `/전쟁편성` allsee 뒤 동일 길드원 번호·배정/미편성·현재 캐슬/종합 축약 매력을 표시한다. 신규 전쟁의 모든 지역 실제 점령에만 전체알림을 예약한다. 수신방별 전송 성공은 재전송하지 않으며 명시적 실패는 한 번 재시도하고, 전송 중 재시작으로 결과가 불명인 경우 중복 방지를 위해 로그를 남기고 자동 재전송하지 않는다.
 
 - 시장 반환 원본 검증: `validateFreeMarketReturnStorage`는 전환 사전 검증의 복사·초기화 전과 공용 반환 함수 진입 시 저장소·사용자·가방 형식을 검사한다. 일반/스킬 가방은 객체, 미니펫/가구/펜던트 보관함은 배열이어야 하며 이미 존재하는 잘못된 값은 초기화하지 않는다. 누락 항목의 기존 초기화는 유지한다. `getUniversalCollectionKeyBagMappings`의 이름 대응을 공유해 병합 전 원래/현재 수량과 다중 합계를 정확한 정수 범위로 검증한다. 이 검증은 전환·취소·강제취소·구매의 공용 반환 경로에 적용된다.
@@ -6398,7 +6398,7 @@ Status: PARTIAL
 
 Status: VERIFIED
 
-- `/자유시장검색`은 `parseFreeMarketSearch`·`getFreeMarketSearchGrade`로 공백 없는 실제 분류·등급·이름을 판정한다. 카테고리+등급+이름은 AND, 복수 등급은 OR이다. 검색 결과만 전체 닉네임·유형별 구획을 사용하고, 기본 목록/내판매의 기존 정렬·UI는 유지한다.
+- `/자유시장검색`은 `parseFreeMarketSearch`·`getFreeMarketSearchGrade`로 공백 없는 실제 분류·등급·이름을 판정한다. 카테고리+등급+이름은 AND, 복수 등급은 OR이다. 검색 결과만 전체 닉네임·유형별 구획을 사용하고, 기본 목록/내판매의 기존 정렬·UI는 유지한다. 분류 해석은 다른 매물의 유무에 영향을 받지 않으며, 검색의 개당 가격은 `compareFreeMarketUnitPrices`로 안전 정수 범위의 분수를 정확히 비교한다.
 - `isFreeMarketTradableItem`은 시장 전용 확정 금지 12종·통화 자체·재화 전용 묶음만 제외하며 일반 아이템/미확정 혼합 패키지는 허용한다. 기존 개인거래 `isTradableItem` 정책을 바꾸지 않는다.
 - 시장 진입에서 로드한 상품 정의를 `recallFreeMarketBlockedItems`에 넘겨 금지 가방 매물을 전부 검증한 뒤 원래 가방에 반환한다. `beginFreeMarketMutation` → 회원/시장 저장 수집 → `finishFreeMarketMutation`의 확정 원문 게시로 반환과 매물 제거를 함께 반영하고 회원을 다시 로드한다. 별도 회수 안내는 추가하지 않는다. 구매 확정에서도 같은 허용 판정을 반복한다.
 
@@ -8775,7 +8775,7 @@ Status: VERIFIED
 
 - `commitGuildWarRoster`는 과거 길마 선포자 미확인을 이유로 공격편성을 차단하지 않는다. 현재 소드마스터·중복·겸직 제한과 공용 공격권/개인 사용 이력은 유지한다. 기존 정찰 전환 보호는 유지한다.
 - `claimGuildWarDailyReward`는 회원 객체의 `guildWarRewards.scout/bomb`에 실제 KST 일자를 기록한다. 단독 정찰만 성공 1억/실패 5,000만P, 자폭은 성공 3억/실패 5,000만P이며 종류별 계정당 하루 한 번이다. 선포·방어·재정찰에는 정찰 보상을 지급하지 않는다. 사용자가 확정한 현행 자폭 30%·길드당 하루 2회를 유지한다.
-- `resolveGuildWarMatch`의 실제 참가자 표식과 `awardGuildWarFighters`는 최종 정상 종료 시 실제 참가자에게 각 1억P를 지급하고 `war.personalRewards`를 보존한다. 라운드/알림 재전송은 재지급하지 않으며 무혈입성·취소·미참여는 제외한다. `snapshotGuildWarSettlement`/`restoreGuildWarSettlement`는 개인 포인트도 복원한다. 기존 길드자금 보상은 별도로 유지한다.
+- `resolveGuildWarMatch`의 실제 참가자 표식과 `awardGuildWarFighters`는 최종 정상 종료 시 실제 참가자에게 각 1억P를 지급하고 `war.personalRewards`를 보존한다. 라운드/알림 재전송은 재지급하지 않으며 무혈입성·취소·미참여는 제외한다. `snapshotGuildWarSettlement`/`restoreGuildWarSettlement`는 개인 포인트도 복원한다. 기존 길드자금 보상은 별도로 유지한다. `getGuildWarMatchParticipant`는 구기록의 실제 매력·아이템 판정·크리티컬·방어 참가 확인으로 참가 여부를 구분하며, 참가/불참이 구분되지 않는 계정은 `personalRewards.pendingUsers`에 보류한다. `requireGuildWarFighterRewardReceipt`로 지급·보류 중복을 거절하고, `recordGuildWar`는 최근 30건 밖으로 밀려난 보류 전쟁도 원본 경기와 함께 보존한다. 화면은 기존 최근 30건과 실제 지급 인원만 표시한다.
 - 정찰/자폭 개인 보상과 전투원 보상은 기존 `publishGuildWar`의 회원 변경 게시에 포함한다. 정찰/자폭은 기존 결과 안의 기획 보상 줄, 전투원은 최종 결과의 인원수별 한 줄만 표시한다.
 
 ## Commands and permissions

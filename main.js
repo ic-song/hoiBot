@@ -52650,7 +52650,7 @@ function getDiamondShopDailyTotals(log, day) {
 }
 // 검색어를 입력하지 않은 시장 검색에서 종류·이름·좁히기 예시를 안내하는 함수
 function buildFreeMarketSearchGuide() {
-    return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n\n입력: /자유시장검색 검색어";
+    return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지\n\n🔎 이름 검색\n/자유시장검색 카오스\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.\n\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n\n입력: /자유시장검색 검색어";
 }
 // 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
 function buildFreeMarketExpectedSettlement(data, seller, price) {
@@ -53035,8 +53035,9 @@ function getFreeMarketSearchGrade(listing) {
     return normalizeFreeMarketSearchText(skill ? skill.grade : row.grade);
 }
 // 현재 게임 등급과 기획서의 가구 등급 약칭만 검색어에서 분리하는 함수
-function parseFreeMarketSearch(query, rows) {
+function parseFreeMarketSearch(query) {
     var original = String(query || "").trim(), text = normalizeFreeMarketSearchText(original), remaining = text; // 공백 정규화 후 아직 분리하지 않은 검색 조건
+    var inputWords = original.split(/\s+/).map(normalizeFreeMarketSearchText);
     var words = ["로열", "아르카나"], tables = [miniPetData.gradeTable, PENDANT_GRADE_TABLE];
     for (var t = 0; t < tables.length; t++) for (var g = 0; g < tables[t].length; g++) words.push(tables[t][g].grade);
     words = words.concat(GLOBAL_CONFIG.freeMarket.furnitureGrades, GLOBAL_CONFIG.petSkillCollection.gradeOrder).map(normalizeFreeMarketSearchText);
@@ -53062,17 +53063,29 @@ function parseFreeMarketSearch(query, rows) {
     for (var categoryIndex = 0; categoryIndex < categoryWords.length; categoryIndex++) {
         if (category) break;
         var key = categoryWords[categoryIndex];
-        if (remaining !== key && remaining.indexOf(key) !== 0 && remaining.slice(-key.length) !== key) continue;
+        var explicit = inputWords.indexOf(key) !== -1 || text === key;
+        if (!explicit && !grades.length) continue;
+        if (explicit ? remaining.indexOf(key) === -1 : remaining.indexOf(key) !== 0 && remaining.slice(-key.length) !== key) continue;
         if (key === "펫스킬" && remaining.indexOf("펫스킬북") === 0) continue;
-        // 등급 없는 기존 상품명 검색은 유지하고, 등급 복합 검색에서는 실제 분류를 우선한다.
-        if (!grades.length && text !== key && categories[key] !== "bag" && rows.some(function (row) { return normalizeFreeMarketSearchText(row.itemName).indexOf(text) !== -1; })) break;
-        category = categories[key]; remaining = remaining.indexOf(key) === 0 ? remaining.substring(key.length) : remaining.substring(0, remaining.length - key.length); break;
+        category = categories[key]; remaining = remaining.replace(key, ""); break;
     }
     return { text: text, category: category, grades: grades, name: remaining };
 }
+// 나눗셈 반올림·교차곱 오버플로 없이 정수 분수의 실제 개당 가격을 비교하는 함수
+function compareFreeMarketUnitPrices(a, b) {
+    var an = a.price, ad = a.quantity, bn = b.price, bd = b.quantity, direction = 1;
+    if (!isPointShopSafeCount(an) || !isPointShopSafeCount(bn) || !isPointShopSafeCount(ad) || ad < 1 || !isPointShopSafeCount(bd) || bd < 1) throw new Error("시장 개당 가격 비교 수량 오류");
+    while (true) {
+        var aq = Math.floor(an / ad), bq = Math.floor(bn / bd); // 정수 몫이 같으면 나머지의 역수로 비교
+        if (aq !== bq) return (aq < bq ? -1 : 1) * direction;
+        var ar = an % ad, br = bn % bd;
+        if (ar === 0 || br === 0) return ar === br ? 0 : (ar === 0 ? -1 : 1) * direction;
+        an = ad; ad = ar; bn = bd; bd = br; direction = -direction;
+    }
+}
 // 분류·실제 등급·공백 없는 이름 조건을 적용하고 유형별 기존 우선순위로 정렬하는 함수
 function searchFreeMarketV2(market, query) {
-    var rows = getFreeMarketActiveListings(market), search = parseFreeMarketSearch(query, rows);
+    var rows = getFreeMarketActiveListings(market), search = parseFreeMarketSearch(query);
     return rows.filter(function (row) {
         if (!search.text) return true;
         if (search.category && getFreeMarketCategory(row) !== search.category) return false;
@@ -53091,7 +53104,10 @@ function searchFreeMarketV2(market, query) {
             if (av.grade !== bv.grade) return av.grade === null ? 1 : bv.grade === null ? -1 : bv.grade - av.grade;
             if (av.power !== bv.power) return av.power === null ? 1 : bv.power === null ? -1 : bv.power - av.power;
         }
-        if (av.unit !== bv.unit) return av.unit - bv.unit;
+        if (search.text) {
+            var unitOrder = compareFreeMarketUnitPrices(a, b);
+            if (unitOrder !== 0) return unitOrder;
+        } else if (av.unit !== bv.unit) return av.unit - bv.unit;
         if ((ac === "bag" || ac === "package") && a.quantity !== b.quantity) return b.quantity - a.quantity;
         return (b.createdAtMs || 0) - (a.createdAtMs || 0) || a.id - b.id;
     });
@@ -53122,7 +53138,7 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
 }
 // 시장 검색·등록·구매를 위한 기본 양식을 안내하는 함수
 function buildFreeMarketV2Guide() {
-    return "📦 호이월드 자유시장 판매가이드\n━━━━━━━━━━━━\n💎 킹 이상 · 다이아 전용 · 등록비 무료\n💰 일반 17% / 회원권 10% · 최소 10다이아(묶음 전체 금액)\n/가방거래등록 번호 갯수 다이아가격\n/미니펫거래등록 번호 갯수 다이아가격\n/가구거래등록 번호 갯수 다이아가격\n/스킬거래등록 번호 갯수 다이아가격\n/펜던트거래등록 번호 다이아가격\n/자유시장구매 거래번호\n/거래확인 1 또는 /거래확인 2\n/자유시장취소 거래번호\n/내판매\n/자유시장가격수정 거래번호 다이아가격\n/자유시장정보 거래번호\n/자유시장검색 검색어\n예: 펜던트 / 펜던트 강화석 / 아이템 펜던트 강화석 / 미니펫 카오스\n※ 다이아·다이아상자 거래 등록 및 개인거래는 불가합니다.";
+    return "📦 호이월드 자유시장 판매가이드\n━━━━━━━━━━━━\n💎 킹 이상 · 다이아 전용 · 등록비 무료\n💰 일반 17% / 회원권 10% · 최소 10다이아(묶음 전체 금액)\n/가방거래등록 번호 갯수 다이아가격\n/미니펫거래등록 번호 갯수 다이아가격\n/가구거래등록 번호 갯수 다이아가격\n/스킬거래등록 번호 갯수 다이아가격\n/펜던트거래등록 번호 다이아가격\n/자유시장구매 거래번호\n/거래확인 1 또는 /거래확인 2\n/자유시장취소 거래번호\n/내판매\n/자유시장가격수정 거래번호 다이아가격\n/자유시장정보 거래번호\n/자유시장검색 검색어\n예: 펜던트 / 아이템 펜던트 강화석 / 미니펫 창조\n※ 다이아·다이아상자 거래 등록 및 개인거래는 불가합니다.";
 }
 // 가격 수정 전후 구매 확인에서 같은 판매 건·가격·물품인지 확인하는 함수
 function getFreeMarketListingFingerprint(listing) {
@@ -69096,8 +69112,6 @@ function createGuildWarRights() {
     return { master: false, scout: false, attack0: false, attack1: false, attack2: false };
 }
 
-// 길드원에게 현재 배정된 선포권을 길마 기본권 우선으로 반환하는 함수
-// 당일 개인 선포 사용량을 확정 기록에서 복원해 겸직·편성 이동의 추가 사용을 막는 함수
 // 선포자 미확인 구기록이 있는 길드의 당일 편성 전환 제한을 보존하는 함수
 function prepareGuildWarPersonalTransition(state, entry, gid) {
     if (entry.personalTransitionDay !== undefined && (!isPointShopSafeCount(entry.personalTransitionDay) || entry.personalTransitionDay > state.day)) throw new Error("길드전쟁 개인 전환 날짜 오류");
@@ -69111,6 +69125,17 @@ function prepareGuildWarPersonalTransition(state, entry, gid) {
     entry.personalTransitionDay = state.day;
     return true;
 }
+// 선포자 명시 기록 또는 당시 정찰·공격 스냅샷에서 실제 선포 계정을 찾는 함수
+function getGuildWarDeclaredUser(war) {
+    var name = war.declaredBy;
+    if (!name && war.right === "scout") name = war.attackScout && war.attackScout.name;
+    else if (!name && /^attack[012]$/.test(war.right)) {
+        var fighters = war.originalAttack || war.attack;
+        name = fighters && fighters[Number(war.right.slice(-1))] && fighters[Number(war.right.slice(-1))].name;
+    }
+    return name || "";
+}
+// 당일 개인 선포 사용량을 확정 기록에서 복원하는 함수
 function getGuildWarPersonalUsage(state, guild, entry, gid) {
     if (entry.personalDeclarations !== undefined) {
         if (!entry.personalDeclarations || typeof entry.personalDeclarations !== "object" || Array.isArray(entry.personalDeclarations)) throw new Error("길드전쟁 개인 사용량 오류");
@@ -69122,13 +69147,28 @@ function getGuildWarPersonalUsage(state, guild, entry, gid) {
         var war = rows[i];
         if (war.attackId !== gid || war.day !== state.day || war.ticketEpoch !== entry.ticketEpoch || war.refunded || seen[war.id]) continue;
         seen[war.id] = true;
-        var name = war.declaredBy;
-        if (!name && war.right === "scout") name = war.attackScout && war.attackScout.name;
-        else if (!name && /^attack[012]$/.test(war.right)) { var fighters = war.originalAttack || war.attack; name = fighters && fighters[Number(war.right.slice(-1))] && fighters[Number(war.right.slice(-1))].name; }
+        var name = getGuildWarDeclaredUser(war);
         if (name) usage[name] = (usage[name] || 0) + 1;
     }
     return usage;
 }
+// 선포자 미확인 사용분을 모든 개인의 당일 한도에서 보수적으로 예약하는 함수
+function getGuildWarPersonalUseCount(entry, usage, user) {
+    var consumed = entry.carryUsed, known = 0, rights = createGuildWarRights(); // 공용 소모량과 확정 선포자 사용량의 차이가 미확인 사용분
+    if (!isPointShopSafeCount(consumed)) throw new Error("길드전쟁 이전 사용량 오류");
+    for (var right in rights) if (Object.prototype.hasOwnProperty.call(rights, right)) {
+        if (typeof entry.rights[right] !== "boolean") throw new Error("길드전쟁 소모 권한 오류");
+        if (entry.rights[right]) consumed++;
+    }
+    for (var name in usage) if (Object.prototype.hasOwnProperty.call(usage, name)) {
+        if (!isPointShopSafeCount(usage[name])) throw new Error("길드전쟁 개인 횟수 오류");
+        known += usage[name];
+    }
+    if (!isPointShopSafeCount(known) || known > consumed || consumed > GLOBAL_CONFIG.guildWar.dailyTickets) throw new Error("길드전쟁 개인 사용량 합계 오류");
+    var personal = Object.prototype.hasOwnProperty.call(usage, user) ? usage[user] : 0;
+    return personal + consumed - known;
+}
+// 길드원에게 현재 배정된 선포권을 길마 기본권 우선으로 반환하는 함수
 function getGuildWarUserRights(guild, entry, user) {
     var keys = [];
     if (guild.master === user) keys.push("master");
@@ -69141,10 +69181,12 @@ function getGuildWarUserRights(guild, entry, user) {
 function buildGuildWarTicketHelp(data, petData, guildData, gid, sender) {
     var guild = guildData.guilds[gid], entry = getGuildWarEntry(guildData.war24, gid);
     var own = getGuildWarUserRights(guild, entry, sender), available = [];
+    var usage = getGuildWarPersonalUsage(guildData.war24, guild, entry, gid);
+    var personalRemaining = Math.max(0, GLOBAL_CONFIG.guildWar.personalDailyLimit - getGuildWarPersonalUseCount(entry, usage, sender));
     var labels = { master: "👑 길드마스터", scout: "🔭 정찰병", attack0: "🥇 선봉", attack1: "🥈 중견", attack2: "🥉 대장" };
     var names = { master: guild.master, scout: entry.scout, attack0: entry.attack[0], attack1: entry.attack[1], attack2: entry.attack[2] };
-    for (var key in names) if (Object.prototype.hasOwnProperty.call(names, key) && names[key] && guild.members[names[key]] && !entry.rights[key] && entry.tickets > 0) available.push(labels[key] + ": [" + checkRank(data, petData, guildData, names[key]) + "] 1/1회");
-    return "🎯 내 공격권: " + Math.min(entry.tickets, own.filter(function (key) { return !entry.rights[key]; }).length) + "/" + own.length + "회\n🎯 길드 남은 공격권: " + entry.tickets + "/5회\n\n⚔️ 남은 공격 가능 길드원\n" + (available.length ? available.join("\n") : "선포 가능한 인원 없음") + "\n⚠️ 편성 변경으로 사용권 복구 불가";
+    for (var key in names) if (Object.prototype.hasOwnProperty.call(names, key) && names[key] && guild.members[names[key]] && !entry.rights[key] && entry.tickets > 0 && getGuildWarPersonalUseCount(entry, usage, names[key]) < GLOBAL_CONFIG.guildWar.personalDailyLimit) available.push(labels[key] + ": [" + checkRank(data, petData, guildData, names[key]) + "] 1/1회");
+    return "🎯 내 공격권: " + Math.min(entry.tickets, personalRemaining, own.filter(function (key) { return !entry.rights[key]; }).length) + "/" + own.length + "회\n🎯 길드 남은 공격권: " + entry.tickets + "/5회\n\n⚔️ 남은 공격 가능 길드원\n" + (available.length ? available.join("\n") : "선포 가능한 인원 없음") + "\n⚠️ 편성 변경으로 사용권 복구 불가";
 }
 
 // 해당 전쟁이 차감한 같은 날짜·초기화 회차의 역할권만 한 번 환급하는 함수
@@ -69155,7 +69197,8 @@ function refundGuildWarTicket(state, war) {
     var entry = getGuildWarEntry(state, war.attackId);
     if (war.right && war.ticketEpoch === entry.ticketEpoch && entry.rights[war.right]) {
         entry.rights[war.right] = false;
-        if (war.declaredBy && entry.personalDeclarations && entry.personalDeclarations[war.declaredBy] > 0) entry.personalDeclarations[war.declaredBy]--;
+        var declaredUser = getGuildWarDeclaredUser(war);
+        if (declaredUser && entry.personalDeclarations && entry.personalDeclarations[declaredUser] > 0) entry.personalDeclarations[declaredUser]--;
         entry.tickets = Math.min(GLOBAL_CONFIG.guildWar.dailyTickets, entry.tickets + 1);
     }
 }
@@ -69265,7 +69308,7 @@ function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)
         if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [소드마스터 전용]" : "⚒️ 방어 진형\n└ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n━━━━━━━━━━━━\n";
         text += ["🥇 1번 선봉", "🥈 2번 중견", "🥉 3번 대장"][i % 3] + ": [" + (fighters[i] ? checkRank(data, petData, guildData, fighters[i]) : "미편성") + "]\n";
     }
-    if (entry.personalTransitionDay === guildData.war24.day) text += "\n⏳ 이전 선포자 확인 불가 · 정찰/공격 편성 변경은 다음 일일 초기화 후 가능\n";
+    if (entry.personalTransitionDay === guildData.war24.day) text += "\n⏳ 이전 선포자 확인 불가 · 정찰 편성 변경은 다음 일일 초기화 후 가능\n";
     return text + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n📚 진형 편성 방법 전체보기" + allsee + "\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n📚 전쟁 명령어 안내\n" + GLOBAL_CONFIG.guildWar.commandGuide;
 }
 
@@ -69291,29 +69334,54 @@ function buildGuildWarDailyRewardMessage(kind, amount) {
     if (!amount) return "\n오늘의 " + role + " 개인 보상은 이미 수령했습니다.";
     return "\n🎁 " + role + " 개인 보상: 🅟" + formatGuildTerritoryRewardAmount(amount) + "\n📌 오늘의 " + (kind === "scout" ? "정찰" : "자폭") + " 보상: 1/1회 수령";
 }
-// 최종 전쟁의 실제 참가자에게 계정당 한 번 지급하고 전쟁 원본에 지급 대상을 남기는 함수
+// 지급 완료·보류 계정이 중복되거나 손상된 전투원 보상 기록을 거절하는 함수
+function requireGuildWarFighterRewardReceipt(receipt) {
+    if (!receipt || !isPointShopSafeCount(receipt.amount) || receipt.amount < 1 || !Array.isArray(receipt.users) || receipt.pendingUsers !== undefined && !Array.isArray(receipt.pendingUsers)) throw new Error("길드전쟁 전투원 보상 기록 오류");
+    var names = receipt.users.concat(receipt.pendingUsers || []);
+    if (names.length > 6 || names.some(function (user, index) { return typeof user !== "string" || !user || names.indexOf(user) !== index; })) throw new Error("길드전쟁 전투원 보상 대상 오류");
+    return receipt;
+}
+// 확정 참가·불참은 이름·빈 문자열로 반환하고 구기록의 불명확한 참가는 미확정으로 남기는 함수
+function getGuildWarMatchParticipant(match, fighter, side) {
+    var user = match[side === 0 ? "attackParticipant" : "defenseParticipant"];
+    if (user !== undefined) {
+        if (typeof user !== "string" || user && user !== fighter.name) throw new Error("길드전쟁 실제 참가자 기록 오류");
+        return user;
+    }
+    if (!fighter.name) return "";
+    if (side === 1) return typeof match.defenseRoll.checked === "boolean" ? match.defenseRoll.checked ? fighter.name : "" : undefined;
+    if (match.attack.base > 0 || match.attackRoll.checked === true || match.attack.critical === true) return fighter.name;
+    if (match.attack.base === 0 && fighter.baseExp > 0) return "";
+    return undefined;
+}
+// 최종 실제 참가자는 한 번 지급하고 불명확한 구기록은 보류 계정과 원본 경기로 보존하는 함수
 function awardGuildWarFighters(data, guildData, war) {
     if (war.personalRewards !== undefined) {
-        var receipt = war.personalRewards;
-        if (!receipt || !isPointShopSafeCount(receipt.amount) || receipt.amount < 1 || !Array.isArray(receipt.users) || receipt.users.length > 6 || receipt.users.some(function (user, index) { return typeof user !== "string" || !user || receipt.users.indexOf(user) !== index; })) throw new Error("길드전쟁 전투원 보상 기록 오류");
+        requireGuildWarFighterRewardReceipt(war.personalRewards);
         return false;
     }
     if (war.cancelled || war.bloodless || war.matches.length !== 3) return false;
-    var users = [], amount = GLOBAL_CONFIG.guildWar.personalRewards.fighter;
+    var users = [], pending = [], amount = GLOBAL_CONFIG.guildWar.personalRewards.fighter;
     for (var i = 0; i < war.matches.length; i++) {
-        var match = war.matches[i], keys = ["attackParticipant", "defenseParticipant"], fighters = [war.attack[i], war.defense[i]];
-        for (var side = 0; side < keys.length; side++) {
-            var user = match[keys[side]];
-            // 이전에 끝난 라운드는 실제 매력 또는 방어 참가 확인이 남은 인원만 인정한다.
-            if (user === undefined && (side === 0 ? match.attack.base > 0 : match.defenseRoll.checked)) user = fighters[side].name;
+        var match = war.matches[i], fighters = [war.attack[i], war.defense[i]];
+        for (var side = 0; side < fighters.length; side++) {
+            var user = getGuildWarMatchParticipant(match, fighters[side], side);
+            if (user === undefined) {
+                if (pending.indexOf(fighters[side].name) === -1) pending.push(fighters[side].name);
+                continue;
+            }
             if (!user || users.indexOf(user) !== -1 || !data.member[user]) continue;
             var point = data.member[user].point;
             if (!isFreeMarketPointBalance(point) || !isFreeMarketPointBalance(point + amount)) throw new Error("길드전쟁 전투원 보상 포인트 범위 오류");
             users.push(user);
         }
     }
+    pending = pending.filter(function (user) { return users.indexOf(user) === -1; });
+    var receipt = { amount: amount, users: users };
+    if (pending.length) receipt.pendingUsers = pending;
+    requireGuildWarFighterRewardReceipt(receipt);
     for (var j = 0; j < users.length; j++) data.member[users[j]].point += amount;
-    war.personalRewards = { amount: amount, users: users };
+    war.personalRewards = receipt;
     return users.length > 0;
 }
 // 기존 자폭 확률·횟수와 점령 처리를 유지하면서 실제 시도자의 개인 보상을 함께 확정하는 함수
@@ -69458,7 +69526,15 @@ function requireGuildWarState(state) {
         for (var key in rights) if (Object.prototype.hasOwnProperty.call(rights, key)) { if (typeof daily.rights[key] !== "boolean") throw new Error("길드전쟁 역할권 오류"); if (daily.rights[key]) used++; }
         if (daily.tickets !== Math.max(0, GLOBAL_CONFIG.guildWar.dailyTickets - daily.carryUsed - used)) throw new Error("길드전쟁 공격권 합계 오류");
     }
-    for (var recordGuild in state.records) if (Object.prototype.hasOwnProperty.call(state.records, recordGuild) && (!Array.isArray(state.records[recordGuild]) || state.records[recordGuild].length > GLOBAL_CONFIG.guildWar.recordLimit)) throw new Error("길드전쟁 기록 개수 오류");
+    for (var recordGuild in state.records) if (Object.prototype.hasOwnProperty.call(state.records, recordGuild)) {
+        var records = state.records[recordGuild];
+        if (!Array.isArray(records)) throw new Error("길드전쟁 기록 개수 오류");
+        for (var recordIndex = 0; recordIndex < records.length; recordIndex++) {
+            var receipt = records[recordIndex].personalRewards;
+            if (receipt !== undefined) requireGuildWarFighterRewardReceipt(receipt);
+            if (recordIndex >= GLOBAL_CONFIG.guildWar.recordLimit && !(receipt && receipt.pendingUsers && receipt.pendingUsers.length)) throw new Error("길드전쟁 기록 개수 오류");
+        }
+    }
     for (var n = 0; n < state.notices.length; n++) {
         var notice = state.notices[n];
         if (!notice || typeof notice.room !== "string" || typeof notice.text !== "string" || !isPointShopSafeCount(notice.attempts) || notice.attempts > 2) throw new Error("길드전쟁 알림 기록 오류");
@@ -69605,7 +69681,7 @@ function buildGuildWarResult(war, recipientId) {
     return text + "━━━━━━━━━━━━\n" + pairs.join("\n\n") + "\n\n📚 전투 상세정보" + allsee + "\n" + details.join("\n\n");
 }
 
-// 정상·취소 전쟁을 길드마다 최근 30건만 보관하고 결과 알림을 예약하는 함수
+// 최근 30건과 미확정 보상 원본을 보관하고 기존 결과 알림을 예약하는 함수
 function recordGuildWar(state, guildData, war) {
     var ids = [war.attackId, war.defenseId], results = [];
     // 양쪽 결과를 먼저 완성해 표시 오류가 완료 기록 일부만 남기지 않게 한다.
@@ -69615,7 +69691,9 @@ function recordGuildWar(state, guildData, war) {
         if (!gid) continue;
         if (!state.records[gid]) state.records[gid] = [];
         state.records[gid].unshift(war);
-        state.records[gid] = state.records[gid].slice(0, GLOBAL_CONFIG.guildWar.recordLimit);
+        state.records[gid] = state.records[gid].filter(function (record, index) {
+            return index < GLOBAL_CONFIG.guildWar.recordLimit || record.personalRewards && record.personalRewards.pendingUsers && record.personalRewards.pendingUsers.length > 0;
+        });
         queueGuildWarNotice(state, guildData, gid, results[i]);
     }
 }
@@ -70175,7 +70253,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             var defenseEntry = defenseId ? getGuildWarEntry(state, defenseId) : { scout: "", defense: ["", "", ""] };
             if (request.kind === "declare") {
                 var personalUsage = getGuildWarPersonalUsage(state, guild, entry, gid);
-                if ((personalUsage[sender] || 0) >= GLOBAL_CONFIG.guildWar.personalDailyLimit) throw guildWarInputError("개인 전쟁선포는 하루 최대 2회입니다. 편성 이동으로 사용량은 초기화되지 않습니다.");
+                if (getGuildWarPersonalUseCount(entry, personalUsage, sender) >= GLOBAL_CONFIG.guildWar.personalDailyLimit) throw guildWarInputError("개인 전쟁선포는 하루 최대 2회입니다. 편성 이동으로 사용량은 초기화되지 않습니다.");
                 var personalRights = getGuildWarUserRights(guild, entry, sender);
                 if (!personalRights.length) throw guildWarInputError("길드마스터·정찰병·공격 선봉/중견/대장만 선포할 수 있습니다.");
                 var right = personalRights.filter(function (key) { return !entry.rights[key]; })[0];
