@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.790"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.791"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -43755,17 +43755,22 @@ function normalizePendantTransitionItemName(itemName) {
     return itemName;
 }
 
-// 기존 컬렉션 만능열쇠·펫스킬 슬롯 확장권을 사용 명령어가 포함된 정식 이름으로 병합하는 함수
-function normalizeUniversalCollectionKeyBagItems(bag) {
-    if (!bag) return false;
+// 컬렉션 만능열쇠와 스킬 슬롯 확장권의 기존 이름·현재 이름 대응을 반환하는 함수
+function getUniversalCollectionKeyBagMappings() {
     var config = GLOBAL_CONFIG.universalBox;
-    var mappings = [
+    return [
         { oldName: config.legacyPetSkillKeyItemName, newName: config.petSkillKeyItemName },
         { oldName: config.legacyMiniPetKeyItemName, newName: config.miniPetKeyItemName },
         { oldName: config.oldPetSkillKeyItemName, newName: config.petSkillKeyItemName },
         { oldName: config.oldMiniPetKeyItemName, newName: config.miniPetKeyItemName },
         { oldName: GLOBAL_CONFIG.petSkill.slots.legacyExpansionItemName, newName: GLOBAL_CONFIG.petSkill.slots.expansionItemName }
     ];
+}
+
+// 기존 컬렉션 만능열쇠·펫스킬 슬롯 확장권을 사용 명령어가 포함된 정식 이름으로 병합하는 함수
+function normalizeUniversalCollectionKeyBagItems(bag) {
+    if (!bag) return false;
+    var mappings = getUniversalCollectionKeyBagMappings();
     var changed = false;
     for (var i = 0; i < mappings.length; i++) {
         var mapping = mappings[i];
@@ -53086,6 +53091,7 @@ function validateFreeMarketReturns(data, petData, skills, home, market) {
     var members = { member: {} }, pets = {}, skillCopy = {}, homeCopy = {}, rows = getFreeMarketActiveListings(market);
     for (var i = 0; i < rows.length; i++) {
         var user = rows[i].seller;
+        validateFreeMarketReturnStorage(data, petData, skills, home, rows[i], user);
         if (!members.member[user]) {
             members.member[user] = cloneFreeMarketObject(data.member[user]); pets[user] = cloneFreeMarketObject(petData[user] || {});
             skillCopy[user] = cloneFreeMarketObject(skills[user] || {});
@@ -53491,8 +53497,39 @@ function formatFreeMarketFurnitureDetail(furniture) {
     );
 }
 
+// 시장 반환에 필요한 기존 보관함의 형식과 이름 병합 수량을 보정 전에 검증하는 함수
+function validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, listing, owner) {
+    var type = listing.type;
+    var store = type === "bag" ? data.member : type === "skill" ? petSkillData : type === "furniture" ? homeData : petData;
+    if (!store || typeof store !== "object" || Array.isArray(store)) throw new Error("시장 반환 저장소 형식 확인 필요: " + listing.id);
+    var record = store[owner]; // 반환을 받을 사용자의 기존 저장 항목
+    if (record !== undefined && (!record || typeof record !== "object" || Array.isArray(record))) throw new Error("시장 반환 사용자 형식 확인 필요: " + listing.id);
+    if (type === "skill" && record !== undefined) {
+        record = record.petSkills;
+        if (record !== undefined && (!record || typeof record !== "object" || Array.isArray(record))) throw new Error("시장 반환 스킬 정보 형식 확인 필요: " + listing.id);
+        if (record && (record.equipped !== undefined && !Array.isArray(record.equipped) || record.lockedPremium !== undefined && !Array.isArray(record.lockedPremium))) throw new Error("시장 반환 스킬 장착 목록 확인 필요: " + listing.id);
+    }
+    var bagName = type === "miniPet" ? "miniPetBag" : type === "pendant" ? "pendantBag" : type === "furniture" ? "furnitureBag" : "bag";
+    var bag = record === undefined ? undefined : record[bagName]; // 누락과 이미 존재하는 잘못된 보관함을 구분
+    if (bag === undefined) return;
+    if (type === "bag" || type === "skill") {
+        if (!bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("시장 반환 가방 형식 확인 필요: " + listing.id);
+    } else if (!Array.isArray(bag)) throw new Error("시장 반환 개체 보관함 형식 확인 필요: " + listing.id);
+    if (type !== "bag") return;
+    var mappings = getUniversalCollectionKeyBagMappings(), totals = {}; // 같은 현재 이름으로 병합될 누적 수량
+    for (var i = 0; i < mappings.length; i++) {
+        var mapping = mappings[i];
+        if (bag[mapping.oldName] === undefined) continue;
+        var oldCount = bag[mapping.oldName];
+        var currentCount = totals[mapping.newName] !== undefined ? totals[mapping.newName] : bag[mapping.newName] === undefined ? 0 : bag[mapping.newName];
+        if (!isPointShopSafeCount(oldCount) || !isPointShopSafeCount(currentCount) || !isPointShopSafeCount(currentCount + oldCount)) throw new Error("시장 반환 이름 변경 수량 확인 필요: " + listing.id);
+        totals[mapping.newName] = currentCount + oldCount;
+    }
+}
+
 // 시장에 보관된 상품을 실제 보관 정보와 수량 그대로 수령자에게 반환하는 함수
 function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, listing, owner) {
+    validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, listing, owner);
     if (listing.type === "bag") {
         addItem(data, owner, listing.itemName, listing.quantity);
         return;
