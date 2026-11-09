@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.793"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.794"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -6743,8 +6743,15 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             if (diamondSetting) {
                 var diamondSettingProduct = diamondShopV2.products[Number(diamondSetting[1]) - 1], diamondSettingOn = diamondSetting[2] === "켜기", diamondSettingBase = diamondSettingOn ? Number(diamondSetting[3]) : GLOBAL_CONFIG.diamondShop.defaultBaseSales;
                 if (!diamondSettingProduct || !isPointShopSafeCount(diamondSettingBase) || diamondSettingBase < 1 || (!diamondSettingOn && diamondSetting[3])) { replier.reply("❌ 상품 번호와 기준 판매량을 확인해주세요.\n/다이아시세설정 번호 켜기 기준판매량\n/다이아시세설정 번호 끄기"); return; }
-                diamondSettingProduct.pending = { on: diamondSettingOn, baseSales: diamondSettingBase };
-                saveJsonFile(data, filePath); replier.reply("✅ 다음 운영일 00:01부터 " + (diamondSettingOn ? "시세 ON · 기준 " + diamondSettingBase + "묶음" : "시세 OFF · 기본가 복귀") + " 예약\n오늘 적용 가격은 그대로 유지됩니다."); return;
+                var diamondSettingPercent = diamondSettingOn && diamondSettingProduct.on ? diamondSettingProduct.percent : 0; // 켜진 시세의 누적 보정률만 유지
+                var diamondSettingPrice = Math.max(1, Math.round(diamondSettingProduct.basePrice * (1 + diamondSettingPercent / 100)));
+                var diamondSettingValuation = diamondSettingPrice * diamondSettingProduct.actual; // 현재 판매량을 변경 가격으로 평가한 금액
+                var diamondSettingAdjustment = diamondSettingProduct.diamonds - diamondSettingValuation; // 실제 과거 결제액과의 차이 보존
+                if (!isPointShopSafeCount(diamondSettingPrice) || !isPointShopSafeCount(diamondSettingValuation) || !isPointShopSafeCount(Math.abs(diamondSettingAdjustment))) { replier.reply("❌ 가격 변경 후 판매 집계 범위를 확인해주세요."); return; }
+                diamondSettingProduct.on = diamondSettingOn; diamondSettingProduct.baseSales = diamondSettingBase;
+                diamondSettingProduct.percent = diamondSettingPercent; diamondSettingProduct.price = diamondSettingPrice;
+                diamondSettingProduct.priceAdjustment = diamondSettingAdjustment; diamondSettingProduct.pending = null;
+                saveJsonFile(data, filePath); replier.reply("✅ " + (diamondSettingOn ? "시세 ON · 기준 " + diamondSettingBase + "묶음" : "시세 OFF · 기본가 복귀") + " 즉시 적용\n현재 가격: 💎" + numberWithCommas(diamondSettingPrice) + "개\n오늘 구매 횟수와 판매기록은 유지됩니다."); return;
             }
             var diamondPurchase = msg.match(/^\/다이아(?:구매|상점구매)\s+(\d+)\s+(\d+)$/);
             if (diamondPurchase) {
@@ -52621,13 +52628,17 @@ function requireDiamondShopProduct(product, nextId) {
         !isPointShopSafeCount(product.day) || typeof product.operated !== "boolean" || !product.accounts || typeof product.accounts !== "object" || Array.isArray(product.accounts) ||
         !isPointShopSafeCount(product.actual) || !isPointShopSafeCount(product.effective) || !isPointShopSafeCount(product.diamonds) || (product.limit !== null && (!isPointShopSafeCount(product.limit) || product.limit < 1))) throw new Error("다이아상점 상품 원본 확인 필요");
     if (product.pending !== null && (!product.pending || typeof product.pending.on !== "boolean" || !isPointShopSafeCount(product.pending.baseSales) || product.pending.baseSales < 1)) throw new Error("다이아상점 예약 설정 확인 필요");
+    var priceAdjustment = product.priceAdjustment === undefined ? 0 : product.priceAdjustment; // 당일 설정 변경 전 실제 결제액 차이
+    if (typeof priceAdjustment !== "number" || !isPointShopSafeCount(Math.abs(priceAdjustment))) throw new Error("다이아상점 가격 변경 집계 확인 필요");
     var actual = 0, effective = 0;
     for (var key in product.accounts) if (Object.prototype.hasOwnProperty.call(product.accounts, key)) {
         var account = product.accounts[key];
         if (!account || !isPointShopSafeCount(account.bought) || !isPointShopSafeCount(account.effective) || account.effective > GLOBAL_CONFIG.diamondShop.accountEffectiveLimit || account.effective > account.bought) throw new Error("다이아상점 계정 집계 확인 필요");
         actual += account.bought; effective += account.effective;
     }
-    if (actual !== product.actual || effective !== product.effective || product.price * actual !== product.diamonds) throw new Error("다이아상점 판매 집계 불일치");
+    if (actual !== product.actual || effective !== product.effective || !isPointShopSafeCount(product.price * actual) ||
+        !isPointShopSafeCount(product.price * actual + priceAdjustment) || product.price * actual + priceAdjustment !== product.diamonds ||
+        actual === 0 && priceAdjustment !== 0) throw new Error("다이아상점 판매 집계 불일치");
     return product;
 }
 
@@ -52654,7 +52665,7 @@ function getDiamondShopCorrection(sold, base) {
     if (sold < base * 2) return 5;
     return 10;
 }
-// 지난 운영일을 한 번 마감하고 예약 설정을 다음 운영일부터 적용하는 함수
+// 지난 운영일을 한 번 마감하고 남아 있는 이전 예약 설정을 적용하는 함수
 function advanceDiamondShopDay(shop, now) {
     var today = getDiamondShopDay(now), changed = false;
     if (today < shop.day) throw new Error("다이아상점 운영일보다 현재 시각이 이전입니다.");
@@ -52670,7 +52681,7 @@ function advanceDiamondShopDay(shop, now) {
         if (!product.on) product.percent = 0;
         product.price = Math.max(1, Math.round(product.basePrice * (1 + product.percent / 100)));
         product.previousDay = { day: today - 1, price: today - previousDay === 1 ? previousPrice : product.price, effective: today - previousDay === 1 ? previousEffective : 0 };
-        product.day = today; product.accounts = {}; product.actual = 0; product.effective = 0; product.diamonds = 0; product.operated = false;
+        product.day = today; product.accounts = {}; product.actual = 0; product.effective = 0; product.diamonds = 0; product.priceAdjustment = 0; product.operated = false;
         changed = true;
     }
     if (shop.day !== today) { shop.day = today; changed = true; }
@@ -52742,7 +52753,7 @@ function applyDiamondShopPurchase(data, log, user, accountId, product, bundles, 
 function buildDiamondShopView(shop, member, manage, log) {
     var totals = manage ? getDiamondShopDailyTotals(log, shop.day) : null; // 삭제된 상품까지 포함한 당일 완료 통계
     var text = manage ? "💎 다이아상점 관리" : "💎 호이월드 다이아상점";
-    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 당일 가격 고정\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide() + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
+    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 운영 설정은 즉시 적용\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide() + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
     if (!shop.products.length) text += "\n등록된 상품이 없습니다.";
     for (var i = 0; i < shop.products.length; i++) {
         var p = shop.products[i], identity = member.serverRaidAccount && member.serverRaidAccount.id, bought = identity && p.accounts["$" + identity] ? p.accounts["$" + identity].bought : 0;
