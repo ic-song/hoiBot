@@ -667,6 +667,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- 정상 완료한 입력자에게 `awardDailyBattlePoints`로 승패 무관 50,000,000P를 지급한다. 실제 지급액과 결과 UI는 `GLOBAL_CONFIG.daily.battlePointReward`를 사용하며 경험치·CP·리셋권은 유지한다.
+
 ## Command Anchors
 
 - Search in `main.js`: `/캐슬대전`
@@ -2554,6 +2556,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- 정상 완료 보상은 `awardDailyBattlePoints`의 50,000,000P로 고정한다. 완료 보상의 야수의 본능 2배 계산·안내는 적용하지 않으며 기존 경험치·아이템·별도 약탈 효과와 횟수 정책은 유지한다.
+
 ## Command Anchors
 
 - Search in `main.js`: `/미니펫대전`
@@ -2694,6 +2698,8 @@ Status: VERIFIED
 # /자동일퀘
 
 Status: VERIFIED
+
+- 수동·자동·정리의 공통 `claimQuestReward`는 일반 일퀘 최초 수령 분기에서 `dailyQuestDungeonTicketReward`만큼 펫던전 입장권을 추가한다. 기존 완료 표식을 재사용하며 주간·패스 전용 수령에는 추가하지 않는다. main/Info의 `buildDailyQuestInfoMessage`와 공통 지급 결과에 같은 입장권 수량을 표시한다.
 
 ## Command Anchors
 
@@ -6392,6 +6398,10 @@ Status: PARTIAL
 
 Status: VERIFIED
 
+- `/자유시장검색`은 `parseFreeMarketSearch`·`getFreeMarketSearchGrade`로 공백 없는 실제 분류·등급·이름을 판정한다. 카테고리+등급+이름은 AND, 복수 등급은 OR이다. 검색 결과만 전체 닉네임·유형별 구획을 사용하고, 기본 목록/내판매의 기존 정렬·UI는 유지한다.
+- `isFreeMarketTradableItem`은 시장 전용 확정 금지 12종·통화 자체·재화 전용 묶음만 제외하며 일반 아이템/미확정 혼합 패키지는 허용한다. 기존 개인거래 `isTradableItem` 정책을 바꾸지 않는다.
+- 시장 진입에서 로드한 상품 정의를 `recallFreeMarketBlockedItems`에 넘겨 금지 가방 매물을 전부 검증한 뒤 원래 가방에 반환한다. `beginFreeMarketMutation` → 회원/시장 저장 수집 → `finishFreeMarketMutation`의 확정 원문 게시로 반환과 매물 제거를 함께 반영하고 회원을 다시 로드한다. 별도 회수 안내는 추가하지 않는다. 구매 확정에서도 같은 허용 판정을 반복한다.
+
 ## Command Anchors
 
 - Search in `main.js`: `/자유시장`
@@ -6481,6 +6491,9 @@ Status: VERIFIED
 # /탐
 
 Status: VERIFIED
+
+- 던전 성공률 감소는 `GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty = 7`이다. 현재 공개 번호 `/탐 3~4`가 내부 지역 4·5의 던전이며, 광산(`/탐 1~2`)·미궁(`/탐 5~6`)·이벤트의 감소량은 유지한다.
+- `getGuildWarKingdomExploreBonus`는 계산 시점의 점령자·회원 소속·실제 길드 명단을 모두 확인한다. 점령 길드원 +5%p와 영주 개인 +10%p는 중복 합산하지 않으며 예약/지도/실제 정산의 공통 계산과 상세 표시에 반영한다.
 
 ## Files
 - main.js
@@ -8760,11 +8773,16 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- `commitGuildWarRoster`는 과거 길마 선포자 미확인을 이유로 공격편성을 차단하지 않는다. 현재 소드마스터·중복·겸직 제한과 공용 공격권/개인 사용 이력은 유지한다. 기존 정찰 전환 보호는 유지한다.
+- `claimGuildWarDailyReward`는 회원 객체의 `guildWarRewards.scout/bomb`에 실제 KST 일자를 기록한다. 단독 정찰만 성공 1억/실패 5,000만P, 자폭은 성공 3억/실패 5,000만P이며 종류별 계정당 하루 한 번이다. 선포·방어·재정찰에는 정찰 보상을 지급하지 않는다. 사용자가 확정한 현행 자폭 30%·길드당 하루 2회를 유지한다.
+- `resolveGuildWarMatch`의 실제 참가자 표식과 `awardGuildWarFighters`는 최종 정상 종료 시 실제 참가자에게 각 1억P를 지급하고 `war.personalRewards`를 보존한다. 라운드/알림 재전송은 재지급하지 않으며 무혈입성·취소·미참여는 제외한다. `snapshotGuildWarSettlement`/`restoreGuildWarSettlement`는 개인 포인트도 복원한다. 기존 길드자금 보상은 별도로 유지한다.
+- 정찰/자폭 개인 보상과 전투원 보상은 기존 `publishGuildWar`의 회원 변경 게시에 포함한다. 정찰/자폭은 기존 결과 안의 기획 보상 줄, 전투원은 최종 결과의 인원수별 한 줄만 표시한다.
+
 ## Commands and permissions
 - main.js: getGuildWarRequest → runGuildWarEntry. 실행 명령은 전체 문법 일치, 안내문·추가 인수는 미실행. 공개 조회는 /길드전쟁·/길드전쟁가이드, 나머지는 자기 등록 길드톡의 소속 길드원만 사용한다.
 - /전쟁선포 지역번호(1~5)는 길마 기본권1 + 정찰병 역할권1 + 공격 선봉/중견/대장 각1, 하루 총5회. 부길마 직책만으로 선포 불가, 길마 겸직은 기본권부터 소모한다. 역할칸의 소모 이력과 전체 예산을 보존해 편성 교체로 복구되지 않는다.
-- /전쟁공격편성 번호3개, /전쟁방어편성 번호3개(동시 방어전은 영지번호 추가), /전쟁정찰편성 번호, /전쟁자폭편성 번호는 길마·부길마. 기존7인 중복 금지, 자폭병만 기존 역할과 겸직 가능. 기본 진형은 전쟁 중 변경 불가, 정찰 승리 측만 3분 준비 중 해당 전쟁의 기존3명 순서 변경 가능.
-- /전쟁편성초기화는 공격·방어만 해제하며 정찰병·자폭병·사용량 유지. /정찰 길드명은 등록 정찰병만 하루2회, 정찰병 변경은 하루2회(최초무료). /자폭 지역번호는 등록 자폭병만 하루1회·성공10%, 자폭병 변경 하루1회(최초무료).
+- /전쟁공격편성 번호3개, /전쟁방어편성 번호3개(동시 방어전은 영지번호 추가), /전쟁정찰편성 번호, /전쟁자폭편성 번호는 길마·부길마. 최대 2개 역할 겸직 · 공격/방어 중복 불가. 기본 진형은 전쟁 중 변경 불가, 정찰 승리 측만 2분 준비 중 해당 전쟁의 기존3명 순서 변경 가능.
+- /전쟁편성초기화는 8칸을 해제하고 정찰·자폭 변경 횟수를 사용하며 선포 사용량은 유지. /정찰 길드명은 등록 정찰병만 하루2회, 정찰병 변경은 하루2회(최초무료). /자폭 지역번호는 등록 자폭병만 하루2회·성공30%, 자폭병 변경 하루1회(최초무료).
 - /전쟁기록은 길드별 최근30건의 공격/방어 길드·승리 길드만 표시한다. 취소에는 승자 없음. /전쟁기록 번호는 실행하지 않는다. 내부 상세와 최종 결과 allsee는 유지한다.
 - /전쟁톡등록은 길마·부길마·MASTER. /전쟁톡확인 길드명과 /전쟁톡해제 길드명은 MASTER 원격 기능. 전쟁 중 등록 교체·해제는 MASTER도 불가. room은 마크 제외 정확한 길드명이다.
 - /길드전쟁공격초기화는 MASTER가 현재 등록 길드톡의 해당 길드만 초기화한다. 진행 전쟁·기록·점령·보상을 재처리하지 않으며 공개 가이드에 노출하지 않는다. 초기화 회차가 다른 이전 전쟁의 환급으로 권한을 중복 복구하지 않는다.

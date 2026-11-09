@@ -94,6 +94,7 @@ const GLOBAL_CONFIG = {
 		passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
 		questTargets: { tower: 5, castle: 5, mini: 5 }, // 콘텐츠 횟수와 별도인 일반 일퀘 목표
 		dailyQuestDollTicketReward: 1, // 일반 일퀘 인형 이용권 보상
+		dailyQuestDungeonTicketReward: 1, // 일반 일퀘 펫던전 입장권 보상
 		dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
 		weeklyQuestExperienceReward: 500 // 주간퀘스트 경험치 보상
 	},
@@ -3254,6 +3255,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("펫 강화석⭐ 30개");
 	lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " 1개");
 	lines.push("인형뽑기이용권🧸(/인형뽑기) " + GLOBAL_CONFIG.daily.dailyQuestDollTicketReward + "개");
+	lines.push("펫던전 입장권🌋 " + GLOBAL_CONFIG.daily.dailyQuestDungeonTicketReward + "개");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("🦋주간 퀘스트 조건🦋");
 	lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
