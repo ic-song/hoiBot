@@ -5,6 +5,13 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 2026-11-09 지도 UI 정합성 보완 (ver_2.788)
+
+Status: VERIFIED
+
+- `buildPetExploreStatusMessage`의 기본 지도는 노션 3-1 예시와 같은 영역·줄 순서를 사용한다. 현재·고정 표시, 독립된 최근5회 영역, 광산/던전/미궁의 명령 범위·구분선, 6번 입장 제한을 표시한다. 공지·구회차·재선택 안내가 있으면 별도 구분선으로 분리한다.
+- 시간은 시작 후60분 주기를 안내하고 실제 예약은 기존대로 유지한다. 확률 상세는 양수 항목을 최대3개씩 나누고 확률UP·디버프와 합계를 마지막에 표시한다. 아이템 등록명, 실제 데이터·확률 계산·정산·전환·allsee 위치와 별도 이벤트 지도 분기는 유지한다.
+
 ## 2026-11-09 후속 보완 (ver_2.787 후보)
 
 Status: VERIFIED
