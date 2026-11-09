@@ -47,6 +47,8 @@ Status: VERIFIED
 
 - 전환 앞단 분기: `/자유시장전환`과 `/자유시장전환 실행`은 초기 복구·회원 최초 로드 후 전용 분기에서 권한·시장 원본·보상·반환 검증을 완료하고 종료한다. 미리보기도 `validateFreeMarketReturns`를 통과해야 하며 백업·저장을 하지 않는다. 공통 운영 보정과 `ensurePetSkillSystemData`는 전환 두 명령에서 실행되지 않으므로, 이전 시스템 버전이나 비참가자의 기존 스킬 자료도 임의 보정하지 않는다. 실행의 백업·확정 게시·복구 경로는 유지한다.
 
+- 시장 단가 표기: `formatFreeMarketUnitPrice`가 표시용 개당 가격을 `Math.round`로 정수 반올림한 뒤 천 단위 쉼표를 붙인다. `formatFreeMarketUnitPriceText`의 상품명 옆 단가와 `buildFreeMarketV2List`의 가격 행이 같은 포맷을 사용한다. 실제 묶음 가격·결제·정렬 값은 변경하지 않는다.
+
 ## 2026-11-09 READY 개발 (ver_2.785)
 
 Status: VERIFIED
