@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.789"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.790"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -32628,6 +32628,10 @@ replier.reply(
         };
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.error = errorObj.error;
         debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
+        if ((msg === "/자유시장전환" || msg === "/자유시장전환 실행") && isMasterIdentity(sender)) {
+            try { createContextReplier(request.replier, ctx).reply("❌ 자유시장 전환 처리 중 오류가 발생했습니다.\n" + errorObj.error.substring(0, 300) + "\n원인 확인 후 /자유시장전환으로 완료 여부를 다시 확인해주세요."); }
+            catch (marketConversionReplyError) { debuggerLog("[자유시장 전환 오류 안내 실패] " + marketConversionReplyError); }
+        }
         if (error.miniGameCatalogFailure) {
             try { replier.reply("⚠️ 미니게임 자료를 불러오지 못했어요.\n잠시 후 다시 이용해 주세요."); }
             catch (miniCatalogReplyError) { debuggerLog("[미니게임 자료 안내 실패] " + miniCatalogReplyError); }
@@ -53084,7 +53088,8 @@ function validateFreeMarketReturns(data, petData, skills, home, market) {
         var user = rows[i].seller;
         if (!members.member[user]) {
             members.member[user] = cloneFreeMarketObject(data.member[user]); pets[user] = cloneFreeMarketObject(petData[user] || {});
-            skillCopy[user] = cloneFreeMarketObject(skills[user] || {}); homeCopy[user] = cloneFreeMarketObject(home[user] || {});
+            skillCopy[user] = cloneFreeMarketObject(skills[user] || {});
+            if (home[user] !== undefined) homeCopy[user] = cloneFreeMarketObject(home[user]);
         }
         var returnBag = null, returnName = rows[i].itemName; // 반환 전후 수량을 비교할 실제 보관함과 이름
         if (rows[i].type === "bag") {
