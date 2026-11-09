@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.791"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.792"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -4624,6 +4624,26 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         updateResponseQueueStage(request, "회원 자료 로드");
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
+        // 전환 조회·실행은 공통 보정이 원본을 바꾸기 전에 검증하고 종료한다.
+        if (msg === "/자유시장전환" || msg === "/자유시장전환 실행") {
+            if (!isMaster(sender)) { replier.reply("❌ Master 전용 명령어입니다."); return; }
+            var marketV2 = requireFreeMarketSource(loadJsonFile(freeMarketPath));
+            if (marketV2.version === 2) { replier.reply("✅ 자유시장 2.0 전환이 이미 완료됐습니다."); return; }
+            var petData = loadJsonFile(memberPetPath);
+            var petSkillData = loadJsonFile(petSkillDataPath);
+            var marketHome = loadJsonFile(homeDataFile);
+            var marketPlan = planFreeMarketConversion(data, marketV2);
+            validateFreeMarketReturns(data, petData, petSkillData, marketHome, marketV2);
+            if (msg === "/자유시장전환") {
+                replier.reply("🏪 자유시장 전환 점검\n미판매 원본 반환: " + marketPlan.returned.length + "건\n보유 당근: " + numberWithCommas(marketPlan.carrots) + "개\n총 보상: 🅟" + numberWithCommas(marketPlan.totalPoint) + "\n등록비 별도 확인: " + (marketPlan.manual.join(", ") || "없음") + "\n백업·반환·정산 후 다이아 거래를 엽니다.\n/자유시장전환 실행"); return;
+            }
+            var marketBackup = backupFreeMarketConversion();
+            replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
+            applyFreeMarketConversion(data, petData, petSkillData, marketHome, marketV2, marketPlan, marketBackup, new Date().getTime());
+            saveJsonFile(data, filePath); saveJsonFile(petData, memberPetPath); saveJsonFile(petSkillData, petSkillDataPath);
+            saveJsonFile(marketHome, homeDataFile); saveJsonFile(marketV2, freeMarketPath);
+            replier.reply("✅ 자유시장 2.0 전환 완료\n원본 반환 " + marketPlan.returned.length + "건 · 보상 🅟" + numberWithCommas(marketPlan.totalPoint) + "\n등록비 별도 확인: " + (marketPlan.manual.join(", ") || "없음") + "\n백업: " + marketBackup); return;
+        }
         if (!memberStorageCleanupAllowed && !dataCleanupAction && !getAutoDailyBatchContext()) {
             var operatingField = ensureMatzangFieldData(data), operatingNew = operatingField.diamondShopV2 === undefined;
             var operatingShop = ensureDiamondShopV2(operatingField, Date.now());
@@ -8054,22 +8074,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply("✅ 자유시장 파일을 확인했습니다. /자유시장전환으로 전환 대상을 확인해주세요."); return;
                     }
                     var marketV2 = requireFreeMarketSource(loadJsonFile(freeMarketPath));
-                    if (msg === "/자유시장전환" || msg === "/자유시장전환 실행") {
-                        if (!isMaster(sender)) { replier.reply("❌ Master 전용 명령어입니다."); return; }
-                        if (marketV2.version === 2) { replier.reply("✅ 자유시장 2.0 전환이 이미 완료됐습니다."); return; }
-                        var marketPlan = planFreeMarketConversion(data, marketV2);
-                        if (msg === "/자유시장전환") {
-                            replier.reply("🏪 자유시장 전환 점검\n미판매 원본 반환: " + marketPlan.returned.length + "건\n보유 당근: " + numberWithCommas(marketPlan.carrots) + "개\n총 보상: 🅟" + numberWithCommas(marketPlan.totalPoint) + "\n등록비 별도 확인: " + (marketPlan.manual.join(", ") || "없음") + "\n백업·반환·정산 후 다이아 거래를 엽니다.\n/자유시장전환 실행"); return;
-                        }
-                        var marketHome = loadJsonFile(homeDataFile);
-                        validateFreeMarketReturns(data, petData, petSkillData, marketHome, marketV2);
-                        var marketBackup = backupFreeMarketConversion();
-                        replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
-                        applyFreeMarketConversion(data, petData, petSkillData, marketHome, marketV2, marketPlan, marketBackup, new Date().getTime());
-                        saveJsonFile(data, filePath); saveJsonFile(petData, memberPetPath); saveJsonFile(petSkillData, petSkillDataPath);
-                        saveJsonFile(marketHome, homeDataFile); saveJsonFile(marketV2, freeMarketPath);
-                        replier.reply("✅ 자유시장 2.0 전환 완료\n원본 반환 " + marketPlan.returned.length + "건 · 보상 🅟" + numberWithCommas(marketPlan.totalPoint) + "\n등록비 별도 확인: " + (marketPlan.manual.join(", ") || "없음") + "\n백업: " + marketBackup); return;
-                    }
                     if (marketV2.version !== 2) { replier.reply("🏪 자유시장 전환 점검 중입니다. Master가 /자유시장전환을 확인해주세요."); return; }
                     if (msg === "/자유시장검색") { replier.reply(buildFreeMarketSearchGuide()); return; }
                     if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
