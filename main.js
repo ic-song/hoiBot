@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.789"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.790"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -32628,6 +32628,10 @@ replier.reply(
         };
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.error = errorObj.error;
         debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
+        if ((msg === "/자유시장전환" || msg === "/자유시장전환 실행") && isMasterIdentity(sender)) {
+            try { createContextReplier(request.replier, ctx).reply("❌ 자유시장 전환 처리 중 오류가 발생했습니다.\n" + errorObj.error.substring(0, 300) + "\n원인 확인 후 /자유시장전환으로 완료 여부를 다시 확인해주세요."); }
+            catch (marketConversionReplyError) { debuggerLog("[자유시장 전환 오류 안내 실패] " + marketConversionReplyError); }
+        }
         if (error.miniGameCatalogFailure) {
             try { replier.reply("⚠️ 미니게임 자료를 불러오지 못했어요.\n잠시 후 다시 이용해 주세요."); }
             catch (miniCatalogReplyError) { debuggerLog("[미니게임 자료 안내 실패] " + miniCatalogReplyError); }
@@ -53084,11 +53088,23 @@ function validateFreeMarketReturns(data, petData, skills, home, market) {
         var user = rows[i].seller;
         if (!members.member[user]) {
             members.member[user] = cloneFreeMarketObject(data.member[user]); pets[user] = cloneFreeMarketObject(petData[user] || {});
-            skillCopy[user] = cloneFreeMarketObject(skills[user] || {}); homeCopy[user] = cloneFreeMarketObject(home[user] || {});
+            skillCopy[user] = cloneFreeMarketObject(skills[user] || {});
+            if (home[user] !== undefined) homeCopy[user] = cloneFreeMarketObject(home[user]);
         }
+        var returnBag = null, returnName = rows[i].itemName; // 반환 전후 수량을 비교할 실제 보관함과 이름
+        if (rows[i].type === "bag") {
+            if (!members.member[user].bag) members.member[user].bag = {};
+            returnName = returnName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName ? GLOBAL_CONFIG.petSkill.bookItemName : returnName;
+            returnBag = members.member[user].bag;
+            returnName = normalizePendantTransitionBagItem(returnBag, returnName);
+        } else if (rows[i].type === "skill") {
+            returnBag = initPetSkillUser(skillCopy, user).bag;
+            returnName = normalizePetSkillName(returnName);
+        }
+        var beforeCount = returnBag && returnBag[returnName] !== undefined ? returnBag[returnName] : 0; // 이름 병합 후의 기존 수량
+        if (returnBag && !isPointShopSafeCount(beforeCount)) throw new Error("매물 반환 전 가방 수량 확인 필요: " + rows[i].id);
         returnFreeMarketItemToOwner(members, pets, skillCopy, homeCopy, rows[i], user);
-        if (rows[i].type === "bag" && !isPointShopSafeCount(members.member[user].bag[rows[i].itemName])) throw new Error("매물 반환 후 가방 수량 범위 초과: " + rows[i].id);
-        if (rows[i].type === "skill" && !isPointShopSafeCount(skillCopy[user].bag[normalizePetSkillName(rows[i].itemName)])) throw new Error("매물 반환 후 스킬 수량 범위 초과: " + rows[i].id);
+        if (returnBag && (!isPointShopSafeCount(returnBag[returnName]) || returnBag[returnName] !== beforeCount + rows[i].quantity)) throw new Error("매물 반환 수량 불일치 또는 범위 초과: " + rows[i].id);
     }
 }
 // 전환 원문과 회원 분리 저장소를 고유한 운영 백업 폴더에 검증 복사하는 함수
@@ -53475,6 +53491,7 @@ function formatFreeMarketFurnitureDetail(furniture) {
     );
 }
 
+// 시장에 보관된 상품을 실제 보관 정보와 수량 그대로 수령자에게 반환하는 함수
 function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, listing, owner) {
     if (listing.type === "bag") {
         addItem(data, owner, listing.itemName, listing.quantity);
@@ -53500,7 +53517,13 @@ function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, list
         return;
     }
     if (listing.type === "skill") {
-        addPetSkillToBag(petSkillData, owner, listing.itemName, listing.quantity);
+        var skillName = normalizePetSkillName(listing.itemName);
+        var skillBag = initPetSkillUser(petSkillData, owner).bag;
+        var skillCount = skillBag[skillName] !== undefined ? skillBag[skillName] : 0; // 이미 보유한 같은 스킬 수량
+        var restoredCount = skillCount + listing.quantity; // 시장 보관분을 전량 더한 수량
+        if (!skillName || !isPointShopSafeCount(listing.quantity) || listing.quantity < 1 || !isPointShopSafeCount(skillCount) || !isPointShopSafeCount(restoredCount)) throw new Error("시장 스킬 반환 수량 확인 필요: " + listing.id);
+        // 시장 보관분 반환은 획득 한도로 자르지 않는다. 구매의 공간 검사는 명령 진입 흐름에서 유지한다.
+        skillBag[skillName] = restoredCount;
         return;
     }
     if (listing.type === "pendant") {
