@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.796"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.797"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -34476,13 +34476,24 @@ function readPublishedMemberSplitStore(marker, kind) {
     var revision = kind === "raid" ? marker.raidRevision : marker.logsRevision;
     var store = readMemberSplitStore(getMemberSplitStorePath(kind, revision), kind);
     if (store.id === marker.id && store.revision === revision) return store;
+    var found = ["선택 슬롯=" + store.revision]; // 누락된 공개 차수와 실제 보관 차수를 함께 진단
     for (var generation = 1; generation <= 2; generation++) {
         var backupPath = getMemberSplitBackupPath(kind, generation);
         if (!new java.io.File(backupPath).exists()) continue;
         var backup = readMemberSplitStore(backupPath, kind);
         if (backup.id === marker.id && backup.revision === revision) return backup;
+        found.push(generation + "차 백업=" + backup.revision);
     }
-    throw new Error("회원 파일과 분리 파일의 버전이 일치하지 않습니다: " + kind);
+    throw new Error("회원 파일과 분리 파일의 버전이 일치하지 않습니다: " + kind + " (필요=" + revision + ", " + found.join(", ") + ")");
+}
+
+// 회원 원본을 복구하기 전에 참조하는 레이드·로그 저장본이 모두 존재하는지 검증하는 함수
+function validateMemberSplitRecovery(data, path) {
+    if (resolveActiveDataPath(path) !== resolveActiveDataPath(filePath)) return;
+    var marker = getMemberSplitMarker(data);
+    if (!marker || marker.phase !== "COMPLETE") return;
+    readPublishedMemberSplitStore(marker, "raid");
+    readPublishedMemberSplitStore(marker, "logs");
 }
 
 // 일반 정보 조회에 필요한 레이드 상태와 우승 횟수만 회원 파일에 남기는 함수
@@ -35043,6 +35054,7 @@ function restoreManagedJsonFromBackup(path, reason) {
         try {
             var backupText = FileStream.read(backupPath, "utf-8");
             var restoredData = parseManagedJsonContent(backupText, backupPath);
+            validateMemberSplitRecovery(restoredData, path);
             writeVerifiedJsonFile(path, backupText, true);
             debuggerLog("[RECOVERY : " + reason + "] " + path + " <- " + backupPath);
             notifyManagedJsonRecovery(path, backupPath, reason);
@@ -35064,6 +35076,7 @@ function restoreManagedJsonFromSelectedBackup(path, generation, reason) {
     if (!backupFile.exists()) throw new Error(generation + "차 백업 파일이 없습니다.");
     var backupText = FileStream.read(backupPath, "utf-8");
     var restoredData = parseManagedJsonContent(backupText, backupPath);
+    validateMemberSplitRecovery(restoredData, path);
     writeVerifiedJsonFile(path, backupText, true);
     notifyManagedJsonRecovery(path, backupPath, reason);
     return { data: restoredData, backupPath: backupPath };
@@ -35257,7 +35270,8 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
                                 var currentPrimaryBackupText = FileStream.read(managedBackupPath, "utf-8");
                                 parseManagedJsonContent(currentPrimaryBackupText, managedBackupPath);
                                 if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentPrimaryBackupText, 2, 1);
-                                writeVerifiedJsonFile(secondaryManagedBackupPath, currentPrimaryBackupText, true);
+                                if (path === resolveActiveDataPath(filePath)) writeMemberSplitSlot(secondaryManagedBackupPath, currentPrimaryBackupText);
+                                else writeVerifiedJsonFile(secondaryManagedBackupPath, currentPrimaryBackupText, true);
                             } catch (backupRotationError) {
                                 if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" && getMemberSplitMarker(parseJsonContent(currentJsonText, path))) throw backupRotationError;
                                 debuggerLog("[WARN : managed backup rotation] " + managedBackupPath + " " + backupRotationError.toString());
@@ -35265,19 +35279,27 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
                         }
                     } else if (!secondaryManagedBackupFile.exists()) {
                         if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 2, 0, false, reuseMemberBackup ? verifiedMemberBackup.data : null);
-                        writeVerifiedJsonFile(secondaryManagedBackupPath, currentJsonText, true);
+                        if (path === resolveActiveDataPath(filePath)) writeMemberSplitSlot(secondaryManagedBackupPath, currentJsonText);
+                        else writeVerifiedJsonFile(secondaryManagedBackupPath, currentJsonText, true);
                     }
                 }
                 if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 1, 0, false, reuseMemberBackup ? verifiedMemberBackup.data : null);
-                writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
+                // 회원 백업도 분리 백업과 같은 트랜잭션에 등록해 실패 시 함께 되돌린다.
+                if (path === resolveActiveDataPath(filePath)) writeMemberSplitSlot(managedBackupPath, currentJsonText);
+                else writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
             } else {
                 seedManagedBackup = true;
             }
         }
 
         if (seedManagedBackup) {
-            writeVerifiedJsonFile(managedBackupPath, jsonText, true);
-            if (secondaryManagedBackupPath) writeVerifiedJsonFile(secondaryManagedBackupPath, jsonText, true);
+            if (path === resolveActiveDataPath(filePath)) {
+                writeMemberSplitSlot(managedBackupPath, jsonText);
+                if (secondaryManagedBackupPath) writeMemberSplitSlot(secondaryManagedBackupPath, jsonText);
+            } else {
+                writeVerifiedJsonFile(managedBackupPath, jsonText, true);
+                if (secondaryManagedBackupPath) writeVerifiedJsonFile(secondaryManagedBackupPath, jsonText, true);
+            }
         }
         if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
             throw new Error("Current JSON file backup failed: " + path);

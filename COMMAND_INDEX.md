@@ -7417,6 +7417,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Strictly validates the selected backup and safely replaces only the selected original without rotating or overwriting either backup generation.
+- `validateMemberSplitRecovery` checks the selected member backup's exact raid/log split ID and revisions before replacing the original; unmatched or malformed split files remain errors. The existing automatic managed recovery applies the same check to each candidate.
+- Normal member saves register both member backup generations with `writeMemberSplitSlot`, matching `preserveMemberSplitBackupStores`; transaction rollback restores the member and split backups together.
 
 ## AI Notes
 
