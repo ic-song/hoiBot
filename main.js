@@ -53017,7 +53017,7 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
     if (!rows.length) out += "📭 판매 중인 물품이 없습니다.";
     for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
-        out += "\n[" + row.id + "] " + getFreeMarketItemText(row) + "\n└ 💎 " + numberWithCommas(row.price) + "개" + (row.quantity > 1 ? " (개당 " + numberWithCommas(row.price / row.quantity) + ")" : "") + " | [" + checkRank(data, petData, guildData, row.seller) + "]\n└ " + formatFreeMarketDisplayTime(row.createdAt, row.createdAtMs) + "\n";
+        out += "\n[" + row.id + "] " + getFreeMarketItemText(row) + "\n└ 💎 " + numberWithCommas(row.price) + "개" + (row.quantity > 1 ? " (개당 " + formatFreeMarketUnitPrice(row.price, row.quantity) + ")" : "") + " | [" + checkRank(data, petData, guildData, row.seller) + "]\n└ " + formatFreeMarketDisplayTime(row.createdAt, row.createdAtMs) + "\n";
     }
     return out;
 }
@@ -53298,13 +53298,18 @@ function formatFreeMarketPoint(price) {
     return text;
 }
 
+// 표시용 개당 가격을 반올림한 정수와 천 단위 쉼표로 반환하는 함수
+function formatFreeMarketUnitPrice(price, quantity) {
+    return numberWithCommas(Math.round(price / quantity));
+}
+
 // 자유시장 목록에 표시할 개당 가격 문자열 반환 함수
 function formatFreeMarketUnitPriceText(listing) {
     if (!listing) return "";
     var quantity = parseInt(listing.quantity, 10) || 0;
     var price = parseInt(listing.price, 10) || 0;
     if (quantity < 2 || price <= 0) return "";
-    return "[개당 " + (listing.currency === "DIAMOND" ? "💎" + numberWithCommas(price / quantity) : "기존 포인트 🅟" + numberWithCommas(price / quantity)) + "]";
+    return "[개당 " + (listing.currency === "DIAMOND" ? "💎" : "기존 포인트 🅟") + formatFreeMarketUnitPrice(price, quantity) + "]";
 }
 
 // 자유시장 표시용 월/일 시각 문자열 반환 함수
