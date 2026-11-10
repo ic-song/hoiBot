@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.814"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.815"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -3098,6 +3098,7 @@ blockedNicknameTerms: [
         memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
         memberFeeTag: "자회원🏪(수수료 10%)",
         minPrice: 10, messageChars: 12000, carrotCompensation: 50000000,
+        unitPriceDecimals: 2, // 개당 안내값의 기본 소수 자릿수·불일치 시 근삿값 표시
         furnitureGrades: ["리브", "쁘띠", "부띠끄", "시그니엘", "그랑 루미에르", "로열 루미에르", "아르카나 루미에르"],
         searchGradeAliases: { "로열": "로열 루미에르", "아르카나": "아르카나 루미에르" },
         petSkillSearchAliases: ["펫스킬북", "펫스킬"],
@@ -4089,7 +4090,6 @@ function isResponseAdmissionDenied(room, msg, sender, isGroupChat, event) {
     var isDev = isDevCommandMessage(msg), command = getServerRaidAdmissionCommand(msg);
     var ctx = createCommandContext(isDev, room), previous = enterCommandContext(ctx);
     try {
-        if (/^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(command) && !isMaster(sender)) { Api.replyRoom(room, ctx.header(buildDiamondShopDirectHeader(sender) + "❌ Master 전용 명령어입니다.\n/다이아상점에서 일반 상품을 확인해주세요.")); return true; }
         if (isRetiredCarrotCommand(command)) { Api.replyRoom(room, "🥕 당근 개인거래와 신규 지급은 종료됐습니다. 자유시장을 이용해주세요."); return true; }
         if (/^\/자유시장전환(?:\s|$)/.test(command) && !isMaster(sender)) return true;
         if (isServerRaidCommand(command)) {
@@ -4309,6 +4309,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        var diamondPermissionCommand = getServerRaidAdmissionCommand(msg);
+        if (/^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(diamondPermissionCommand) && !isMaster(sender)) {
+            var diamondPermissionData = loadJsonFile(filePath, "bootstrap"), diamondPermissionGuild = loadJsonFile(guildPath);
+            var diamondPermissionNick = checkRank(diamondPermissionData, null, diamondPermissionGuild, sender);
+            createContextReplier(replier, ctx).reply(buildDiamondShopDirectHeader(diamondPermissionNick) + "❌ Master 전용 명령어입니다.\n/다이아상점에서 일반 상품을 확인해주세요.");
+            return; // 공통 초기화·저장 전에 기존 권한을 확인하고 실제 전체 닉네임으로 안내
+        }
         if (request.operatorReadDiagnostic) {
             request.operatorReadDiagnostic.admin = Admins.indexOf(sender) !== -1;
             request.operatorReadDiagnostic.master = Master.indexOf(sender) !== -1;
@@ -5868,6 +5875,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var reuseEntryGuildData = commonGuildTransaction && territoryEntryTransaction === commonGuildTransaction && !commonGuildTransaction.failed && !commonGuildTransaction.rollingBack && !(commonGuildSaveEntry && commonGuildSaveEntry.saved);
         var guildData = reuseEntryGuildData ? territoryEntryGuildData : loadJsonFile(guildPath); // 복구 경계·길드 저장이 없을 때만 같은 요청의 검증 원본 재사용
         territoryEntryGuildData = null;
+        if (isFreeMarketV2Command(msg) || /^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|시세설정|조합(?:법|선택)?)(?:\s|$)/.test(msg) || msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
+            replier = createRequesterReplier(replier, checkRank(data, petData, guildData, sender), sender);
+        }
         if (msg === "/스케줄") {
             replier.reply(buildDailyScheduleMessage(data, petData, guildData, sender));
             return;
@@ -6776,8 +6786,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             } catch (liveError) { if (livePersisting || getDataSaveTransaction() && getDataSaveTransaction().failed) throw liveError; replier.reply(liveHeader + "⚠️ " + String(liveError.message || liveError)); return; }
         }
         if (/^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|시세설정)(?:\s|$)/.test(msg)) {
-            var diamondReplyBase = replier;
-            replier = { reply: function (text) { return diamondReplyBase.reply((msg === "/다이아상점" ? "" : buildDiamondShopDirectHeader(sender)) + text); } };
             var diamondManage = /^\/다이아(?:명령어|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(msg);
             if (diamondManage && !isMaster(sender)) { replier.reply("❌ Master 전용 명령어입니다."); return; }
             if (msg === "/다이아명령어") {
@@ -52860,6 +52868,17 @@ function formatMatzangRestRemainingTime(restUntil) {
 }
 
 // 유저 다이아 보유량 필드를 보장하는 함수
+// 직접 응답의 입력자 헤더를 전체 닉네임으로 통일하고 이미 있는 동일 헤더는 중복하지 않는 함수
+function createRequesterReplier(replier, nickname, sender) {
+    var header = "[" + nickname + "] 님";
+    var headers = [header, "[" + nickname + "]님", "[" + sender + "] 님", "[" + sender + "]님"];
+    return { requesterHeaderLength: header.length + 1, reply: function (message) {
+        var text = String(message), end = text.indexOf("\n"), firstLine = end < 0 ? text : text.substring(0, end);
+        text = headers.indexOf(firstLine) >= 0 ? header + text.substring(firstLine.length) : header + "\n" + text;
+        return replier.reply(text);
+    } };
+}
+
 // 한국 시각 00:01을 경계로 다이아상점 운영일 번호를 계산하는 함수
 // 직접 명령 응답에서 실제 입력자 닉네임의 기존 대괄호를 보존하는 함수
 function buildDiamondShopDirectHeader(sender) {
@@ -53453,7 +53472,7 @@ function searchFreeMarketV2(market, query, recentFirst) {
 }
 // 사용자 추가 입력 없이 기존 전체보기와 자동 이어보내기로 목록을 표시하는 함수
 function replyFreeMarketV2(replier, message) {
-    var limit = GLOBAL_CONFIG.freeMarket.messageChars, lines = String(message).split("\n"), chunk = "";
+    var limit = Math.max(1, GLOBAL_CONFIG.freeMarket.messageChars - (replier.requesterHeaderLength || 0)), lines = String(message).split("\n"), chunk = "";
     for (var i = 0; i < lines.length; i++) {
         if (chunk.length && chunk.length + lines[i].length + 1 > limit) { replier.reply(chunk); chunk = ""; }
         chunk += (chunk ? "\n" : "") + lines[i];
@@ -53846,11 +53865,16 @@ function formatFreeMarketPoint(price) {
     return text;
 }
 
-// 표시용 개당 가격을 반올림한 정수와 천 단위 쉼표로 반환하는 함수
+// 실제 묶음 총액의 개당 값을 표시하고 반올림한 경우에만 근삿값임을 알리는 함수
 function formatFreeMarketUnitPrice(price, quantity) {
     if (!isPointShopSafeCount(price) || !isPointShopSafeCount(quantity) || quantity < 1) throw new Error("시장 개당 가격 표시 수량 오류");
-    var rounded = Math.floor(price / quantity) + (price % quantity >= Math.ceil(quantity / 2) ? 1 : 0); // 정수 몫·나머지로 반올림 경계 판정
-    return numberWithCommas(rounded);
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return formatFreeMarketUnitPrice(price, quantity); });
+    var amount = new java.math.BigDecimal(String(price)), count = new java.math.BigDecimal(String(quantity));
+    var decimal = amount.divide(count, GLOBAL_CONFIG.freeMarket.unitPriceDecimals, java.math.RoundingMode.HALF_UP);
+    if (price > 0 && decimal.signum() === 0) decimal = amount.divide(count, new java.math.MathContext(GLOBAL_CONFIG.freeMarket.unitPriceDecimals + 1, java.math.RoundingMode.HALF_UP)); // 매우 작은 단가도 0으로 표시하지 않음
+    var exact = decimal.multiply(count).compareTo(amount) === 0; // 표시한 단가와 실제 총액이 정확히 일치하는지 확인
+    var parts = String(decimal.stripTrailingZeros().toPlainString()).split(".");
+    return (exact ? "" : "≈") + numberWithCommas(parts[0]) + (parts.length > 1 ? "." + parts[1] : "");
 }
 
 // 자유시장 목록에 표시할 개당 가격 문자열 반환 함수
