@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.807"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.808"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -102,6 +102,7 @@ const PET_SKILL_COMPAT_GROUPS = [
     ["기도", "신성한 기도", "호월신의 총애"]
 ];
 const PET_SKILL_FIXED_ACTUAL_RATES = {
+    SSS: 0.15,
     SS: 0.1,
     S: 0.3,
     A: 0.4,
@@ -109,6 +110,7 @@ const PET_SKILL_FIXED_ACTUAL_RATES = {
     C: 1.5
 };
 const PET_SKILL_LIST = [
+    { name: "삼성전자", grade: "SSS", rate: 0.15, raidExp: 3000000, castleExp: 3000000, effect: "호이의 바램입니다. 매력만큼 상승하길 기원하는 마음이 깃들어 있습니다. 육배만전자 가즈아!\n장착 시 레이드매력 300만과 캐슬매력 300만, 총 종합매력 600만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "경제사범", grade: "한정판", limitedEdition: true, openable: false, effect: "누군가는 말합니다.\n“적당한 사기는 사기꾼이라 부르지만,\n그 규모가 조 단위가 되면 경제사범이라 부릅니다.”\n\n🔐 장착 시 금고 도전 횟수 +4회\n※ 금고털이범과 효과 중복 불가" },
     { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 경제사범과 효과 중복 불가" },
 
@@ -123,6 +125,7 @@ const PET_SKILL_LIST = [
     { name: "탈세자", grade: "SS", rate: 0.1, effect: "/상점의 /구매로 상품 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "[엘리트] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +150만 · 레이드매력 +150만\n└ 종합매력 +300만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +75만 · 레이드매력 +75만\n└ 종합매력 +150만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "망작귀의 지팡이", grade: "SS", rate: 0.1, raidExp: 2000000, castleExp: 2000000, effect: "상표권에 걸릴까봐 망작귀로 정했습니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
     { name: "느그 집 마련의 꿈", grade: "S", effect: "장착 시 별채의 합산 버프가 10%p 증가합니다.\n펫스킬을 해제하면 해당 스킬로 적용된 추가 매력 버프가 제거됩니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
@@ -138,6 +141,7 @@ const PET_SKILL_LIST = [
     { name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
     { name: "창조림", grade: "S", rate: 1.0, raidExp: 500000, castleExp: 500000, charmCondition: "creationMiniPet", effect: "[창조] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +50만 · 레이드매력 +50만\n└ 종합매력 +100만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +25만 · 레이드매력 +25만\n└ 종합매력 +50만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다." },
     { name: "엑스칼리버", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "선택받은 자만이 사용할 수 있는 전설의 성검입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "강철왁뿌볼", grade: "S", rate: 0.3, raidExp: 2000000, castleExp: 2000000, effect: "맞으면 저승사자랑 하이파이브 할 수 있습니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
 
     { name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
     { name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
@@ -2381,9 +2385,9 @@ const GLOBAL_CONFIG = {
         }
     },
     petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
-        gradeOrder: ["SS", "S", "A", "B", "C", "D", "한정판"],
-        maxCounts: { SS: 5, S: 10, A: 20, B: 50, C: 100, D: 200, "한정판": 10 },
-        rewardCounts: { SS: 500, S: 150, A: 80, B: 50, C: 20, D: 10, "한정판": 300 },
+        gradeOrder: ["SSS", "SS", "S", "A", "B", "C", "D", "한정판"],
+        maxCounts: { SSS: 3, SS: 5, S: 10, A: 20, B: 50, C: 100, D: 200, "한정판": 10 },
+        rewardCounts: { SSS: 1500, SS: 500, S: 150, A: 80, B: 50, C: 20, D: 10, "한정판": 300 },
         rewardItemName: "홈뱃지 큐브💟",
         maxSelectionCount: 10
     },
@@ -7528,7 +7532,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (msg === "/펫스킬확률") {
                     var rateMsg = "📙 펫스킬북 확률표 📙\n\n" + allsee + "\n";
                     var totalPercent = 0;
-                    var petSkillGrades = ["SS", "S", "A", "B", "C", "D"];
+                    var petSkillGrades = ["SSS", "SS", "S", "A", "B", "C", "D"];
 
                     for (var pg = 0; pg < petSkillGrades.length; pg++) {
                         var currentGrade = petSkillGrades[pg];
@@ -7734,7 +7738,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     var skillResultKeys = Object.keys(pickedSkillMap).sort(function (a, b) {
                         var ga = pickedSkillMap[a].grade;
                         var gb = pickedSkillMap[b].grade;
-                        var gradeOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5 };
+                        var gradeOrder = { SSS: 0, SS: 1, S: 2, A: 3, B: 4, C: 5, D: 6 };
                         if (gradeOrder[ga] !== gradeOrder[gb]) return gradeOrder[ga] - gradeOrder[gb];
                         return pickedSkillMap[a].name.localeCompare(pickedSkillMap[b].name, "ko");
                     });
@@ -31310,6 +31314,7 @@ replier.reply(
                             }
                         }
 
+                        petSkillCollectionSave = ensurePetSkillCollection(petSkillData, sender); // 재료 차감 시 이름 정규화로 교체된 현재 컬렉션을 사용
                         var petSkillCollectionAfter = petSkillCollectionBefore + 1;
                         var petSkillCollectionReward = GLOBAL_CONFIG.petSkillCollection.rewardCounts[petSkillCollectionCurrentSkillData.grade];
                         petSkillCollectionSave[petSkillCollectionPicked.name] = petSkillCollectionAfter;
@@ -55227,7 +55232,7 @@ function getOpenablePetSkillCountByGrade(grade) {
     return count;
 }
 
-// SS~C 등급의 스킬별 고정 확률 합계를 반환
+// SSS~C 등급의 스킬별 고정 확률 합계를 반환
 function getPetSkillFixedActualRateTotal() {
     var totalRate = 0;
     for (var grade in PET_SKILL_FIXED_ACTUAL_RATES) {
@@ -55244,9 +55249,9 @@ function getPetSkillRandomWeight(skillData) {
     if (typeof fixedActualRate === "number") return fixedActualRate;
     if (skillData.grade !== "D") return 0;
     var dGradeCount = getOpenablePetSkillCountByGrade("D");
-    var fixedActualRateTotal = getPetSkillFixedActualRateTotal(); // SS~C에 배정된 전체 확률
+    var fixedActualRateTotal = getPetSkillFixedActualRateTotal(); // SSS~C에 배정된 전체 확률
     if (fixedActualRateTotal > 100) throw new Error("Invalid pet skill fixed actual rate total");
-    var dGradeRemainRate = 100 - fixedActualRateTotal; // SS~C 배정 후 D등급에 남는 전체 확률
+    var dGradeRemainRate = 100 - fixedActualRateTotal; // SSS~C 배정 후 D등급에 남는 전체 확률
     return dGradeCount > 0 ? dGradeRemainRate / dGradeCount : 0;
 }
 
