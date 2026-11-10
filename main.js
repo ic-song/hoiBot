@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.810"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.811"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -7622,7 +7622,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         return;
                     }
                     // 스킬명과 회원 닉네임이 같아도 스킬 정보 조회를 우선한다.
-                    var skillInfo = getPetSkillData(skillQuery);
+                    var skillInfo = findPetSkillInfoData(skillQuery);
                     if (!skillInfo && data.member[skillQuery] && (isAdmin(sender) || isMaster(sender))) {
                         replier.reply(formatSkillBagMessage(data, petData, petSkillData, guildData, skillQuery));
                         return;
@@ -54332,6 +54332,25 @@ function getPetSkillData(skillName) {
         }
     }
     return null;
+}
+
+// 정보 조회에서만 공백을 무시하고 전체 스킬명·기존 별칭·티어 조회명을 대조하는 함수
+function findPetSkillInfoData(skillName) {
+    var normalized = normalizePetSkillName(skillName);
+    var query = normalizePetSkillName(normalized.replace(/\s/g, "")).replace(/\s/g, ""); // 공백 제거 후 기존 별칭도 다시 표준화
+    if (!query) return null;
+    var exact = getPetSkillData(normalized);
+    if (exact) return exact;
+    var matched = null;
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        var skillData = PET_SKILL_LIST[i];
+        var name = normalizePetSkillName(skillData.name).replace(/\s/g, "");
+        var tierName = getTierPetSkillSearchName(skillData).replace(/\s/g, "");
+        if (query !== name && query !== tierName) continue;
+        if (matched && matched !== skillData) return null; // 공백 제거 뒤 다른 스킬끼리 겹치면 임의 선택하지 않음
+        matched = skillData;
+    }
+    return matched;
 }
 
 // 기도 계열 펫스킬의 설정을 이름으로 조회하는 함수
