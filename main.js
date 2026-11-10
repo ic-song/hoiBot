@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.800"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.801"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3090,6 +3090,7 @@ blockedNicknameTerms: [
         minPrice: 10, messageChars: 12000, carrotCompensation: 50000000,
         furnitureGrades: ["리브", "쁘띠", "부띠끄", "시그니엘", "그랑 루미에르", "로열 루미에르", "아르카나 루미에르"],
         searchGradeAliases: { "로열": "로열 루미에르", "아르카나": "아르카나 루미에르" },
+        petSkillSearchAliases: ["펫스킬북", "펫스킬"],
         searchCategories: { "일반아이템": "bag", "아이템": "bag", "미니펫": "miniPet", "펜던트": "pendant", "가구": "furniture", "펫스킬": "skill", "패키지": "package" },
         categoryLabels: { bag: "일반 아이템", furniture: "가구", miniPet: "미니펫", package: "패키지", pendant: "펜던트", skill: "펫스킬" },
         blockedItems: ["자동탐험권🌄", "자동일퀘권📝", "자유시장회원권🏪", "티어 승급티켓🎟", "고급 티어 승급티켓🎫", "펫 친밀도🐾", "다이아상자💎", "1억포인트상자🪙", "럭키박스🍀", "다이아상자💎(소)", "다이아상자💎(중)", "다이아상자💎(대)"],
@@ -52654,7 +52655,7 @@ function getDiamondShopDailyTotals(log, day) {
 }
 // 검색어를 입력하지 않은 시장 검색에서 종류·이름·좁히기 예시를 안내하는 함수
 function buildFreeMarketSearchGuide() {
-    return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지\n\n🔎 이름 검색\n/자유시장검색 카오스\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.\n\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n\n입력: /자유시장검색 검색어";
+    return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지\n\n🔎 이름 검색\n/자유시장검색 카오스\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.\n\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북 / 펫 스킬북 / 펫스킬\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n\n입력: /자유시장검색 검색어";
 }
 // 안전 정수 가격의 정수 퍼센트 수수료를 곱셈 오차 없이 기존 반올림 규칙대로 계산하는 함수
 function calculateFreeMarketTradeFee(price, rate) {
@@ -53111,6 +53112,11 @@ function parseFreeMarketSearch(query) {
             category = "bag"; remaining = remaining.replace(bagLabel, ""); break;
         }
     }
+    categoryWords.sort(function (a, b) {
+        var ai = inputWords.indexOf(a), bi = inputWords.indexOf(b); // 여러 분류 단어가 있으면 먼저 명시한 분류를 적용
+        if (ai !== -1 || bi !== -1) return ai === -1 ? 1 : bi === -1 ? -1 : ai - bi;
+        return b.length - a.length;
+    });
     var categoryText = remaining; // 등급 후보가 상품명인 경우 원래 이름 순서를 복원할 기준
     for (var i = 0; i < words.length; i++) {
         var word = words[i];
@@ -53135,7 +53141,7 @@ function parseFreeMarketSearch(query) {
         remaining = categoryText;
         for (var gradeIndex = 0; gradeIndex < grades.length; gradeIndex++) remaining = remaining.split(grades[gradeIndex]).join("");
     }
-    return { text: text, category: category, grades: grades, name: remaining, literalName: categoryText };
+    return { text: text, category: category, grades: grades, name: remaining, literalName: categoryText, petSkillRelated: GLOBAL_CONFIG.freeMarket.petSkillSearchAliases.indexOf(text) !== -1 };
 }
 // 나눗셈 반올림·교차곱 오버플로 없이 정수 분수의 실제 개당 가격을 비교하는 함수
 function compareFreeMarketUnitPrices(a, b) {
@@ -53154,6 +53160,8 @@ function searchFreeMarketV2(market, query) {
     var rows = getFreeMarketActiveListings(market), search = parseFreeMarketSearch(query);
     return rows.filter(function (row) {
         if (!search.text) return true;
+        // 세 단독 검색어는 개별 스킬과 스킬북·조각·관련 가방/패키지를 함께 찾는다.
+        if (search.petSkillRelated) return row.type === "skill" || row.type === "bag" && normalizeFreeMarketSearchText(row.itemName).indexOf("펫스킬") !== -1;
         if (search.category && getFreeMarketCategory(row) !== search.category) return false;
         var name = normalizeFreeMarketSearchText(row.itemName), grade = getFreeMarketSearchGrade(row);
         if (matchesFreeMarketFullName(row, search, grade)) return true;
