@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.802"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.803"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1633,7 +1633,7 @@ const GLOBAL_CONFIG = {
             { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
             { title: "펫홈·가구", emoji: "🏡", intro: "내 펫홈과 가구 효과를 한눈에 확인해요!", learn: ["보유 가구와 장착 가구를 구분해요.", "집 면적·장착칸·가구 효과를 구분해요.", "가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.", "루미에르 빌리지와 별채의 역할을 알아봐요."], commands: ["/펫홈", "/가구정보"], check: "장착 상태와 가구 효과를 어디서 확인하나요?", note: "현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요." },
             { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 6개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령8억·방어3억, 기타 점령5억·방어2억, 공격 실패1억이에요. 특수광산 승리 시 조각1개 또는 길드창고 다이아1개를 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공30%·변경하루1회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
-            { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매. 개인 당근거래는 종료됐어요. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
+            { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매상품. 개인 당근거래는 종료됐어요. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
             { title: "홈뱃지·큐브", emoji: "💟", intro: "홈뱃지 옵션과 큐브 사용 전 확인 사항을 알아봐요!", learn: ["/홈뱃지에서 보유 목록과 장착 상태를, /홈뱃지정보 이름에서 옵션·효과를 확인해요.", "/홈뱃지장착 번호와 /홈뱃지해제 뱃지번호의 안내·확인 절차를 알아봐요.", "/홈뱃지큐브 안내에서 슬롯·옵션 번호·사용 횟수와 보유량·소모량·확률·보호 조건을 확인해요.", "수치와 적용 조건은 교육 시점의 실제 홈뱃지·큐브 안내를 기준으로 설명해요."], commands: ["/홈뱃지", "/홈뱃지정보 이름", "/홈뱃지큐브", "/큐브확률"], check: "내 홈뱃지 옵션과 큐브 대상·소모량·확률을 어디에서 확인하나요?", note: "선택 안내: /홈뱃지큐브 슬롯 옵션 사용횟수. 현재 화면의 슬롯·옵션 번호를 먼저 확인해요. 뱃지·큐브가 없으면 GM 예시로 배우며 실제 큐브 사용은 완료 조건이 아니에요." },
             { title: "패키지 상품 확인", emoji: "📘", intro: "보유 중인 패키지를 확인하는 방법을 알아봐요!", learn: ["/패키지가방에서 보유 중인 패키지 상품을 확인할 수 있어요.", "패키지 상품의 이름과 보유 수량을 확인하는 방법을 알아봐요."], commands: ["/패키지가방"], check: "보유 중인 패키지 상품의 이름과 수량을 어디에서 확인하나요?", note: "후원은 선택 사항이며 실제 후원·결제·후원 이력 없이 설명만으로 교육을 완료할 수 있어요." }
         ]
@@ -3082,6 +3082,7 @@ blockedNicknameTerms: [
         dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, combinePoint: 350000000
     },
     freeMarket: { // 자유시장 설정
+        mySalesHistoryLimit: 10, // 본인의 최근 판매 완료 기록 표시 개수
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
         tradeFeeRate: 0.17, // 자유시장 기본 거래 수수료율
@@ -8103,11 +8104,12 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         data = loadJsonFile(filePath);
                     }
                     if (msg === "/자유시장검색") { replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buildFreeMarketSearchGuide()); return; }
-                    if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
-                        var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "", msg === "/자유시장" || msg === "ㅈㅈ");
-                        if (msg === "/내판매") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
-                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined)); return;
+                    if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
+                        var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "", msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품");
+                        if (msg === "/내판매상품") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
+                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매상품" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined)); return;
                     }
+                    if (msg === "/내판매기록") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, sender)); return; }
                     if (msg === "자유시장 판매가이드") { replier.reply(buildFreeMarketV2Guide()); return; }
                     if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2)); return; }
                     if (msg === "/자유시장정보" || /^\/자유시장정보\s+\d+$/.test(msg)) {
@@ -53007,7 +53009,7 @@ function requireFreeMarketSource(market) {
 
 // 자유시장 2.0 대상 명령을 실행 경계로 구분하는 함수
 function isFreeMarketV2Command(msg) {
-    return /^(?:\/자유시장(?:구매|취소|거래현황|검색|가격수정|정보|전환|생성)?|\/내판매|\/가방거래등록|\/미니펫거래등록|\/가구거래등록|\/스킬거래등록|\/펜던트거래등록|\/펜던트거래정보|\/거래소강제취소|\/거래확인)(?:\s|$)/.test(msg) || msg === "ㅈㅈ" || msg === "ㅅㅅ" || msg === "자유시장 판매가이드" || msg === "자유시장거래" || msg === "자유시장거래취소";
+    return msg === "/내판매상품" || msg === "/내판매기록" || /^(?:\/자유시장(?:구매|취소|거래현황|검색|가격수정|정보|전환|생성)?|\/가방거래등록|\/미니펫거래등록|\/가구거래등록|\/스킬거래등록|\/펜던트거래등록|\/펜던트거래정보|\/거래소강제취소|\/거래확인)(?:\s|$)/.test(msg) || msg === "ㅈㅈ" || msg === "ㅅㅅ" || msg === "자유시장 판매가이드" || msg === "자유시장거래" || msg === "자유시장거래취소";
 }
 // 종료된 당근 개인 이전·직접 지급 명령을 판별하는 함수
 function isRetiredCarrotCommand(msg) {
@@ -53201,7 +53203,7 @@ function replyFreeMarketV2(replier, message) {
 }
 // 검색 결과·내 판매·전체 매물을 같은 실제 거래번호와 가격으로 표시하는 함수
 function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery) {
-    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n💰 수수료: 일반 17% / 회원권 10%\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매\n📖 자유시장 판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
+    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n💰 수수료: 일반 17% / 회원권 10%\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 자유시장 판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
     if (searchQuery !== undefined) out = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + out;
     if (!rows.length) out += searchQuery !== undefined ? "검색 결과가 없습니다.\n" + searchQuery : "📭 판매 중인 물품이 없습니다.";
     var previousCategory = null;
@@ -53216,7 +53218,7 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
 }
 // 시장 검색·등록·구매를 위한 기본 양식을 안내하는 함수
 function buildFreeMarketV2Guide() {
-    return "📦 호이월드 자유시장 판매가이드\n━━━━━━━━━━━━\n💎 킹 이상 · 다이아 전용 · 등록비 무료\n💰 일반 17% / 회원권 10% · 최소 10다이아(묶음 전체 금액)\n/가방거래등록 번호 갯수 다이아가격\n/미니펫거래등록 번호 갯수 다이아가격\n/가구거래등록 번호 갯수 다이아가격\n/스킬거래등록 번호 갯수 다이아가격\n/펜던트거래등록 번호 다이아가격\n/자유시장구매 거래번호\n/거래확인 1 또는 /거래확인 2\n/자유시장취소 거래번호\n/내판매\n/자유시장가격수정 거래번호 다이아가격\n/자유시장정보 거래번호\n/자유시장검색 검색어\n예: 펜던트 / 아이템 펜던트 강화석 / 미니펫 창조\n※ 다이아·다이아상자 거래 등록 및 개인거래는 불가합니다.";
+    return "📦 호이월드 자유시장 판매가이드\n━━━━━━━━━━━━\n💎 킹 이상 · 다이아 전용 · 등록비 무료\n💰 일반 17% / 회원권 10% · 최소 10다이아(묶음 전체 금액)\n/가방거래등록 번호 갯수 다이아가격\n/미니펫거래등록 번호 갯수 다이아가격\n/가구거래등록 번호 갯수 다이아가격\n/스킬거래등록 번호 갯수 다이아가격\n/펜던트거래등록 번호 다이아가격\n/자유시장구매 거래번호\n/거래확인 1 또는 /거래확인 2\n/자유시장취소 거래번호\n/내판매상품\n🤑 /내판매기록\n/자유시장가격수정 거래번호 다이아가격\n/자유시장정보 거래번호\n/자유시장검색 검색어\n예: 펜던트 / 아이템 펜던트 강화석 / 미니펫 창조\n※ 다이아·다이아상자 거래 등록 및 개인거래는 불가합니다.";
 }
 // 가격 수정 전후 구매 확인에서 같은 판매 건·가격·물품인지 확인하는 함수
 function getFreeMarketListingFingerprint(listing) {
@@ -53596,16 +53598,18 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
     return out.trim();
 }
 
-function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData) {
+// 전체 거래현황 또는 본인의 최근 판매 완료 기록을 표시하는 함수
+function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData, seller) {
     freeMarketData = ensureFreeMarketData(freeMarketData);
-    var logs = freeMarketData.completedLogs.slice(0);
+    var logs = freeMarketData.completedLogs.filter(function (log) { return seller === undefined || log.seller === seller; });
     logs.sort(function (a, b) {
         var ta = parseInt(a.completedAtMs || 0, 10);
         var tb = parseInt(b.completedAtMs || 0, 10);
         if (tb !== ta) return tb - ta;
         return (b.id || 0) - (a.id || 0);
     });
-    var out = "🤝 호월 자유시장 거래현황 🤝\n";
+    if (seller !== undefined) logs = logs.slice(0, GLOBAL_CONFIG.freeMarket.mySalesHistoryLimit);
+    var out = seller === undefined ? "🤝 호월 자유시장 거래현황 🤝\n" : "[" + checkRank(data, petData, guildData, seller) + "] 님\n📜 내 판매기록\n";
     out += "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
