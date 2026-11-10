@@ -54364,9 +54364,19 @@ function buildPetHomeFloorExpansion(before, after, completed, homeData, petSkill
     var beforeData = {}, afterData = {};
     beforeData[user] = beforeHome; afterData[user] = afterHome;
     var equipped = getEquippedPetSkillNames(petSkillData, user);
-    var charm = getPetHomeFurnitureCharm(afterData, petSkillData, user, equipped).floorApplied; // 현재 버프를 포함한 확장 후 평수 매력
-    var delta = charm - getPetHomeFurnitureCharm(beforeData, petSkillData, user, equipped).floorApplied; // 같은 버프 기준의 확장 증가분
-    return (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + (completed ? "확장 완료" : "예상 평수") + ": " + before + "평 → " + after + "평\n├ ⚔️ 캐슬매력 +" + numberWithCommas(charm) + " (+" + numberWithCommas(delta) + ")\n├ 👾 레이드매력 +" + numberWithCommas(charm) + " (+" + numberWithCommas(delta) + ")\n└ 💞 평수 누적매력 +" + numberWithCommas(charm * 2);
+    var beforeCharm = getPetHomeFurnitureCharm(beforeData, petSkillData, user, equipped), afterCharm = getPetHomeFurnitureCharm(afterData, petSkillData, user, equipped);
+    var delta = afterCharm.floorApplied - beforeCharm.floorApplied; // 같은 버프 기준의 한 모드 확장 증가분
+    var baseDelta = afterCharm.floor - beforeCharm.floor; // 버프를 제외한 평수 기본 증가분
+    var dreamRate = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? GLOBAL_CONFIG.petHomeVillage.dreamPercent : 0;
+    var villageRate = afterCharm.percent - dreamRate; // 별채 스킬을 제외한 빌리지 레벨 보너스 비율
+    var villageDelta = Math.floor(afterCharm.base * villageRate / 100) - Math.floor(beforeCharm.base * villageRate / 100);
+    var dreamDelta = afterCharm.villageBonus - beforeCharm.villageBonus - villageDelta; // 합산 버프의 정수 절삭 차이는 마지막 스킬분에 포함
+    var interiorDelta = afterCharm.interior - beforeCharm.interior; // 같은 가구 조건에서 평수 확장으로 추가된 인테리어 효과
+    var out = (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + before + "평 → " + after + "평\n\n📈 이번 " + (after - before) + "평 증가분\n├ 기본 +" + numberWithCommas(baseDelta);
+    if (villageRate) out += "\n├ 빌리지(" + villageRate + "%) +" + numberWithCommas(villageDelta);
+    if (dreamRate) out += "\n├ " + GLOBAL_CONFIG.petHomeVillage.dreamSkillName + "(" + dreamRate + "%) +" + numberWithCommas(dreamDelta);
+    if (equipped.indexOf("인테리어 장인") !== -1) out += "\n├ 인테리어 장인(10%) +" + numberWithCommas(interiorDelta);
+    return out + "\n├ ⚔️ 캐슬매력 +" + numberWithCommas(delta) + "\n├ 👾 레이드매력 +" + numberWithCommas(delta) + "\n└ 💞 종합매력 +" + numberWithCommas(delta * 2) + "\n\n🏠 확장 후 평수 누적 매력\n├ ⚔️ 캐슬매력 " + numberWithCommas(afterCharm.floorApplied) + "\n├ 👾 레이드매력 " + numberWithCommas(afterCharm.floorApplied) + "\n└ 💞 종합매력 " + numberWithCommas(afterCharm.floorApplied * 2);
 }
 
 // 확정 직전 현재 평수와 확장 조건을 재검증하는 함수

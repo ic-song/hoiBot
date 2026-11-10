@@ -5,6 +5,12 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 평수 확장 매력 안내
+
+Status: VERIFIED
+
+- `buildPetHomeFloorExpansion`은 미리보기·완료에서 이번 확장의 기본 증가·빌리지 레벨 효과·집 마련 스킬·인테리어 장인 효과를 나눠 표시하고 캐슬/레이드 각각의 실제 증가 및 두 모드 합계를 표시한다. 확장 후 누적 평수 매력은 별도 영역으로 구분한다. 기존 `getPetHomeFurnitureCharm` 계산 결과를 그대로 사용하며 합산 절삭 차이는 집 마련 스킬분에 포함해 증가분 합계를 일치시킨다. 실제 평수·재료·매력 계산과 저장 흐름은 변경하지 않는다.
+
 ## 다이아상점 판매기록 표시
 
 Status: VERIFIED
