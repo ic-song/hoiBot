@@ -54372,11 +54372,13 @@ function buildPetHomeFloorExpansion(before, after, completed, homeData, petSkill
     var villageDelta = Math.floor(afterCharm.base * villageRate / 100) - Math.floor(beforeCharm.base * villageRate / 100);
     var dreamDelta = afterCharm.villageBonus - beforeCharm.villageBonus - villageDelta; // 합산 버프의 정수 절삭 차이는 마지막 스킬분에 포함
     var interiorDelta = afterCharm.interior - beforeCharm.interior; // 같은 가구 조건에서 평수 확장으로 추가된 인테리어 효과
-    var out = (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + before + "평 → " + after + "평\n\n📈 이번 " + (after - before) + "평 증가분\n├ 기본 +" + numberWithCommas(baseDelta);
-    if (villageRate) out += "\n├ 빌리지(" + villageRate + "%) +" + numberWithCommas(villageDelta);
-    if (dreamRate) out += "\n├ " + GLOBAL_CONFIG.petHomeVillage.dreamSkillName + "(" + dreamRate + "%) +" + numberWithCommas(dreamDelta);
-    if (equipped.indexOf("인테리어 장인") !== -1) out += "\n├ 인테리어 장인(10%) +" + numberWithCommas(interiorDelta);
-    return out + "\n├ ⚔️ 캐슬매력 +" + numberWithCommas(delta) + "\n├ 👾 레이드매력 +" + numberWithCommas(delta) + "\n└ 💞 종합매력 +" + numberWithCommas(delta * 2) + "\n\n🏠 확장 후 평수 누적 매력\n├ ⚔️ 캐슬매력 " + numberWithCommas(afterCharm.floorApplied) + "\n├ 👾 레이드매력 " + numberWithCommas(afterCharm.floorApplied) + "\n└ 💞 종합매력 " + numberWithCommas(afterCharm.floorApplied * 2);
+    var out = (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + before + "평 → " + after + "평\n\n📈 이번 " + (after - before) + "평 증가분\n├ ⚔️ 캐슬매력 +" + numberWithCommas(delta) + "\n├ 👾 레이드매력 +" + numberWithCommas(delta) + "\n└ 💞 종합매력 +" + numberWithCommas(delta * 2);
+    var effects = ["평수 기본 +" + numberWithCommas(baseDelta)]; // 적용된 효과만 모아 마지막 줄의 트리 표시를 맞춤
+    if (villageRate) effects.push("빌리지(" + villageRate + "%) +" + numberWithCommas(villageDelta));
+    if (dreamRate) effects.push(GLOBAL_CONFIG.petHomeVillage.dreamSkillName + "(" + dreamRate + "%) +" + numberWithCommas(dreamDelta));
+    if (equipped.indexOf("인테리어 장인") !== -1) effects.push("인테리어 장인(10%) +" + numberWithCommas(interiorDelta));
+    out += "\n\n📙 각 매력의 증가 내역\n" + effects.map(function (effect, index) { return (index === effects.length - 1 ? "└ " : "├ ") + effect; }).join("\n");
+    return out + "\n\n🏠 확장 후 평수 누적 매력\n├ ⚔️ 캐슬매력 " + numberWithCommas(afterCharm.floorApplied) + "\n├ 👾 레이드매력 " + numberWithCommas(afterCharm.floorApplied) + "\n└ 💞 종합매력 " + numberWithCommas(afterCharm.floorApplied * 2);
 }
 
 // 확정 직전 현재 평수와 확장 조건을 재검증하는 함수
@@ -62440,7 +62442,7 @@ var PENDANT_GRADE_TABLE = [
     { name: "탐욕의 펜던트", icon: "🪙", grade: "상급+", rate: 2, charm: 5000000, explore: 1.0, notice: false },
     { name: "운명의 펜던트", icon: "🎲", grade: "최상급", rate: 1.2, charm: 6000000, explore: 1.1, notice: false },
     { name: "심판의 펜던트", icon: "⚖️", grade: "최상급+", rate: 0.6, charm: 7000000, explore: 1.2, notice: false },
-    { name: "왕좌의 펜던트", icon: "👑", grade: "신화", rate: 0.2, charm: 8000000, explore: 1.3, notice: true },
+    { name: "왕좌의 펜던트", icon: "👑", grade: "신화", rate: 0.2, charm: 8000000, explore: 1.3, notice: false },
     { name: "천공의 펜던트", icon: "🪽", grade: "초월", rate: 0.08, charm: 10000000, explore: 1.5, notice: true },
     { name: "창세의 펜던트", icon: "🌠", grade: "창세", rate: 0.02, charm: 15000000, explore: 2.0, notice: true },
     { name: "창조의 펜던트", icon: "🪬", grade: "창조", rate: 0.01, charm: 20000000, explore: 2.5, notice: true }
