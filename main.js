@@ -1154,7 +1154,7 @@ const GLOBAL_CONFIG = {
         "중앙 금광",
         "서부 금광",
         "펫스킬 광산",
-        "다이아광산"
+        "다이아 광산"
     ],
     "rewardPolicy": 3,
     "dailyTickets": 5,
@@ -53616,7 +53616,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
     out += "💰수수료는 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
-    out += "🏪 자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
+    out += "🏪자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
