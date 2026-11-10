@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.805"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.806"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1017,7 +1017,18 @@ var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 �
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
-    premiumExtension: { itemName: "호이패스 프리미엄 30일👑(/호패프리미엄오픈)", days: 30 },
+    passDuration: { // 기존 두 패스의 기간권·미개봉 패키지 정의
+        legacyPremiumItem: "호이패스 프리미엄 30일👑(/호패프리미엄오픈)",
+        legacyPremiumCommand: "/호패프리미엄오픈",
+        tickets: [
+            { key: "hoi", days: 10, command: "/호패10일오픈", itemName: "호이패스 10일🐶(/호패10일오픈)", packageName: "호이패스 10일 패키지🐶" },
+            { key: "hoi", days: 20, command: "/호패20일오픈", itemName: "호이패스 20일🐶(/호패20일오픈)", packageName: "호이패스 20일 패키지🐶" },
+            { key: "hoi", days: 30, command: "/호패30일오픈", itemName: "호이패스 30일🐶(/호패30일오픈)", packageName: "호이패스 30일 패키지🐶" },
+            { key: "premium", days: 10, command: "/호패프리미엄10일오픈", itemName: "호이패스 프리미엄 10일👑(/호패프리미엄10일오픈)", packageName: "호이패스 프리미엄 10일 패키지👑" },
+            { key: "premium", days: 20, command: "/호패프리미엄20일오픈", itemName: "호이패스 프리미엄 20일👑(/호패프리미엄20일오픈)", packageName: "호이패스 프리미엄 20일 패키지👑" },
+            { key: "premium", days: 30, command: "/호패프리미엄30일오픈", itemName: "호이패스 프리미엄 30일👑(/호패프리미엄30일오픈)", packageName: "호이패스 프리미엄 30일 패키지👑" }
+        ]
+    },
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     commandQueue: {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
@@ -5855,16 +5866,20 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(buildDailyScheduleMessage(data, petData, guildData, sender));
             return;
         }
-        if (/^\/호패프리미엄오픈(?:\s|$)/.test(msg)) {
-            var premiumUseActivity = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
-            var premiumUse = applyPremiumExtension(data, petSkillData, premiumUseActivity, sender, msg, getTodaySupportPassDateValue());
-            var premiumUseHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님\n\n";
-            if (!premiumUse.ok) { replier.reply(premiumUseHeader + premiumUse.message); return; }
-            var premiumUseReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier, [petHomeActivityFile]);
+        var passDurationRequest = parsePassDurationRequest(msg);
+        if (passDurationRequest) {
+            var passUseHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님\n\n";
+            if (!passDurationRequest.valid) { replier.reply(passUseHeader + buildPassDurationUsage(passDurationRequest.config)); return; }
+            var passUseActivity = passDurationRequest.config.key === "premium" ? requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)) : null;
+            var passUse = applyPassDurationExtension(data, petSkillData, passUseActivity, sender, passDurationRequest, getTodaySupportPassDateValue());
+            if (!passUse.ok) { replier.reply(passUseHeader + passUse.message); return; }
+            var passUseReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier, [petHomeActivityFile]);
             saveJsonFile(data, filePath);
-            saveJsonFile(petSkillData, petSkillDataPath);
-            saveJsonFile(premiumUseActivity, petHomeActivityFile);
-            premiumUseReply.reply(premiumUseHeader + premiumUse.message);
+            if (passUse.premiumActivated) {
+                saveJsonFile(petSkillData, petSkillDataPath);
+                saveJsonFile(passUseActivity, petHomeActivityFile);
+            }
+            passUseReply.reply(passUseHeader + passUse.message);
             return;
         }
         var halloweenRequest = getHalloweenRequest(msg);
@@ -6745,7 +6760,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 replyFreeMarketV2(replier, diamondHistoryMessage); return;
             }
             if (/^\/다이아상점추가\s+.+$/.test(msg)) {
-                var diamondCatalogItems = loadJsonFile(itemListPath), diamondCatalogPackages = loadJsonFile(packageInfoPath), diamondNewProduct;
+                var diamondCatalogItems = loadJsonFile(itemListPath), diamondCatalogPackages = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)), diamondNewProduct;
                 try { diamondNewProduct = parseDiamondShopProduct(msg, getDiamondShopItemNames(data, diamondCatalogItems, diamondCatalogPackages)); } catch (diamondParseError) { replier.reply("❌ " + diamondParseError.message + "\n/다이아상점추가 상품명 상품갯수 다이아갯수 [하루구매갯수]"); return; }
                 var diamondAdded = addDiamondShopProduct(diamondShopV2, diamondNewProduct, Date.now());
                 matzangField.shop = diamondShopV2.products; saveJsonFile(data, filePath);
@@ -8101,7 +8116,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     var marketV2 = requireFreeMarketSource(loadJsonFile(freeMarketPath));
                     if (marketV2.version !== 2) { replier.reply("🏪 자유시장 전환 점검 중입니다. Master가 /자유시장전환을 확인해주세요."); return; }
-                    var marketItemList = loadJsonFile(itemListPath), marketPackages = loadJsonFile(packageInfoPath);
+                    var marketItemList = loadJsonFile(itemListPath), marketPackages = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath));
                     if (recallFreeMarketBlockedItems(data, marketV2, marketPackages, marketItemList)) {
                         var marketRecallReplier = replier;
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
@@ -19259,7 +19274,7 @@ replier.reply(
 
                 if (msg === "/패키지리스트") {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 패키지 정보 데이터
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 패키지 정보 데이터
                     replier.reply(buildPackageListMessage(packageInfoData));
                     return;
                 }
@@ -19284,7 +19299,7 @@ replier.reply(
 
                 if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 단계형 추가 중복 확인용 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
                     var packageFlowResult = handlePackageAddFlowMessage(sender, msg, packageInfoData);
                     if (packageFlowResult.ok && packageFlowResult.packageInfoData) saveJsonFile(packageFlowResult.packageInfoData, packageInfoPath);
                     replier.reply(packageFlowResult.message);
@@ -19299,7 +19314,7 @@ replier.reply(
 
                 if (/^\/패키지추가\s+.+\|.+\|.+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 빠른 추가용 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 빠른 추가용 패키지 목록
                     var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData);
                     if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
                     replier.reply(packageAddResult.message);
@@ -19308,7 +19323,7 @@ replier.reply(
 
                 if (/^\/패키지수정\s+\d+\s+.+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 수정 대상 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 수정 대상 패키지 목록
                     var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData);
                     if (packageEditResult.ok) saveJsonFile(packageEditResult.packageInfoData, packageInfoPath);
                     replier.reply(packageEditResult.message);
@@ -19323,7 +19338,7 @@ replier.reply(
 
                 if (/^\/(패키지제거|패키지리스트제거)\s+\d+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 제거 대상 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 제거 대상 패키지 목록
                     var packageRemoveResult = removePackageByCommand(sender, msg, packageInfoData);
                     if (packageRemoveResult.ok) saveJsonFile(packageRemoveResult.packageInfoData, packageInfoPath);
                     replier.reply(packageRemoveResult.message);
@@ -19332,7 +19347,7 @@ replier.reply(
 
                 if (/^\/패키지활성\s+\d+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 활성화 대상 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 활성화 대상 패키지 목록
                     var packageEnableResult = setPackageEnabledByCommand(sender, msg, true, packageInfoData);
                     if (packageEnableResult.ok) saveJsonFile(packageEnableResult.packageInfoData, packageInfoPath);
                     replier.reply(packageEnableResult.message);
@@ -19341,7 +19356,7 @@ replier.reply(
 
                 if (isPackageGrantCommand(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 지급 가능한 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 지급 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 지급 로그 데이터
                     var packageStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName);
                     if (!new java.io.File(packageStatsPath).exists() && (new java.io.File(packageStatsPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(packageStatsPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(packageStatsPath)).exists())) throw new Error("패키지 실적 원본 누락: /데이터복구 packageGrantStats 1로 백업을 확인해 주세요.");
@@ -19393,7 +19408,7 @@ replier.reply(
                             return;
                         }
                     }
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 패키지가방 필터링용 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 패키지가방 필터링용 패키지 목록
                     ctx.halloweenScreen = true;
                     replier.reply(buildUserPackageBagMessage(data, petData, petSkillData, guildData, packageBagTarget, packageInfoData));
                     return;
@@ -19401,7 +19416,7 @@ replier.reply(
 
                 if (msg === "/패키지사용" || /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg)) {
                     if (!data.member || !data.member[sender]) return;
-                    var packageInfoData = loadJsonFile(packageInfoPath); // 사용 가능한 패키지 목록
+                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 사용 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 사용 로그 데이터
                     var halloweenPackageUse = parsePackageUseCommand(msg);
                     var halloweenPackageBag = getUserPackageBagList(data, sender, packageInfoData);
@@ -27744,7 +27759,7 @@ replier.reply(
                         replier.reply("❌ 상품 수량, 황금당근 가격, 계정당 구매 한도는 모두 1 이상이어야 합니다.");
                         return;
                     }
-                    var moonShopRewards = createChuseokAdminShopRewards(moonShopProductName, moonShopRewardCount, loadJsonFile(itemListPath), loadJsonFile(packageInfoPath));
+                    var moonShopRewards = createChuseokAdminShopRewards(moonShopProductName, moonShopRewardCount, loadJsonFile(itemListPath), getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)));
                     if (!moonShopRewards) {
                         replier.reply("❌ 지급 가능한 기존 상품·아이템·패키지를 찾을 수 없습니다.\n상품명을 정확히 확인해주세요.");
                         return;
@@ -47039,41 +47054,103 @@ function parseHoiPassPremiumCommand(msg) {
     return null;
 }
 
-// 검증된 유저에게 호이패스 프리미엄과 필요한 자동탐험권을 적용하는 함수
-// 프리미엄 이용권의 KST 달력 기간과 차감을 검증해 기존 자격에 적용하는 함수
-function applyPremiumExtension(data, skills, activity, user, message, today) {
-    var config = GLOBAL_CONFIG.premiumExtension;
-    var match = /^\/호패프리미엄오픈(?:\s+(\d+))?$/.exec(message);
-    var count = match ? (match[1] === undefined ? 1 : Number(match[1])) : 0;
-    if (!isPointShopSafeCount(count) || count < 1 || count * config.days > 9007199254740991) return { ok: false, message: "❌ 올바른 사용 개수를 입력해주세요.\n━━━━━━━━━━━━\n📌 1개 사용: /호패프리미엄오픈\n📌 여러 개 사용: /호패프리미엄오픈 [개수]" };
+// 기간권 명령의 종류·개수를 완전 일치로 확인하는 함수
+function parsePassDurationRequest(message) {
+    var configs = GLOBAL_CONFIG.passDuration.tickets;
+    for (var i = 0; i < configs.length; i++) {
+        var commands = [configs[i].command];
+        if (configs[i].key === "premium" && configs[i].days === 30) commands.push(GLOBAL_CONFIG.passDuration.legacyPremiumCommand);
+        for (var j = 0; j < commands.length; j++) {
+            var command = commands[j];
+            if (message !== command && (message.indexOf(command) !== 0 || !/\s/.test(message.charAt(command.length)))) continue;
+            var suffix = message.substring(command.length), match = /^(?:[ \t]+(\d+))?$/.exec(suffix);
+            var count = match && match[0] === suffix ? (match[1] === undefined ? 1 : Number(match[1])) : 0;
+            return { config: configs[i], count: count, valid: isPointShopSafeCount(count) && count > 0 && isPointShopSafeCount(count * configs[i].days) };
+        }
+    }
+    return null;
+}
+
+// 기간권의 정식 사용법을 안내하는 함수
+function buildPassDurationUsage(config) {
+    return "❌ 올바른 사용 개수를 입력해주세요.\n━━━━━━━━━━━━\n📌 1개 사용: " + config.command + "\n📌 여러 개 사용: " + config.command + " [개수]";
+}
+
+// 구 프리미엄 30일권도 신규 지급부터 정식 이름으로 통일하는 함수
+function normalizePassDurationItemName(name) {
+    return name === GLOBAL_CONFIG.passDuration.legacyPremiumItem ? GLOBAL_CONFIG.passDuration.tickets[5].itemName : name;
+}
+
+// 운영 중인 패키지를 보존하며 기간권 6종의 고정 구성만 카탈로그에 제공하는 함수
+function getPassDurationPackageCatalog(packages) {
+    if (!Array.isArray(packages)) throw new Error("패키지 목록 형식 오류");
+    var result = packages.slice(), configs = GLOBAL_CONFIG.passDuration.tickets;
+    for (var i = 0; i < configs.length; i++) {
+        var found = false, config = configs[i];
+        for (var j = 0; j < result.length; j++) {
+            if (getPackageBagItemName(result[j]) !== config.packageName) continue;
+            var rewards = result[j].rewards;
+            if (!Array.isArray(rewards) || rewards.length !== 1 || rewards[0].type !== "item" || normalizePassDurationItemName(rewards[0].name) !== config.itemName || rewards[0].count !== 1) throw new Error("기간권 패키지는 해당 이용권 1개로 구성해야 합니다: " + config.packageName);
+            found = true;
+        }
+        if (!found) result.push({ id: "pass_duration_" + config.key + "_" + config.days, name: config.packageName, enabled: true, rewards: [{ type: "item", name: config.itemName, count: 1 }] });
+    }
+    return result;
+}
+
+// 검증된 기간권을 차감하고 해당 패스의 KST 종료일만 연장하는 함수
+function applyPassDurationExtension(data, skills, activity, user, request, today) {
+    var config = request.config, count = request.count;
+    if (!request.valid) return { ok: false, message: buildPassDurationUsage(config) };
     var member = data.member && data.member[user];
     if (!member) return { ok: false, message: "❌ 가입 상태를 확인해주세요." };
-    var stock = member.bag && member.bag[config.itemName] || 0;
-    if (!isPointShopSafeCount(stock) || stock < count) return { ok: false, message: "❌ 호이패스 프리미엄 연장 실패!\n━━━━━━━━━━━━\n🎟️ 아이템: " + config.itemName + "\n📦 보유: " + stock + "개 / 요청: " + count + "개\n\n📌 사용법: /호패프리미엄오픈 [개수]" };
-    var previous = member.pass && member.pass.premium;
-    var oldText = previous ? previous.endDate : "";
-    var oldDate = previous ? getSupportPassDateValue(oldText) : null;
-    if (previous && (previous.permanent === true || oldDate === null)) return { ok: false, message: "❌ 기존 프리미엄 종료일을 확인해주세요. 아이템은 사용하지 않았습니다." };
+    if (member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag)) || member.pass !== undefined && (!member.pass || typeof member.pass !== "object" || Array.isArray(member.pass))) throw new Error("기간권 보유·패스 정보 형식 오류");
+    var bag = member.bag || {}, names = [config.itemName], stock = 0;
+    if (config.key === "premium" && config.days === 30) names.push(GLOBAL_CONFIG.passDuration.legacyPremiumItem);
+    for (var i = 0; i < names.length; i++) {
+        var itemCount = bag[names[i]] === undefined ? 0 : bag[names[i]];
+        if (!isPointShopSafeCount(itemCount) || !isPointShopSafeCount(stock + itemCount)) throw new Error("기간권 보유 수량 오류");
+        stock += itemCount;
+    }
+    if (stock < count) return { ok: false, message: "❌ 이용권 사용 실패!\n━━━━━━━━━━━━\n🎟️ 아이템: " + config.itemName + "\n📦 보유: " + stock + "개 / 요청: " + count + "개 / 부족: " + (count - stock) + "개\n📌 사용법: " + config.command + " [개수]" };
+    var previous = member.pass && member.pass[config.key];
+    if (previous !== undefined && (!previous || typeof previous !== "object" || Array.isArray(previous))) throw new Error("기존 패스 정보 형식 오류");
+    var label = config.key === "hoi" ? "호이패스🐶" : "호이패스 프리미엄👑";
+    if (previous && previous.enabled === true && previous.permanent === true) return { ok: false, message: "❌ 이용권 사용 실패!\n━━━━━━━━━━━━\n" + label + " 영구권 사용 중이므로 기간 연장권을 사용할 수 없습니다.\n📦 아이템은 차감되지 않았습니다." };
+    var oldText = previous ? previous.endDate : "", oldDate = getSupportPassDateValue(oldText);
+    if (previous && previous.permanent !== true && oldDate === null) return { ok: false, message: "❌ 기존 패스 종료일을 확인해주세요. 아이템은 사용하지 않았습니다." };
     var active = !!(previous && previous.enabled === true && oldDate >= today);
-    var base = active ? oldDate : today; // 미가입·만료는 당일을 첫날로 포함
+    var base = active ? oldDate : today; // 미가입·만료는 사용 당일을 첫날로 포함
     var year = Math.floor(base / 10000), month = Math.floor(base / 100) % 100, day = base % 100;
     var end = new Date(Date.UTC(year, month - 1, day + count * config.days - (active ? 0 : 1)));
     if (!isFinite(end.getTime()) || end.getUTCFullYear() < 2000 || end.getUTCFullYear() > 2099) return { ok: false, message: "❌ 적용 가능한 기간을 초과했습니다. 아이템은 사용하지 않았습니다." };
     var endText = String(end.getUTCFullYear()).slice(-2) + "." + ("0" + (end.getUTCMonth() + 1)).slice(-2) + "." + ("0" + end.getUTCDate()).slice(-2);
     if (active) previous.endDate = endText;
-    else addHoiPassPremium(data, skills, activity, user, endText, user);
-    removeItem(data, user, config.itemName, count);
-    var text = "👑 호이패스 프리미엄 " + (active ? "연장" : "활성화") + " 완료!\n━━━━━━━━━━━━\n🎟️ 사용: " + config.itemName + " ×" + count;
+    else if (config.key === "premium") addHoiPassPremium(data, skills, activity, user, endText, user, true);
+    else {
+        var pass = previous || {};
+        pass.enabled = true; pass.permanent = false; pass.endDate = endText;
+        ensureSupportPassStore(data, user).hoi = pass;
+        if (getAutoExploreTicketCount(data, user) < 1) addItem(data, user, "자동탐험권🌄", 1);
+    }
+    var remaining = count; // 신·구 30일권을 합쳐 요청 수량만 한 번 차감
+    for (var n = 0; n < names.length && remaining > 0; n++) {
+        var used = Math.min(bag[names[n]] || 0, remaining);
+        if (used > 0) removeItem(data, user, names[n], used);
+        remaining -= used;
+    }
+    var displayLabel = config.key === "hoi" ? "🐶 호이패스 기간" : "👑 호이패스 프리미엄";
+    var text = displayLabel + " " + (active ? "연장" : "활성화") + " 완료!\n━━━━━━━━━━━━\n🎟️ 사용: " + config.itemName + " ×" + count;
     text += active ? "\n📅 기존 종료일: " + oldText + "\n➕ 추가 기간: " + count * config.days + "일" : "\n📅 적용 기간: " + count * config.days + "일";
-    text += "\n✅ " + (active ? "변경 종료일: " : "종료 예정일: ") + endText + (active ? "\n\n기존 프리미엄 혜택은 그대로 유지됩니다." : "\n\n🐹 호월패스 사용 현황에 반영되었습니다.");
-    return { ok: true, message: text };
+    text += "\n✅ " + (active ? "변경 종료일: " : "종료 예정일: ") + endText + (active ? "\n\n기존 " + (config.key === "hoi" ? "호이패스" : "프리미엄") + " 혜택은 그대로 유지됩니다." : "\n\n🐹 호월패스 사용 현황에 반영되었습니다.");
+    return { ok: true, premiumActivated: config.key === "premium" && !active, message: text };
 }
 
 // 검증된 유저에게 프리미엄 자격·홈뱃지·잠금 스킬을 적용하는 함수
-function addHoiPassPremium(data, petSkillData, activityData, user, endDate, operator) {
+function addHoiPassPremium(data, petSkillData, activityData, user, endDate, operator, avoidDuplicateTicket) {
     var passStore = ensureSupportPassStore(data, user);
     var previous = passStore.premium || {};
-    var shouldGrantAutoExploreTicket = !isSupportPassActive(data, user, "hoi"); // 기본 호이패스가 없을 때 프리미엄용 자동탐험권 지급
+    var shouldGrantAutoExploreTicket = !isSupportPassActive(data, user, "hoi") && (!avoidDuplicateTicket || getAutoExploreTicketCount(data, user) < 1); // 기본 호이패스가 없을 때 프리미엄용 자동탐험권 지급
     passStore.premium = {
         enabled: true,
         endDate: endDate,
@@ -49585,7 +49662,7 @@ function handlePackageAddFlowMessage(sender, msg, packageInfoData) {
     if (state.step === "ITEM_COUNT") {
         var itemCount = parseInt(text, 10); // 추가할 아이템 수량
         if (isNaN(itemCount) || itemCount < 1) return { ok: false, message: "❌ 아이템 수량은 1 이상 숫자로 입력해주세요." };
-        var itemName = normalizeMiniPetRewardBoxItemName(state.pendingReward ? state.pendingReward.name : ""); // 기존 등급 확정 이름도 신규 이름으로 등록
+        var itemName = normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(state.pendingReward ? state.pendingReward.name : "")); // 기존 등급 확정 이름도 신규 이름으로 등록
         if (!itemName) {
             state.step = "ITEM_NAME";
             return { ok: false, message: "❌ 아이템명이 없습니다. 아이템명을 다시 입력해주세요." };
@@ -49661,7 +49738,7 @@ function parsePackageNaturalItemRewardSpec(rewardSpec) {
 
         var itemCount = parseInt(String(match[1]).replace(/,/g, ""), 10); // 쉼표가 포함된 수량 정규화
         if (isNaN(itemCount) || itemCount < 1) return { error: "아이템 보상 수량이 올바르지 않습니다: " + rawName };
-        rewards.push({ type: "item", name: normalizeMiniPetRewardBoxItemName(rawName), count: itemCount });
+        rewards.push({ type: "item", name: normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(rawName)), count: itemCount });
         lastEnd = pattern.lastIndex;
     }
 
@@ -49694,7 +49771,7 @@ function parsePackageRewardSpec(rewardSpec) {
             var itemCount = parseInt(itemBody.substring(lastColon + 1).trim(), 10); // 보상 아이템 수량
             if (!itemName) return { error: "아이템명이 비어 있습니다." };
             if (isNaN(itemCount) || itemCount < 1) return { error: "아이템 보상 수량이 올바르지 않습니다: " + itemName };
-            rewards.push({ type: "item", name: normalizeMiniPetRewardBoxItemName(itemName), count: itemCount });
+            rewards.push({ type: "item", name: normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(itemName)), count: itemCount });
         } else {
             return { error: "지원하지 않는 보상 형식입니다: " + raw };
         }
@@ -50736,7 +50813,7 @@ function applyPackageRewards(data, user, packageInfo, useCount, halloween) {
             halloween.account.history.push({ kind: "packageCandy", candy: totalCount, packageName: packageInfo.name, at: halloween.at, txId: halloween.txId });
             rewardLines.push(GLOBAL_CONFIG.halloween.currencyName + " x" + numberWithCommas(totalCount));
         } else if (reward.type === "item") {
-            var packageRewardItemName = normalizeMiniPetRewardBoxItemName(reward.name); // 기존 구성품 이름도 신규 등급명으로 지급
+            var packageRewardItemName = normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(reward.name)); // 구 이용권도 새 정식 이름으로 지급
             addItem(data, user, packageRewardItemName, totalCount);
             rewardLines.push(packageRewardItemName + " x" + numberWithCommas(totalCount));
         } else if (reward.type === "point") {
@@ -52457,6 +52534,7 @@ function removeAllItem(data, user, itemName) {
 function addItem(data, user, itemName, count) {
     if (itemName === GLOBAL_CONFIG.spiritRetirement.removedItem || itemName === GLOBAL_CONFIG.items.carrotName) return;
     if (itemName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName) itemName = GLOBAL_CONFIG.petSkill.bookItemName;
+    itemName = normalizePassDurationItemName(itemName);
     if (!data.member[user]) return;
     if (!data.member[user].bag) data.member[user].bag = {};
     itemName = normalizePendantTransitionBagItem(data.member[user].bag, itemName);
@@ -53400,6 +53478,9 @@ function getFreeMarketItemPolicyName(name) {
 // 확정된 금지 품목과 재화 전용 묶음만 시장 거래에서 제외하는 함수
 function isFreeMarketTradableItem(name, packages, items) {
     if (isFreeMarketBlockedCurrency(name)) return false;
+    var tickets = GLOBAL_CONFIG.passDuration.tickets;
+    for (var t = 0; t < tickets.length; t++) if (getFreeMarketItemPolicyName(name) === getFreeMarketItemPolicyName(tickets[t].itemName)) return false;
+    if (getFreeMarketItemPolicyName(name) === getFreeMarketItemPolicyName(GLOBAL_CONFIG.passDuration.legacyPremiumItem)) return false;
     var policyName = getFreeMarketItemPolicyName(name), config = GLOBAL_CONFIG.freeMarket;
     var blocked = config.blockedItems.concat(config.blockedCurrencies);
     for (var b = 0; b < blocked.length; b++) if (policyName === getFreeMarketItemPolicyName(blocked[b])) return false;
