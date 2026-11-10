@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.804"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.805"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -2082,6 +2082,13 @@ const GLOBAL_CONFIG = {
         experience: [8,15,23,77,231,385,770,1540,3850],
         charm: [2500,5000,15000,30000,125000,250000,650000,1250000,2500000],
         sale: [1000000,2000000,5000000,10000000,30000000,100000000,300000000,1000000000,3000000000]
+    },
+    peperoTitle: { // 빼빼로데이 타이틀 상자의 개봉·보상 규칙
+        itemName: "빼빼로타이틀상자🍫(/빼빼로타이틀오픈)",
+        description: "빼빼로는 달콤하지만 사랑은 쓰다! 개봉 시 빼빼로데이 한정 타이틀 16종 중 1종을 획득합니다.",
+        maxOpen: 100, titlePrice: 100000000, duplicatePoint: 50000000,
+        specialTitle: "🪦 11월 11일 솔로 확정",
+        titles: ["💔 빼빼로 줬는데 차였음","🥜 아몬드 줬는데 읽씹당함","🫣 누드 빼빼로처럼 마음만 벗겨짐","🍪 쿠앤크 줬더니 친구로 지내재","😭 쿠키 빼빼로보다 바삭하게 차임","🥲 그냥 빼빼로 줬더니 그냥 친구","💔 더블 빼빼로 줬는데 두 번 차임","🍓 딸기 빼빼로만큼 달콤한 착각","🤍 화이트 빼빼로보다 새하얀 내 연애경력","🍫 초코필드 줬는데 내 속만 타들어감","🍵 녹차 빼빼로 줬다가 차갑게 식음","💥 크런키 빼빼로처럼 박살 난 썸","🖤 블랙 빼빼로 주고 차단당함","📏 롱 빼빼로 줬는데 답장은 ‘ㅇ’","🤏 미니 빼빼로보다 작은 연애 가능성","🪦 11월 11일 솔로 확정"]
     },
     fortuneCookie: { // 호츈쿠키의 개봉·보상·추첨 규칙
         itemName: "호츈쿠키🥠(/호츈오픈 숫자)", legacyItemName: "호츈쿠키🥠", maxOpen: 100, generalRate: 0.5, specialRate: 0.01,
@@ -17219,6 +17226,34 @@ replier.reply(
                 }
 
 // =======================================================
+                if (/^\/빼빼로타이틀오픈(?:\s|$)/.test(msg)) {
+                    var peperoNick = checkRank(data, petData, guildData, sender), peperoHeader = "[" + peperoNick + "] 님\n\n";
+                    var peperoMatch = /^\/빼빼로타이틀오픈(?:[ \t]+(\d+))?$/.exec(msg);
+                    var peperoCount = peperoMatch && peperoMatch[0] === msg ? peperoMatch[1] === undefined ? 1 : Number(peperoMatch[1]) : NaN;
+                    if (!isPointShopSafeCount(peperoCount) || peperoCount < 1 || peperoCount > GLOBAL_CONFIG.peperoTitle.maxOpen) {
+                        replier.reply(peperoHeader + "❗ 개봉 수량은 1~" + GLOBAL_CONFIG.peperoTitle.maxOpen + " 사이의 정수로 입력해주세요.\n사용법: /빼빼로타이틀오픈 [수량]"); return;
+                    }
+                    var peperoTitleData = loadJsonFile(memberTitlePath);
+                    var peperoResult = applyPeperoTitleOpen(data, peperoTitleData, sender, peperoCount, Math.random, new Date().toISOString());
+                    if (!peperoResult.ok) {
+                        replier.reply(peperoHeader + (peperoResult.reason === "shortage" ? "❌ 빼빼로타이틀상자🍫가 부족합니다.\n📦 필요한 수량: " + peperoCount + "개\n📦 보유 수량: " + numberWithCommas(peperoResult.held) + "개\n\n사용법: /빼빼로타이틀오픈 [수량]" : "❌ 상자·포인트·타이틀 원본을 확인해주세요. 상자 소모와 보상 지급은 없습니다.")); return;
+                    }
+                    var peperoPlan = buildMemberSplitSavePlan(data), peperoRows = []; // 기존 회원 분리 파일도 같은 확정 원문에 포함
+                    if (peperoPlan) for (var peperoSplitIndex = 0; peperoSplitIndex < peperoPlan.writes.length; peperoSplitIndex++) peperoRows.push({ name: String(new java.io.File(peperoPlan.writes[peperoSplitIndex].path).getName()), text: typeof peperoPlan.writes[peperoSplitIndex].text === "string" ? peperoPlan.writes[peperoSplitIndex].text : JSON.stringify(peperoPlan.writes[peperoSplitIndex].text) });
+                    if (peperoResult.newCount > 0) peperoRows.push({ name: "member_title.json", text: JSON.stringify(peperoTitleData) });
+                    peperoRows.push({ name: "member.json", text: JSON.stringify(peperoPlan ? peperoPlan.member : data) });
+                    publishOperationalRows(peperoRows);
+                    try { replier.reply(buildPeperoTitleOpenMessage(peperoResult, peperoNick)); } catch (peperoReplyError) { debuggerLog("[ERROR : 빼빼로 타이틀 결과 전송 실패]"); }
+                    var peperoRooms = getNoticeTargetRooms(ctx);
+                    for (var peperoIndex = 0; peperoIndex < peperoResult.results.length; peperoIndex++) {
+                        if (!peperoResult.results[peperoIndex].special) continue;
+                        for (var peperoRoomIndex = 0; peperoRoomIndex < peperoRooms.length; peperoRoomIndex++) {
+                            try { if (noticeMsg(buildPeperoTitleNotice(peperoNick), [peperoRooms[peperoRoomIndex]]) === false) debuggerLog("[ERROR : 빼빼로 타이틀 특별 알림 일부 전송 실패]"); }
+                            catch (peperoNoticeError) { debuggerLog("[ERROR : 빼빼로 타이틀 특별 알림 전송 실패]"); }
+                        }
+                    }
+                    return;
+                }
                 if (msg === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(msg)) {
                     var fortuneNick = "[" + checkRank(data, petData, guildData, sender) + "]";
                     var fortuneMatch = msg.match(/^\/호츈오픈\s+(\d+)$/);
@@ -33754,6 +33789,56 @@ function getCoffeePackageSpecialIndex(roll) {
     }
 
     return -1;
+}
+
+// 빼빼로 타이틀을 사본에서 추첨·검증한 뒤 상자·포인트·타이틀을 함께 반영하는 함수
+function applyPeperoTitleOpen(data, titleData, user, count, random, acquiredAt) {
+    var config = GLOBAL_CONFIG.peperoTitle, member = data.member && data.member[user];
+    if (!isPointShopSafeCount(count) || count < 1 || count > config.maxOpen) return { ok: false, reason: "quantity" };
+    if (!member || member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag))) return { ok: false, reason: "data" };
+    var held = !member.bag || member.bag[config.itemName] === undefined ? 0 : member.bag[config.itemName];
+    if (!isPointShopSafeCount(held)) return { ok: false, reason: "data" };
+    if (held < count) return { ok: false, reason: "shortage", held: held };
+    if (!titleData || typeof titleData !== "object" || Array.isArray(titleData) || !titleData.member || typeof titleData.member !== "object" || Array.isArray(titleData.member)) return { ok: false, reason: "data" };
+    var owner = titleData.member[user];
+    if (owner !== undefined && (!owner || typeof owner !== "object" || Array.isArray(owner) || !owner.title || typeof owner.title !== "object" || !Array.isArray(owner.title.list))) return { ok: false, reason: "data" };
+    var list = owner ? owner.title.list.slice(0) : [];
+    for (var oldIndex = 0; oldIndex < list.length; oldIndex++) if (!list[oldIndex] || typeof list[oldIndex].name !== "string") return { ok: false, reason: "data" };
+    var results = [], newCount = 0, duplicateCount = 0;
+    for (var i = 0; i < count; i++) {
+        var draw = random();
+        if (typeof draw !== "number" || !isFinite(draw) || draw < 0 || draw >= 1) throw new Error("빼빼로 타이틀 추첨값 오류");
+        var name = config.titles[Math.floor(draw * config.titles.length)], duplicate = false;
+        for (var j = 0; j < list.length; j++) if (list[j].name === name) { duplicate = true; break; }
+        if (duplicate) duplicateCount++;
+        else { list.push({ name: name, inDate: acquiredAt, price: config.titlePrice }); newCount++; }
+        results.push({ name: name, duplicate: duplicate, special: name === config.specialTitle });
+    }
+    var bonus = duplicateCount * config.duplicatePoint, point = member.point; // 한 일괄 개봉 안의 중복도 보상에 포함
+    if (!isFreeMarketPointBalance(point) || !isFreeMarketPointBalance(point + bonus)) return { ok: false, reason: "data" };
+    if (held === count) delete member.bag[config.itemName]; else member.bag[config.itemName] = held - count;
+    member.point = point + bonus;
+    if (newCount > 0) { ensureTitleUserData(titleData, user); titleData.member[user].title.list = list; }
+    return { ok: true, count: count, results: results, newCount: newCount, duplicateCount: duplicateCount, pointBonus: bonus };
+}
+
+// 빼빼로 상자 단일·일괄 개봉 결과를 기획서 형식으로 표시하는 함수
+function buildPeperoTitleOpenMessage(result, nick) {
+    var head = "[" + nick + "] 님\n\n";
+    if (result.count === 1) {
+        var row = result.results[0];
+        if (row.duplicate) return head + "🍫 빼빼로데이 한정 타이틀\n━━━━━━━━━━━━\n🏅 " + row.name + "\n\n⚠️ 이미 보유 중인 타이틀입니다.\n🎁 중복 보상: 🅟5,000만";
+        return head + "🍫 빼빼로데이 한정 타이틀\n━━━━━━━━━━━━\n🎉 한정판 타이틀 획득!\n\n🏅 " + row.name + "\n\n✅ 타이틀 등록 완료!\n━━━━━━━━━━━━\n📖 타이틀 확인: /타이틀목록";
+    }
+    var lines = [head + "🍫 빼빼로데이 타이틀 " + result.count + "회 개봉", "━━━━━━━━━━━━"];
+    for (var i = 0; i < result.results.length; i++) lines.push((i + 1) + ". " + result.results[i].name + (result.results[i].duplicate ? " 🔁 중복" : " ✅ 신규"));
+    lines.push("━━━━━━━━━━━━", "✅ 신규 타이틀: " + result.newCount + "종", "🔁 중복: " + result.duplicateCount + "회 / 🅟" + formatGuildTerritoryRewardAmount(result.pointBonus) + " 지급", "📖 타이틀 확인: /타이틀목록");
+    return lines.join("\n");
+}
+
+// 빼빼로 특별 타이틀의 당첨 1건에 대한 전체알림을 만드는 함수
+function buildPeperoTitleNotice(nick) {
+    return "📢 [🏆전체알림] 빼빼로데이 참사 발생!\n━━━━━━━━━━━━\n🎉 [" + nick + "] 님께서\n\n🍫 빼빼로타이틀상자를 개봉하다가...\n\n" + GLOBAL_CONFIG.peperoTitle.specialTitle + "\n\n타이틀에 당첨되었습니다!\n━━━━━━━━━━━━\n💔 빼빼로는 달콤했지만, 사랑은 없었습니다.\n😭 호이월드가 당신의 솔로 생활을 응원합니다.";
 }
 
 // 쿠키 한 개의 일반·특별·미당첨 결과를 독립적으로 추첨하는 함수
@@ -52761,6 +52846,7 @@ function getDiamondShopItemNames(data, items, packages) {
     for (var p = 0; p < packages.length; p++) names[getPackageBagItemName(packages[p])] = true;
     var aliases = GLOBAL_CONFIG.petHomeActivity.shopAliases;
     names[aliases.gacha1] = true; names[aliases.gacha2] = true; names[aliases.gacha3] = true; names[aliases.cube50] = true;
+    names[GLOBAL_CONFIG.peperoTitle.itemName] = true;
     delete names[GLOBAL_CONFIG.items.carrotName]; delete names[GLOBAL_CONFIG.spiritRetirement.removedItem];
     return names;
 }
@@ -54275,11 +54361,11 @@ function validateAdventurePublication(journal) {
     var seen = {};
     for (var i = 0; i < journal.pending.length; i++) {
         var row = journal.pending[i];
-        if (!row || typeof row.name !== "string" || !/^(?:member|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
+        if (!row || typeof row.name !== "string" || !/^(?:member|member_title|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
         seen[row.name] = true;
         var parsed = parseJsonContent(row.text, row.name);
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("모험가 성장 원본 형식 오류");
-        if (row.name === "member.json" && (!parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("모험가 성장 회원 원본 오류");
+        if ((row.name === "member.json" || row.name === "member_title.json") && (!parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("모험가 성장 회원 원본 오류");
         if (/^(serverRaidData|memberOperationLogs)/.test(row.name)) requireMemberSplitStore(parsed, row.name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
     }
     if (!journal.pending.length) throw new Error("확정 게시 원본 누락");
@@ -54322,7 +54408,7 @@ function recoverAdventurePublication() {
 
 // 집 확장 확정 자료의 검증·복구를 처리하는 함수
 function assertAdventurePublicationReady(path) {
-    if ([resolveActiveDataPath(filePath), resolveActiveDataPath(memberPetPath), resolveActiveDataPath(homeDataFile), resolveActiveDataPath(petSkillDataPath), resolveActiveDataPath(freeMarketPath), resolveActiveDataPath(currencyLogPath)].indexOf(resolveActiveDataPath(path)) === -1) return;
+    if ([resolveActiveDataPath(filePath), resolveActiveDataPath(memberTitlePath), resolveActiveDataPath(memberPetPath), resolveActiveDataPath(homeDataFile), resolveActiveDataPath(petSkillDataPath), resolveActiveDataPath(freeMarketPath), resolveActiveDataPath(currencyLogPath)].indexOf(resolveActiveDataPath(path)) === -1) return;
     if (adventurePublishingThread.get()) return;
     var pending = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventurePublication.pendingName);
     if (!new java.io.File(pending).exists() && new java.io.File(pending + ".rollback").exists()) throw new Error("모험가 성장 복구 대기");
