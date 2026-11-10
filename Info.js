@@ -136,7 +136,7 @@ const GLOBAL_CONFIG = {
 			"오딘의 뿅망치": { raidExp: 2000000, castleExp: 2000000 },
 			"망작귀의 지팡이": { raidExp: 2000000, castleExp: 2000000 },
 			"삼성전자": { raidExp: 3000000, castleExp: 3000000 },
-			"강철왁뿌볼": { raidExp: 2000000, castleExp: 2000000 },
+			"강철왁뿌볼": { raidExp: 1000000, castleExp: 1000000 },
 			"장미칼": { raidExp: 500000, castleExp: 500000 },
 			"엑스칼리버": { raidExp: 1000000, castleExp: 1000000 },
 			"사신의 낫": { raidExp: 500000, castleExp: 500000 },
