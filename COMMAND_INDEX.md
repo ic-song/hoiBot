@@ -6398,9 +6398,10 @@ Status: PARTIAL
 
 Status: VERIFIED
 
-- `/자유시장검색`은 `parseFreeMarketSearch`·`getFreeMarketSearchGrade`로 공백 없는 실제 분류·등급·이름을 판정한다. 카테고리+등급+이름은 AND, 복수 등급은 OR이다. 검색 결과만 전체 닉네임·유형별 구획을 사용하고, 기본 목록/내판매의 기존 정렬·UI는 유지한다. 분류 해석은 다른 매물의 유무에 영향을 받지 않으며, 검색의 개당 가격은 `compareFreeMarketUnitPrices`로 안전 정수 범위의 분수를 정확히 비교한다. `일반 아이템` 분류는 입력 위치와 공백에 관계없이 등급보다 먼저 분리해 `일반` 등급으로 오인하지 않는다. `isFreeMarketSearchGradeForCategory`와 `searchGradeAliases`로 유형별 실제 등급을 구분하며, 해당 유형에 없는 등급 단어는 상품명으로 유지한다. 종류 미지정 검색에서도 `아르카나 하우스`·`로열 하우스`처럼 등급 단어와 겹치는 다른 유형의 상품명을 누락하지 않는다. 해당 유형의 실제 등급이 있는 경우에는 등급 원본을 우선한다.
+- `/자유시장검색`은 `parseFreeMarketSearch`·`getFreeMarketSearchGrade`로 공백 없는 실제 분류·등급·이름을 판정한다. 카테고리+등급+이름은 AND, 복수 등급은 OR이다. 검색 결과만 전체 닉네임·유형별 구획을 사용하고, 기본 목록/내판매의 기존 정렬·UI는 유지한다. 분류 해석은 다른 매물의 유무에 영향을 받지 않으며, 검색의 개당 가격은 `compareFreeMarketUnitPrices`로 안전 정수 범위의 분수를 정확히 비교한다. `일반 아이템` 분류는 입력 위치와 공백에 관계없이 등급보다 먼저 분리해 `일반` 등급으로 오인하지 않는다. `isFreeMarketSearchGradeForCategory`와 `searchGradeAliases`로 유형별 실제 등급을 구분하며, 해당 유형에 없는 등급 단어는 상품명으로 유지한다. 종류 미지정 검색에서도 `아르카나 하우스`·`로열 하우스`처럼 등급 단어와 겹치는 다른 유형의 상품명을 누락하지 않는다. 등급 단독 검색은 실제 등급을 우선하며, `matchesFreeMarketFullName`은 전체 상품명(명령 안내·끝 장식 이모지 제외)이 일치하면 이름 안의 등급 단어 때문에 누락하지 않는다. 실제 등급+전체 상품명도 인정하고, 명시한 다른 종류나 잘못된 추가 등급 조건은 통과시키지 않는다. `getFreeMarketMiniPetSearchGrades`는 등급표·미니펫 카탈로그의 원본 등급을 검색에만 사용하며 엘리트 정렬 순위를 만들지 않는다.
 - `isFreeMarketTradableItem`은 시장 전용 확정 금지 12종·통화 자체·재화 전용 묶음만 제외하며 일반 아이템/미확정 혼합 패키지는 허용한다. 기존 개인거래 `isTradableItem` 정책을 바꾸지 않는다.
 - `calculateFreeMarketTradeFee`는 총가격을 정수 몫·나머지로 나눠 기존 17%/10% 반올림 수수료를 계산하고 예상 실수령 안내와 실제 구매 확정에 함께 사용한다. `formatFreeMarketUnitPrice`도 나눗셈 결과 대신 몫·나머지로 정수 반올림 경계를 판정한다. 안전 정수 범위 밖의 금액·수량은 거절한다.
+- `validateFreeMarketBagMergeCounts`는 가방 이름 병합 전의 형식·합산 범위를, `validateFreeMarketReturnStorage`는 수령 가방/스킬가방의 현재 이름·기존 수량+지급 수량을 실제 변경 전에 확인한다. 구매 안내·확정은 보관소 초기화 및 결제 전에 재검증하고 등록도 차감·이름 보정 전에 원본 수량을 검증한다. 누락 회원에게 반환한 것으로 처리하지 않으며, 합산 검증은 복사본만 사용하고 helper에서 파일 IO를 추가하지 않는다.
 - 시장 진입에서 로드한 상품 정의를 `recallFreeMarketBlockedItems`에 넘겨 금지 가방 매물을 전부 검증한 뒤 원래 가방에 반환한다. `beginFreeMarketMutation` → 회원/시장 저장 수집 → `finishFreeMarketMutation`의 확정 원문 게시로 반환과 매물 제거를 함께 반영하고 회원을 다시 로드한다. 별도 회수 안내는 추가하지 않는다. 구매 확정에서도 같은 허용 판정을 반복한다.
 
 ## Command Anchors

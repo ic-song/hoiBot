@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.799"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.800"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -8238,6 +8238,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply("❌ [" + bagMarketItemName + "] 아이템은 자유시장 거래가 불가능합니다.");
                         return;
                     }
+                    if (!isPointShopSafeCount(data.member[sender].bag[bagMarketItemName])) throw new Error("시장 판매 원본 수량 확인 필요");
+                    validateFreeMarketBagMergeCounts(data.member[sender].bag);
                     if (!hasItem(data, sender, bagMarketItemName, bagMarketCount)) {
                         replier.reply("❌ 아이템 수량이 부족합니다.\n보유: " + numberWithCommas(data.member[sender].bag[bagMarketItemName] || 0) + "개");
                         return;
@@ -8626,6 +8628,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     var buyHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
                     var buyHomeData = parseJsonContent(buyHomeDataRollbackText, homeDataFile);
+                    validateFreeMarketReturnStorage(data, petData, petSkillData, buyHomeData, buyListing, sender);
                     if (buyListing.type === "miniPet") {
                         if (!petData[sender]) petData[sender] = {};
                         if (!Array.isArray(petData[sender].miniPetBag)) petData[sender].miniPetBag = [];
@@ -53041,10 +53044,52 @@ function getFreeMarketSearchGrade(listing) {
     var skill = listing.type === "skill" ? getPetSkillData(listing.itemName) : null;
     return normalizeFreeMarketSearchText(skill ? skill.grade : row.grade);
 }
+// 미니펫 원본 등급표·카탈로그의 검색용 등급만 모으며 기존 정렬 순위는 변경하지 않는 함수
+function getFreeMarketMiniPetSearchGrades() {
+    var table = miniPetData.gradeTable, catalog = miniPetData.miniPet, cache = getFreeMarketMiniPetSearchGrades.cache;
+    if (!Array.isArray(table) || !Array.isArray(catalog)) throw new Error("시장 미니펫 등급 정의 확인 필요");
+    if (cache && cache.table === table && cache.catalog === catalog && cache.tableLength === table.length && cache.catalogLength === catalog.length) return cache.grades;
+    var rows = table.concat(catalog), grades = [];
+    for (var i = 0; i < rows.length; i++) {
+        if (!rows[i] || typeof rows[i].grade !== "string" || !rows[i].grade) throw new Error("시장 미니펫 등급 원본 확인 필요");
+        var grade = normalizeFreeMarketSearchText(rows[i].grade);
+        if (grades.indexOf(grade) === -1) grades.push(grade);
+    }
+    getFreeMarketMiniPetSearchGrades.cache = { table: table, catalog: catalog, tableLength: table.length, catalogLength: catalog.length, grades: grades };
+    return grades;
+}
+// 상품명 전체 비교에서 명령 안내·끝 장식 이모지를 제외하는 함수
+function normalizeFreeMarketFullName(value) {
+    return normalizeFreeMarketSearchText(value).replace(/\(\/[^)]*\)/g, "").replace(/(?:[\u200D\uFE0E\uFE0F\u20E3\u2300-\u23FF\u2600-\u27FF]|[\uD83C-\uD83E][\uDC00-\uDFFF])+$/, "");
+}
+// 등급 단독 검색을 유지하면서 전체 상품명과 실제 등급+전체 상품명 일치를 인정하는 함수
+function matchesFreeMarketFullName(listing, search, grade) {
+    var literal = normalizeFreeMarketSearchText(search.literalName).replace(/\(\/[^)]*\)/g, "").replace(/[\uFE0E\uFE0F]/g, "");
+    var fullName = normalizeFreeMarketSearchText(listing.itemName).replace(/\(\/[^)]*\)/g, "").replace(/[\uFE0E\uFE0F]/g, "");
+    var names = [fullName], plainName = normalizeFreeMarketFullName(listing.itemName);
+    if (plainName !== fullName) names.push(plainName); // 이모지를 입력했다면 원래 이모지도 일치해야 함
+    for (var n = 0; n < names.length; n++) {
+        var name = names[n];
+        if (!name || !literal) continue;
+        if (search.name && literal === name) return true;
+        if (!grade || literal.length <= name.length) continue;
+        var extra = literal.indexOf(name) === 0 ? literal.substring(name.length) : literal.slice(-name.length) === name ? literal.substring(0, literal.length - name.length) : ""; // 전체 상품명 앞뒤의 등급 조건
+        if (!extra) continue;
+        var matched = false;
+        for (var i = 0; i < search.grades.length; i++) {
+            var word = search.grades[i], alias = GLOBAL_CONFIG.freeMarket.searchGradeAliases[word];
+            if (extra.indexOf(word) === -1) continue;
+            if (grade === word || alias && grade === normalizeFreeMarketSearchText(alias)) matched = true;
+            extra = extra.split(word).join("");
+        }
+        if (matched && !extra) return true;
+    }
+    return false;
+}
 // 해당 거래 유형에 실제로 존재하는 등급과 가구 등급 약칭인지 확인하는 함수
 function isFreeMarketSearchGradeForCategory(word, category) {
     var grade = GLOBAL_CONFIG.freeMarket.searchGradeAliases[word] || word;
-    var grades = category === "miniPet" ? miniPetData.gradeTable : category === "pendant" ? PENDANT_GRADE_TABLE : category === "furniture" ? GLOBAL_CONFIG.freeMarket.furnitureGrades : category === "skill" ? GLOBAL_CONFIG.petSkillCollection.gradeOrder : [];
+    var grades = category === "miniPet" ? getFreeMarketMiniPetSearchGrades() : category === "pendant" ? PENDANT_GRADE_TABLE : category === "furniture" ? GLOBAL_CONFIG.freeMarket.furnitureGrades : category === "skill" ? GLOBAL_CONFIG.petSkillCollection.gradeOrder : [];
     return grades.some(function (entry) {
         return normalizeFreeMarketSearchText(typeof entry === "string" ? entry : entry.grade) === normalizeFreeMarketSearchText(grade);
     });
@@ -53053,7 +53098,7 @@ function isFreeMarketSearchGradeForCategory(word, category) {
 function parseFreeMarketSearch(query) {
     var original = String(query || "").trim(), text = normalizeFreeMarketSearchText(original), remaining = text; // 공백 정규화 후 아직 분리하지 않은 검색 조건
     var inputWords = original.split(/\s+/).map(normalizeFreeMarketSearchText);
-    var words = Object.keys(GLOBAL_CONFIG.freeMarket.searchGradeAliases), tables = [miniPetData.gradeTable, PENDANT_GRADE_TABLE];
+    var words = Object.keys(GLOBAL_CONFIG.freeMarket.searchGradeAliases).concat(getFreeMarketMiniPetSearchGrades()), tables = [PENDANT_GRADE_TABLE];
     for (var t = 0; t < tables.length; t++) for (var g = 0; g < tables[t].length; g++) words.push(tables[t][g].grade);
     words = words.concat(GLOBAL_CONFIG.freeMarket.furnitureGrades, GLOBAL_CONFIG.petSkillCollection.gradeOrder).map(normalizeFreeMarketSearchText);
     words = words.filter(function (word, index) { return word && words.indexOf(word) === index; }).sort(function (a, b) { return b.length - a.length; });
@@ -53090,7 +53135,7 @@ function parseFreeMarketSearch(query) {
         remaining = categoryText;
         for (var gradeIndex = 0; gradeIndex < grades.length; gradeIndex++) remaining = remaining.split(grades[gradeIndex]).join("");
     }
-    return { text: text, category: category, grades: grades, name: remaining };
+    return { text: text, category: category, grades: grades, name: remaining, literalName: categoryText };
 }
 // 나눗셈 반올림·교차곱 오버플로 없이 정수 분수의 실제 개당 가격을 비교하는 함수
 function compareFreeMarketUnitPrices(a, b) {
@@ -53111,6 +53156,7 @@ function searchFreeMarketV2(market, query) {
         if (!search.text) return true;
         if (search.category && getFreeMarketCategory(row) !== search.category) return false;
         var name = normalizeFreeMarketSearchText(row.itemName), grade = getFreeMarketSearchGrade(row);
+        if (matchesFreeMarketFullName(row, search, grade)) return true;
         if (search.grades.length && !search.grades.some(function (word) {
             var alias = GLOBAL_CONFIG.freeMarket.searchGradeAliases[word];
             if (grade && (grade === word || alias && grade === normalizeFreeMarketSearchText(alias))) return true;
@@ -53706,12 +53752,26 @@ function formatFreeMarketFurnitureDetail(furniture) {
     );
 }
 
-// 시장 반환에 필요한 기존 보관함의 형식과 이름 병합 수량을 보정 전에 검증하는 함수
+// 같은 현재 이름으로 합쳐지는 가방 원본 수량의 형식과 합계를 변경 전에 검증하는 함수
+function validateFreeMarketBagMergeCounts(bag) {
+    var mappings = getUniversalCollectionKeyBagMappings(), totals = {};
+    for (var i = 0; i < mappings.length; i++) {
+        var mapping = mappings[i];
+        if (bag[mapping.oldName] === undefined) continue;
+        var oldCount = bag[mapping.oldName];
+        var currentCount = totals[mapping.newName] !== undefined ? totals[mapping.newName] : bag[mapping.newName] === undefined ? 0 : bag[mapping.newName];
+        if (!isPointShopSafeCount(oldCount) || !isPointShopSafeCount(currentCount) || !isPointShopSafeCount(currentCount + oldCount)) throw new Error("시장 가방 이름 변경 수량 확인 필요");
+        totals[mapping.newName] = currentCount + oldCount;
+    }
+}
+// 반환 대상 보관소·이름 병합·합산 수량을 실제 변경 전에 검증하는 함수
 function validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, listing, owner) {
     var type = listing.type;
     var store = type === "bag" ? data.member : type === "skill" ? petSkillData : type === "furniture" ? homeData : petData;
     if (!store || typeof store !== "object" || Array.isArray(store)) throw new Error("시장 반환 저장소 형식 확인 필요: " + listing.id);
     var record = store[owner]; // 반환을 받을 사용자의 기존 저장 항목
+    if (type === "bag" && record === undefined) throw new Error("시장 반환 회원 원본 확인 필요: " + listing.id);
+    if ((type === "bag" || type === "skill") && (!isPointShopSafeCount(listing.quantity) || listing.quantity < 1)) throw new Error("시장 반환 수량 확인 필요: " + listing.id);
     if (record !== undefined && (!record || typeof record !== "object" || Array.isArray(record))) throw new Error("시장 반환 사용자 형식 확인 필요: " + listing.id);
     if (type === "skill" && record !== undefined) {
         record = record.petSkills;
@@ -53724,16 +53784,16 @@ function validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, 
     if (type === "bag" || type === "skill") {
         if (!bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("시장 반환 가방 형식 확인 필요: " + listing.id);
     } else if (!Array.isArray(bag)) throw new Error("시장 반환 개체 보관함 형식 확인 필요: " + listing.id);
-    if (type !== "bag") return;
-    var mappings = getUniversalCollectionKeyBagMappings(), totals = {}; // 같은 현재 이름으로 병합될 누적 수량
-    for (var i = 0; i < mappings.length; i++) {
-        var mapping = mappings[i];
-        if (bag[mapping.oldName] === undefined) continue;
-        var oldCount = bag[mapping.oldName];
-        var currentCount = totals[mapping.newName] !== undefined ? totals[mapping.newName] : bag[mapping.newName] === undefined ? 0 : bag[mapping.newName];
-        if (!isPointShopSafeCount(oldCount) || !isPointShopSafeCount(currentCount) || !isPointShopSafeCount(currentCount + oldCount)) throw new Error("시장 반환 이름 변경 수량 확인 필요: " + listing.id);
-        totals[mapping.newName] = currentCount + oldCount;
-    }
+    if (type !== "bag" && type !== "skill") return;
+    var returnBag = bag, returnName = listing.itemName; // 실제 지급 때의 현재 이름과 병합 후 수량을 검증
+    if (type === "bag") {
+        validateFreeMarketBagMergeCounts(bag);
+        returnBag = cloneFreeMarketObject(bag);
+        returnName = returnName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName ? GLOBAL_CONFIG.petSkill.bookItemName : returnName;
+        returnName = normalizePendantTransitionBagItem(returnBag, returnName);
+    } else returnName = normalizePetSkillName(returnName);
+    var held = returnBag[returnName] === undefined ? 0 : returnBag[returnName];
+    if (!isPointShopSafeCount(held) || !isPointShopSafeCount(held + listing.quantity)) throw new Error("시장 반환 합산 수량 확인 필요: " + listing.id);
 }
 
 // 시장에 보관된 상품을 실제 보관 정보와 수량 그대로 수령자에게 반환하는 함수
