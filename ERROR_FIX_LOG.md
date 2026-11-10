@@ -6,6 +6,14 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-11-11 - 다이아 조합 Number 변환 오류·펫스킬 정보 앞단 무응답 (ver_2.814)
+
+- 제보: `/다이아조합`에서 `Cannot find function add in object 8691151922`가 발생했고 `/펫스킬정보 대머리대장장이`·띄어쓴 명령도 응답하지 않았다.
+- 재현: 자바 BigInteger/BigDecimal 반환값을 일반 숫자로 바꾸는 합성 WrapFactory에서 제보와 동일한 add 오류를 재현했다. 기본 Rhino 셸 설정만 사용한 이전 검증으로는 이 환경 차이를 잡지 못했다. 운영 기기의 실제 WrapFactory 종류는 직접 조사하지 않았다.
+- 수정: 다이아 도메인의 정수 합계·가격·통계·신청/확정 계산만 현재 Rhino Context의 독립 표준 WrapFactory로 실행한다. 원래 Factory 자체의 옵션은 건드리지 않고, finally에서 원래 참조를 복원한다. 기존 기준값/재화 저장·거래 정책은 바꾸지 않는다.
+- 앞단: 정보 조회가 레거시 `sender.length <= 4` 조건과 펫 초기화 후 return 안쪽에 있었음을 AST로 확인했다. 카탈로그 조회를 해당 초기화보다 먼저 처리하며 다른 게임 명령의 기존 길이 제한은 유지한다. 제보 계정의 실제 펫 데이터는 임의 수정하지 않았다.
+- 검증: 다이아663개 시나리오를 기본·기본 primitive-wrap false·Number 자동변환 Factory 조건으로 실행한다. 큰 정수·중첩·예외 시 Factory 복원, 전체111스킬1200입력 및 닉네임/펫 상태 조합30개 앞단 사례를 검증한다. 운영 Android 실행은 별도 확인 대상이다.
+
 ## 2026-11-11 - 시작 시 전역 설정 초기화 전 요청 모니터링 파일 로드 (ver_2.813)
 
 - 제보: `MAIN#54600`에서 `diamondLive`를 undefined에서 읽는 오류가 발생했다. 요청 모니터링 설정의 최초 `loadJsonFile`이 `GLOBAL_CONFIG` 선언보다 먼저 실행되어, 파일 접근 보호 검사 `assertAdventurePublicationReady`의 `GLOBAL_CONFIG.diamondLive.baselineFile` 참조에 도달했다.
