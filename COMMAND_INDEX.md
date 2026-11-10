@@ -5,6 +5,24 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 펜던트 획득 전체알림
+
+Status: VERIFIED
+
+- `PENDANT_GRADE_TABLE`의 신화(왕좌의 펜던트)는 `notice: false`로 전체알림을 보내지 않는다. 초월·창세·창조의 기존 알림은 유지한다. `runPendantOpen`의 획득 결과·지급·확률·재료 소모는 유지한다.
+
+## 평수 확장 매력 안내
+
+Status: VERIFIED
+
+- `buildPetHomeFloorExpansion`은 미리보기·완료에서 캐슬/레이드 각각의 실제 증가와 두 모드 합계를 먼저 표시하고, 각 매력의 증가 내역에서 평수 기본·빌리지 레벨 효과·집 마련 스킬·인테리어 장인 효과를 나눠 표시한다. 확장 후 누적 평수 매력은 별도 영역으로 구분한다. 기존 `getPetHomeFurnitureCharm` 계산 결과를 그대로 사용하며 합산 절삭 차이는 집 마련 스킬분에 포함해 증가분 합계를 일치시킨다. 실제 평수·재료·매력 계산과 저장 흐름은 변경하지 않는다.
+
+## 다이아상점 판매기록 표시
+
+Status: VERIFIED
+
+- `buildDiamondShopSales`는 페이지의 첫 5건만 미리 보여주고 `allsee` 뒤에는 6번째부터 이어서 표시해 같은 거래를 중복 출력하지 않는다. 5건 이하인 페이지는 전체보기 구분을 생략한다. 날짜·페이지 필터와 완료 기록·구매 제한·판매 집계는 변경하지 않는다.
+
 ## 2026-11-09 다이아상점 UI 정리 (ver_2.789)
 
 Status: VERIFIED

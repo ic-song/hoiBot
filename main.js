@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.803"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.804"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1154,7 +1154,7 @@ const GLOBAL_CONFIG = {
         "중앙 금광",
         "서부 금광",
         "펫스킬 광산",
-        "다이아광산"
+        "다이아 광산"
     ],
     "rewardPolicy": 3,
     "dailyTickets": 5,
@@ -3079,7 +3079,7 @@ blockedNicknameTerms: [
         transferFeeMax: 25 // 이체 수수료 최대 설정값
     },
     diamondShop: { // 다이아상점 운영일·시세·구매 집계 설정
-        dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, combinePoint: 350000000
+        dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, historyPreviewCount: 5, combinePoint: 350000000
     },
     freeMarket: { // 자유시장 설정
         mySalesHistoryLimit: 10, // 본인의 최근 판매 완료 기록 표시 개수
@@ -52839,7 +52839,9 @@ function buildDiamondShopSales(log, date, page) {
     var selected = rows.slice((page - 1) * GLOBAL_CONFIG.diamondShop.historyPageSize, page * GLOBAL_CONFIG.diamondShop.historyPageSize);
     // 완료 당시 닉네임과 상품 이름을 보존해 삭제·재등록 뒤에도 원래 거래를 표시한다.
     function line(row) { if (row.legacy) return "[이전 상점] " + row.atText + "\n[" + row.user + "] " + row.product + " · 결제 💎" + (isPointShopSafeCount(row.total) ? numberWithCommas(row.total) : "미기록") + "\n묶음 수·등록 ID 미기록"; return formatDiamondShopDay(row.day) + " · " + new Date(row.at + 9 * 3600000).toISOString().substring(11, 19) + "\n[" + row.user + "] " + row.product + " x" + row.granted + " (" + row.bundles + "묶음) · 💎" + numberWithCommas(row.total) + " · ID " + row.productId; }
-    return "💎 다이아상점 판매기록\n" + (date || "전체 날짜") + " · " + page + "/" + totalPages + "페이지 · 완료 " + rows.length + "건\n" + selected.slice(0, 5).map(line).join("\n\n") + "\n전체 보기" + allsee + "\n" + selected.map(line).join("\n\n");
+    var previewCount = GLOBAL_CONFIG.diamondShop.historyPreviewCount; // 전체보기 위에 먼저 표시할 기록 개수
+    var out = "💎 다이아상점 판매기록\n" + (date || "전체 날짜") + " · " + page + "/" + totalPages + "페이지 · 완료 " + rows.length + "건\n" + selected.slice(0, previewCount).map(line).join("\n\n");
+    return selected.length > previewCount ? out + "\n전체 보기" + allsee + "\n" + selected.slice(previewCount).map(line).join("\n\n") : out;
 }
 
 function ensureDiamondMemberData(data, user) {
@@ -53614,7 +53616,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
     out += "💰수수료는 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
-    out += "🏪 자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
+    out += "🏪자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -54362,9 +54364,21 @@ function buildPetHomeFloorExpansion(before, after, completed, homeData, petSkill
     var beforeData = {}, afterData = {};
     beforeData[user] = beforeHome; afterData[user] = afterHome;
     var equipped = getEquippedPetSkillNames(petSkillData, user);
-    var charm = getPetHomeFurnitureCharm(afterData, petSkillData, user, equipped).floorApplied; // 현재 버프를 포함한 확장 후 평수 매력
-    var delta = charm - getPetHomeFurnitureCharm(beforeData, petSkillData, user, equipped).floorApplied; // 같은 버프 기준의 확장 증가분
-    return (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + (completed ? "확장 완료" : "예상 평수") + ": " + before + "평 → " + after + "평\n├ ⚔️ 캐슬매력 +" + numberWithCommas(charm) + " (+" + numberWithCommas(delta) + ")\n├ 👾 레이드매력 +" + numberWithCommas(charm) + " (+" + numberWithCommas(delta) + ")\n└ 💞 평수 누적매력 +" + numberWithCommas(charm * 2);
+    var beforeCharm = getPetHomeFurnitureCharm(beforeData, petSkillData, user, equipped), afterCharm = getPetHomeFurnitureCharm(afterData, petSkillData, user, equipped);
+    var delta = afterCharm.floorApplied - beforeCharm.floorApplied; // 같은 버프 기준의 한 모드 확장 증가분
+    var baseDelta = afterCharm.floor - beforeCharm.floor; // 버프를 제외한 평수 기본 증가분
+    var dreamRate = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? GLOBAL_CONFIG.petHomeVillage.dreamPercent : 0;
+    var villageRate = afterCharm.percent - dreamRate; // 별채 스킬을 제외한 빌리지 레벨 보너스 비율
+    var villageDelta = Math.floor(afterCharm.base * villageRate / 100) - Math.floor(beforeCharm.base * villageRate / 100);
+    var dreamDelta = afterCharm.villageBonus - beforeCharm.villageBonus - villageDelta; // 합산 버프의 정수 절삭 차이는 마지막 스킬분에 포함
+    var interiorDelta = afterCharm.interior - beforeCharm.interior; // 같은 가구 조건에서 평수 확장으로 추가된 인테리어 효과
+    var out = (completed ? "\n━━━━━━━━━━━━━━━\n" : "\n\n") + "🏡 평수 확장 매력 정보" + allsee + "\n📐 " + before + "평 → " + after + "평\n\n📈 이번 " + (after - before) + "평 증가분\n├ ⚔️ 캐슬매력 +" + numberWithCommas(delta) + "\n├ 👾 레이드매력 +" + numberWithCommas(delta) + "\n└ 💞 종합매력 +" + numberWithCommas(delta * 2);
+    var effects = ["평수 기본 +" + numberWithCommas(baseDelta)]; // 적용된 효과만 모아 마지막 줄의 트리 표시를 맞춤
+    if (villageRate) effects.push("빌리지(" + villageRate + "%) +" + numberWithCommas(villageDelta));
+    if (dreamRate) effects.push(GLOBAL_CONFIG.petHomeVillage.dreamSkillName + "(" + dreamRate + "%) +" + numberWithCommas(dreamDelta));
+    if (equipped.indexOf("인테리어 장인") !== -1) effects.push("인테리어 장인(10%) +" + numberWithCommas(interiorDelta));
+    out += "\n\n📙 각 매력의 증가 내역\n" + effects.map(function (effect, index) { return (index === effects.length - 1 ? "└ " : "├ ") + effect; }).join("\n");
+    return out + "\n\n🏠 확장 후 평수 누적 매력\n├ ⚔️ 캐슬매력 " + numberWithCommas(afterCharm.floorApplied) + "\n├ 👾 레이드매력 " + numberWithCommas(afterCharm.floorApplied) + "\n└ 💞 종합매력 " + numberWithCommas(afterCharm.floorApplied * 2);
 }
 
 // 확정 직전 현재 평수와 확장 조건을 재검증하는 함수
@@ -62428,7 +62442,7 @@ var PENDANT_GRADE_TABLE = [
     { name: "탐욕의 펜던트", icon: "🪙", grade: "상급+", rate: 2, charm: 5000000, explore: 1.0, notice: false },
     { name: "운명의 펜던트", icon: "🎲", grade: "최상급", rate: 1.2, charm: 6000000, explore: 1.1, notice: false },
     { name: "심판의 펜던트", icon: "⚖️", grade: "최상급+", rate: 0.6, charm: 7000000, explore: 1.2, notice: false },
-    { name: "왕좌의 펜던트", icon: "👑", grade: "신화", rate: 0.2, charm: 8000000, explore: 1.3, notice: true },
+    { name: "왕좌의 펜던트", icon: "👑", grade: "신화", rate: 0.2, charm: 8000000, explore: 1.3, notice: false },
     { name: "천공의 펜던트", icon: "🪽", grade: "초월", rate: 0.08, charm: 10000000, explore: 1.5, notice: true },
     { name: "창세의 펜던트", icon: "🌠", grade: "창세", rate: 0.02, charm: 15000000, explore: 2.0, notice: true },
     { name: "창조의 펜던트", icon: "🪬", grade: "창조", rate: 0.01, charm: 20000000, explore: 2.5, notice: true }
