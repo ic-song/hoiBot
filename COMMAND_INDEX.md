@@ -5,6 +5,15 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## /빼빼로타이틀오픈 [수량]
+
+Status: VERIFIED
+
+- 명령어는 수량 생략 시 1개, 수량 지정 시 1~100개만 실행하며 잘못된 인자·추가 안내 문장은 소비 없이 안내한다. `GLOBAL_CONFIG.peperoTitle`의 16종을 각 6.25%로 독립 추첨한다. 상품 판매가격은 자동 지정하지 않으며 `getDiamondShopItemNames`에 전용 상자를 등록 가능한 이름으로 제공한다.
+- `applyPeperoTitleOpen`은 사본에서 타이틀 중복·포인트 범위·원본 형식을 검증한 뒤 회원 가방·포인트와 `member_title.member[user].title.list`를 반영한다. 신규 가격은 1억, 중복 보상은 5,000만이며 `title.num`을 바꾸지 않는다. 같은 일괄 개봉 안의 중복도 보상한다.
+- 명령 진입에서 타이틀을 로드하고 기존 회원 분리 저장 계획과 회원·신규 타이틀 원문을 `publishOperationalRows`로 함께 확정한다. `validateAdventurePublication`·`assertAdventurePublicationReady`가 `member_title.json`도 검증·보호하며 기존 시작/명령 진입 복구가 동일 원문을 재게시한다. 로드 실패는 기존 오류 흐름을 유지한다. helper에 파일 IO를 추가하지 않는다.
+- 게시 완료 후 개인 결과와 실제 특별 당첨별 공지방 알림을 보낸다. `🪦 11월 11일 솔로 확정`은 신규·중복 모두 알림 대상이며 다른 15종은 알리지 않는다. 한 수신방 전송 실패가 다른 방 발송을 막지 않고 확정 보상도 되돌리지 않는다. DEV는 기존 DEV 데이터 경로와 DEV 공지방만 사용한다. 실제 네트워크 전달 실패는 로그로 남기며 자동 재발송을 추가하지 않는다.
+
 ## 펜던트 획득 전체알림
 
 Status: VERIFIED
