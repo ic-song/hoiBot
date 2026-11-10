@@ -2989,6 +2989,7 @@ function normalizePetSkillName(skillName) {
 		.replace(/📙/g, "")
 		.replace(/✨/g, "")
 		.trim();
+	if (skillName.replace(/\s/g, "") === "대머리대장장이") return "대머리 대장장이";
 	if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
 	if (skillName === "종의본능") return "종의 본능";
 	if (skillName === "로열하우스") return "로열 하우스";

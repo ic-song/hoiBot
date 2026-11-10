@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.808"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.809"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -159,7 +159,7 @@ const PET_SKILL_LIST = [
     { name: "무쌍귀신", grade: "A", rate: 1.7, equipComment: "촹 촹 챙챙 슈슉 슈슉 윽! 악!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n펫무쌍 공격 보상 지급 시 포인트 1억을 추가로 획득합니다." },
     // { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
     { name: "대머리 대장장이", grade: "A", rate: 1.7, effect: "/펫강화 성공 확률 5% 증가" },
-    { name: "꽃집 대장장이", grade: "A", rate: 1.7, effect: "정령 콘텐츠 종료로 효과가 종료되었습니다." },
+    { name: "꽃집 대장장이", grade: "A", rate: 1.7, openable: false, hideFromRateTable: true, retired: true, collectionEligible: false, effect: "정령 콘텐츠 종료로 효과가 종료되었습니다." },
 
     { name: "일일루틴", grade: "B", rate: 2.0, effect: "일일퀘스트 완료 시 100%로 포인트 1억을 획득합니다." },
     { name: "주간루틴", grade: "B", rate: 2.0, effect: "주간퀘스트 완료 시 100%로 포인트 10억을 획득합니다." },
@@ -7540,7 +7540,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
                         for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
                             var sd = PET_SKILL_LIST[ps];
-                            if (sd.grade !== currentGrade) continue;
+                            if (sd.grade !== currentGrade || sd.hideFromRateTable === true) continue;
 
                             var rate = getPetSkillActualRate(sd);
                             totalPercent += rate;
@@ -7563,19 +7563,18 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     replier.reply(rateMsg.trim());
                     return;
                 }
-                if (msg.startsWith("/펫스킬정보")) {
+                if (msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
                     var skillQuery = msg.replace("/펫스킬정보", "").trim();
                     if (!skillQuery) {
                         replier.reply("사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)");
                         return;
                     }
-                    // 1순위: 유저 닉네임으로 매칭 (관리자 전용 — 데이터 복구용)
-                    if (data.member[skillQuery] && (isAdmin(sender) || isMaster(sender))) {
+                    // 스킬명과 회원 닉네임이 같아도 스킬 정보 조회를 우선한다.
+                    var skillInfo = getPetSkillData(skillQuery);
+                    if (!skillInfo && data.member[skillQuery] && (isAdmin(sender) || isMaster(sender))) {
                         replier.reply(formatSkillBagMessage(data, petData, petSkillData, guildData, skillQuery));
                         return;
                     }
-                    // 2순위: 펫스킬 이름으로 매칭
-                    var skillInfo = getPetSkillData(skillQuery);
                     if (!skillInfo) {
                         // 일반 유저가 다른 유저 닉네임으로 조회 시도한 경우
                         if (data.member[skillQuery]) {
@@ -54743,6 +54742,7 @@ function normalizePetSkillName(skillName) {
         .replace(/📙/g, "")
         .replace(/✨/g, "")
         .trim();
+    if (skillName.replace(/\s/g, "") === "대머리대장장이") return "대머리 대장장이";
     if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
     else if (skillName === "야수의본능") return "야수의 본능";
     else if (skillName === "종의본능") return "종의 본능";
