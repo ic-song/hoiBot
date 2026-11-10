@@ -6,7 +6,7 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
-## 2026-11-11 - 시작 시 전역 설정 초기화 전 요청 모니터링 파일 로드 (ver_2.812)
+## 2026-11-11 - 시작 시 전역 설정 초기화 전 요청 모니터링 파일 로드 (ver_2.813)
 
 - 제보: `MAIN#54600`에서 `diamondLive`를 undefined에서 읽는 오류가 발생했다. 요청 모니터링 설정의 최초 `loadJsonFile`이 `GLOBAL_CONFIG` 선언보다 먼저 실행되어, 파일 접근 보호 검사 `assertAdventurePublicationReady`의 `GLOBAL_CONFIG.diamondLive.baselineFile` 참조에 도달했다.
 - 수정: 요청 모니터링 설정 읽기·기존 기본값 보완·요청 제한값 반영을 기존 최초 저장 위치로 옮겼다. 전역 설정·저장 잠금·스레드별 상태가 준비된 뒤 읽고 저장하며, 파일 로드 오류 전파·기존 기본값 정책·미완료 지급 보호 검사는 유지한다. 설정 누락을 우회하는 가드나 저장 복구 동작은 추가하지 않는다.
