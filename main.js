@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.801"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.802"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -8104,7 +8104,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (msg === "/자유시장검색") { replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buildFreeMarketSearchGuide()); return; }
                     if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
-                        var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "");
+                        var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "", msg === "/자유시장" || msg === "ㅈㅈ");
                         if (msg === "/내판매") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
                         replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined)); return;
                     }
@@ -53155,8 +53155,8 @@ function compareFreeMarketUnitPrices(a, b) {
         an = ad; ad = ar; bn = bd; bd = br; direction = -direction;
     }
 }
-// 분류·실제 등급·공백 없는 이름 조건을 적용하고 유형별 기존 우선순위로 정렬하는 함수
-function searchFreeMarketV2(market, query) {
+// 검색은 유형별 우선순위로, 기본 자유시장 목록만 최근 등록순으로 정렬하는 함수
+function searchFreeMarketV2(market, query, recentFirst) {
     var rows = getFreeMarketActiveListings(market), search = parseFreeMarketSearch(query);
     return rows.filter(function (row) {
         if (!search.text) return true;
@@ -53172,6 +53172,7 @@ function searchFreeMarketV2(market, query) {
         })) return false;
         return !search.name || name.indexOf(search.name) !== -1;
     }).sort(function (a, b) {
+        if (recentFirst) return (b.createdAtMs || 0) - (a.createdAtMs || 0) || b.id - a.id;
         var ac = getFreeMarketCategory(a), bc = getFreeMarketCategory(b);
         if (ac !== bc) return ac < bc ? -1 : 1;
         var an = search.text ? normalizeFreeMarketSearchText(a.itemName) : a.itemName, bn = search.text ? normalizeFreeMarketSearchText(b.itemName) : b.itemName;
