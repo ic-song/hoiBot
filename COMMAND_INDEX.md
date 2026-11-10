@@ -124,8 +124,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `main.js`: `requestMonitorConfigPath`에서 설정을 읽고 기존 기준대로 누락·잘못된 설정값을 보완한다.
-- 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`는 `GLOBAL_CONFIG`와 저장 잠금 초기화 이후, 지급 복구·최초 회원 로드 이전에 실행한다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조한다.
+- `main.js`: `GLOBAL_CONFIG`·저장 잠금·스레드별 상태 초기화 이후, 지급 복구·최초 회원 로드 이전에 `requestMonitorConfigPath`를 읽고 기존 기준대로 누락·잘못된 설정값을 보완한 뒤 요청 제한값 반영과 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`를 실행한다.
+- 파일 로드의 미완료 지급 보호 검사도 `GLOBAL_CONFIG.diamondLive` 등을 참조하므로 읽기부터 이 순서를 지킨다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조하며 기존 오류 전파·보호 검사를 유지한다.
 - `loadJsonFile`·`saveJsonFile`·DEV/PROD 경로 선택과 저장 실패 전파 방식은 유지한다.
 
 ## /꽃집보상지급 · /꽃집보상현황 · /꽃집보상공지확정

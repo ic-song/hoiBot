@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.811"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.812"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -984,21 +984,6 @@ const DEFAULT_REQUEST_MONITOR_CONFIG = {
     excludedRooms: [room90]
 };
 
-requestMonitorConfig = loadJsonFile(requestMonitorConfigPath) || {};
-if (!requestMonitorConfig.windowMs || requestMonitorConfig.windowMs <= 0) {
-    requestMonitorConfig.windowMs = DEFAULT_REQUEST_MONITOR_CONFIG.windowMs;
-}
-if (!requestMonitorConfig.limit || requestMonitorConfig.limit <= 0) {
-    requestMonitorConfig.limit = DEFAULT_REQUEST_MONITOR_CONFIG.limit;
-}
-if (!(requestMonitorConfig.excludedCommands instanceof Array)) {
-    requestMonitorConfig.excludedCommands = DEFAULT_REQUEST_MONITOR_CONFIG.excludedCommands.slice();
-}
-if (!(requestMonitorConfig.excludedRooms instanceof Array)) {
-    requestMonitorConfig.excludedRooms = DEFAULT_REQUEST_MONITOR_CONFIG.excludedRooms.slice();
-}
-USER_REQUEST_WINDOW_MS = requestMonitorConfig.windowMs;
-USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 //초기 어드민 설정
 var protectedJsonSaveLocks = {}; // 보호 JSON과 직전 백업 경로별 저장 잠금
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
@@ -3614,7 +3599,22 @@ blockedNicknameTerms: [
     }
 };
 
-// 저장 계층이 참조하는 전역 설정 초기화 후 요청 모니터링 설정을 저장한다.
+// 저장 설정·잠금·스레드별 상태가 준비된 뒤 요청 모니터링 설정을 읽고 보완·저장한다.
+requestMonitorConfig = loadJsonFile(requestMonitorConfigPath) || {};
+if (!requestMonitorConfig.windowMs || requestMonitorConfig.windowMs <= 0) {
+    requestMonitorConfig.windowMs = DEFAULT_REQUEST_MONITOR_CONFIG.windowMs;
+}
+if (!requestMonitorConfig.limit || requestMonitorConfig.limit <= 0) {
+    requestMonitorConfig.limit = DEFAULT_REQUEST_MONITOR_CONFIG.limit;
+}
+if (!(requestMonitorConfig.excludedCommands instanceof Array)) {
+    requestMonitorConfig.excludedCommands = DEFAULT_REQUEST_MONITOR_CONFIG.excludedCommands.slice();
+}
+if (!(requestMonitorConfig.excludedRooms instanceof Array)) {
+    requestMonitorConfig.excludedRooms = DEFAULT_REQUEST_MONITOR_CONFIG.excludedRooms.slice();
+}
+USER_REQUEST_WINDOW_MS = requestMonitorConfig.windowMs;
+USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 
 // 중단된 지급의 회원 원문부터 복구한 뒤 최초 권한·캐시를 읽는다.
