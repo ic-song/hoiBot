@@ -1,8 +1,9 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.809"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.810"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
+var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
 var miniPetCollectionAllPending = {}; // DEV/PROD 계정별 미니펫 컬렉션 전체등록 확인 대기
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
@@ -1021,6 +1022,7 @@ var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 �
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
+    diamondLive: { pointWeight: 150000000, diamondWeight: 200000000, roundingUnit: 1000000, confirmationMs: 60000, correctionPercent: 50, operatorName: "호이 남", baselineFile: "diamondLiveBaseline.json" },
     passDuration: { // 기존 두 패스의 기간권·미개봉 패키지 정의
         legacyPremiumItem: "호이패스 프리미엄 30일👑(/호패프리미엄오픈)",
         legacyPremiumCommand: "/호패프리미엄오픈",
@@ -6736,7 +6738,43 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(diaMsg.trim());
             return;
         }
-        if (msg === "/다이아조합법") { replier.reply(buildDiamondShopDirectHeader(sender) + buildDiamondCombineGuide()); return; }
+        if (msg === "/포인트다이아통계" || /^\/다이아조합(?:법|선택)?(?:\s|$)/.test(msg)) {
+            var liveNick = checkRank(data, petData, guildData, sender), liveHeader = "[" + liveNick + "] 님\n\n";
+            if (msg === "/포인트다이아통계" && !isMaster(sender)) { replier.reply(liveHeader + "❌ MASTER 전용 명령어입니다."); return; }
+            var liveChoice = /^\/다이아조합선택[ \t]+([12])$/.exec(msg);
+            var liveQuantity = /^\/다이아조합(?:[ \t]+(\d+))?$/.exec(msg);
+            if (msg !== "/포인트다이아통계" && msg !== "/다이아조합법" && !(liveChoice && liveChoice[0] === msg) && !(liveQuantity && liveQuantity[0] === msg)) { replier.reply(liveHeader + "사용법: /다이아조합 [숫자]\n선택: /다이아조합선택 1 또는 2"); return; }
+            var livePersisting = false;
+            try {
+                var liveNow = Date.now(), liveBaselinePath = DATA_ROOT_PATH + GLOBAL_CONFIG.diamondLive.baselineFile;
+                var liveReceipt = loadJsonFile(liveBaselinePath);
+                if (liveReceipt === null && new java.io.File(resolveActiveDataPath(liveBaselinePath) + ".rollback").exists()) throw new Error("시세 고정 기준 기록 복구가 필요합니다.");
+                verifyDiamondLiveReceipt(data, liveReceipt);
+                if (liveChoice) {
+                    var liveResult = applyDiamondLiveChoice(data, sender, Number(liveChoice[1]), liveNow, request && request.receivedAt || liveNow);
+                    var liveReply = replier;
+                    if (liveResult.changed) { livePersisting = true; liveReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier); saveJsonFile(data, filePath); }
+                    liveReply.reply(buildDiamondLiveMessage(liveResult.kind, liveNick, liveResult.quote)); return;
+                }
+                var liveCount = liveQuantity && liveQuantity[1] !== undefined ? Number(liveQuantity[1]) : 1;
+                if (!isPointShopSafeCount(liveCount) || liveCount < 1) { replier.reply(liveHeader + "사용법: /다이아조합 [숫자]"); return; }
+                var liveMarket = requireFreeMarketSource(loadJsonFile(freeMarketPath)), liveRoot = ctx.rootPath;
+                if (initializeDiamondLiveState(data, liveMarket, userState, liveRoot, liveNow, function () { return String(java.util.UUID.randomUUID()); })) {
+                    livePersisting = true; beginFreeMarketMutation(request, data, petData, petSkillData, replier, [liveBaselinePath]);
+                    saveJsonFile({ version: 1, operatorId: data.diamondLiveMarket.operatorId, baseline: data.diamondLiveMarket.baseline }, liveBaselinePath);
+                    saveJsonFile(data, filePath); finishFreeMarketMutation(request); livePersisting = false;
+                }
+                var liveState = requireDiamondLiveState(data), liveSnapshot = getDiamondLiveSnapshot(data, liveMarket, userState, liveRoot, liveNow, ctx.diamondLiveMemberText);
+                var livePrice = calculateDiamondLivePrice(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent);
+                if (msg === "/포인트다이아통계") { replier.reply(buildDiamondLiveStatistics(liveNick, liveState.baseline, liveSnapshot, livePrice)); return; }
+                if (!liveQuantity || liveQuantity[1] === undefined) { replier.reply(buildDiamondLiveMessage("view", liveNick, { count: 1, price: livePrice, total: livePrice })); return; }
+                var liveQuote = prepareDiamondLiveQuote(data, sender, liveCount, livePrice, liveNow, String(java.util.UUID.randomUUID()));
+                livePersisting = true;
+                var liveQuoteReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
+                saveJsonFile(data, filePath);
+                liveQuoteReply.reply(buildDiamondLiveMessage("confirm", liveNick, liveQuote)); return;
+            } catch (liveError) { if (livePersisting || getDataSaveTransaction() && getDataSaveTransaction().failed) throw liveError; replier.reply(liveHeader + "⚠️ " + String(liveError.message || liveError)); return; }
+        }
         if (/^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|시세설정)(?:\s|$)/.test(msg)) {
             var diamondReplyBase = replier;
             replier = { reply: function (text) { return diamondReplyBase.reply((msg === "/다이아상점" ? "" : buildDiamondShopDirectHeader(sender)) + text); } };
@@ -6747,7 +6785,21 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             }
             if (msg === "/다이아상점" || msg === "/다이아상점관리") {
                 if (msg === "/다이아상점" && recordAdventureQuestAction(data, sender, 13, "diamondShopViewed", 0)) saveJsonFile(data, filePath);
-                replyFreeMarketV2(replier, buildDiamondShopView(diamondShopV2, data.member[sender], diamondManage, diamondManage ? ensureCurrencyLogData(loadJsonFile(currencyLogPath)) : null)); return;
+                var shopLiveNick = checkRank(data, petData, guildData, sender), shopLivePrice, shopLivePersisting = false;
+                try {
+                    var shopLiveMarket = requireFreeMarketSource(loadJsonFile(freeMarketPath)), shopLiveNow = Date.now(), shopLiveBaselinePath = DATA_ROOT_PATH + GLOBAL_CONFIG.diamondLive.baselineFile;
+                    var shopLiveReceipt = loadJsonFile(shopLiveBaselinePath);
+                    if (shopLiveReceipt === null && new java.io.File(resolveActiveDataPath(shopLiveBaselinePath) + ".rollback").exists()) throw new Error("시세 고정 기준 기록 복구가 필요합니다.");
+                    verifyDiamondLiveReceipt(data, shopLiveReceipt);
+                    if (initializeDiamondLiveState(data, shopLiveMarket, userState, ctx.rootPath, shopLiveNow, function () { return String(java.util.UUID.randomUUID()); })) {
+                        shopLivePersisting = true; beginFreeMarketMutation(request, data, petData, petSkillData, replier, [shopLiveBaselinePath]);
+                        saveJsonFile({ version: 1, operatorId: data.diamondLiveMarket.operatorId, baseline: data.diamondLiveMarket.baseline }, shopLiveBaselinePath);
+                        saveJsonFile(data, filePath); finishFreeMarketMutation(request); shopLivePersisting = false;
+                    }
+                    var shopLiveSnapshot = getDiamondLiveSnapshot(data, shopLiveMarket, userState, ctx.rootPath, shopLiveNow, ctx.diamondLiveMemberText);
+                    shopLivePrice = calculateDiamondLivePrice(requireDiamondLiveState(data).baseline, shopLiveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent);
+                } catch (shopLiveError) { if (shopLivePersisting || getDataSaveTransaction() && getDataSaveTransaction().failed) throw shopLiveError; shopLivePrice = null; } // 조합 시세 오류도 기존 상품 목록·구매 기능은 유지
+                replyFreeMarketV2(replier, (diamondManage ? "" : "[" + shopLiveNick + "] 님\n\n") + buildDiamondShopView(diamondShopV2, data.member[sender], diamondManage, diamondManage ? ensureCurrencyLogData(loadJsonFile(currencyLogPath)) : null, shopLivePrice)); return;
             }
             var diamondMaintenance = msg.match(/^\/다이아상점관리\s+(점검|정상)\s+(\d{4}-\d{2}-\d{2})$/);
             if (diamondMaintenance) {
@@ -8684,7 +8736,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         }
                     }
                     if (!isFreeMarketConfirmed) {
-                        setFreeMarketConfirmState(sender, "buy", msg, buyListing.id, getFreeMarketListingFingerprint(buyListing));
+                        if (!data.member[sender].serverRaidAccount) { data.member[sender].serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(data.member[sender].server), latest: null, total: null }; saveJsonFile(data, filePath); }
+                        if (typeof data.member[sender].serverRaidAccount.id !== "string" || !data.member[sender].serverRaidAccount.id) throw new Error("구매 확인 계정 ID 오류");
+                        setFreeMarketConfirmState(sender, "buy", msg, buyListing.id, getFreeMarketListingFingerprint(buyListing), data.member[sender].serverRaidAccount.id);
                         replier.reply(buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, buyListing));
                         return;
                     }
@@ -27348,31 +27402,6 @@ replier.reply(
                     replier.reply(petSkillBookCombineResult.message);
                     return;
                 }
-                if (msg === "/다이아조합" || /^\/다이아조합\s+\d+$/.test(msg)) {
-                    var diamondCombineMatch = msg.match(/^\/다이아조합(?:\s+(\d+))?$/);
-                    var diamondCombineCount = diamondCombineMatch && diamondCombineMatch[1] ? parseInt(diamondCombineMatch[1], 10) : 1;
-                    if (!isPointShopSafeCount(diamondCombineCount) || diamondCombineCount < 1 || !isPointShopSafeCount(diamondCombineCount * GLOBAL_CONFIG.diamondShop.combinePoint)) {
-                        replier.reply(buildDiamondShopDirectHeader(sender) + "사용법: /다이아조합 [숫자]\n예) /다이아조합 10");
-                        return;
-                    }
-
-                    var stoneNeed = diamondCombineCount;
-                    var pointNeed = GLOBAL_CONFIG.diamondShop.combinePoint * diamondCombineCount;
-                    var stoneHave = data.member[sender].bag && data.member[sender].bag[GLOBAL_CONFIG.items.legendStoneName] ? data.member[sender].bag[GLOBAL_CONFIG.items.legendStoneName] : 0;
-                    var pointHave = data.member[sender].point || 0;
-
-                    if (stoneHave < stoneNeed || pointHave < pointNeed) {
-                        replier.reply(buildDiamondShopDirectHeader(sender) + buildDiamondCombineShortage(diamondCombineCount, stoneHave, pointHave)); return;
-                    }
-                    if (!isPointShopSafeCount(((data.member[sender].bag || {})[GLOBAL_CONFIG.items.diamondBoxName] || 0) + diamondCombineCount)) { replier.reply(buildDiamondShopDirectHeader(sender) + "❌ 보관 수량을 확인해주세요."); return; }
-
-                    removeItem(data, sender, GLOBAL_CONFIG.items.legendStoneName, stoneNeed);
-                    addPoint(data, sender, -pointNeed);
-                    addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, diamondCombineCount);
-                    saveJsonFile(data, filePath);
-                    replier.reply(buildDiamondShopDirectHeader(sender) + "💎 다이아 조합 완료!\n\n소비: 전설의 돌맹이🗿 " + numberWithCommas(stoneNeed) + "개 / 🅟" + numberWithCommas(pointNeed) + "\n획득: 다이아상자💎(/다이아상자오픈) " + numberWithCommas(diamondCombineCount) + "개");
-                    return;
-                }
                 if (msg === "/포인트상자오픈" || /^\/포인트상자오픈\s+\d+$/.test(msg)) {
                     runPointBoxOpen(sender, data, petData, guildData, msg, replier);
                     saveJsonFile(data, filePath);
@@ -34872,6 +34901,7 @@ function loadJsonFile(path, memberStoreMode) {
         path = resolveActiveDataPath(path);
         var autoDailyBatch = getAutoDailyBatchContext();
         if (autoDailyBatch && autoDailyBatch.managedPaths[path] && Object.prototype.hasOwnProperty.call(autoDailyBatch.files, path)) {
+            if (path === resolveActiveDataPath(filePath)) getCurrentContext().diamondLiveMemberText = null; // 미게시 배치의 최신 회원 객체는 원문 캐시를 재사용하지 않음
             return autoDailyBatch.files[path];
         }
         if (isProtectedManagedJsonPath(path)) {
@@ -34884,6 +34914,7 @@ function loadJsonFile(path, memberStoreMode) {
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             var loadedData = isProtectedManagedJsonPath(path) ? parseManagedJsonContent(fileContent, path) : parseJsonContent(fileContent, path);
+            if (path === resolveActiveDataPath(filePath)) getCurrentContext().diamondLiveMemberText = String(fileContent);
             if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
                 try {
                     var splitMarker = getMemberSplitMarker(loadedData);
@@ -35324,6 +35355,7 @@ function getProtectedJsonSaveLock(path) {
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
 function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup) {
+    if (path === resolveActiveDataPath(filePath)) { diamondLiveOwnedCache = {}; getCurrentContext().diamondLiveMemberText = null; } // 실패·복구 쓰기도 이전 집계 합계를 무효화
     assertAdventurePublicationReady(path);
     if (GLOBAL_CONFIG.guildWar && (path === resolveActiveDataPath(filePath) || path === resolveActiveDataPath(guildPath))) assertGuildWarNoPending();
     if (path === resolveActiveDataPath(filePath)) assertHowolDramaNoPending();
@@ -52829,8 +52861,9 @@ function buildDiamondShopDirectHeader(sender) {
     return (/^\[[\s\S]*\]$/.test(sender) ? sender : "[" + sender + "]") + " 님\n";
 }
 // 다이아 획득 방법과 현재 조합 비용을 안내하는 함수
-function buildDiamondCombineGuide() {
-    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + formatKoreanShort(GLOBAL_CONFIG.diamondShop.combinePoint) + "\n → 다이아상자💎 1개";
+function buildDiamondCombineGuide(livePrice) {
+    if (livePrice === null) return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n⚠️ 조합 시세 확인 불가 · 신규 조합 신청 중단";
+    return "💎 다이아 획득 방법\n① 호이월드 후원\n② /다이아조합 [숫자]\n└ 전설의 돌맹이🗿 1개 + 🅟" + (livePrice !== undefined ? numberWithCommas(livePrice) : formatKoreanShort(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n → 다이아상자💎 1개";
 }
 // 조합 요청의 두 재료 보유·필요·부족 또는 충족 상태를 표시하는 함수
 function buildDiamondCombineShortage(count, stoneHave, pointHave) {
@@ -53028,10 +53061,10 @@ function applyDiamondShopPurchase(data, log, user, accountId, product, bundles, 
     addUsedDiamond(log, user, plan.total, { type: "구매", shopSaleId: sale.id, memo: product.name + "x" + numberWithCommas(plan.grant.count) });
 }
 // 일반 상점·관리자 상품 현황을 현재 적용 설정과 다음날 예약으로 구분해 표시하는 함수
-function buildDiamondShopView(shop, member, manage, log) {
+function buildDiamondShopView(shop, member, manage, log, livePrice) {
     var totals = manage ? getDiamondShopDailyTotals(log, shop.day) : null; // 삭제된 상품까지 포함한 당일 완료 통계
     var text = manage ? "💎 다이아상점 관리" : "💎 호이월드 다이아상점";
-    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 운영 설정은 즉시 적용\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide() + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
+    text += "\n💎 보유: " + numberWithCommas(member.diamond || 0) + "개\n━━━━━━━━━━━━\n구매: /다이아구매 번호 갯수\n시세는 매일 00:01 갱신 · 운영 설정은 즉시 적용\n━━━━━━━━━━━━\n" + buildDiamondCombineGuide(livePrice) + "\n" + (manage ? "활성 상품: " + shop.products.length + "개 · 시세 ON " + shop.products.filter(function (product) { return product.on; }).length + "개\n오늘 완료 구매: " + totals.completed + "건\n실제 판매: " + totals.actual + "묶음 / 유효: " + totals.effective + "묶음\n회수 다이아: 💎" + numberWithCommas(totals.diamonds) + "개\n" + (totals.legacy ? "과거 완료 " + totals.legacy + "건의 묶음 수·유효량은 미기록\n" : "") : "") + allsee;
     if (!shop.products.length) text += "\n등록된 상품이 없습니다.";
     for (var i = 0; i < shop.products.length; i++) {
         var p = shop.products[i], identity = member.serverRaidAccount && member.serverRaidAccount.id, bought = identity && p.accounts["$" + identity] ? p.accounts["$" + identity].bought : 0;
@@ -53046,6 +53079,7 @@ function buildDiamondShopView(shop, member, manage, log) {
         text += "\n└ 📅 " + (p.limit === null ? "구매제한 없음" : "오늘 구매 " + bought + "/" + p.limit + "회") + "\n";
         if (manage) text += "등록 ID " + p.id + " · 기본가 💎" + p.basePrice + " · 기준 B " + p.baseSales + "\n전날 유효 " + (p.previousDay ? p.previousDay.effective : "미기록") + " / 오늘 실판매 " + p.actual + " / 유효 " + p.effective + " / 회수 💎" + p.diamonds + "\n다음 운영일: " + (p.pending ? (p.pending.on ? "ON · B " + p.pending.baseSales : "OFF · 기본가 복귀") : "변경 없음") + "\n";
     }
+    if (!manage && typeof livePrice === "string") text = text.replace("시세는 매일 00:01", "상품 시세는 매일 00:01").replace("\n💎 보유:", "\n💎 보유 다이아:").replace("\n━━━━━━━━━━━━\n구매:", "\n\n📊 실시간 다이아 시세\n💰 조합 가격: 🅟" + numberWithCommas(livePrice) + "\n" + buildDiamondLiveChange(livePrice, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n━━━━━━━━━━━━\n구매:");
     if (!manage && shop.products.length) text += "\n━━━━━━━━━━━━\n📊 변동 범위: -20% ~ +60%\n※ 상품별 시세 ON/OFF가 다릅니다.\n※ 갯수는 상품 묶음의 구매 수량입니다.\n※ 구매 한도는 계정별 하루 기준입니다.";
     return text;
 }
@@ -54077,11 +54111,12 @@ function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, list
     }
 }
 
-function setFreeMarketConfirmState(sender, action, command, listingId, fingerprint) {
+function setFreeMarketConfirmState(sender, action, command, listingId, fingerprint, accountId) {
     sender = getFreeMarketPendingKey(sender);
     if (!userState[sender]) userState[sender] = {};
     userState[sender].freeMarket = {
         fingerprint: fingerprint || (action === "register" ? getCurrentContext().marketRegistrationFingerprint : null),
+        accountId: accountId || null,
         action: action,
         command: command,
         listingId: listingId || 0,
@@ -54496,7 +54531,7 @@ function validateAdventurePublication(journal) {
     var seen = {};
     for (var i = 0; i < journal.pending.length; i++) {
         var row = journal.pending[i];
-        if (!row || typeof row.name !== "string" || !/^(?:member|member_title|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
+        if (!row || typeof row.name !== "string" || !/^(?:diamondLiveBaseline|member|member_title|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
         seen[row.name] = true;
         var parsed = parseJsonContent(row.text, row.name);
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("모험가 성장 원본 형식 오류");
@@ -54543,7 +54578,7 @@ function recoverAdventurePublication() {
 
 // 집 확장 확정 자료의 검증·복구를 처리하는 함수
 function assertAdventurePublicationReady(path) {
-    if ([resolveActiveDataPath(filePath), resolveActiveDataPath(memberTitlePath), resolveActiveDataPath(memberPetPath), resolveActiveDataPath(homeDataFile), resolveActiveDataPath(petSkillDataPath), resolveActiveDataPath(freeMarketPath), resolveActiveDataPath(currencyLogPath)].indexOf(resolveActiveDataPath(path)) === -1) return;
+    if ([resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.diamondLive.baselineFile), resolveActiveDataPath(filePath), resolveActiveDataPath(memberTitlePath), resolveActiveDataPath(memberPetPath), resolveActiveDataPath(homeDataFile), resolveActiveDataPath(petSkillDataPath), resolveActiveDataPath(freeMarketPath), resolveActiveDataPath(currencyLogPath)].indexOf(resolveActiveDataPath(path)) === -1) return;
     if (adventurePublishingThread.get()) return;
     var pending = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventurePublication.pendingName);
     if (!new java.io.File(pending).exists() && new java.io.File(pending + ".rollback").exists()) throw new Error("모험가 성장 복구 대기");
@@ -60092,6 +60127,227 @@ function getAdventureQuestStageConfig(stageNumber) {
     var index = parseInt(stageNumber, 10) - 1;
     var stages = GLOBAL_CONFIG.adventureQuest.stages;
     return index >= 0 && index < stages.length ? stages[index] : null;
+}
+
+// 현재 회원의 정확한 보유 합계를 계산하며 같은 계정 ID의 중복 행은 한 번만 집계하는 함수
+function collectDiamondLiveOwned(data, operatorId, identities) {
+    if (!data.member || typeof data.member !== "object" || Array.isArray(data.member)) throw new Error("회원 집계 원본 오류");
+    var points = new java.math.BigInteger("0"), diamonds = points, boxes = points, count = 0, byId = {}, byName = {}, operatorSeen = false;
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
+        var member = data.member[user];
+        if (!member || typeof member !== "object" || Array.isArray(member)) throw new Error("회원 집계 레코드 오류");
+        var id = identities && identities[user] || member.serverRaidAccount && member.serverRaidAccount.id;
+        if (typeof id !== "string" || !id) throw new Error("회원 고유 ID 확인이 필요합니다.");
+        if (id === operatorId) { operatorSeen = true; continue; }
+        var point = member.point, diamond = member.diamond === undefined ? 0 : member.diamond;
+        var bag = member.bag === undefined ? {} : member.bag;
+        if (!bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("회원 가방 집계 오류");
+        var box = bag[GLOBAL_CONFIG.items.diamondBoxName] === undefined ? 0 : bag[GLOBAL_CONFIG.items.diamondBoxName];
+        if (!isPointShopSafeCount(point) || !isPointShopSafeCount(diamond) || !isPointShopSafeCount(box)) throw new Error("재화 집계 수량 오류");
+        var row = { id: id, points: String(point), diamonds: String(diamond), boxes: String(box) };
+        byName[user] = id;
+        if (byId["$" + id]) {
+            if (JSON.stringify(byId["$" + id]) !== JSON.stringify(row)) throw new Error("동일 계정 ID의 재화가 일치하지 않습니다.");
+            continue;
+        }
+        byId["$" + id] = row; count++;
+        points = points.add(new java.math.BigInteger(row.points));
+        diamonds = diamonds.add(new java.math.BigInteger(row.diamonds));
+        boxes = boxes.add(new java.math.BigInteger(row.boxes));
+    }
+    if (!operatorSeen) throw new Error("집계 제외 운영자 계정 ID가 현재 회원에 없습니다. MASTER 확인이 필요합니다.");
+    return { points: String(points.toString()), held: String(diamonds.toString()), boxes: String(boxes.toString()), members: String(count), byId: byId, byName: byName };
+}
+
+// 유효한 자유시장 구매 확인 대기액만 실제 잔고와 별도로 합산하는 함수
+function collectDiamondLiveReserved(owned, market, states, root, now) {
+    var perAccount = {}, seen = {}, total = new java.math.BigInteger("0");
+    for (var key in states) {
+        if (!Object.prototype.hasOwnProperty.call(states, key) || key.indexOf("market:") !== 0) continue;
+        var scope;
+        try { scope = JSON.parse(key.substring(7)); } catch (unrelatedStateKey) { continue; }
+        var pending = states[key] && states[key].freeMarket;
+        if (!Array.isArray(scope) || scope[0] !== root || !pending || pending.action !== "buy" || !isPointShopSafeCount(pending.createdAt) || pending.createdAt > now || now - pending.createdAt > GLOBAL_CONFIG.diamondLive.confirmationMs) continue;
+        var id = pending.accountId, row = id && owned.byId["$" + id];
+        if (!row) continue;
+        var listing = getFreeMarketListingById(market, pending.listingId);
+        if (!listing || pending.fingerprint !== getFreeMarketListingFingerprint(listing)) continue;
+        if (!isPointShopSafeCount(listing.price) || listing.price < 1) throw new Error("시장 구매 대기 금액 오류");
+        var token = JSON.stringify([id, listing.id]); // 같은 계정·같은 매물의 방별 중복 확인은 한 번만 제외
+        if (seen[token]) continue;
+        seen[token] = true;
+        var held = new java.math.BigInteger(row.diamonds), amount = new java.math.BigInteger(String(listing.price));
+        perAccount["$" + id] = (perAccount["$" + id] || new java.math.BigInteger("0")).add(amount);
+        if (perAccount["$" + id].compareTo(held) > 0) throw new Error("시장 구매 대기액이 보유 다이아를 초과했습니다. 대기 요청을 취소해주세요.");
+        total = total.add(amount);
+    }
+    return String(total.toString());
+}
+
+// 보유 다이아·미개봉 상자에서 아직 차감되지 않은 구매 대기액만 통계상 제외하는 함수
+function buildDiamondLiveSnapshot(owned, market, states, root, now) {
+    var reserved = collectDiamondLiveReserved(owned, market, states, root, now);
+    var held = new java.math.BigInteger(owned.held).subtract(new java.math.BigInteger(reserved));
+    return { points: owned.points, diamonds: String(held.add(new java.math.BigInteger(owned.boxes)).toString()), members: owned.members, held: String(held.toString()), boxes: owned.boxes, reserved: reserved };
+}
+
+// 최초 기준과 확인 대기의 저장 형식을 검증하고 유실된 기준을 자동 재생성하지 않는 함수
+function requireDiamondLiveState(data) {
+    var state = data.diamondLiveMarket;
+    if (!data.migrations || data.migrations.diamondLiveInitialized !== true || !state || state.version !== 1 || typeof state.operatorId !== "string" || !state.operatorId || !state.baseline || !state.pending || typeof state.pending !== "object" || Array.isArray(state.pending)) throw new Error("실시간 다이아 기준값이 없거나 손상됐습니다. MASTER가 백업을 확인해주세요.");
+    requireDiamondLiveInteger(state.baseline.points, true); requireDiamondLiveInteger(state.baseline.diamonds, true); requireDiamondLiveInteger(state.baseline.members, true);
+    return state;
+}
+
+// 별도 고정 기준 기록과 회원 표시를 함께 확인해 과거 회원 복원 뒤 기준 재생성을 차단하는 함수
+function verifyDiamondLiveReceipt(data, receipt) {
+    var hasState = data.diamondLiveMarket !== undefined || data.migrations && data.migrations.diamondLiveInitialized !== undefined;
+    if (!hasState && receipt === null) return;
+    var state = requireDiamondLiveState(data);
+    if (!receipt || receipt.version !== 1 || receipt.operatorId !== state.operatorId || !receipt.baseline) throw new Error("실시간 시세 고정 기준 기록이 없거나 불일치합니다. MASTER가 백업을 확인해주세요.");
+    var fields = ["points", "diamonds", "members", "at"];
+    for (var i = 0; i < fields.length; i++) if (receipt.baseline[fields[i]] !== state.baseline[fields[i]]) throw new Error("실시간 시세 최초 기준값이 고정 기록과 다릅니다. MASTER 확인이 필요합니다.");
+}
+
+// 최초 활성화 때만 계정 ID와 기준 스냅샷을 준비하고 기존 기준은 영구 보존하는 함수
+function initializeDiamondLiveState(data, market, states, root, now, newId) {
+    if (data.diamondLiveMarket !== undefined || data.migrations && data.migrations.diamondLiveInitialized !== undefined) { requireDiamondLiveState(data); return false; }
+    var identities = {};
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
+        var member = data.member[user];
+        if (!member || typeof member !== "object" || Array.isArray(member)) throw new Error("회원 집계 레코드 오류");
+        var account = member.serverRaidAccount;
+        if (account !== undefined && (!account || typeof account !== "object" || Array.isArray(account))) throw new Error("회원 고유 ID 형식 오류");
+        if (account && account.id !== undefined && typeof account.id !== "string") throw new Error("회원 고유 ID 형식 오류");
+        identities[user] = account && account.id || newId();
+    }
+    var operatorId = identities[GLOBAL_CONFIG.diamondLive.operatorName];
+    if (!operatorId) throw new Error("집계 제외 운영자의 고유 계정을 확인할 수 없습니다.");
+    var owned = collectDiamondLiveOwned(data, operatorId, identities);
+    var snapshot = buildDiamondLiveSnapshot(owned, market, states, root, now);
+    requireDiamondLiveInteger(snapshot.points, true); requireDiamondLiveInteger(snapshot.diamonds, true); requireDiamondLiveInteger(snapshot.members, true);
+    if (data.migrations !== undefined && (!data.migrations || typeof data.migrations !== "object" || Array.isArray(data.migrations))) throw new Error("회원 이전 표시 오류");
+    for (var name in identities) if (Object.prototype.hasOwnProperty.call(identities, name)) {
+        var row = data.member[name];
+        if (!row.serverRaidAccount) row.serverRaidAccount = { id: identities[name], period: 0, server: normalizeHoiServerLabel(row.server), latest: null, total: null };
+        else if (!row.serverRaidAccount.id) row.serverRaidAccount.id = identities[name];
+    }
+    if (!data.migrations) data.migrations = {};
+    data.diamondLiveMarket = { version: 1, operatorId: operatorId, baseline: { points: snapshot.points, diamonds: snapshot.diamonds, members: snapshot.members, at: now }, pending: {} };
+    data.migrations.diamondLiveInitialized = true;
+    return true;
+}
+
+// 동일한 검증 회원 원문만 합계를 재사용하고 시장 대기액은 매번 최신 상태로 제외하는 함수
+function getDiamondLiveSnapshot(data, market, states, root, now, sourceText) {
+    var state = requireDiamondLiveState(data), cached = diamondLiveOwnedCache[root], owned;
+    if (typeof sourceText === "string" && cached && cached.text === sourceText && cached.operatorId === state.operatorId) owned = cached.owned;
+    else {
+        owned = collectDiamondLiveOwned(data, state.operatorId);
+        if (typeof sourceText === "string") diamondLiveOwnedCache[root] = { text: sourceText, operatorId: state.operatorId, owned: owned };
+    }
+    return buildDiamondLiveSnapshot(owned, market, states, root, now);
+}
+
+// 현재값의 기준 대비 등락을 정확히 소수 첫째 자리까지 표시하는 함수
+function buildDiamondLiveChange(current, baseline) {
+    var c = requireDiamondLiveInteger(current, false), b = requireDiamondLiveInteger(baseline, true), difference = c.subtract(b);
+    if (difference.signum() === 0) return "➖ 기준 대비 0.0%";
+    var percent = new java.math.BigDecimal(difference.abs().multiply(new java.math.BigInteger("100")).toString()).divide(new java.math.BigDecimal(b.toString()), 1, java.math.RoundingMode.HALF_UP);
+    return (difference.signum() > 0 ? "📈 기준 대비 ▲" : "📉 기준 대비 ▼") + String(percent.toPlainString()) + "%";
+}
+
+// 조합 안내·확인·성공·취소 메시지에서 기획서의 기존 텍스트 UI를 구성하는 함수
+function buildDiamondLiveMessage(kind, nick, quote) {
+    var header = "[" + nick + "] 님\n\n", line = "━━━━━━ ✦ ━━━━━━";
+    var simple = { cancel: "❌ 다이아조합 취소\n" + line + "\n조합 신청이 취소되었습니다.\n재료는 차감되지 않았습니다.", expired: "⏳ 다이아조합 시간 만료\n" + line + "\n선택 유효시간 60초가 지났습니다.\n/다이아조합 [숫자]로 다시 신청해주세요.", shortage: "⚠️ 다이아조합 실패\n" + line + "\n포인트 또는 전설의 돌맹이가 부족합니다.\n재료는 차감되지 않았습니다.", missing: "⚠️ 확인할 다이아조합 신청이 없습니다.\n/다이아조합 [숫자]로 다시 신청해주세요." };
+    if (simple[kind]) return header + simple[kind];
+    var count = quote.count, total = numberWithCommas(quote.total), price = numberWithCommas(quote.price);
+    if (kind === "success") return header + "💎 다이아조합 성공! 🎉\n" + line + "\n🎯 변환 완료: " + count + "개\n\n📦 사용한 재료\n├ 🗿 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득한 아이템\n└ 다이아상자💎 ×" + count + "\n" + line + "\n✨ 다이아 조합을 완료했습니다!";
+    var title = kind === "view" ? "💎 호이월드 다이아조합" : "💎 다이아조합 | 변환 확인";
+    var text = header + title + "\n" + line + (kind === "view" ? "" : "\n🎯 조합 신청: " + count + "개\n") + "\n📊 실시간 다이아 시세\n💰 1개당 🅟" + price + "\n" + buildDiamondLiveChange(quote.price, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n━━━━━━━━━━━━\n📦 " + (kind === "view" ? "조합 재료 (1개 기준)" : "소모 재료") + "\n├ 🗿 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득 아이템\n└ 다이아상자💎 ×" + count + "\n" + line;
+    return text + (kind === "view" ? "\n🎯 조합: /다이아조합 [숫자]" : "\n💬 " + count + "개를 변환하시겠습니까?\n\n1. ✅ 변환하기\n2. ❌ 안하기\n\n⏳ 선택 유효시간: 60초");
+}
+
+// 재화 통계를 같은 집계 스냅샷의 전체 정수와 기준 대비 변화로 표시하는 함수
+function buildDiamondLiveStatistics(nick, baseline, current, price) {
+    var text = "[" + nick + "] 님\n\n📊 호이월드 재화·시세 통계\n━━━━━━ ✦ ━━━━━━\n👑 MASTER 전용\n🚫 호이 남 계정 집계 제외";
+    var sections = [{ title: "👥 서버 유효 회원", key: "members", unit: "명", icon: "" }, { title: "🅟 서버 포인트 현황", key: "points", unit: "", icon: "🅟" }, { title: "💎 서버 다이아 현황", key: "diamonds", unit: "개", icon: "" }];
+    for (var i = 0; i < sections.length; i++) {
+        var section = sections[i], c = current[section.key], b = baseline[section.key], diff = new java.math.BigInteger(c).subtract(new java.math.BigInteger(b));
+        text += "\n\n━━━━━━━━━━━━\n" + section.title;
+        if (section.key === "diamonds") text += "\n├ 보유 다이아: " + numberWithCommas(current.held) + "개\n├ 미개봉 상자: " + numberWithCommas(current.boxes) + "개\n├ 구매 확인 대기 제외: " + numberWithCommas(current.reserved) + "개";
+        text += "\n├ 기준: " + section.icon + numberWithCommas(b) + section.unit + "\n├ 현재: " + section.icon + numberWithCommas(c) + section.unit + "\n├ " + (diff.signum() < 0 ? "감소" : "증가") + ": " + section.icon + numberWithCommas(String(diff.abs().toString())) + section.unit + "\n└ " + buildDiamondLiveChange(c, b);
+    }
+    var basePrice = String(GLOBAL_CONFIG.diamondShop.combinePoint), difference = new java.math.BigInteger(price).subtract(new java.math.BigInteger(basePrice));
+    return text + "\n\n━━━━━━━━━━━━\n📊 실시간 다이아 조합 시세\n├ 기준: 🅟" + numberWithCommas(basePrice) + "\n├ 현재: 🅟" + numberWithCommas(price) + "\n├ " + (difference.signum() < 0 ? "하락" : "상승") + ": 🅟" + numberWithCommas(String(difference.abs().toString())) + "\n└ " + buildDiamondLiveChange(price, basePrice) + "\n\n━━━━━━ ✦ ━━━━━━\n🔄 실시간 시세 적용 중\n※ 기준값은 최초 저장 후 영구 유지\n※ 개인 보유 재화만 집계";
+}
+// 60초 조합 신청을 계정별 한 건으로 저장하고 표시 금액을 정확히 고정하는 함수
+function prepareDiamondLiveQuote(data, user, count, price, now, id) {
+    if (!isPointShopSafeCount(count) || count < 1) throw new Error("사용법: /다이아조합 [숫자]");
+    var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
+    if (typeof accountId !== "string" || !accountId) throw new Error("조합 계정 ID를 확인해주세요.");
+    var total = requireDiamondLiveInteger(price, true).multiply(new java.math.BigInteger(String(count)));
+    var quote = { id: id, accountId: accountId, count: count, price: price, total: String(total.toString()), createdAt: now, expiresAt: now + GLOBAL_CONFIG.diamondLive.confirmationMs };
+    state.pending["$" + accountId] = quote;
+    return quote;
+}
+
+// 조합 확인의 기한·계정·재료를 재검사하고 확정된 한 요청만 차감·지급하는 함수
+function applyDiamondLiveChoice(data, user, choice, now, receivedAt) {
+    if (data.diamondLiveMarket === undefined && (!data.migrations || data.migrations.diamondLiveInitialized === undefined)) return { kind: "missing", changed: false };
+    var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
+    var key = "$" + accountId, quote = state.pending[key];
+    if (!quote || quote.accountId !== accountId || receivedAt < quote.createdAt || now < quote.createdAt) return { kind: "missing", changed: false };
+    if (typeof quote.id !== "string" || !quote.id || !isPointShopSafeCount(quote.count) || quote.count < 1 || !isPointShopSafeCount(quote.createdAt) || quote.expiresAt !== quote.createdAt + GLOBAL_CONFIG.diamondLive.confirmationMs || String(requireDiamondLiveInteger(quote.price, true).multiply(new java.math.BigInteger(String(quote.count))).toString()) !== quote.total) throw new Error("조합 신청 저장 정보 오류");
+    if (now >= quote.expiresAt) { delete state.pending[key]; return { kind: "expired", changed: true }; }
+    if (choice === 2) { delete state.pending[key]; return { kind: "cancel", changed: true }; }
+    var bag = member.bag, point = member.point;
+    if (!bag || typeof bag !== "object" || Array.isArray(bag) || !isPointShopSafeCount(point)) throw new Error("조합 재료 정보 오류");
+    var stone = bag[GLOBAL_CONFIG.items.legendStoneName] === undefined ? 0 : bag[GLOBAL_CONFIG.items.legendStoneName];
+    var boxes = bag[GLOBAL_CONFIG.items.diamondBoxName] === undefined ? 0 : bag[GLOBAL_CONFIG.items.diamondBoxName];
+    if (!isPointShopSafeCount(stone) || !isPointShopSafeCount(boxes) || !isPointShopSafeCount(boxes + quote.count)) throw new Error("조합 아이템 보유 수량 오류");
+    if (stone < quote.count || new java.math.BigInteger(String(point)).compareTo(new java.math.BigInteger(quote.total)) < 0) { delete state.pending[key]; return { kind: "shortage", changed: true }; }
+    delete state.pending[key];
+    removeItem(data, user, GLOBAL_CONFIG.items.legendStoneName, quote.count);
+    addPoint(data, user, -Number(quote.total));
+    addItem(data, user, GLOBAL_CONFIG.items.diamondBoxName, quote.count);
+    return { kind: "success", changed: true, quote: quote };
+}
+
+// 재화 집계 문자열을 손실 없는 음이 아닌 정수로 확인하는 함수
+function requireDiamondLiveInteger(text, positive) {
+    if (typeof text !== "string" || !/^\d+$/.test(text)) throw new Error("다이아 조합 집계 정수 오류");
+    var value = new java.math.BigInteger(text);
+    if (positive && value.signum() <= 0) throw new Error("다이아 조합 최초 기준값은 0보다 커야 합니다.");
+    return value;
+}
+
+// 확정된 보정 비율을 인자로 받아 시세를 정수 분수로 계산하고 백만 단위 사사오입하는 함수
+function calculateDiamondLivePrice(baseline, current, correctionPercent) {
+    var rateText = String(correctionPercent);
+    if (!/^\d+(?:\.\d+)?$/.test(rateText)) throw new Error("회원 수 보정 비율 오류");
+    var rate = new java.math.BigDecimal(rateText);
+    if (rate.compareTo(new java.math.BigDecimal("100")) > 0) throw new Error("회원 수 보정 비율 오류");
+    var rateDenominator = new java.math.BigInteger("100").multiply(new java.math.BigInteger("10").pow(rate.scale()));
+    var rateNumerator = rate.unscaledValue(); // 소수 보정 비율도 나눗셈 없이 정확한 분수로 보존
+    var p0 = requireDiamondLiveInteger(baseline.points, true), d0 = requireDiamondLiveInteger(baseline.diamonds, true), n0 = requireDiamondLiveInteger(baseline.members, true);
+    var p = requireDiamondLiveInteger(current.points, false), d = requireDiamondLiveInteger(current.diamonds, false), n = requireDiamondLiveInteger(current.members, false);
+    var zero = new java.math.BigInteger("0"), memberGrowth = n.subtract(n0).max(zero);
+    var pointOverlap = p.subtract(p0).max(zero).multiply(n0).min(memberGrowth.multiply(p0));
+    var diamondOverlap = d.subtract(d0).max(zero).multiply(n0).min(memberGrowth.multiply(d0));
+    var pointAdjusted = p.multiply(n0).multiply(rateDenominator).subtract(rateNumerator.multiply(pointOverlap));
+    var diamondAdjusted = d.multiply(n0).multiply(rateDenominator).subtract(rateNumerator.multiply(diamondOverlap));
+    var config = GLOBAL_CONFIG.diamondLive;
+    var numerator = pointAdjusted.multiply(new java.math.BigInteger(String(config.pointWeight))).multiply(d0).add(diamondAdjusted.multiply(new java.math.BigInteger(String(config.diamondWeight))).multiply(p0));
+    var denominator = p0.multiply(d0).multiply(n0).multiply(rateDenominator); // 2개 재화 비율과 인구 보정분의 공통 분모
+    var unit = new java.math.BigInteger(String(config.roundingUnit)), two = new java.math.BigInteger("2");
+    var roundingDenominator = denominator.multiply(unit);
+    var rounded = numerator.multiply(two).add(roundingDenominator).divide(roundingDenominator.multiply(two)).multiply(unit);
+    if (numerator.signum() <= 0 || rounded.signum() <= 0) throw new Error("조합 가격이 0원 또는 비정상입니다. MASTER 확인이 필요합니다.");
+    return String(rounded.toString());
 }
 
 // 다이아상점 표기 상품을 실제 사용 가능한 가방 아이템으로 변환하는 함수
