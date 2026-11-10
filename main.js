@@ -68539,15 +68539,17 @@ function applyHalloweenCommand(request, context) {
             var nextEpoch = closeNeeded ? requireHalloweenInteger(state.epoch + 1) : state.epoch; // 가방을 변경하기 전에 다음 세대 검증
             var clearedUsers = clearHalloweenBagItems(context.data);
             if (clearedUsers > 0) { result.changed = true; result.memberChanged = true; }
-            if (!closeNeeded) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다." + (clearedUsers > 0 ? "\n🧹 가방의 할로윈 사탕·입장권을 정리했습니다. (" + clearedUsers + "명)" : ""));
+            var titleCleanupMessage = context.clearedTitleUsers > 0 ? "\n🏅 남은 할로윈 칭호를 정리했습니다. (" + context.clearedTitleUsers + "계정)" : ""; // 칭호가 남았던 계정의 정리 결과
+            if (context.clearedTitleUsers > 0) result.changed = true;
+            if (!closeNeeded) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다." + (clearedUsers > 0 ? "\n🧹 가방의 할로윈 사탕·입장권을 정리했습니다. (" + clearedUsers + "명)" : "") + titleCleanupMessage);
             state.active = false;
             state.epoch = nextEpoch;
             state.candyClearEpoch = nextEpoch;
             state.logs.push({ action: wasActive ? "end" : "endCleanup", actor: context.sender, at: context.now, epoch: state.epoch });
             result.stateChanged = true;
-            if (!wasActive) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.\n🧹 남은 사탕 잔액과 가방의 할로윈 사탕·입장권을 정리했습니다.");
-            result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎃 할로윈 이벤트가 종료되었습니다.\n" + config.name + "\n\n귀신의 집 탐험과 할로윈 상점 이용이 종료되었습니다.\n남은 사탕과 가방의 할로윈 입장권은 소멸했습니다.\n교환한 보상 아이템과 획득한 칭호는 유지됩니다.\n참여해 주셔서 감사합니다!";
-            return reply("🎃 할로윈 이벤트를 종료했습니다.\n남은 사탕 잔액과 가방의 할로윈 사탕·입장권을 모두 정리했습니다.\n주문 기록과 획득 칭호는 보존했습니다.");
+            if (!wasActive) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.\n🧹 남은 사탕 잔액과 가방의 할로윈 사탕·입장권을 정리했습니다." + titleCleanupMessage);
+            result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎃 할로윈 이벤트가 종료되었습니다.\n" + config.name + "\n\n귀신의 집 탐험과 할로윈 상점 이용이 종료되었습니다.\n남은 사탕과 가방의 할로윈 입장권, 획득한 할로윈 칭호는 소멸했습니다.\n교환한 보상 아이템은 유지됩니다.\n참여해 주셔서 감사합니다!";
+            return reply("🎃 할로윈 이벤트를 종료했습니다.\n남은 사탕 잔액과 가방의 할로윈 사탕·입장권, 획득한 할로윈 칭호를 모두 정리했습니다.\n주문 기록과 교환한 보상 아이템은 보존했습니다.");
         }
     }
     if (request.action === "titles") {
@@ -68796,8 +68798,22 @@ function runHalloweenEntry(mode, args) {
         }
     }
     if (request && request.action === "resetUser" && master && state.active && !account) return { message: actor + "님\n❌ 대상을 확인할 수 없습니다.\n사용방법: /할로윈횟수초기화 닉네임\n예: /할로윈횟수초기화 호이 남" };
+    if (mode === "command" && request && request.action === "end" && master) {
+        var titleFiles = new java.io.File(root).listFiles(); // 회원과 분리된 계정을 포함한 종료 정리 대상
+        if (titleFiles === null) throw new Error("할로윈 칭호 정리 대상 조회 실패");
+        for (var titleFileIndex = 0; titleFileIndex < titleFiles.length; titleFileIndex++) {
+            var titleFile = titleFiles[titleFileIndex], titleFileName = String(titleFile.getName());
+            var titleFileMatch = /^halloweenAccount_([A-Za-z0-9_-]{1,128})\.json$/.exec(titleFileName);
+            if (!titleFileMatch || !titleFile.isFile()) continue;
+            var titleAccountText = String(FileStream.read(root + titleFileName, "utf-8"));
+            var titleAccount = requireHalloweenAccount(JSON.parse(titleAccountText), titleFileMatch[1]);
+            if (titleAccount.titles.length === 0) continue;
+            titleAccount.titles = [];
+            cleanupWrites.push({ name: titleFileName, text: titleAccountText, account: titleAccount });
+        }
+    }
     var now = args.now === undefined ? Date.now() : args.now;
-    var context = { data: data, state: state, account: account, sender: sender, target: target, master: master, actor: actor,
+    var context = { data: data, state: state, account: account, sender: sender, target: target, master: master, actor: actor, clearedTitleUsers: cleanupWrites.length,
         targetActor: account ? "[" + checkRank(data, args.petData, args.guildData, target) + "] " : "",
         premium: account ? isHoiPassPremiumActive(data, target) : false, now: now, txId: String(java.util.UUID.randomUUID()) };
     var requestId = args.event && !args.event.invalid && typeof args.event.id === "string" ? args.event.id : "";
