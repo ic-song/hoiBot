@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.806"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.807"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -47089,13 +47089,54 @@ function getPassDurationPackageCatalog(packages) {
         var found = false, config = configs[i];
         for (var j = 0; j < result.length; j++) {
             if (getPackageBagItemName(result[j]) !== config.packageName) continue;
-            var rewards = result[j].rewards;
-            if (!Array.isArray(rewards) || rewards.length !== 1 || rewards[0].type !== "item" || normalizePassDurationItemName(rewards[0].name) !== config.itemName || rewards[0].count !== 1) throw new Error("기간권 패키지는 해당 이용권 1개로 구성해야 합니다: " + config.packageName);
             found = true;
         }
         if (!found) result.push({ id: "pass_duration_" + config.key + "_" + config.days, name: config.packageName, enabled: true, rewards: [{ type: "item", name: config.itemName, count: 1 }] });
     }
     return result;
+}
+
+// 정식 기간권 패키지 이름에 해당하는 설정을 찾는 함수
+function getPassDurationPackageConfig(name) {
+    var tickets = GLOBAL_CONFIG.passDuration.tickets;
+    for (var i = 0; i < tickets.length; i++) if (tickets[i].packageName === name) return tickets[i];
+    return null;
+}
+
+// 정식 기간권 패키지의 고정 구성 오류를 변경·개봉 전에 확인하는 함수
+function getPassDurationPackageError(packageInfo) {
+    var config = getPassDurationPackageConfig(getPackageBagItemName(packageInfo));
+    if (!config) return "";
+    var rewards = packageInfo.rewards;
+    if (!Array.isArray(rewards) || rewards.length !== 1 || !rewards[0] || rewards[0].type !== "item" || normalizePassDurationItemName(rewards[0].name) !== config.itemName || rewards[0].count !== 1) return "기간권 패키지는 해당 이용권 1개로 구성해야 합니다: " + config.packageName;
+    return "";
+}
+
+// 기간권 지급 합계를 사전 검증해 개봉 후 수량 손상과 일부 지급을 막는 함수
+function validatePassDurationPackageStock(data, user, packageInfo, useCount) {
+    var rewards = packageInfo.rewards || [], tickets = GLOBAL_CONFIG.passDuration.tickets;
+    var bag = data.member[user].bag || {}, totals = {}; // 동일 이용권의 여러 보상 항목을 합산
+    for (var i = 0; i < rewards.length; i++) {
+        var reward = rewards[i];
+        if (!reward || reward.type !== "item") continue;
+        var name = normalizePassDurationItemName(reward.name), config = null;
+        for (var j = 0; j < tickets.length; j++) if (tickets[j].itemName === name) { config = tickets[j]; break; }
+        if (!config) continue;
+        if (!isPointShopSafeCount(useCount) || useCount < 1 || !isPointShopSafeCount(reward.count) || reward.count < 1 || !isPointShopSafeCount(reward.count * useCount)) throw new Error("기간권 지급 수량을 확인해주세요. 패키지는 사용하지 않았습니다.");
+        if (totals[name] === undefined) {
+            var held = bag[name] === undefined ? 0 : bag[name];
+            if (!isPointShopSafeCount(held)) throw new Error("기간권 보유 수량을 확인해주세요. 패키지는 사용하지 않았습니다.");
+            if (config.key === "premium" && config.days === 30) {
+                var legacyHeld = bag[GLOBAL_CONFIG.passDuration.legacyPremiumItem] === undefined ? 0 : bag[GLOBAL_CONFIG.passDuration.legacyPremiumItem];
+                if (!isPointShopSafeCount(legacyHeld) || !isPointShopSafeCount(held + legacyHeld)) throw new Error("기간권 보유 수량을 확인해주세요. 패키지는 사용하지 않았습니다.");
+                held += legacyHeld;
+            }
+            totals[name] = held;
+        }
+        var next = totals[name] + reward.count * useCount; // 구·신 보유량과 이번 지급량의 최종 합계
+        if (!isPointShopSafeCount(next)) throw new Error("기간권 보유 수량의 안전한 처리 범위를 초과했습니다. 패키지는 사용하지 않았습니다.");
+        totals[name] = next;
+    }
 }
 
 // 검증된 기간권을 차감하고 해당 패스의 KST 종료일만 연장하는 함수
@@ -49842,6 +49883,8 @@ function editPackageInfoByCommand(sender, msg, packageInfoData) {
     if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
 
     var packageName = packageInfo.name || getPackageBagItemName(packageInfo); // 기존 패키지 표시명
+    var durationPackageError = getPassDurationPackageError({ itemName: getPackageBagItemName(packageInfo), rewards: rewardParseResult.rewards });
+    if (durationPackageError) return { ok: false, message: "❌ " + durationPackageError };
     packageInfo.enabled = packageInfo.enabled === false ? false : true;
     packageInfo.maxUseOnce = GLOBAL_CONFIG.package.maxUseOnce;
     packageInfo.rewards = rewardParseResult.rewards;
@@ -50779,6 +50822,8 @@ function parsePackageUseCommand(msg) {
 function validatePackageUse(packageInfo, useCount, halloween) {
     if (hasHalloweenPackageReward(packageInfo) && (!halloween || !halloween.state.active)) return "할로윈 이벤트 진행 중에만 이 패키지를 사용할 수 있습니다.";
     if (!packageInfo) return "패키지 정보가 없습니다.";
+    var durationPackageError = getPassDurationPackageError(packageInfo);
+    if (durationPackageError) return durationPackageError;
     if (packageInfo.enabled === false) return "비활성화된 패키지는 사용할 수 없습니다.";
     if (packageInfo.blockCastle && castleSiegeFlag) return "이벤트 진행 중에는 해당 패키지를 사용할 수 없습니다.";
     if (useCount < 1) return "사용 수량은 1개 이상이어야 합니다.";
@@ -50841,7 +50886,10 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
     var validationMessage = validatePackageUse(packageInfo, parsed.count, halloween); // 차감 전 사전 검사 결과
     if (validationMessage) return { ok: false, message: "❌ " + validationMessage };
 
-    try { getPackagePointAward(packageInfo, parsed.count, data.member[sender].point); } catch (pointError) { return { ok: false, message: "❌ " + pointError.message }; }
+    try {
+        validatePassDurationPackageStock(data, sender, packageInfo, parsed.count);
+        getPackagePointAward(packageInfo, parsed.count, data.member[sender].point);
+    } catch (pointError) { return { ok: false, message: "❌ " + pointError.message }; }
     var afterCount = beforeCount - parsed.count; // 사용 후 보유 수량
     if (afterCount > 0) {
         data.member[sender].bag[packageBagItemName] = afterCount;
@@ -52939,6 +52987,7 @@ function parseDiamondShopProduct(msg, names) {
         candidates.push({ name: match[1], count: count, price: price, limit: limit });
     }
     if (candidates.length !== 1) throw new Error("정식 아이템 이름과 1 이상의 정수 수량·가격·선택 한도를 확인해주세요. 해석이 겹치면 이름을 명확히 입력해주세요.");
+    if (getPassDurationPackageConfig(candidates[0].name) && candidates[0].count !== 1) throw new Error("기간권 패키지는 상품갯수를 1개로 등록해주세요.");
     var item = getDiamondShopGrantItem(candidates[0], 1);
     if (!isPointShopSafeCount(item.count) || item.count < 1) throw new Error("지급 수량 범위를 확인해주세요.");
     return candidates[0];
@@ -52953,6 +53002,7 @@ function addDiamondShopProduct(shop, item, now) {
 }
 // 계정별 당일 구매 한도·유효량과 다이아·지급 수량을 모두 검증하는 함수
 function planDiamondShopPurchase(member, product, accountId, bundles) {
+    if (getPassDurationPackageConfig(product.name) && product.count !== 1) throw new Error("기간권 패키지의 상품갯수는 1개여야 합니다. 운영자가 상품을 다시 등록해야 합니다.");
     if (typeof accountId !== "string" || !accountId) throw new Error("계정 식별자를 확인해주세요.");
     if (!isPointShopSafeCount(bundles) || bundles < 1) throw new Error("구매 갯수는 1 이상의 안전한 정수여야 합니다.");
     var account = product.accounts["$" + accountId] || { bought: 0, effective: 0 }, total = product.price * bundles, grant = getDiamondShopGrantItem(product, bundles);
