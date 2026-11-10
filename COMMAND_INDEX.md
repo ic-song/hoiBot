@@ -5,6 +5,12 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 다이아상점 판매기록 표시
+
+Status: VERIFIED
+
+- `buildDiamondShopSales`는 페이지의 첫 5건만 미리 보여주고 `allsee` 뒤에는 6번째부터 이어서 표시해 같은 거래를 중복 출력하지 않는다. 5건 이하인 페이지는 전체보기 구분을 생략한다. 날짜·페이지 필터와 완료 기록·구매 제한·판매 집계는 변경하지 않는다.
+
 ## 2026-11-09 다이아상점 UI 정리 (ver_2.789)
 
 Status: VERIFIED

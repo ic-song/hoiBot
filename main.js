@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.803"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.804"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3079,7 +3079,7 @@ blockedNicknameTerms: [
         transferFeeMax: 25 // 이체 수수료 최대 설정값
     },
     diamondShop: { // 다이아상점 운영일·시세·구매 집계 설정
-        dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, combinePoint: 350000000
+        dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, historyPreviewCount: 5, combinePoint: 350000000
     },
     freeMarket: { // 자유시장 설정
         mySalesHistoryLimit: 10, // 본인의 최근 판매 완료 기록 표시 개수
@@ -52839,7 +52839,9 @@ function buildDiamondShopSales(log, date, page) {
     var selected = rows.slice((page - 1) * GLOBAL_CONFIG.diamondShop.historyPageSize, page * GLOBAL_CONFIG.diamondShop.historyPageSize);
     // 완료 당시 닉네임과 상품 이름을 보존해 삭제·재등록 뒤에도 원래 거래를 표시한다.
     function line(row) { if (row.legacy) return "[이전 상점] " + row.atText + "\n[" + row.user + "] " + row.product + " · 결제 💎" + (isPointShopSafeCount(row.total) ? numberWithCommas(row.total) : "미기록") + "\n묶음 수·등록 ID 미기록"; return formatDiamondShopDay(row.day) + " · " + new Date(row.at + 9 * 3600000).toISOString().substring(11, 19) + "\n[" + row.user + "] " + row.product + " x" + row.granted + " (" + row.bundles + "묶음) · 💎" + numberWithCommas(row.total) + " · ID " + row.productId; }
-    return "💎 다이아상점 판매기록\n" + (date || "전체 날짜") + " · " + page + "/" + totalPages + "페이지 · 완료 " + rows.length + "건\n" + selected.slice(0, 5).map(line).join("\n\n") + "\n전체 보기" + allsee + "\n" + selected.map(line).join("\n\n");
+    var previewCount = GLOBAL_CONFIG.diamondShop.historyPreviewCount; // 전체보기 위에 먼저 표시할 기록 개수
+    var out = "💎 다이아상점 판매기록\n" + (date || "전체 날짜") + " · " + page + "/" + totalPages + "페이지 · 완료 " + rows.length + "건\n" + selected.slice(0, previewCount).map(line).join("\n\n");
+    return selected.length > previewCount ? out + "\n전체 보기" + allsee + "\n" + selected.slice(previewCount).map(line).join("\n\n") : out;
 }
 
 function ensureDiamondMemberData(data, user) {
