@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.813"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.814"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -7128,6 +7128,33 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(buildReferralRankingMessage(data, petData, guildData, sender));
             return;
         }
+        // 정보 조회는 닉네임 길이 제한·펫 초기화의 조기 종료보다 먼저 처리한다.
+        if (msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
+            var skillQuery = msg.replace("/펫스킬정보", "").trim();
+            if (!skillQuery) {
+                replier.reply("사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)");
+                return;
+            }
+            // 스킬명과 회원 닉네임이 같아도 스킬 정보 조회를 우선한다.
+            var skillInfo = findPetSkillInfoData(skillQuery);
+            if (!skillInfo && data.member[skillQuery] && (isAdmin(sender) || isMaster(sender))) {
+                replier.reply(formatSkillBagMessage(data, petData, petSkillData, guildData, skillQuery));
+                return;
+            }
+            if (!skillInfo) {
+                // 일반 유저가 다른 유저 닉네임으로 조회 시도한 경우
+                if (data.member[skillQuery]) {
+                    replier.reply("❌ 다른 유저의 펫스킬 조회는 관리자만 가능합니다.");
+                    return;
+                }
+                replier.reply("등록되지 않은 펫스킬입니다.\n또는 존재하지 않는 유저입니다.");
+                return;
+            }
+            replier.reply(buildPetSkillInfoMessage(skillInfo));
+            return;
+        }
+
+
         {
             var isSignupPetFlow = !!getAdventureOnboardingMemberState(data, sender) || msg === "/모험시작" || msg === "/호여!!";
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
@@ -7615,31 +7642,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     replier.reply(rateMsg.trim());
                     return;
                 }
-                if (msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
-                    var skillQuery = msg.replace("/펫스킬정보", "").trim();
-                    if (!skillQuery) {
-                        replier.reply("사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)");
-                        return;
-                    }
-                    // 스킬명과 회원 닉네임이 같아도 스킬 정보 조회를 우선한다.
-                    var skillInfo = findPetSkillInfoData(skillQuery);
-                    if (!skillInfo && data.member[skillQuery] && (isAdmin(sender) || isMaster(sender))) {
-                        replier.reply(formatSkillBagMessage(data, petData, petSkillData, guildData, skillQuery));
-                        return;
-                    }
-                    if (!skillInfo) {
-                        // 일반 유저가 다른 유저 닉네임으로 조회 시도한 경우
-                        if (data.member[skillQuery]) {
-                            replier.reply("❌ 다른 유저의 펫스킬 조회는 관리자만 가능합니다.");
-                            return;
-                        }
-                        replier.reply("등록되지 않은 펫스킬입니다.\n또는 존재하지 않는 유저입니다.");
-                        return;
-                    }
-                    replier.reply(buildPetSkillInfoMessage(skillInfo));
-                    return;
-                }
-
                 if (msg === "/펫스킬중복") {
                     var dupMsg = "📙 중복 장착 불가 목록 📙\n\n";
                     for (var dg = 0; dg < PET_SKILL_COMPAT_GROUPS.length; dg++) {
@@ -60204,8 +60206,24 @@ function getAdventureQuestStageConfig(stageNumber) {
     return index >= 0 && index < stages.length ? stages[index] : null;
 }
 
+// 현재 실행 문맥이 큰 정수 반환값을 숫자로 풀지 않는 표준 래핑인지 확인하는 함수
+function isDiamondLiveExactMathReady() {
+    var factory = Packages.org.mozilla.javascript.Context.getCurrentContext().getWrapFactory();
+    return String(factory.getClass().getName()) === "org.mozilla.javascript.WrapFactory" && factory.isJavaPrimitiveWrap();
+}
+
+// 현재 스레드의 계산 동안만 표준 자바 래핑을 사용하고 기존 설정을 반드시 복원하는 함수
+function withDiamondLiveExactMath(action) {
+    var context = Packages.org.mozilla.javascript.Context.getCurrentContext();
+    var previous = context.getWrapFactory(), factory = new Packages.org.mozilla.javascript.WrapFactory();
+    factory.setJavaPrimitiveWrap(true);
+    context.setWrapFactory(factory);
+    try { return action(); } finally { context.setWrapFactory(previous); }
+}
+
 // 현재 회원의 정확한 보유 합계를 계산하며 같은 계정 ID의 중복 행은 한 번만 집계하는 함수
 function collectDiamondLiveOwned(data, operatorId, identities) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return collectDiamondLiveOwned(data, operatorId, identities); });
     if (!data.member || typeof data.member !== "object" || Array.isArray(data.member)) throw new Error("회원 집계 원본 오류");
     var points = new java.math.BigInteger("0"), diamonds = points, boxes = points, count = 0, byId = {}, byName = {}, operatorSeen = false;
     for (var user in data.member) {
@@ -60237,6 +60255,7 @@ function collectDiamondLiveOwned(data, operatorId, identities) {
 
 // 유효한 자유시장 구매 확인 대기액만 실제 잔고와 별도로 합산하는 함수
 function collectDiamondLiveReserved(owned, market, states, root, now) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return collectDiamondLiveReserved(owned, market, states, root, now); });
     var perAccount = {}, seen = {}, total = new java.math.BigInteger("0");
     for (var key in states) {
         if (!Object.prototype.hasOwnProperty.call(states, key) || key.indexOf("market:") !== 0) continue;
@@ -60262,6 +60281,7 @@ function collectDiamondLiveReserved(owned, market, states, root, now) {
 
 // 보유 다이아·미개봉 상자에서 아직 차감되지 않은 구매 대기액만 통계상 제외하는 함수
 function buildDiamondLiveSnapshot(owned, market, states, root, now) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return buildDiamondLiveSnapshot(owned, market, states, root, now); });
     var reserved = collectDiamondLiveReserved(owned, market, states, root, now);
     var held = new java.math.BigInteger(owned.held).subtract(new java.math.BigInteger(reserved));
     return { points: owned.points, diamonds: String(held.add(new java.math.BigInteger(owned.boxes)).toString()), members: owned.members, held: String(held.toString()), boxes: owned.boxes, reserved: reserved };
@@ -60328,6 +60348,7 @@ function getDiamondLiveSnapshot(data, market, states, root, now, sourceText) {
 
 // 현재값의 기준 대비 등락을 정확히 소수 첫째 자리까지 표시하는 함수
 function buildDiamondLiveChange(current, baseline) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return buildDiamondLiveChange(current, baseline); });
     var c = requireDiamondLiveInteger(current, false), b = requireDiamondLiveInteger(baseline, true), difference = c.subtract(b);
     if (difference.signum() === 0) return "➖ 기준 대비 0.0%";
     var percent = new java.math.BigDecimal(difference.abs().multiply(new java.math.BigInteger("100")).toString()).divide(new java.math.BigDecimal(b.toString()), 1, java.math.RoundingMode.HALF_UP);
@@ -60348,6 +60369,7 @@ function buildDiamondLiveMessage(kind, nick, quote) {
 
 // 재화 통계를 같은 집계 스냅샷의 전체 정수와 기준 대비 변화로 표시하는 함수
 function buildDiamondLiveStatistics(nick, baseline, current, price) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return buildDiamondLiveStatistics(nick, baseline, current, price); });
     var text = "[" + nick + "] 님\n\n📊 호이월드 재화·시세 통계\n━━━━━━ ✦ ━━━━━━\n👑 MASTER 전용\n🚫 호이 남 계정 집계 제외";
     var sections = [{ title: "👥 서버 유효 회원", key: "members", unit: "명", icon: "" }, { title: "🅟 서버 포인트 현황", key: "points", unit: "", icon: "🅟" }, { title: "💎 서버 다이아 현황", key: "diamonds", unit: "개", icon: "" }];
     for (var i = 0; i < sections.length; i++) {
@@ -60361,6 +60383,7 @@ function buildDiamondLiveStatistics(nick, baseline, current, price) {
 }
 // 60초 조합 신청을 계정별 한 건으로 저장하고 표시 금액을 정확히 고정하는 함수
 function prepareDiamondLiveQuote(data, user, count, price, now, id) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return prepareDiamondLiveQuote(data, user, count, price, now, id); });
     if (!isPointShopSafeCount(count) || count < 1) throw new Error("사용법: /다이아조합 [숫자]");
     var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
     if (typeof accountId !== "string" || !accountId) throw new Error("조합 계정 ID를 확인해주세요.");
@@ -60372,6 +60395,7 @@ function prepareDiamondLiveQuote(data, user, count, price, now, id) {
 
 // 조합 확인의 기한·계정·재료를 재검사하고 확정된 한 요청만 차감·지급하는 함수
 function applyDiamondLiveChoice(data, user, choice, now, receivedAt) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return applyDiamondLiveChoice(data, user, choice, now, receivedAt); });
     if (data.diamondLiveMarket === undefined && (!data.migrations || data.migrations.diamondLiveInitialized === undefined)) return { kind: "missing", changed: false };
     var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var key = "$" + accountId, quote = state.pending[key];
@@ -60402,6 +60426,7 @@ function requireDiamondLiveInteger(text, positive) {
 
 // 확정된 보정 비율을 인자로 받아 시세를 정수 분수로 계산하고 백만 단위 사사오입하는 함수
 function calculateDiamondLivePrice(baseline, current, correctionPercent) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return calculateDiamondLivePrice(baseline, current, correctionPercent); });
     var rateText = String(correctionPercent);
     if (!/^\d+(?:\.\d+)?$/.test(rateText)) throw new Error("회원 수 보정 비율 오류");
     var rate = new java.math.BigDecimal(rateText);
