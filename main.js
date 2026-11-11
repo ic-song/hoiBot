@@ -4311,7 +4311,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
         var diamondPermissionCommand = getServerRaidAdmissionCommand(msg);
-        if ((/^\/다이아(?:명령어|기준설정|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(diamondPermissionCommand) || /^\/포인트(?:기준설정|다이아통계|통계다이아)(?:\s|$)/.test(diamondPermissionCommand)) && !isMaster(sender)) {
+        if ((/^\/다이아(?:명령어|기준설정|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(diamondPermissionCommand) || /^\/포인트(?:기준설정|다이아통계|통계(?:다이아)?)(?:\s|$)/.test(diamondPermissionCommand)) && !isMaster(sender)) {
             var diamondPermissionData = loadJsonFile(filePath, "bootstrap"), diamondPermissionGuild = loadJsonFile(guildPath);
             var diamondPermissionNick = checkRank(diamondPermissionData, null, diamondPermissionGuild, sender);
             createContextReplier(replier, ctx).reply(buildDiamondShopDirectHeader(diamondPermissionNick) + "❌ Master 전용 명령어입니다.\n/다이아상점에서 일반 상품을 확인해주세요.");
@@ -4366,7 +4366,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     diamondLiveCancelAliasScopes[diamondAliasScope] = requireDiamondLiveState(diamondAliasData).pending["$" + diamondAliasId].expiresAt;
                 }
             } else { delete diamondLiveCancelAliasScopes[diamondAliasScope]; delete request.diamondLiveFailureNick; }
-        } else if (/^\/(?:다이아조합(?:법|선택)?|포인트(?:기준설정|다이아통계|통계다이아)|다이아기준설정)(?:\s|$)/.test(diamondEarlyInput)) msg = diamondEarlyInput;
+        } else if (/^\/(?:다이아조합(?:법|선택)?|포인트(?:기준설정|다이아통계|통계(?:다이아)?)|다이아기준설정)(?:\s|$)/.test(diamondEarlyInput)) msg = diamondEarlyInput;
         var dramaSessionKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var dramaEarlyRequest = getHowolDramaRequest(msg);
         if (dramaEarlyRequest) msg = String(msg).replace(/^[ \t]+|[ \t]+$/g, ""); // 공통 필터·대전 제한에도 실행할 명령과 같은 문자열 전달
@@ -5896,7 +5896,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var reuseEntryGuildData = commonGuildTransaction && territoryEntryTransaction === commonGuildTransaction && !commonGuildTransaction.failed && !commonGuildTransaction.rollingBack && !(commonGuildSaveEntry && commonGuildSaveEntry.saved);
         var guildData = reuseEntryGuildData ? territoryEntryGuildData : loadJsonFile(guildPath); // 복구 경계·길드 저장이 없을 때만 같은 요청의 검증 원본 재사용
         territoryEntryGuildData = null;
-        if (isFreeMarketV2Command(msg) || /^\/포인트(?:기준설정|다이아통계|통계다이아)(?:\s|$)/.test(msg) || /^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|기준설정|시세설정|조합(?:법|선택)?)(?:\s|$)/.test(msg) || msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
+        if (isFreeMarketV2Command(msg) || /^\/포인트(?:기준설정|다이아통계|통계(?:다이아)?)(?:\s|$)/.test(msg) || /^\/다이아(?:상점(?:추가|삭제|관리|판매기록|구매)?|구매|명령어|기준설정|시세설정|조합(?:법|선택)?)(?:\s|$)/.test(msg) || msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
             replier = createRequesterReplier(replier, checkRank(data, petData, guildData, sender), sender);
         }
         if (msg === "/스케줄") {
@@ -6769,10 +6769,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(diaMsg.trim());
             return;
         }
-        if (msg === "/포인트다이아통계" || msg === "/포인트통계다이아" || /^\/(?:포인트기준설정|다이아기준설정|다이아조합(?:법|선택)?)(?:\s|$)/.test(msg)) {
+        if (msg === "/포인트통계" || msg === "/포인트다이아통계" || msg === "/포인트통계다이아" || /^\/(?:포인트기준설정|다이아기준설정|다이아조합(?:법|선택)?)(?:\s|$)/.test(msg)) {
             var liveNick = checkRank(data, petData, guildData, sender), liveHeader = "[" + liveNick + "] 님\n";
             request.diamondLiveFailureNick = liveNick;
-            var liveStatistics = msg === "/포인트다이아통계" || msg === "/포인트통계다이아";
+            var liveStatistics = msg === "/포인트통계" || msg === "/포인트다이아통계" || msg === "/포인트통계다이아";
             var liveBaselineInput = /^\/(포인트|다이아)기준설정(?:[ \t]+(\d+))?$/.exec(msg);
             var liveBaselineCommand = /^\/(?:포인트|다이아)기준설정(?:\s|$)/.test(msg);
             if ((liveStatistics || liveBaselineCommand) && !isMaster(sender)) { replier.reply(liveHeader + "❌ MASTER 전용 명령어입니다."); return; }
@@ -6810,8 +6810,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 }
                 if (liveBaselineResult) { replier.reply(liveHeader + buildDiamondLiveBaselineResult(liveBaselineInput[1], liveBaselineResult)); return; }
                 var liveState = requireDiamondLiveState(data), liveSnapshot = getDiamondLiveSnapshot(data, liveMarket, userState, liveRoot, liveNow, ctx.diamondLiveMemberText);
-                var livePrice = calculateDiamondLivePrice(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent);
-                if (liveStatistics) { replier.reply(buildDiamondLiveStatistics(liveNick, liveState.baseline, liveSnapshot, livePrice)); return; }
+                var liveCalculation = liveStatistics ? calculateDiamondLivePriceDetails(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent) : null;
+                var livePrice = liveCalculation ? liveCalculation.price : calculateDiamondLivePrice(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent);
+                if (liveStatistics) { replier.reply(buildDiamondLiveStatistics(liveNick, liveState.baseline, liveSnapshot, livePrice, liveCalculation)); return; }
                 if (!liveQuantity || liveQuantity[1] === undefined) { replier.reply(buildDiamondLiveMessage("view", liveNick, { count: 1, price: livePrice, total: livePrice })); return; }
                 var liveQuote = prepareDiamondLiveQuote(data, sender, liveCount, livePrice, liveNow, String(java.util.UUID.randomUUID()), room, isGroupChat);
                 diamondLiveCancelAliasScopes[JSON.stringify([liveRoot, sender, room, isGroupChat])] = liveQuote.expiresAt;
@@ -60499,20 +60500,56 @@ function buildDiamondLiveMessage(kind, nick, quote) {
     return text + (kind === "view" ? "\n🎯 조합: /다이아조합 [숫자]" : "\n💬 " + count + "개를 변환하시겠습니까?\n\n1. ✅ 변환하기\n2. ❌ 안하기\n입력: 변환하기 / 안하기\n⏳ 선택 유효시간: 60초");
 }
 
-// 재화 통계를 같은 집계 스냅샷의 전체 정수와 기준 대비 변화로 표시하는 함수
-function buildDiamondLiveStatistics(nick, baseline, current, price) {
-    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return buildDiamondLiveStatistics(nick, baseline, current, price); });
+// 통계의 비교 대상을 구분하고 미세한 증감을 정확한 0%와 구별하는 함수
+function buildDiamondLiveStatisticsChange(current, baseline, label) {
+    var change = buildDiamondLiveChange(current, baseline).replace("기준 대비", label);
+    if (change.indexOf("▲0.0%") !== -1 || change.indexOf("▼0.0%") !== -1) change = change.replace("0.0%", "0.1% 미만");
+    return change;
+}
+
+// 분수 금액을 표시용 정수로만 반올림하고 생략한 소수에는 약 표시를 붙이는 함수
+function formatDiamondLiveStatisticsAmount(numerator, denominator, signed) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return formatDiamondLiveStatisticsAmount(numerator, denominator, signed); });
+    var n = new java.math.BigInteger(numerator), d = new java.math.BigInteger(denominator);
+    var amount = new java.math.BigDecimal(n.abs().toString()).divide(new java.math.BigDecimal(d.toString()), 0, java.math.RoundingMode.HALF_UP);
+    var approximate = n.remainder(d).signum() !== 0; // 가격 계산에는 이 표시용 반올림 값을 사용하지 않음
+    return (approximate ? "약 " : "") + (n.signum() < 0 ? "-" : signed && n.signum() > 0 ? "+" : "") + "🅟" + numberWithCommas(String(amount.toPlainString()));
+}
+
+// 같은 조회에서 확정한 기여액·회원 보정·최저가 적용을 전체보기 상세로 만드는 함수
+function buildDiamondLiveStatisticsDetail(baseline, current, calculation) {
+    var config = GLOBAL_CONFIG.diamondLive, basePrice = String(GLOBAL_CONFIG.diamondShop.combinePoint);
+    var memberText = "기준 " + numberWithCommas(baseline.members) + "명 → 현재 " + numberWithCommas(current.members) + "명";
+    if (new java.math.BigInteger(calculation.memberNumerator).signum() !== 0) memberText += " · 보정 반영 " + formatDiamondLiveStatisticsAmount(calculation.memberNumerator, calculation.denominator, true);
+    else memberText = new java.math.BigInteger(baseline.members).compareTo(new java.math.BigInteger(current.members)) === 0 ? "기준과 동일 · 보정 영향 없음" : memberText + " · 보정 영향 없음";
+    var text = "📚 조합 시세 계산 상세\n━━━━━━━━━━━━\n📌 증감률이 서로 다른 이유\n\n🅟 " + buildDiamondLiveStatisticsChange(current.points, baseline.points, "서버 포인트 총량 증감률") +
+        "\n💎 " + buildDiamondLiveStatisticsChange(current.diamonds, baseline.diamonds, "서버 다이아 총량 증감률") + "\n📊 " + buildDiamondLiveStatisticsChange(calculation.price, basePrice, "조합 가격 등락률") +
+        "\n\n조합 가격은 포인트와 다이아의\n변화를 함께 반영하여 계산합니다.\n\n⚙️ 가격 반영 기준\n━━━━━━━━━━━━\n🅟 포인트 총량 10% 증가\n└ 조합 가격 " + formatDiamondLiveStatisticsAmount(String(config.pointWeight), "10", true) +
+        "\n\n💎 다이아 총량 10% 증가\n└ 조합 가격 " + formatDiamondLiveStatisticsAmount(String(config.diamondWeight), "10", true) +
+        "\n\n※ 감소 시 같은 비율로 차감\n※ 10% 단위가 아닌 실제 변동률로 계산\n※ 회원 수 증가와 겹친 재화 증가분은 " + calculation.correctionPercent + "% 보정 차감\n\n🧮 현재 조합 가격 계산\n━━━━━━━━━━━━\n├ 기준 가격: 🅟" + numberWithCommas(basePrice) +
+        "\n├ 포인트 반영: " + formatDiamondLiveStatisticsAmount(calculation.pointNumerator, calculation.pointDenominator, true) +
+        "\n├ 다이아 반영: " + formatDiamondLiveStatisticsAmount(calculation.diamondNumerator, calculation.diamondDenominator, true) + "\n├ 회원 수: " + memberText +
+        "\n├ 계산값: " + formatDiamondLiveStatisticsAmount(calculation.numerator, calculation.denominator, false) + "\n└ 최종 가격: 🅟" + numberWithCommas(calculation.price);
+    if (calculation.belowMinimum) text += "\n🔒 최저가 적용: 🅟" + numberWithCommas(config.minimumPrice);
+    return text + "\n\n" + buildDiamondLiveStatisticsChange(calculation.price, basePrice, "기준 조합 가격 대비") + "\n\n📌 최종 적용 규칙\n━━━━━━━━━━━━\n• 🅟" + numberWithCommas(config.roundingUnit) + " 단위로 반올림\n• 최저 조합 가격은 🅟" + numberWithCommas(config.minimumPrice) + "\n• 미개봉 포인트·다이아상자도 집계\n• 기준값은 MASTER가 변경하기 전까지 유지";
+}
+
+// 재화 총량 증감과 최종 가격 등락을 구분하고 같은 계산의 상세를 접어서 표시하는 함수
+function buildDiamondLiveStatistics(nick, baseline, current, price, calculation) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return buildDiamondLiveStatistics(nick, baseline, current, price, calculation); });
+    calculation = calculation || calculateDiamondLivePriceDetails(baseline, current, GLOBAL_CONFIG.diamondLive.correctionPercent);
+    if (price !== calculation.price) throw new Error("통계와 조합 시세의 계산 결과가 다릅니다. 다시 조회해주세요.");
     var text = "[" + nick + "] 님\n📊 호이월드 재화·시세 통계\n━━━━━━ ✦ ━━━━━━\n👑 MASTER 전용\n🚫 호이 남 계정 집계 제외";
     var sections = [{ title: "👥 서버 유효 회원", key: "members", unit: "명", icon: "" }, { title: "🅟 서버 포인트 현황", key: "points", unit: "", icon: "🅟" }, { title: "💎 서버 다이아 현황", key: "diamonds", unit: "개", icon: "" }];
     for (var i = 0; i < sections.length; i++) {
         var section = sections[i], c = current[section.key], b = baseline[section.key], diff = new java.math.BigInteger(c).subtract(new java.math.BigInteger(b));
-        text += "\n\n━━━━━━━━━━━━\n" + section.title;
+        text += "\n\n" + section.title + "\n━━━━━━━━━━━━";
         if (section.key === "points") text += "\n├ 보유 포인트: 🅟" + numberWithCommas(current.heldPoints) + "\n├ 미개봉 상자: " + numberWithCommas(current.pointBoxes) + "개\n├ 상자 환산액: 🅟" + numberWithCommas(current.boxPoints);
         if (section.key === "diamonds") text += "\n├ 보유 다이아: " + numberWithCommas(current.held) + "개\n├ 미개봉 상자: " + numberWithCommas(current.boxes) + "개\n├ 구매 확인 대기 제외: " + numberWithCommas(current.reserved) + "개";
-        text += "\n├ 기준: " + section.icon + numberWithCommas(b) + section.unit + "\n├ 현재: " + section.icon + numberWithCommas(c) + section.unit + "\n├ " + (diff.signum() < 0 ? "감소" : diff.signum() === 0 ? "변동" : "증가") + ": " + section.icon + numberWithCommas(String(diff.abs().toString())) + section.unit + "\n└ " + buildDiamondLiveChange(c, b);
+        text += "\n├ 기준" + (section.key === "members" ? "" : " 총량") + ": " + section.icon + numberWithCommas(b) + section.unit + "\n├ 현재" + (section.key === "members" ? "" : " 총량") + ": " + section.icon + numberWithCommas(c) + section.unit + "\n├ " + (diff.signum() < 0 ? "감소" : diff.signum() === 0 ? "변동" : "증가") + ": " + section.icon + numberWithCommas(String(diff.abs().toString())) + section.unit + "\n└ " + buildDiamondLiveStatisticsChange(c, b, section.key === "members" ? "회원 수 증감률" : "총량 증감률");
     }
     var basePrice = String(GLOBAL_CONFIG.diamondShop.combinePoint), difference = new java.math.BigInteger(price).subtract(new java.math.BigInteger(basePrice));
-    return text + "\n\n━━━━━━━━━━━━\n📊 실시간 다이아 조합 시세\n├ 기준: 🅟" + numberWithCommas(basePrice) + "\n├ 현재: 🅟" + numberWithCommas(price) + "\n├ " + (difference.signum() < 0 ? "하락" : difference.signum() === 0 ? "변동" : "상승") + ": 🅟" + numberWithCommas(String(difference.abs().toString())) + "\n├ 최저: 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.minimumPrice) + "\n└ " + buildDiamondLiveChange(price, basePrice) + "\n━━━━━━━━━━━━\n⚙️ 기준값 변경\n🅟 /포인트기준설정 금액\n💎 /다이아기준설정 개수\n※ 숫자는 쉼표 없이 입력\n━━━━━━ ✦ ━━━━━━\n🔄 실시간 시세 적용 중\n※ 기준값은 자동 변경되지 않으며 MASTER 명령으로 수정\n※ 개인 보유 재화만 집계\n※ 미개봉 포인트상자는 개당 🅟100,000,000 합산";
+    return text + "\n\n📊 실시간 다이아 조합 시세\n━━━━━━━━━━━━\n├ 기준 가격: 🅟" + numberWithCommas(basePrice) + "\n├ 현재 가격: 🅟" + numberWithCommas(price) + "\n├ " + (difference.signum() < 0 ? "하락" : difference.signum() === 0 ? "변동" : "상승") + ": 🅟" + numberWithCommas(String(difference.abs().toString())) + "\n├ 최저 가격: 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.minimumPrice) + "\n└ " + buildDiamondLiveStatisticsChange(price, basePrice, "가격 등락률") + "\n\n⚙️ 기준값 변경\n━━━━━━━━━━━━\n🅟 /포인트기준설정 금액\n💎 /다이아기준설정 개수\n※ 숫자는 쉼표 없이 입력\n\n━━━━━━ ✦ ━━━━━━\n🔄 실시간 시세 적용 중\n※ 기준값은 자동 변경되지 않습니다.\n※ 기준값 변경은 MASTER 명령으로만 가능합니다.\n※ 개인 보유 재화만 집계합니다.\n※ 미개봉 포인트상자: 개당 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.pointBoxValue) + " 합산\n※ 재화 총량 증감률과 조합 가격 등락률은 다릅니다.\n\n📚 조합 시세 계산 상세 · 전체보기" + allsee + "\n" + buildDiamondLiveStatisticsDetail(baseline, current, calculation);
 }
 // 60초 조합 신청을 계정별 한 건으로 저장하고 표시 금액을 정확히 고정하는 함수
 function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat) {
@@ -60562,14 +60599,21 @@ function requireDiamondLiveInteger(text, positive) {
 
 // 확정된 보정 비율을 인자로 받아 시세를 정수 분수로 계산하고 백만 단위 사사오입하는 함수
 function calculateDiamondLivePrice(baseline, current, correctionPercent) {
-    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return calculateDiamondLivePrice(baseline, current, correctionPercent); });
+    return calculateDiamondLivePriceDetails(baseline, current, correctionPercent).price;
+}
+
+// 실제 조합 가격과 통계 설명에 쓸 반올림 전 기여액을 같은 정수 분수에서 반환하는 함수
+function calculateDiamondLivePriceDetails(baseline, current, correctionPercent) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return calculateDiamondLivePriceDetails(baseline, current, correctionPercent); });
     var rateText = String(correctionPercent);
     if (!/^\d+(?:\.\d+)?$/.test(rateText)) throw new Error("회원 수 보정 비율 오류");
     var rate = new java.math.BigDecimal(rateText);
     if (rate.compareTo(new java.math.BigDecimal("100")) > 0) throw new Error("회원 수 보정 비율 오류");
     var rateDenominator = new java.math.BigInteger("100").multiply(new java.math.BigInteger("10").pow(rate.scale()));
     var rateNumerator = rate.unscaledValue(); // 소수 보정 비율도 나눗셈 없이 정확한 분수로 보존
-    var p0 = requireDiamondLiveInteger(baseline.points, true), d0 = requireDiamondLiveInteger(baseline.diamonds, true), n0 = requireDiamondLiveInteger(baseline.members, true);
+    var p0, d0, n0;
+    try { p0 = requireDiamondLiveInteger(baseline.points, true); d0 = requireDiamondLiveInteger(baseline.diamonds, true); n0 = requireDiamondLiveInteger(baseline.members, true); }
+    catch (baselineError) { throw new Error("기준값 확인 필요: " + baselineError.message); }
     var p = requireDiamondLiveInteger(current.points, false), d = requireDiamondLiveInteger(current.diamonds, false), n = requireDiamondLiveInteger(current.members, false);
     var zero = new java.math.BigInteger("0"), memberGrowth = n.subtract(n0).max(zero);
     var pointOverlap = p.subtract(p0).max(zero).multiply(n0).min(memberGrowth.multiply(p0));
@@ -60583,7 +60627,12 @@ function calculateDiamondLivePrice(baseline, current, correctionPercent) {
     var roundingDenominator = denominator.multiply(unit);
     var rounded = numerator.multiply(two).add(roundingDenominator).divide(roundingDenominator.multiply(two)).multiply(unit);
     if (numerator.signum() < 0) throw new Error("조합 가격이 비정상입니다. MASTER 확인이 필요합니다.");
-    return String(rounded.max(new java.math.BigInteger(config.minimumPrice)).toString());
+    var pointImpact = p.subtract(p0).multiply(new java.math.BigInteger(String(config.pointWeight))); // 포인트 원본 비율의 가격 반영 분자
+    var diamondImpact = d.subtract(d0).multiply(new java.math.BigInteger(String(config.diamondWeight))); // 다이아 원본 비율의 가격 반영 분자
+    var memberImpact = rateNumerator.multiply(pointOverlap.multiply(new java.math.BigInteger(String(config.pointWeight))).multiply(d0).add(diamondOverlap.multiply(new java.math.BigInteger(String(config.diamondWeight))).multiply(p0))).negate(); // 회원 증가와 겹친 재화 증가분의 보정 차감
+    return { price: String(rounded.max(new java.math.BigInteger(config.minimumPrice)).toString()), numerator: String(numerator.toString()), denominator: String(denominator.toString()),
+        pointNumerator: String(pointImpact.toString()), pointDenominator: String(p0.toString()), diamondNumerator: String(diamondImpact.toString()), diamondDenominator: String(d0.toString()),
+        memberNumerator: String(memberImpact.toString()), correctionPercent: rateText, belowMinimum: numerator.compareTo(new java.math.BigInteger(config.minimumPrice).multiply(denominator)) < 0 };
 }
 
 // 다이아상점 표기 상품을 실제 사용 가능한 가방 아이템으로 변환하는 함수

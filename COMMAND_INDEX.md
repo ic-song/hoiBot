@@ -6807,7 +6807,7 @@ Status: VERIFIED
 
 ---
 
-# /다이아조합 · /다이아조합선택 · /포인트다이아통계 · 기준값 설정
+# /다이아조합 · /다이아조합선택 · /포인트통계 · 기준값 설정
 
 Status: VERIFIED
 
@@ -6821,7 +6821,7 @@ Status: VERIFIED
 - `applyDiamondLiveBaselinePolicy`, `parseDiamondLiveBaselineValue`, `changeDiamondLiveBaseline`
 - `collectDiamondLiveOwned`, `collectDiamondLiveReserved`, `getDiamondLiveSnapshot`
 - `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`, `getDiamondLiveCancelAlias`
-- `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
+- `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveStatisticsChange`, `formatDiamondLiveStatisticsAmount`, `buildDiamondLiveStatisticsDetail`, `calculateDiamondLivePriceDetails`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
 
 ## Data Usage
 
@@ -6841,7 +6841,11 @@ Status: VERIFIED
 - `/다이아조합`·`/다이아조합법`: 현재 시세 조회. `/다이아조합 양의정수`: 재료 차감 없이60초 확인, 새 신청은 같은 계정의 이전 대기를 교체한다. 신청가·수량·총액·방 문맥을 저장한다. `/다이아조합선택 1|2`는 계정·유효기한·접수시각·재료를 검증하며 기존 유효 신청은 시세나 기준이 바뀌어도 신청가를 보장한다. 패치 전 하한 미만 신청은 취소·재신청 안내하며 몰래 인상하거나 저가 체결하지 않는다.
 - 앞뒤 공백을 제거한 `변환하기`는 확인1, `안하기`는 본인의 대기가 있는 방 또는 같은 방의 최근60초 조합 문맥에서 취소2로 조기에 연결한다. DEV 접두어도 처리한다. 다른 콘텐츠의 취소와 단독숫자1·2는 선점하지 않으며 기존 출석·정지·전투 제한을 따른다. 반복 확인·취소는 결과를 안내하고 추가 차감하지 않는다.
 - 성공은 돌 차감·포인트 차감·정식 다이아상자 지급·대기 제거를 같은 회원 원문으로 게시한다. 확인·완료는 실제 지급물인 상자를 표시한다. 저장 오류는 롤백 후 전체 닉네임과 오류 안내를 전송하되 확정 게시 여부를 확인하지 못한 경우 무차감을 단언하지 않는다.
-- `/포인트다이아통계`와 `/포인트통계다이아`는 같은 MASTER 전용 통계다. 보유 포인트·상자 수·환산액·기준·현재·차이와 다이아·회원·최저/현재가격을 전체 숫자로 표시하고 두 기준값 설정 안내를 유지한다. `/다이아명령어`는 기존 운영8개와 통계·두 기준값 설정·예시를 함께 안내하며 조회로 기준을 바꾸지 않는다.
+- `/포인트통계`, `/포인트다이아통계`, `/포인트통계다이아`는 같은 MASTER 전용 통계다. 정확한 명령 일치로만 조회하며 공통 초기화 전 권한 검사·입력 정리·전체 닉네임 응답에 같은 별칭을 연결한다. 기존 보유 포인트·상자·환산액·제외량·회원·두 기준값 변경 안내를 유지한다.
+- `buildDiamondLiveStatistics`는 회원 수 증감률·재화 총량 증감률·최종 가격 등락률을 구분하고 제목 아래 구분선을 배치한다. 실제 증감이 있으나 소수 첫째 자리에서 0.0%가 되는 경우 통계에서만 방향과 `0.1% 미만`을 표시한다. 전체보기 패딩은 마지막 상세 안내 뒤 한 번이며 원본 전체 숫자와 보유·상자·제외량을 재집계하지 않는다.
+- `calculateDiamondLivePriceDetails`는 기존 정수 분수 가격식·회원 증가 중복분 보정·백만 단위 반올림·최저가를 유지해 실제 가격과 설명용 기여액을 함께 반환한다. `calculateDiamondLivePrice`도 같은 결과의 가격을 사용한다. 통계 엔트리는 같은 조회 스냅샷·설정으로 한 번 계산한 결과를 기본 화면과 상세에 전달한다.
+- `buildDiamondLiveStatisticsDetail`은 포인트/다이아 반영액·실제 회원 보정·반올림 전 계산값·최종가·최저가 적용을 표시한다. 중간 소수를 생략한 금액에는 `약`을 붙이며 표시용 반올림을 가격 계산에 재사용하지 않는다. 기준값 오류·누락 집계·가격 불일치는 기존 오류 응답으로 전파하고 기본값으로 대체하지 않는다. 저장·기준값 정책과 실제 결제·지급은 변경하지 않는다.
+- `/다이아명령어`는 기존 운영8개와 통계·두 기준값 설정·예시를 함께 안내하며 조회로 기준을 바꾸지 않는다.
 - `/다이아상점`은 닉네임·제목·잔액을 붙여 표시하고 전돌1개+시세변동 포인트→다이아1개 획득 안내를 제공한다. 실제 지급은 미개봉 상자이며 상품 번호/가격/한도/시세 규칙과 접기·목록은 유지한다. MASTER 명령은 일반 상점에 표시하지 않는다. 집계 오류 시 상품 목록은 보존하고 신규 조합 가격 확정만 중단한다.
 
 ---
