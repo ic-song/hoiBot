@@ -6807,7 +6807,7 @@ Status: VERIFIED
 
 ---
 
-# /다이아조합 · /다이아조합선택 · /포인트다이아통계
+# /다이아조합 · /다이아조합선택 · /포인트다이아통계 · 기준값 설정
 
 Status: VERIFIED
 
@@ -6817,27 +6817,32 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `initializeDiamondLiveState`, `requireDiamondLiveState`, `verifyDiamondLiveReceipt`
+- `initializeDiamondLiveState`, `requireDiamondLiveState`, `verifyDiamondLiveReceipt`, `buildDiamondLiveReceipt`
+- `applyDiamondLiveBaselinePolicy`, `parseDiamondLiveBaselineValue`, `changeDiamondLiveBaseline`
 - `collectDiamondLiveOwned`, `collectDiamondLiveReserved`, `getDiamondLiveSnapshot`
-- `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`
-- `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`
+- `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`, `getDiamondLiveCancelAlias`
+- `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
 
 ## Data Usage
 
-- 기존 `member.json`의 `diamondLiveMarket`: 영구 기준 points/diamonds/members·운영자 고유ID, 계정별 확인 대기1건. `migrations.diamondLiveInitialized`와 함께 검증하며 유실 시 자동 재초기화하지 않는다.
-- 별도 `diamondLiveBaseline.json`에 최초 기준·운영자ID를 고정 보관한다. 회원 표시·기준 기록이 유실되거나 불일치하면 자동 재생성하지 않고 중단한다. 과거 회원 백업 복원도 별도 기록과 대조한다.
-- 현재 회원의 개인 point·diamond·가방 정식 다이아상자만 집계한다. 길드자금·미개봉 패키지 내부 재화 제외, 호이 남은 최초 고정한 계정ID로 제외. 휴면·정지 회원은 추가 제외하지 않으며 지정 테스트 계정은 없다(사용자 확정). 같은ID 행이 재화까지 같으면1회, 재화 불일치면 차단한다.
-- 자유시장 구매 확인의 계정ID·매물ID·지문·60초·환경을 확인해 대기 금액을 실제 잔고 차감 전부터 통계에서 제외한다(사용자 확정). 실제 잔고는 미변경. 취소/만료/가격변경/완료 매물은 제외 해제. 같은 계정·매물의 방별 중복은1회만 합산하고 보유 다이아 초과 대기는 집계 오류로 중단한다.
-- `isDiamondLiveExactMathReady`·`withDiamondLiveExactMath`가 현재 스레드에서 큰 정수 계산을 표준 Rhino 자바 래핑으로 실행하고 성공·오류 모두 원래 WrapFactory로 복원한다. 자바 Number 반환값을 일반 숫자로 풀어버리는 실행 환경에서도 중간 정밀도와 연쇄 메서드를 보존한다.
-- 큰 합계와 가격은 문자열+Java BigInteger/BigDecimal로 정확히 계산한다. 1.5억×포인트 비율+2억×다이아 비율, 회원 증가와 재화 증가가 겹친 부분50% 보정, 백만 단위 사사오입. 가격 상·하한 없음,0원·비정상값은 신규 신청 차단.
-- 검증 회원 원문이 같을 때만 환경별 합계를 재사용하고 구매 대기는 매번 최신 반영한다. 회원 쓰기/복구/미게시 배치 읽기 시 캐시를 무효화하며 원문 변경·재시작 후 재집계한다.
+- 기존 `member.json`의 `diamondLiveMarket`: 기준 points/diamonds/members·운영자 고유ID, 계정별 확인 대기1건. `migrations.diamondLiveInitialized`와 함께 검증하며 유실 시 자동 재초기화하지 않는다.
+- 별도 `diamondLiveBaseline.json`과 회원 기준·운영자ID·`pointBasisVersion`을 대조한다. 기존 기록이 없거나 손상·불일치하면 재생성하지 않고 중단한다. 과거 회원 백업 복원도 별도 기록과 대조한다.
+- 현재 회원의 개인 point와 정확한 가방 아이템 `1억포인트상자🪙(/포인트상자오픈)` 개수×100,000,000을 합쳐 통계와 실제 시세가 같은 포인트 총량을 사용한다. 현금·상자 수·환산액을 별도 구성값으로 전달한다. diamond와 정식 다이아상자는 기존대로 집계한다. 길드자금·미개봉 패키지 내부 재화는 제외하며 호이 남은 고정한 계정ID로 제외한다. 같은ID 행은 포인트상자를 포함한 모든 재화가 같아야1회 집계하며 불일치는 차단한다. 상자 개봉·지급·회수는 회원 최종 원문이 바뀐 뒤 재집계하며 결제에 포인트상자를 자동 사용하지 않는다.
+- 자유시장 구매 확인의 계정ID·매물ID·지문·60초·환경을 확인해 아직 차감하지 않은 다이아 대기액을 통계에서 한 번만 제외한다. 실제 잔고는 미변경이며 취소/만료/가격변경/완료 매물은 제외 해제한다. 보유 다이아 초과 대기는 집계 오류로 중단한다.
+- `isDiamondLiveExactMathReady`·`withDiamondLiveExactMath`가 현재 스레드에서 큰 정수 계산을 표준 Rhino 자바 래핑으로 실행하고 성공·오류 모두 원래 WrapFactory로 복원한다. 합계·곱셈·가격은 문자열+Java BigInteger/BigDecimal로 계산한다.
+- 1.5억×포인트 비율+2억×다이아 비율, 회원 증가와 재화 증가가 겹친 부분50% 보정은 유지한다. 백만 단위 사사오입 후 최소350,000,000을 적용하며 상한은 없다. 정상0 재화도 하한을 적용하지만 누락·손상·잘못된 숫자를 하한으로 대체하지 않는다. 상품별 다이아 판매 시세(-20~+60%)에는 이 포인트 하한을 적용하지 않는다.
+- 검증 회원 원문이 같을 때만 환경별 합계를 재사용하고 구매 대기는 매번 최신 반영한다. 회원 쓰기/복구/미게시 배치 읽기 시 캐시를 무효화하며 원문 변경·재시작 후 재집계한다. 기준 변경도 관련 환경 캐시를 비운다. 일반 채팅마다 가방 전체를 추가 탐색하거나 상시 타이머를 만들지 않는다.
 
 ## Save Flow
 
-- 최초 기준 생성은 별도 고정 기록과 member를 같은 확정 게시에 포함한다. 최초 기준·고유ID 준비, 새 확인 신청, 취소/만료/성공은 기존 `beginFreeMarketMutation`/`finishFreeMarketMutation`의 확정 게시로 member와 분리 파일을 함께 저장한다. 성공은 돌 차감·포인트 차감·상자 지급·대기 제거가 같은 원문에 포함된다. 중단 복구는 확정 원문만 재게시한다.
-- `/다이아조합`·`/다이아조합법`: 현재 시세 조회만. `/다이아조합 양의정수`: 재료 차감 없이 60초 확인, 새 신청은 같은 계정의 이전 대기 교체. `/다이아조합선택 1|2`: 유효기한/접수시각/계정과 실제 재료를 재검증해 신청가로 처리. 불필요한 접미 문구는 실행 불가.
-- `/포인트다이아통계`: MASTER 전용, 일반인은 전체 닉네임·권한 안내만. 최초 기준과 현재 스냅샷 및 차이를 전체 정수·세 자리 콤마로 표시한다.
-- `/다이아상점`의 기존 상품 번호/가격/한도/시세(-20~+60%)는 유지하며 조합 시세만 실시간 표시한다. 집계 오류 시에도 상품 목록은 보존하고 조합 신규 가격 확정만 중단한다.
+- 신규 기준은 포인트15조와 당시 다이아·회원 총량으로 생성한다. 기존 기준은 별도 기록 검증 후 최초 한 번만 포인트15조로 변경하고 `pointBasisVersion:2`를 함께 저장한다. 이후 MASTER 변경값은 재시작·날짜 변경·조회로 덮어쓰지 않는다. 다이아·회원 기준 및 실제 회원 재화는 이 변경으로 바꾸지 않는다.
+- `/포인트기준설정 금액`, `/다이아기준설정 개수`는 MASTER만 1~9,007,199,254,740,991의 정확한 정수 한 개를 쉼표 없이 입력할 수 있다. 무인수는 현재 저장값·사용법만 조회하며 잘못된 인수·접미 설명·권한 오류는 저장하지 않는다. 설정은 해당 기준 하나만 바꾸고 `baselineHistory`에 변경 전후·처리자·시각을 기록한다. 개인 재화·회원 기준·가격 하한은 유지한다.
+- 기준 최초 생성·1회 정책 변경·MASTER 변경은 별도 기준 기록과 member를 같은 `beginFreeMarketMutation`/`finishFreeMarketMutation` 확정 게시에 포함한다. 실패 시 성공을 알리지 않으며 미완료 확정 journal은 읽기를 차단하고 기존 복구 경로로 게시한다. 새 저장 파일·helper IO는 없다.
+- `/다이아조합`·`/다이아조합법`: 현재 시세 조회. `/다이아조합 양의정수`: 재료 차감 없이60초 확인, 새 신청은 같은 계정의 이전 대기를 교체한다. 신청가·수량·총액·방 문맥을 저장한다. `/다이아조합선택 1|2`는 계정·유효기한·접수시각·재료를 검증하며 기존 유효 신청은 시세나 기준이 바뀌어도 신청가를 보장한다. 패치 전 하한 미만 신청은 취소·재신청 안내하며 몰래 인상하거나 저가 체결하지 않는다.
+- 앞뒤 공백을 제거한 `변환하기`는 확인1, `안하기`는 본인의 대기가 있는 방 또는 같은 방의 최근60초 조합 문맥에서 취소2로 조기에 연결한다. DEV 접두어도 처리한다. 다른 콘텐츠의 취소와 단독숫자1·2는 선점하지 않으며 기존 출석·정지·전투 제한을 따른다. 반복 확인·취소는 결과를 안내하고 추가 차감하지 않는다.
+- 성공은 돌 차감·포인트 차감·정식 다이아상자 지급·대기 제거를 같은 회원 원문으로 게시한다. 확인·완료는 실제 지급물인 상자를 표시한다. 저장 오류는 롤백 후 전체 닉네임과 오류 안내를 전송하되 확정 게시 여부를 확인하지 못한 경우 무차감을 단언하지 않는다.
+- `/포인트다이아통계`와 `/포인트통계다이아`는 같은 MASTER 전용 통계다. 보유 포인트·상자 수·환산액·기준·현재·차이와 다이아·회원·최저/현재가격을 전체 숫자로 표시하고 두 기준값 설정 안내를 유지한다. `/다이아명령어`는 기존 운영8개와 통계·두 기준값 설정·예시를 함께 안내하며 조회로 기준을 바꾸지 않는다.
+- `/다이아상점`은 닉네임·제목·잔액을 붙여 표시하고 전돌1개+시세변동 포인트→다이아1개 획득 안내를 제공한다. 실제 지급은 미개봉 상자이며 상품 번호/가격/한도/시세 규칙과 접기·목록은 유지한다. MASTER 명령은 일반 상점에 표시하지 않는다. 집계 오류 시 상품 목록은 보존하고 신규 조합 가격 확정만 중단한다.
 
 ---
 
