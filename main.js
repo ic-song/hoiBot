@@ -1163,11 +1163,13 @@ const GLOBAL_CONFIG = {
     "dailyTickets": 5,
     "personalDailyLimit": 2,
     "kingdomExploreBonus": 5,
-    "personalRewards": { "scout": { "success": 100000000, "failure": 50000000 }, "bomb": { "success": 300000000, "failure": 50000000 }, "fighter": 100000000 },
+    "personalRewards": { "scout": { "success": 100000000, "failure": 100000000 }, "bomb": { "success": 100000000, "failure": 100000000 }, "fighter": 100000000, "defense": 50000000 },
     "scoutLimit": 2,
     "scoutChangeLimit": 2,
     "bombLimit": 2,
-    "bomberChangeLimit": 1,
+    "bomberChangeLimit": 2,
+    "formationChangeLimit": 2,
+    "defenseParticipation": { "castleBonus": 0.05, "defenseRate": 0.05 },
     "bombSuccessRate": 0.3,
     "roundIntervalMs": 15000,
     "mineReward": 1,
@@ -1179,7 +1181,7 @@ const GLOBAL_CONFIG = {
     "legacyProduction": { "amount": 2500000, "seconds": 1800 },
     "prepareMs": 120000,
     "legacyPrepareMs": 180000,
-    "rewards": { "capture": 500000000, "goldCapture": 800000000, "defense": 200000000, "goldDefense": 300000000, "loss": 100000000 },
+    "rewards": { "capture": 300000000, "goldCapture": 500000000, "defense": 100000000, "goldDefense": 250000000, "loss": 100000000 },
     "retryMs": 5000,
     "recordLimit": 30,
     "defaultTaxRate": 12,
@@ -1201,9 +1203,8 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back.json",
         "memberOperationLogs_back2.json"
     ],
-    "commandGuide": "/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
-    "publicRules": "🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 길드전쟁 · 점령지 6곳\n🎯 하루 역할별 공격권 5회\n🔭 정찰병도 전쟁선포 가능\n⏳ 2분 뒤 선봉전 · 이후 15초 간격\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외)\n💣 자폭 하루 2회 · 성공 확률 30%\n📚 길드전쟁 참여 방법 전체보기" + allsee + "\n【1. 길드톡 등록과 편성】\n길드톡 이름은 마크를 제외한 정확한 길드명\n길마·부길마가 /전쟁톡등록 → /전쟁톡확인\n공격3명은 전체 길드원 가능, 방어3명은 공격 역할이 없는 길드원, 정찰병1명은 선택\n최대 2개 역할 겸직 · 공격/방어 중복 불가\n편성 번호는 /길드정보 기준\n전쟁 중 기본 변경 불가 · 편성초기화는 8칸 해제 · 정찰/자폭 변경 횟수 소모 · 사용권 복구 없음\n\n【2. 전쟁선포와 지역】\n[1] 호월킹덤🏰 [2] 동부 금광🪙 [3] 중앙 금광🪙 [4] 서부 금광🪙 [5] 펫스킬 광산📕 [6] 다이아광산💎\n자기 등록 길드톡에서 현재 권한 보유자만 선포\n길드의 여러 지역 동시 공격 · 다른 길드의 같은 지역 동시 공격 가능 · 같은 길드·같은 지역 중복 불가 · 공격 쿨타임/점령보호 없음\n\n【3. 정찰·침공 감지】\n선포 순간 정찰병 개인 종합매력 비교, 동률은 방어 승리\n방어톡 침공 감지는 항상 통보 · 감지와 진형변경 권한은 별개\n공격 정찰 승리: 상대 정찰병·기본 방어3명 닉네임/캐슬 공개, 공격 순서변경 가능\n방어 정찰 승리: 적 정찰병 닉네임/종합매력 공개, 방어 순서변경 및 선봉+5%\n방어 정찰병 없음(0:0 포함): 변경권/정찰버프 없음\n2분 안에 기존3명 순서만 변경 · 동시 방어전은 영지번호 지정\n단독 정찰은 등록정찰병 본인만 길드당2회/일, 정찰병 변경2회/일(최초무료)\n단독 정찰에는 전쟁·선봉버프 없음 · 실패 시 정찰병 정보 역공개\n\n【4. 전투·점령·자폭】\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식\n\n【5. 주요 명령어】\n/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
+    "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 6곳\n🎯 길드 공격권 하루 5회\n🔭 정찰 정보 확인 · 방어 참여 시스템\n🔄 공격·방어·자폭 인원 교체: 각각 하루 2회\n⏳ 선포 2분 후 전투 시작\n🏆 3전 2선승 · 3경기 모두 진행\n💣 자폭 2회/일 · 성공확률 30%\n🛡️ 피격 시 방어자는 2분 안에 /방어\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 정찰 결과 무관\n\n📚 참여방법·보상·명령어 전체보기" + allsee + "\n【1. 전쟁 준비와 편성】\n━━━━━━━━━━━━\n🔔 길드톡 이름은 마크를 제외한 정확한 길드명\n└ 길마·부길마: /전쟁톡등록 → /전쟁톡확인\n👥 정찰 1명 · 자폭 1명 · 공격 3명 · 방어 3명\n🎯 공격 3명: 전체 길드원 편성 가능\n⚒️ 방어 3명: 전체 길드원 가능 · 공격 진형과 중복 불가\n🔭 정찰병: 일반 길드원도 편성 가능\n💣 자폭병: 기존 역할과 겸직 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 편성 번호는 /길드정보의 길드원 번호 사용\n🔒 전쟁 중 기본 편성 변경 제한\n🔄 공격·방어·자폭 인원 교체: 길드별 각각 하루 2회\n└ 최초 편성 무료 · 유형별 교체 횟수 별도 관리\n└ 공격 측 정찰 승리 후 순서 변경은 별도 규칙\n└ 방어 측은 선포 시 확정된 인원·자리로 대응\n🔄 편성초기화는 8개 슬롯 해제\n└ 초기화·재편성으로 교체 횟수나 소진한 선포권 복구 불가\n\n【2. 전쟁선포와 공격권】\n━━━━━━━━━━━━\n🏰 [1] 호월킹덤\n🪙 [2] 동부 금광\n🪙 [3] 중앙 금광\n🪙 [4] 서부 금광\n📕 [5] 펫스킬 광산\n💎 [6] 다이아광산\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 길드 하루 5회\n⭐ 길마가 역할을 겸직할 때는 기존 개인 최대 횟수 제한 유지\n└ 길마 기본 선포권 먼저 사용\n⚠️ 부길마 직책만으로는 선포 불가\n⚠️ 편성 변경으로 소진한 선포권 복구 불가\n📣 등록된 자기 길드톡에서 권한 보유자만 선포\n⚔️ 여러 지역 동시 공격 가능\n└ 다른 길드의 동일 지역 동시 공격 가능\n└ 같은 길드의 동일 지역 중복 공격은 불가\n⏱️ 공격 쿨타임·점령보호 없음\n\n【3. 정찰·침공 감지】\n━━━━━━━━━━━━\n🔭 선포 즉시 양측 정찰병의 개인 종합매력 비교\n└ 동률은 방어 정찰 승리\n🚨 방어 길드톡에 침공 감지 항상 통보\n└ 침공 감지 자체는 진형 변경권이 아님\n🎯 공격 정찰 승리 시\n└ 상대 정찰병 및 기본 방어 3명의 닉네임·캐슬 정보 공개\n└ 공격 진형 3명 순서 변경 가능\n⚒️ 방어 정찰 승리 시\n└ 상대 정찰병 닉네임·종합매력 공개\n└ 최종 방어 선봉 캐슬 +5%p 추가\n⚠️ 방어 정찰병이 없을 때(0:0 포함)는 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 승패로 변경하지 않음\n⏳ 공격 측 정찰 승리 시 2분 안에 공격 순서 변경 가능\n└ 기존 공격 3명 유지, 순서만 변경\n🛡️ 감지 성공·실패 및 정찰병 부재 모두 /방어 안내\n└ 해당 전투의 방어자가 2분 준비 시간 안에 입력\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 동일 전투 중복 수령 불가\n🔍 단독 정찰은 등록된 정찰병 본인만 실행\n└ 길드당 하루 2회 · 정찰병 변경 하루 2회(최초 무료)\n└ 단독 정찰에는 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n【4. 전투 진행과 판정】\n━━━━━━━━━━━━\n⏳ 선포 후 2분 준비\n└ 2:00 선봉전 → 2:15 중견전 → 2:30 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n⚔️ 캐슬매력은 전쟁선포 당시 기준\n⚒️ 기본 방어 패시브: 선봉 +3% · 중견 +10%\n🔭 방어 정찰 성공 시 최종 선봉 +5%p 추가(선봉 총 +8%)\n🎲 판정 순서: 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n└ 캐슬 동률 등 기존 동률 규칙은 방어 승리\n🥉 대장전에는 특수 기습·절대방어 아이템 미적용\n└ 길드큐브 패시브는 유지\n\n【5. 점령 보상과 혜택】\n━━━━━━━━━━━━\n🎁 금광 점령 성공: 길드자금 🅟5억\n⚒️ 금광 방어 성공: 길드자금 🅟2.5억\n🎁 기타 지역 점령 성공: 길드자금 🅟3억\n⚒️ 기타 지역 방어 성공: 길드자금 🅟1억\n💔 공격 실패: 길드자금 🅟1억\n⚔️🛡️ 공격/방어 편성 6명: 각 개인 🅟1억\n└ 정상적으로 대전 완료 시 각자 지급(승패 무관)\n🔭 정찰병 개인 보상: 성공·실패 모두 🅟1억\n└ 계정별 하루 1회 수령 유지\n💣 자폭병 개인 보상: 🅟1억\n└ 기존 보상 지급 조건 및 하루 1회 수령 유지\n🛡️ /방어 참여 개인 보상: 🅟5천만 별도 지급\n└ 동일 전투에서 같은 계정에 중복 지급하지 않음\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에만 적용\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n🏰 호월킹덤 점령 중: 점령 길드원 전체 탐험 성공확률 +5%p\n🎲 점령·방어 길드자금에 기존 길드큐브3 추가율을 한 번 적용\n└ 공격 실패 보상에는 길드큐브 미지급\n🏳️ 실제 미점령 지역 공격 시 공격권 1회 차감 후 즉시 무혈입성\n└ 정상 점령 성공과 동일한 점령 보상 적용\n\n【6. 자폭 및 특수 규칙】\n━━━━━━━━━━━━\n💣 자폭: 길드당 하루 2회 · 성공확률 30%\n🔄 자폭병 교체: 하루 2회(최초 편성 무료)\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n💥 자폭 성공 시 지역을 미점령으로 전환\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n🎁 자폭병 개인 보상: 🅟1억 · 하루 1회\n🚨 자폭 실패도 상대 길드톡에 통보\n🔒 전쟁 진행 중 지역·자기 소유 지역·미점령 지역 자폭 불가\n└ 불가 조건에서는 자폭 횟수 미차감\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광의 시간당 생산 보상 없음\n※ 기존 시간제 영지전 및 영지포인트 순위 보상 휴식\n\n【7. 전체 명령어】\n━━━━━━━━━━━━\n📍 전쟁 조회\n━━━━━━━━━━━━\n/길드전쟁\n/길드전쟁가이드\n/전쟁기록\n\n👥 진형 편성\n━━━━━━━━━━━━\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰\n━━━━━━━━━━━━\n/방어\n/전쟁정찰\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n\n🔔 길드톡 관리\n━━━━━━━━━━━━\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -1635,7 +1636,7 @@ const GLOBAL_CONFIG = {
             { title: "미니펫", emoji: "🐣", intro: "미니펫의 장착과 성장 방법을 알아봐요!", learn: ["주력·보조 장착과 보유 미니펫을 구분해요.", "강화 전 소모 재화와 안내를 먼저 확인해요."], commands: ["/미니펫정보", "/미니펫가방"], check: "장착 상태와 강화 전 확인 사항을 알고 있나요?", note: "선택 실습: /미니펫장착 가방번호, /미니펫보조장착 가방번호. /미니펫강화 0 횟수는 대표, 00 횟수는 보조, 양수는 가방 번호예요. 강화는 필수가 아니에요." },
             { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
             { title: "펫홈·가구", emoji: "🏡", intro: "내 펫홈과 가구 효과를 한눈에 확인해요!", learn: ["보유 가구와 장착 가구를 구분해요.", "집 면적·장착칸·가구 효과를 구분해요.", "가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.", "루미에르 빌리지와 별채의 역할을 알아봐요."], commands: ["/펫홈", "/가구정보"], check: "장착 상태와 가구 효과를 어디서 확인하나요?", note: "현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요." },
-            { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 6개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령8억·방어3억, 기타 점령5억·방어2억, 공격 실패1억이에요. 특수광산 승리 시 조각1개 또는 길드창고 다이아1개를 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공30%·변경하루1회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
+            { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 6개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령5억·방어2.5억, 기타 점령3억·방어1억, 공격 실패1억이에요. 특수광산 승리 시 조각1개 또는 길드창고 다이아1개를 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공30%·변경하루2회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
             { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매상품. 개인 당근거래는 종료됐어요. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
             { title: "홈뱃지·큐브", emoji: "💟", intro: "홈뱃지 옵션과 큐브 사용 전 확인 사항을 알아봐요!", learn: ["/홈뱃지에서 보유 목록과 장착 상태를, /홈뱃지정보 이름에서 옵션·효과를 확인해요.", "/홈뱃지장착 번호와 /홈뱃지해제 뱃지번호의 안내·확인 절차를 알아봐요.", "/홈뱃지큐브 안내에서 슬롯·옵션 번호·사용 횟수와 보유량·소모량·확률·보호 조건을 확인해요.", "수치와 적용 조건은 교육 시점의 실제 홈뱃지·큐브 안내를 기준으로 설명해요."], commands: ["/홈뱃지", "/홈뱃지정보 이름", "/홈뱃지큐브", "/큐브확률"], check: "내 홈뱃지 옵션과 큐브 대상·소모량·확률을 어디에서 확인하나요?", note: "선택 안내: /홈뱃지큐브 슬롯 옵션 사용횟수. 현재 화면의 슬롯·옵션 번호를 먼저 확인해요. 뱃지·큐브가 없으면 GM 예시로 배우며 실제 큐브 사용은 완료 조건이 아니에요." },
             { title: "패키지 상품 확인", emoji: "📘", intro: "보유 중인 패키지를 확인하는 방법을 알아봐요!", learn: ["/패키지가방에서 보유 중인 패키지 상품을 확인할 수 있어요.", "패키지 상품의 이름과 보유 수량을 확인하는 방법을 알아봐요."], commands: ["/패키지가방"], check: "보유 중인 패키지 상품의 이름과 수량을 어디에서 확인하나요?", note: "후원은 선택 사항이며 실제 후원·결제·후원 이력 없이 설명만으로 교육을 완료할 수 있어요." }
@@ -69874,19 +69875,25 @@ function commitGuildWarRoster(entry, candidate, guild, day) {
     if (entry.personalTransitionDay === day && day !== undefined && entry.scout !== candidate.scout) throw guildWarInputError("이전 길마권의 선포자를 확인할 수 없어 다음 일일 초기화까지 정찰 편성을 유지합니다. 기존 선포권과 진행 전쟁은 유지됩니다.");
     validateGuildWarRoles(candidate);
     if (candidate.attack.some(function (name) { return name && (!guild.members || !Object.prototype.hasOwnProperty.call(guild.members, name) || !guild.members[name]); })) throw guildWarInputError("같은 길드에 소속된 길드원만 공격 진형에 편성할 수 있습니다.");
-    var config = GLOBAL_CONFIG.guildWar, roles = ["scout", "bomber"];
+    var config = GLOBAL_CONFIG.guildWar, roles = ["scout", "bomber", "attack", "defense"], labels = { scout: "정찰병", bomber: "자폭병", attack: "공격 진형", defense: "방어 진형" }, changedRoles = [];
     for (var i = 0; i < roles.length; i++) {
-        var role = roles[i], changed = entry[role] !== candidate[role], limit = role === "scout" ? config.scoutChangeLimit : config.bomberChangeLimit;
-        if (changed && (entry[role + "Assigned"] || !candidate[role]) && entry[role + "Changes"] >= limit) throw guildWarInputError("남은 " + (role === "scout" ? "정찰병" : "자폭병") + " 변경 횟수가 없습니다. 기존 편성을 유지합니다.");
+        var role = roles[i], formation = role === "attack" || role === "defense";
+        var changed = formation ? entry[role].some(function (name, slot) { return name !== candidate[role][slot]; }) : entry[role] !== candidate[role];
+        var assigned = entry[role + "Assigned"] === undefined && formation ? entry[role].some(function (name) { return !!name; }) : entry[role + "Assigned"];
+        var used = entry[role + "Changes"] === undefined && formation ? 0 : entry[role + "Changes"]; // 기존 저장본에 없던 진형 교체 이력만 0부터 시작
+        var limit = formation ? config.formationChangeLimit : role === "scout" ? config.scoutChangeLimit : config.bomberChangeLimit;
+        if (changed && assigned && used >= limit) throw guildWarInputError("오늘 " + labels[role] + " 교체 횟수를 모두 사용했습니다.\n└ 교체는 하루 최대 " + limit + "회 가능합니다. 기존 편성을 유지합니다.");
+        if (changed) changedRoles.push({ role: role, used: used + (assigned ? 1 : 0), assigned: assigned || (formation ? candidate[role].some(function (name) { return !!name; }) : !!candidate[role]), limit: limit });
     }
-    for (var j = 0; j < roles.length; j++) {
-        var r = roles[j];
-        if (entry[r] !== candidate[r] && (entry[r + "Assigned"] || !candidate[r])) entry[r + "Changes"]++;
-        entry[r + "Assigned"] = entry[r + "Assigned"] || !!candidate[r];
-        entry[r] = candidate[r];
+    var result = "✅ 길드전쟁 편성 완료!";
+    for (var j = 0; j < changedRoles.length; j++) {
+        var update = changedRoles[j];
+        entry[update.role + "Changes"] = update.used; entry[update.role + "Assigned"] = update.assigned;
+        result += "\n└ 오늘 남은 " + labels[update.role] + " 교체: " + (update.limit - update.used) + "/" + update.limit + "회";
     }
+    entry.scout = candidate.scout; entry.bomber = candidate.bomber;
     entry.attack = candidate.attack.slice(0); entry.defense = candidate.defense.slice(0);
-    return "✅ 길드전쟁 편성 완료!\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가";
+    return result + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가";
 }
 // 선포 당시 전쟁 규칙에 따른 준비시간을 반환하는 함수
 function getGuildWarPrepareMs(war) {
@@ -69908,7 +69915,7 @@ function setGuildWarBulkFormation(state, guildData, gid, request, skills) {
 function archiveGuildWarMatchup(war, now) {
     if (!war.matchupHistory) war.matchupHistory = [];
     war.matchupHistory.push({ defenseId: war.defenseId, defenseName: war.defenseName, at: war.at, due: war.due, ended: now,
-        attack: cloneFreeMarketObject(war.attack), defense: cloneFreeMarketObject(war.defense), matches: cloneFreeMarketObject(war.matches), attackScout: war.attackScout, defenseScout: war.defenseScout });
+        attack: cloneFreeMarketObject(war.attack), defense: cloneFreeMarketObject(war.defense), matches: cloneFreeMarketObject(war.matches), defenseJoins: cloneFreeMarketObject(war.defenseJoins || []), attackScout: war.attackScout, defenseScout: war.defenseScout });
 }
 // 현재 점령 길드로 상대를 바꾸고 새로운 정찰·방어 능력치·3분 준비를 확정하는 함수
 function retargetGuildWar(data, guildData, war, owner, now, sources) {
@@ -69924,10 +69931,10 @@ function retargetGuildWar(data, guildData, war, owner, now, sources) {
     war.attack = cloneFreeMarketObject(war.originalAttack); war.defenseId = owner; war.defenseName = nextGuild ? formatGuildDisplay(nextGuild) : "미점령";
     war.attackScout = attacker; war.defenseScout = defender; war.defenseScoutWin = !(attacker.charm > defender.charm);
     war.declaredAt = war.declaredAt || war.at; war.at = now; war.due = now + getGuildWarPrepareMs(war);
-    war.matches = []; war.wins = 0; war.retargetPending = false;
+    war.matches = []; war.wins = 0; war.retargetPending = false; war.defenseJoins = [];
     queueGuildWarNotice(state, guildData, previous, "⚔️ " + oldName + " 길드전쟁\n" + guildWarRegion(war.no) + "\n점령자 변경으로 기존 대진 중단 · 방어전 종료 · 보상 없음");
     queueGuildWarNotice(state, guildData, war.attackId, "⚔️ " + war.attackName + " 길드전쟁\n" + guildWarRegion(war.no) + "\n점령자 변경으로 기존 대진 중단\n상대: " + oldName + " → " + war.defenseName + "\n이전 승패 초기화 · 새 준비시간 " + (getGuildWarPrepareMs(war) / 60000) + "분\n" + buildGuildWarScoutNotice("declare", war.attackName, war.defenseName, war.no, !war.defenseScoutWin, attacker, defender, war.defense, 0, getGuildWarPrepareMs(war) / 60000));
-    queueGuildWarNotice(state, guildData, owner, buildGuildWarScoutReverse("declare", war.attackName, war.defenseName, war.no, attacker, true, war.defenseScoutWin && !!defender.name, getGuildWarPrepareMs(war) / 60000));
+    queueGuildWarDefenseNotice(state, guildData, war, now);
 }
 // 직접 명령 응답에 입력자 전체 닉네임을 한 번만 붙이는 함수
 function buildGuildWarDirectHeader(sender) {
@@ -70133,30 +70140,39 @@ function buildGuildWarRosterDetails(data, pets, guildData, gid, home, skills) {
     var guild = guildData.guilds[gid], entry = getGuildWarEntry(guildData.war24, gid), ordered = getGuildOrderedMemberKeys(guild, skills), assigned = [], free = [];
     for (var i = 0; i < ordered.length; i++) {
         var name = ordered[i], roles = [];
-        if (entry.scout === name) roles.push("└ 🔭 정찰병");
-        if (entry.bomber === name) roles.push("└ 💣 자폭병");
+        if (entry.scout === name) roles.push("🔭 정찰병");
+        if (entry.bomber === name) roles.push("💣 자폭병");
         for (var p = 0; p < 3; p++) {
-            if (entry.attack[p] === name) roles.push("└ 🎯 공격 [" + (p + 1) + "] " + ["선봉", "중견", "대장"][p]);
-            if (entry.defense[p] === name) roles.push("└ ⚒️ 방어 [" + (p + 1) + "] " + ["선봉", "중견", "대장"][p]);
+            if (entry.attack[p] === name) roles.push("🎯 " + ["선봉", "중견", "대장"][p]);
+            if (entry.defense[p] === name) roles.push("⚒️ " + ["선봉", "중견", "대장"][p]);
         }
         var castle = pets[name] ? calculateCastleExp(name, data, pets, home, skills, false, guildData) : 0;
         var total = pets[name] ? calculateTotalExp(name, data, pets, home, skills, guildData) : 0;
-        var row = (i + 1) + ". [" + checkRank(data, pets, guildData, name) + "] " + getGuildMemberRoleEmoji(guild, name, skills) + "\n" + (roles.length ? roles.join("\n") : "└ ❌ 전쟁 포지션 없음") + "\n└ ⚔️ 캐슬 " + formatGuildWarCharm(castle) + " · 💞 종합 " + formatGuildWarCharm(total);
+        var row = (i + 1) + ". [" + checkRank(data, pets, guildData, name) + "] " + getGuildMemberRoleEmoji(guild, name, skills) + "\n└ " + (roles.length ? roles.join(" · ") : "미편성") + " · ⚔️" + formatGuildWarCharm(castle) + " · 💞" + formatGuildWarCharm(total);
         (roles.length ? assigned : free).push(row);
     }
     return "📋 길드원 전쟁 포지션 현황\n━━━━━━━━━━━━\n✅ 포지션 배정 [" + assigned.length + "명]\n\n" + assigned.join("\n\n") + "\n\n━━━━━━━━━━━━\n🆓 미편성 길드원 [" + free.length + "명]\n\n" + free.join("\n\n");
 }
+// 역할별 권리·교체 사용량을 먼저 보이고 전체 길드원 상세는 접어서 표시하는 함수
 function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills) {
     var guild = guildData.guilds[gid], entry = getGuildWarEntry(guildData.war24, gid), fighters = entry.attack.concat(entry.defense);
-    var text = "⚔️ " + formatGuildDisplay(guild) + " 길드전쟁 편성\n━━━━━━━━━━━━\n👥 전쟁 편성: " + fighters.concat([entry.scout, entry.bomber]).filter(function (n) { return !!n; }).length + "/8칸\n🎯 남은 공격권: " + entry.tickets + "/5회\n\n";
-    text += "🔭 정찰병 [전체 길드원 가능]\n└ [" + (entry.scout ? checkRank(data, petData, guildData, entry.scout) : "미편성") + "]\n└ 🔭 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2 · 🔄 변경 " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2\n\n";
-    text += "💣 자폭병 [기존 역할 겸직 가능]\n└ [" + (entry.bomber ? checkRank(data, petData, guildData, entry.bomber) : "미편성") + "]\n└ 💣 자폭 " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2 · 🔄 변경 " + (GLOBAL_CONFIG.guildWar.bomberChangeLimit - entry.bomberChanges) + "/1\n";
+    var usage = getGuildWarPersonalUsage(guildData.war24, guild, entry, gid);
+    // 현재 역할권과 개인 선포 사용량을 구분해 표시하는 함수
+    function display(name, key) {
+        if (!name) return "미편성";
+        var rights = key ? [key] : getGuildWarUserRights(guild, entry, name), total = key ? 1 : Math.min(GLOBAL_CONFIG.guildWar.personalDailyLimit, rights.length);
+        var used = key ? (entry.rights[key] ? 1 : 0) : Math.min(total, getGuildWarPersonalUseCount(entry, usage, name));
+        return "[" + checkRank(data, petData, guildData, name) + "]" + (rights.length ? "🎯(" + used + "/" + total + ")" : "");
+    }
+    var text = "⚔️ " + formatGuildDisplay(guild) + " 전쟁편성\n━━━━━━━━━━━━\n👥 전쟁 편성: " + fighters.concat([entry.scout, entry.bomber]).filter(function (n) { return !!n; }).length + "/8칸\n🎯 남은 공격권: " + entry.tickets + "/5회\n\n👑 길드마스터 [기본 선포권]\n└ " + display(guild.master, "master") + "\n\n";
+    text += "🔭 정찰병: " + display(entry.scout, "scout") + "\n└ 🔭(" + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2) · 🔄(" + entry.scoutChanges + "/2)\n\n";
+    text += "💣 자폭병: " + (entry.bomber ? "[" + checkRank(data, petData, guildData, entry.bomber) + "]" : "미편성") + "[겸직 가능]\n└ 💣(" + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2) · 🔄(" + entry.bomberChanges + "/2)\n";
     for (var i = 0; i < 6; i++) {
-        if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [전체 길드원 가능]" : "⚒️ 방어 진형\n└ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n━━━━━━━━━━━━\n";
-        text += ["🥇 1번 선봉", "🥈 2번 중견", "🥉 3번 대장"][i % 3] + ": [" + (fighters[i] ? checkRank(data, petData, guildData, fighters[i]) : "미편성") + "]\n";
+        if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [전체 길드원 가능] 🔄(" + (entry.attackChanges || 0) + "/2)" : "⚒️ 방어 진형 [전체 길드원 가능] 🔄(" + (entry.defenseChanges || 0) + "/2)\n└ ⚔️ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n";
+        text += ["🥇 1번 선봉", "🥈 2번 중견", "🥉 3번 대장"][i % 3] + ": " + (i < 3 ? display(fighters[i]) : fighters[i] ? "[" + checkRank(data, petData, guildData, fighters[i]) + "] /방어" : "미편성") + "\n";
     }
     if (entry.personalTransitionDay === guildData.war24.day) text += "\n⏳ 이전 선포자 확인 불가 · 정찰 편성 변경은 다음 일일 초기화 후 가능\n";
-    return text + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n📚 진형 편성 방법 전체보기" + allsee + "\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n📚 전쟁 명령어 안내\n" + GLOBAL_CONFIG.guildWar.commandGuide;
+    return text + "\n📚 길드원 현황·편성 설명·방법 전체보기\n\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n※ 🎯·🔄(사용/총) · 🔭·💣(잔여/총)\n※ 공격 진형의 🎯는 개인 합계\n※ 길마·정찰 권리가 개인 합계에 포함될 수 있음" + allsee + "\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n━━━━━━━━━━━━\n🛠️ 주요 편성 명령어\n" + GLOBAL_CONFIG.guildWar.formationGuide + "\n\n📖 기타 명령어: /길드전쟁가이드\n※ 길드원 번호는 /길드정보 기준";
 }
 
 // 유효한 자폭 한 번의 소유권·횟수·양쪽 통보를 함께 변경하는 함수
@@ -70252,15 +70268,14 @@ function applyGuildWarBomb(data, petData, guildData, gid, sender, no, now, rando
             if (legacy) { legacy.ownerGuildId = null; legacy.ownerUser = ""; }
         }
     }
-    var result = success ? "💥 자폭 성공!\n🏳️ 해당 지역 미점령 전환!" : "❌ 자폭 실패!\n⚒️ 기존 점령 유지";
-    queueGuildWarNotice(state, guildData, gid, "💣 " + attackName + " 자폭 작전\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ 상대: " + defenseName + "\n💣 자폭병: [" + checkRank(data, petData, guildData, sender) + "]\n\n" + result + "\n💣 남은 자폭: " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2회" + buildGuildWarDailyRewardMessage("bomb", bombReward));
-    queueGuildWarNotice(state, guildData, target, "🚨 " + attackName + " 자폭 감지!\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ 우리: " + defenseName + "\n\n" + result + (success ? "\n🏳️ 점령 상실!" : "\n✅ 점령 유지!") + "\n🎁 전투 보상 없음");
-    return success;
+    var text = "💣 " + attackName + " 자폭 작전\n" + (success ? "💥 자폭 성공!" : "❌ 자폭 실패!") + "\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ " + (success ? "상대: " : "점령 유지: ") + defenseName + "\n💣 자폭병: [" + checkRank(data, petData, guildData, sender) + "]\n" + (success ? "🏳️ 미점령 지역으로 전환\n" : "") + "\n💬 " + (success ? "점령 깃발까지 시원하게 날려버렸습니다!" : "폭탄은 요란했고, 성벽은 멀쩡했다…") + "\n\n💣 남은 자폭: " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2회\n" + (bombReward ? "🎁 개인 보상: 🅟" + formatGuildTerritoryRewardAmount(bombReward) + "\n📌 오늘 자폭 보상: 1/1회 수령" : "🎁 개인 보상: 오늘 수령 완료");
+    queueGuildWarNotice(state, guildData, target, "🚨 " + attackName + " 자폭 감지!\n" + (success ? "💥 상대 자폭 성공 · 점령 상실!" : "🛡️ 상대 자폭 실패!") + "\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ " + (success ? "우리: " : "점령 유지: ") + defenseName + (success ? "\n🏳️ 미점령 지역으로 전환" : "") + "\n\n💬 " + (success ? "오늘은 깃발이 먼저 퇴근했습니다…" : "성벽 먼지만 털어주고 갔습니다.") + "\n\n🎁 전투 보상 없음");
+    return { success: success, text: text };
 }
 
 // 정확한 실행 문법과 삭제한 상세 조회를 구분하는 함수
 function getGuildWarRequest(msg) {
-    var simple = { "/길드전쟁": "main", "/길드전쟁가이드": "guide", "/전쟁편성": "formation", "/전쟁정찰": "scout", "/전쟁기록": "records", "/전쟁톡등록": "register", "/전쟁톡확인": "room", "/전쟁톡해제": "unregister", "/전쟁편성초기화": "clearFormation", "/길드전쟁공격초기화": "resetTickets", "/전쟁정찰해제": "clearScout", "/전쟁자폭해제": "clearBomber" };
+    var simple = { "/길드전쟁": "main", "/길드전쟁가이드": "guide", "/전쟁편성": "formation", "/전쟁정찰": "scout", "/전쟁기록": "records", "/전쟁톡등록": "register", "/전쟁톡확인": "room", "/전쟁톡해제": "unregister", "/전쟁편성초기화": "clearFormation", "/길드전쟁공격초기화": "resetTickets", "/전쟁정찰해제": "clearScout", "/전쟁자폭해제": "clearBomber", "/방어": "defend" };
     if (Object.prototype.hasOwnProperty.call(simple, msg)) return { kind: simple[msg], args: [] };
     var match = /^\/(전쟁공격편성|전쟁방어편성)[ \t]+(\d+)[ \t]+(\d+)[ \t]+(\d+)(?:[ \t]+(\d+))?$/.exec(msg);
     if (match && match[0] === msg ) return { kind: match[1] === "전쟁공격편성" ? "attackFormation" : "defenseFormation", args: match.slice(2).filter(function (v) { return v !== undefined; }).map(Number) };
@@ -70271,7 +70286,7 @@ function getGuildWarRequest(msg) {
     if (match && match[0] === msg) return { kind: { "전쟁정찰편성": "scoutFormation", "전쟁자폭편성": "bomberFormation", "전쟁선포": "declare", "자폭": "bomb" }[match[1]], args: [Number(match[2])] };
     match = /^\/(정찰|전쟁톡확인|전쟁톡해제)[ \t]+(\S(?:[^\r\n]*\S)?)$/.exec(msg);
     if (match && match[0] === msg) return { kind: match[1] === "정찰" ? "recon" : match[1] === "전쟁톡확인" ? "room" : "unregister", args: [match[2]] };
-    if (/^\/(?:길드전쟁(?:가이드|공격초기화)?|전쟁(?:편성(?:초기화)?|정찰(?:편성)?|자폭편성|공격편성|방어편성|선포|기록|톡등록|톡확인|톡해제)|정찰|자폭)(?:\s|$)/.test(msg)) return { kind: "invalid", args: [] };
+    if (/^\/(?:길드전쟁(?:가이드|공격초기화)?|전쟁(?:편성(?:초기화)?|정찰(?:편성)?|자폭편성|공격편성|방어편성|선포|기록|톡등록|톡확인|톡해제)|정찰|자폭|방어)(?:\s|$)/.test(msg)) return { kind: "invalid", args: [] };
     return null;
 }
 
@@ -70327,6 +70342,20 @@ function initializeGuildWar(data, guildData, now) {
     return true;
 }
 
+// 방어 참여 보상의 계정·전투·기한 기록이 손상되거나 중복되지 않았는지 검증하는 함수
+function requireGuildWarDefenseJoins(war) {
+    if (war.defenseJoins === undefined) return;
+    if (!Array.isArray(war.defenseJoins) || war.defenseJoins.length > 3) throw new Error("길드전쟁 방어 참여 기록 오류");
+    var users = {}, accounts = {};
+    for (var i = 0; i < war.defenseJoins.length; i++) {
+        var join = war.defenseJoins[i];
+        if (!join || typeof join.user !== "string" || !join.user || typeof join.accountId !== "string" || !join.accountId ||
+            !isPointShopSafeCount(join.at) || join.at < war.at || join.at >= war.due || join.amount !== GLOBAL_CONFIG.guildWar.personalRewards.defense ||
+            users["$" + join.user] || accounts["$" + join.accountId] || !war.defense.some(function (fighter) { return fighter.name === join.user; })) throw new Error("길드전쟁 방어 참여 보상 기록 오류");
+        users["$" + join.user] = true; accounts["$" + join.accountId] = true;
+    }
+}
+
 // 길드전쟁 상태의 기본 구조와 주요 수치가 정상인지 검증하는 함수
 function requireGuildWarState(state) {
     if (!state || (state.version !== 1 && state.version !== 2) || !state.territories || !state.guilds || !state.records || !Array.isArray(state.active) || !Array.isArray(state.notices) || typeof state.earth !== "string") throw new Error("길드전쟁 저장 구조 오류");
@@ -70343,6 +70372,8 @@ function requireGuildWarState(state) {
         var war = state.active[i];
         if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
         if (war.reward !== undefined || war.rewardPolicy !== undefined) throw new Error("이미 정산된 전쟁이 진행 목록에 남아 있습니다.");
+        requireGuildWarDefenseJoins(war);
+        for (var matchupIndex = 0; war.matchupHistory && matchupIndex < war.matchupHistory.length; matchupIndex++) requireGuildWarDefenseJoins(war.matchupHistory[matchupIndex]);
         if (state.version === 2 && (!Array.isArray(war.matches) || war.matches.length > 2 || !isPointShopSafeCount(war.wins) || war.wins > war.matches.length || typeof war.right !== "string" || !isPointShopSafeCount(war.ticketEpoch))) throw new Error("길드전쟁 경기 단계 오류");
         if (state.version === 2) {
             if (!Object.prototype.hasOwnProperty.call(createGuildWarRights(), war.right) || !isPointShopSafeCount(war.day)) throw new Error("길드전쟁 소모 권한 오류");
@@ -70368,6 +70399,11 @@ function requireGuildWarState(state) {
     }
     if (state.version === 2) for (var entryId in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, entryId)) {
         var daily = state.guilds[entryId], used = 0, rights = createGuildWarRights();
+        for (var formationIndex = 0; formationIndex < 2; formationIndex++) {
+            var formationRole = formationIndex ? "defense" : "attack";
+            if ((daily[formationRole + "Changes"] !== undefined || daily[formationRole + "Assigned"] !== undefined) &&
+                (!isPointShopSafeCount(daily[formationRole + "Changes"]) || daily[formationRole + "Changes"] > GLOBAL_CONFIG.guildWar.formationChangeLimit || typeof daily[formationRole + "Assigned"] !== "boolean")) throw new Error("길드전쟁 진형 교체 기록 오류");
+        }
         if (typeof daily.scoutAssigned !== "boolean" || typeof daily.bomberAssigned !== "boolean") throw new Error("길드전쟁 최초 편성 기록 오류");
         if (!daily.rights || typeof daily.bomber !== "string" || !isPointShopSafeCount(daily.ticketEpoch) || !isPointShopSafeCount(daily.carryUsed) || daily.carryUsed > 3 || !isPointShopSafeCount(daily.bombUsed) || daily.bombUsed > GLOBAL_CONFIG.guildWar.bombLimit || !isPointShopSafeCount(daily.bomberChanges) || daily.bomberChanges > GLOBAL_CONFIG.guildWar.bomberChangeLimit) throw new Error("길드전쟁 일일 권한 오류");
         for (var key in rights) if (Object.prototype.hasOwnProperty.call(rights, key)) { if (typeof daily.rights[key] !== "boolean") throw new Error("길드전쟁 역할권 오류"); if (daily.rights[key]) used++; }
@@ -70377,6 +70413,7 @@ function requireGuildWarState(state) {
         var records = state.records[recordGuild];
         if (!Array.isArray(records)) throw new Error("길드전쟁 기록 개수 오류");
         for (var recordIndex = 0; recordIndex < records.length; recordIndex++) {
+            requireGuildWarDefenseJoins(records[recordIndex]);
             var receipt = records[recordIndex].personalRewards;
             if (receipt !== undefined) requireGuildWarFighterRewardReceipt(receipt);
             if (recordIndex >= GLOBAL_CONFIG.guildWar.recordLimit && !(receipt && receipt.pendingUsers && receipt.pendingUsers.length)) throw new Error("길드전쟁 기록 개수 오류");
@@ -70385,6 +70422,7 @@ function requireGuildWarState(state) {
     for (var n = 0; n < state.notices.length; n++) {
         var notice = state.notices[n];
         if (!notice || typeof notice.room !== "string" || typeof notice.text !== "string" || !isPointShopSafeCount(notice.attempts) || notice.attempts > 2) throw new Error("길드전쟁 알림 기록 오류");
+        if ((notice.defenseWarId !== undefined || notice.defenseAt !== undefined) && (!isPointShopSafeCount(notice.defenseWarId) || notice.defenseWarId < 1 || !isPointShopSafeCount(notice.defenseAt) || typeof notice.gid !== "string")) throw new Error("길드전쟁 침공 알림 대진 오류");
     }
     return state;
 }
@@ -70456,29 +70494,80 @@ function getGuildWarAvailableItem(data, fighter, candidates) {
     return getGuildTerritorySpecialItem(bag, candidates.filter(function (item) { return fighter.items.indexOf(item.name) !== -1; }));
 }
 
+// 해당 전투에서 확정된 방어 참여 기록을 찾는 함수
+function getGuildWarDefenseJoin(war, user) {
+    var joins = war.defenseJoins || [];
+    for (var i = 0; i < joins.length; i++) if (joins[i].user === user) return joins[i];
+    return null;
+}
+// 위치·정찰·참여 캐슬 버프를 화면과 실제 판정에서 같은 값으로 합산하는 함수
+function getGuildWarDefenseBonuses(war, slot) {
+    var position = GLOBAL_CONFIG.guildWar.defenseBonus[slot];
+    var scout = slot === 0 && war.defenseScoutWin && war.defenseScout.name ? GLOBAL_CONFIG.guildWar.scoutDefenseBonus : 0;
+    var joined = !!getGuildWarDefenseJoin(war, war.defense[slot].name);
+    var participation = joined ? GLOBAL_CONFIG.guildWar.defenseParticipation.castleBonus : 0;
+    return { position: position, scout: scout, participation: participation, total: Math.round((position + scout + participation) * 100), joined: joined };
+}
+// 실제 남은 준비 시간을 분·초로 표시하는 함수
+function formatGuildWarRemaining(due, now) {
+    var seconds = Math.max(0, Math.ceil((due - now) / 1000));
+    return (seconds >= 60 ? Math.floor(seconds / 60) + "분" + (seconds % 60 ? " " : "") : "") + (seconds % 60 || seconds === 0 ? seconds % 60 + "초" : "");
+}
+// 확정 방어자 한 명의 참여와 보상을 검증한 뒤 한 전투에만 등록하는 함수
+function applyGuildWarDefenseJoin(data, guildData, gid, user, now) {
+    var state = guildData.war24, guild = guildData.guilds[gid], member = data.member[user];
+    var title = "🛡️ " + formatGuildDisplay(guild) + " 방어 참여\n━━━━━━━━━━━━\n";
+    var wars = state.active.filter(function (war) { return war.defenseId === gid; });
+    var own = wars.filter(function (war) { return war.defense.some(function (fighter) { return fighter.name === user; }); });
+    own.sort(function (a, b) { return a.due - b.due || a.id - b.id; });
+    var preparing = own.filter(function (war) { return !war.cancelled && !war.finished && now < war.due && !war.matches.length; });
+    var war = preparing[0] || own[0]; // 동시에 방어 중이면 시작이 빠른 한 전투만 선택
+    if (!war) return { changed: false, text: title + (wars.length ? "⚠️ 이번 전투의 방어 대상자가 아닙니다.\n└ 해당 전투에 확정된 방어자만 참여할 수 있습니다." : "⚠️ 현재 참여 가능한 방어전이 없습니다.\n└ 우리 길드가 공격받으면 준비 시간 안에 /방어를 입력해 주세요.") };
+    title += guildWarRegion(war.no) + "\n";
+    if (war.cancelled || war.finished) return { changed: false, text: title + "⚠️ 해당 전투는 취소되었거나 종료되었습니다.\n└ 이 전투에는 방어 참여를 할 수 없습니다." };
+    requireGuildWarDefenseJoins(war);
+    var accountId = member && member.serverRaidAccount && member.serverRaidAccount.id ? String(member.serverRaidAccount.id) : user;
+    var joins = war.defenseJoins || [];
+    if (joins.some(function (join) { return join.user === user || join.accountId === accountId; })) return { changed: false, text: title + "✅ 이미 방어 참여를 완료했습니다.\n└ 같은 전투에는 1회만 참여할 수 있습니다.\n└ 효과와 보상은 추가 지급되지 않습니다." };
+    if (now >= war.due || war.matches.length) return { changed: false, text: title + "⚠️ 방어 참여 시간이 종료되었습니다.\n└ 전투 시작 전 준비 시간에만 참여할 수 있습니다." };
+    var slot = -1;
+    for (var i = 0; i < war.defense.length; i++) if (war.defense[i].name === user) slot = i;
+    if (slot < 0 || !isGuildWarFighterPresent(data, guildData, gid, war.defense[slot])) return { changed: false, text: title + "⚠️ 이번 전투의 방어 대상자가 아닙니다.\n└ 해당 전투에 확정된 방어자만 참여할 수 있습니다." };
+    var amount = GLOBAL_CONFIG.guildWar.personalRewards.defense;
+    if (!member || !isFreeMarketPointBalance(member.point) || !isFreeMarketPointBalance(member.point + amount)) throw new Error("길드전쟁 방어 참여 포인트 범위 오류");
+    member.point += amount;
+    war.defenseJoins = joins.concat([{ user: user, accountId: accountId, at: now, amount: amount }]);
+    var buffs = getGuildWarDefenseBonuses(war, slot), parts = [];
+    if (buffs.position) parts.push(["선봉", "중견", "대장"][slot] + " " + Math.round(buffs.position * 100) + "%");
+    if (buffs.scout) parts.push("정찰 " + Math.round(buffs.scout * 100) + "%");
+    parts.push("방어 " + Math.round(buffs.participation * 100) + "%");
+    return { changed: true, text: title.replace(/\n$/, " · " + ["🥇 선봉", "🥈 중견", "🥉 대장"][slot] + "\n") + "\n✅ 방어 참여 완료!\n\n⚔️ " + parts.join(" + ") + "\n⚔️ 최종버프🆙: " + buffs.total + "%\n🛡️ 절대방어 확률 +" + Math.round(GLOBAL_CONFIG.guildWar.defenseParticipation.defenseRate * 100) + "%\n\n🎁 🅟" + formatGuildTerritoryRewardAmount(amount) + " 지급 완료\n⏳ 전투 시작까지 " + formatGuildWarRemaining(war.due, now) };
+}
+
 // 방어 합산 확률을 먼저 한 번 판정하고 실제 실행·소모한 단계만 기록하는 함수
 function resolveGuildWarMatch(data, guildData, war, slot, random) {
     var attacker = war.attack[slot], defender = war.defense[slot];
     var attackPresent = isGuildWarFighterPresent(data, guildData, war.attackId, attacker), defensePresent = isGuildWarFighterPresent(data, guildData, war.defenseId, defender);
     var attackBase = attackPresent ? attacker.baseExp : 0, defenseBase = defensePresent ? defender.baseExp : 0;
-    var defenseBuff = 1 + GLOBAL_CONFIG.guildWar.defenseBonus[slot] + (slot === 0 && war.defenseScoutWin && war.defenseScout.name ? GLOBAL_CONFIG.guildWar.scoutDefenseBonus : 0); // 최종 방어 자리의 기본·정찰 보너스 합산
+    var defenseBonuses = getGuildWarDefenseBonuses(war, slot), defenseBuff = 1 + defenseBonuses.total / 100; // 위치·정찰·참여 버프 가산
     var defenseItem = defensePresent && slot !== 2 ? getGuildWarAvailableItem(data, defender, GLOBAL_CONFIG.guildWar.defenseItems) : null;
     var attackItem = attackPresent && slot !== 2 ? getGuildWarAvailableItem(data, attacker, GLOBAL_CONFIG.guildWar.attackItems) : null;
     var cubeRate = defensePresent ? defender.cubeDefense : 0, itemRate = defenseItem ? defenseItem.successRate : 0;
     if (typeof cubeRate !== "number" || !isFinite(cubeRate) || cubeRate < 0) throw new Error("길드전쟁 큐브 확률 오류");
-    var probability = Math.min(1, itemRate + cubeRate / 100); // 방어권과 큐브를 합산한 단일 방어 확률
+    var participationRate = defensePresent && defenseBonuses.joined ? GLOBAL_CONFIG.guildWar.defenseParticipation.defenseRate : 0;
+    var probability = Math.min(1, itemRate + cubeRate / 100 + participationRate); // 방어권·큐브·참여를 합산한 단일 방어 확률
     var result = {
         slot: slot, attack: { name: attacker.display, pet: attacker.petName, base: attackBase, final: null, critical: false },
         attackParticipant: attackPresent ? attacker.name : "", defenseParticipant: defensePresent ? defender.name : "",
         defense: { name: defender.display, pet: defender.petName, base: defenseBase, final: null, critical: false },
-        defenseBuff: defenseBuff, defenseRoll: { item: defenseItem ? defenseItem.name : "", itemRate: itemRate, cubeRate: cubeRate, probability: probability, checked: defensePresent, triggered: false, consumed: false },
+        defenseBuff: defenseBuff, defenseRoll: { item: defenseItem ? defenseItem.name : "", itemRate: itemRate, cubeRate: cubeRate, participationRate: participationRate, probability: probability, checked: defensePresent, triggered: false, consumed: false },
         attackRoll: { item: attackItem ? attackItem.name : "", probability: attackItem ? attackItem.successRate : 0, checked: false, triggered: false, consumed: false },
         criticalChecked: false, effect: "", reason: "", win: false
     };
     if (defensePresent && probability > 0 && random() < probability) {
         result.defenseRoll.triggered = true;
         if (defenseItem) { decreaseGuildTerritoryItem(data, defender.name, defenseItem.name); result.defenseRoll.consumed = true; result.effect = defenseItem.name; result.reason = "defenseItem"; }
-        else { result.effect = "길드큐브[4] 패시브 방어"; result.reason = "cube"; }
+        else { result.effect = participationRate ? "길드큐브·방어 참여 합산 방어" : "길드큐브[4] 패시브 방어"; result.reason = "cube"; }
         return result;
     }
     if (attackItem) {
@@ -70504,6 +70593,24 @@ function resolveGuildWarMatch(data, guildData, war, slot, random) {
 // 유효한 등록 길드톡에만 전쟁 알림을 예약하는 함수
 function queueGuildWarNotice(state, guildData, gid, text) {
     if (gid && isGuildWarRoomValid(state, guildData, gid)) state.notices.push({ room: state.guilds[gid].room, gid: gid, text: text, attempts: 0 });
+}
+// 침공 알림을 해당 대진에 연결해 발송·재시도 때 준비 기한을 다시 확인하는 함수
+function queueGuildWarDefenseNotice(state, guildData, war, now) {
+    if (!war.defenseId || !isGuildWarRoomValid(state, guildData, war.defenseId)) return;
+    queueGuildWarNotice(state, guildData, war.defenseId, buildGuildWarScoutReverse("declare", war.attackName, war.defenseName, war.no, war.attackScout, false,
+        war.defenseScoutWin && !!war.defenseScout.name, (war.due - now) / 60000, war.defense, !!war.defenseScout.name));
+    var notice = state.notices[state.notices.length - 1];
+    notice.defenseWarId = war.id; notice.defenseAt = war.at;
+}
+// 준비가 끝난 침공 안내는 중단하고 유효한 알림만 현재 남은 시간으로 만드는 함수
+function refreshGuildWarDefenseNotice(state, notice, now) {
+    if (notice.defenseWarId === undefined) return true;
+    var war = null;
+    for (var i = 0; i < state.active.length; i++) if (state.active[i].id === notice.defenseWarId && state.active[i].defenseId === notice.gid && state.active[i].at === notice.defenseAt) war = state.active[i];
+    if (!war || war.cancelled || war.finished || now >= war.due || war.matches.length) return false;
+    notice.text = buildGuildWarScoutReverse("declare", war.attackName, war.defenseName, war.no, war.attackScout, false,
+        war.defenseScoutWin && !!war.defenseScout.name, (war.due - now) / 60000, war.defense, !!war.defenseScout.name);
+    return true;
 }
 
 // 확정 결과·무혈입성·취소를 수신 길드 관점으로 표시하는 함수
@@ -70740,32 +70847,33 @@ function resetGuildWarDay(guildData, now) {
         delete entry.personalTransitionDay;
         entry.personalDeclarations = {}; entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.rights = createGuildWarRights(); entry.carryUsed = 0; entry.ticketEpoch++;
         entry.scoutAssigned = !!entry.scout; entry.bomberAssigned = !!entry.bomber;
+        entry.attackAssigned = entry.attack.some(function (name) { return !!name; }); entry.defenseAssigned = entry.defense.some(function (name) { return !!name; });
+        entry.attackChanges = 0; entry.defenseChanges = 0;
         entry.scoutUsed = 0; entry.scoutChanges = 0; entry.bombUsed = 0; entry.bomberChanges = 0;
     }
     return true;
 }
 
-// 공개 현황에는 내부 진형 없이 다섯 지역과 실제 남은 횟수만 표시하는 함수
+// 가입 여부에 맞는 핵심 현황과 여섯 점령지를 접지 않고 표시하는 함수
 function buildGuildWarMain(data, guildData, gid, now) {
     var state = guildData.war24, guild = getGuildByIdSafe(guildData, gid), entry = guild && getGuildWarEntry(state, gid), owned = [];
-    var text = "⚔️ " + (guild ? formatGuildDisplay(guild) : "호이월드") + " 길드전쟁\n━━━━━━━━━━━━\n🏰 24시간 길드전쟁 · 점령지 6곳\n\n";
+    for (var region = 1; region <= GLOBAL_CONFIG.guildWar.regions.length; region++) if (guild && state.territories[String(region)].owner === gid) owned.push("[" + region + "]");
+    var text = "⚔️ " + (guild ? formatGuildDisplay(guild) : "호이월드") + " 길드전쟁\n━━━━━━━━━━━━\n";
+    text += guild ? "🎯 남은 공격권: " + entry.tickets + "/5회\n🏴 우리 길드 점령: " + (owned.length ? owned.length + "곳 (" + owned.join("·") + ")" : "없음") + "\n🔔 전쟁톡: " + (isGuildWarRoomValid(state, guildData, gid) ? "등록 완료" : "미등록") : "🏰 24시간 길드전쟁 · 점령지 6곳\n🏴 소속 길드: 없음";
+    text += "\n\n🏰 점령지 현황 [6곳]\n━━━━━━━━━━━━\n";
     for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner);
-        text += guildWarRegion(no) + ": " + formatGuildDisplay(owner) + "\n";
-        if (no === 1) {
-            text += "└ 👑 영주: [" + (territory.owner && data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "]\n";
-            if (territory.owner) text += "👥 점령 길드 전체 혜택\n└ ⛰️ 탐험 성공확률 +" + GLOBAL_CONFIG.guildWar.kingdomExploreBonus + "%p\n";
-        }
-        if (guild && territory.owner === gid) owned.push(GLOBAL_CONFIG.guildWar.regionLabels[no - 1]);
+        text += guildWarRegion(no) + " · " + (owner ? formatGuildDisplay(owner) : "미점령") + "\n";
+        if (no === 1 && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
     }
-    if (!guild) return text + "\n🏴 길드에 가입하면 길드전쟁에 참여할 수 있습니다.\n📖 가이드: /길드전쟁가이드";
-    return text + "\n🎯 오늘의 공격권: " + entry.tickets + "/5회\n🏴 우리 길드 점령: " + (owned.join("·") || "없음") + "\n🔭 정찰병: " + (entry.scout ? "편성 완료 · 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회" : "미편성") + "\n💣 자폭병: " + (entry.bomber ? "편성 완료 · 자폭 " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2회" : "미편성") + "\n🔔 전쟁톡: " + (isGuildWarRoomValid(state, guildData, gid) ? "등록 완료" : "미등록/무효") + "\n\n🎁 점령 성공: 🪙 금광 🅟8억 · 기타 🅟5억\n⚒️ 방어 성공: 🪙 금광 🅟3억 · 기타 🅟2억\n💔 공격 실패: 전 지역 길드자금 🅟1억\n📕 펫스킬 광산 점령·방어 성공: 📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n\n👉 전쟁선포: /전쟁선포 번호\n📖 가이드: /길드전쟁가이드\n📚 길드전쟁 상세정보" + allsee + "\n" + GLOBAL_CONFIG.guildWar.publicRules + "\n\n" + GLOBAL_CONFIG.guildWar.commandGuide;
+    if (!guild) return text + "\n⚠️ 길드에 가입되어 있지 않습니다.\n└ 길드 가입 후 전쟁에 참여할 수 있습니다.\n\n📖 상세가이드: /길드전쟁가이드";
+    return text + "\n" + (entry.scout ? "🔭 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회" : "🔭 정찰병 미편성") + " · " + (entry.bomber ? "💣 자폭 " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2회" : "💣 자폭병 미편성") + "\n\n🎯 전쟁선포: /전쟁선포 번호\n💣 자폭공격: /자폭 번호\n👥 전쟁편성: /전쟁편성\n📖 상세가이드: /길드전쟁가이드";
 }
 
 // 방어 진형 정보는 정찰에 성공한 등록 길드톡에만 표시하는 함수
 function buildGuildWarFormationDetail(fighters) {
     var text = "";
-    for (var i = 0; i < fighters.length; i++) text += ["🥇 선봉", "🥈 중견", "🥉 대장"][i] + ": [" + fighters[i].display + "] · 캐슬매력 " + numberWithCommas(fighters[i].baseExp) + "💕\n";
+    for (var i = 0; i < fighters.length; i++) text += ["🥇 선봉", "🥈 중견", "🥉 대장"][i] + ": [" + fighters[i].display + "] · ⚔️ 캐슬매력 " + numberWithCommas(fighters[i].baseExp) + "\n";
     return text;
 }
 
@@ -70779,7 +70887,7 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         var cleared = cloneFreeMarketObject(entry);
         cleared.attack = ["", "", ""]; cleared.defense = ["", "", ""]; cleared.scout = ""; cleared.bomber = "";
         commitGuildWarRoster(entry, cleared, guild, state.day);
-        return "✅ 정찰·자폭·공격·방어 8칸을 모두 초기화했습니다.\n해제한 정찰·자폭의 변경 횟수를 사용했으며 전쟁선포권은 복구되지 않습니다.";
+        return "✅ 정찰·자폭·공격·방어 8칸을 모두 초기화했습니다.\n해제한 유형별 교체 횟수를 사용했으며 전쟁선포권은 복구되지 않습니다.";
     }
     var ordered = getGuildOrderedMemberKeys(guild, skills), targetNo = (request.kind === "defenseFormation" || request.kind === "attackFormation") && args.length === 4 ? args.shift() : null;
     var picked = args.map(function (no) { return ordered[no - 1]; });
@@ -70787,12 +70895,13 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
     if (picked.filter(function (name, i) { return picked.indexOf(name) === i; }).length !== picked.length) throw guildWarInputError("중복 편성을 확인해 주세요. 기존 편성 유지");
     if (wars.length) {
         if (request.kind === "scoutFormation" || request.kind === "bomberFormation") throw guildWarInputError("전쟁 중에는 기본 정찰병·자폭병을 변경할 수 없습니다.");
+        if (request.kind === "defenseFormation") throw guildWarInputError("방어 인원과 자리는 선포 시 확정됩니다. 전쟁 중에는 변경할 수 없습니다.");
         var defense = request.kind === "defenseFormation";
         var targets = wars.filter(function (war) { return (defense ? war.defenseId === gid : war.attackId === gid) && (targetNo === null || war.no === targetNo); });
-        if (targets.length !== 1) throw guildWarInputError("변경할 전쟁의 영지번호를 지정해 주세요.\n/전쟁공격편성 영지번호 선봉번호 중견번호 대장번호\n/전쟁방어편성 영지번호 선봉번호 중견번호 대장번호");
+        if (targets.length !== 1) throw guildWarInputError("변경할 전쟁의 영지번호를 지정해 주세요.\n/전쟁공격편성 영지번호 선봉번호 중견번호 대장번호");
         var war = targets[0], current = defense ? war.defense : war.attack;
         if (now >= war.due) throw guildWarInputError("준비시간이 끝나 진형 순서를 변경할 수 없습니다.");
-        if (defense ? !war.defenseScoutWin || !war.defenseScout.name : war.defenseScoutWin) throw guildWarInputError(defense ? "침공 감지와 변경 권한은 별개입니다. 정찰 방어 실패로 변경 불가 · 기존 순서 유지" : "공격 정찰 실패로 순서 변경 불가 · 기존 순서 유지");
+        if (war.defenseScoutWin) throw guildWarInputError("공격 정찰 실패로 순서 변경 불가 · 기존 순서 유지");
         if (picked.length !== 3 || picked.some(function (name) { return !current.some(function (f) { return f.name === name; }); })) throw guildWarInputError("해당 전쟁의 기존 3명 순서만 바꿀 수 있습니다.");
         var rearranged = picked.map(function (name) { return current.filter(function (f) { return f.name === name; })[0]; });
         if (defense) war.defense = rearranged; else war.attack = rearranged;
@@ -70957,6 +71066,7 @@ function flushGuildWarNotices(guildData, ctx) {
     var pending = [];
     for (var i = 0; i < state.notices.length; i++) {
         var notice = state.notices[i];
+        if (!refreshGuildWarDefenseNotice(state, notice, Date.now())) { notice.attempts = 2; continue; }
         if (notice.gid && !isGuildWarRoomValid(state, guildData, notice.gid)) { notice.attempts = 2; continue; }
         if (notice.gid) notice.room = state.guilds[notice.gid].room; // 재등록 후에는 현재 등록 이름으로만 발송
         if (notice.inFlight) { notice.attempts = 2; debuggerLog("[길드전쟁 알림 전송 결과 미확인] " + (notice.eventId || notice.room)); }
@@ -71022,12 +71132,16 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     var directReply = replier;
     var directNickname = data && data.member && data.member[sender] ? checkRank(data, null, guildData, sender) : sender;
     replier = { reply: function (text) { return directReply.reply(buildGuildWarDirectHeader(directNickname) + text); } };
-    if (request.kind !== "main" && request.kind !== "guide" && !getCurrentContext().guildWarGroupChat) { replier.reply("길드전쟁 내부 명령은 등록 길드톡에서만 사용할 수 있습니다."); return true; }
     if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~6예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/전쟁기록은 번호 없이 조회해요.\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
     if (request.kind === "guide") { replier.reply(GLOBAL_CONFIG.guildWar.guide); return true; }
     var initialized = initializeGuildWar(data, guildData, now), state = guildData.war24;
     var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
     if (guild && (!guild.members || !guild.members[sender])) { gid = null; guild = null; }
+    var remoteGuildAction = isMasterIdentity(sender) && (request.kind === "register" || request.kind === "resetTickets" || request.args.length && (request.kind === "room" || request.kind === "unregister"));
+    if (!guild && request.kind !== "main" && request.kind !== "records" && !remoteGuildAction) {
+        replier.reply(request.kind === "formation" ? "⚔️ 호이월드 전쟁편성\n━━━━━━━━━━━━\n⚠️ 소속된 길드가 없습니다.\n\n길드전쟁 편성은 길드 가입 후\n이용할 수 있습니다.\n\n🏰 점령 현황: /길드전쟁\n📖 참여 방법: /길드전쟁가이드" : "⚠️ 길드전쟁 이용 안내\n━━━━━━━━━━━━\n소속된 길드가 없습니다.\n길드 가입 후 이용할 수 있습니다.\n\n🏰 점령 현황: /길드전쟁\n📖 참여 방법: /길드전쟁가이드"); return true;
+    }
+    if (request.kind !== "main" && !getCurrentContext().guildWarGroupChat) { replier.reply("길드전쟁 내부 명령은 등록 길드톡에서만 사용할 수 있습니다."); return true; }
     if (initialized) { publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); }
     if (state.active.some(function (w) { return getGuildWarNextDue(w) <= now; })) { processGuildWars(data, guildData, now, Math.random, null, { pets: loadJsonFile(memberPetPath), home: loadJsonFile(homeDataFile), skills: loadJsonFile(petSkillDataPath) }); publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); }
     if (request.kind === "main") { replier.reply(buildGuildWarMain(data, guildData, gid, now)); return true; }
@@ -71064,6 +71178,11 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         if (request.kind === "records") {
             replyFreeMarketV2(replier, buildGuildWarRecords(state, guildData, gid)); return true;
         }
+        if (request.kind === "defend") {
+            var defenseJoinResult = applyGuildWarDefenseJoin(data, guildData, gid, sender, now);
+            if (defenseJoinResult.changed) publishGuildWar(data, guildData, true);
+            replier.reply(defenseJoinResult.text); return true;
+        }
         var petData = loadJsonFile(memberPetPath), homeData = loadJsonFile(homeDataFile), skills = loadJsonFile(petSkillDataPath);
         if (reconcileGuildWarRoster(state, guildData, gid, skills)) publishGuildWar(data, guildData, false);
         if (request.kind === "clearScout" || request.kind === "clearBomber") {
@@ -71076,8 +71195,8 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         }
         if (request.kind === "formation") { replier.reply(buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true; }
         if (request.kind === "bomb") {
-            applyGuildWarBomb(data, petData, guildData, gid, sender, request.args[0], now, Math.random);
-            publishGuildWar(data, guildData, true); flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); return true;
+            var bombResult = applyGuildWarBomb(data, petData, guildData, gid, sender, request.args[0], now, Math.random);
+            publishGuildWar(data, guildData, true); replier.reply(bombResult.text); flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); return true;
         }
         if (request.kind === "scout") {
             var scout = snapshotGuildWarScout(data, petData, homeData, skills, guildData, guild, entry.scout);
@@ -71135,10 +71254,17 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             }
             var scoutNotice = buildGuildWarScoutNotice(request.kind, formatGuildDisplay(guild), defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", targetNo, success, attackScout, defenseScout, defense, GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed, undefined, request.kind === "recon" ? entry.recon.reward : undefined);
             queueGuildWarNotice(state, guildData, gid, scoutNotice);
-            if (request.kind === "declare" || !success && defenseScout.name) queueGuildWarNotice(state, guildData, defenseId, buildGuildWarScoutReverse(request.kind, formatGuildDisplay(guild), formatGuildDisplay(defenderGuild), targetNo, attackScout, getGuildWarBattles(state, defenseId).filter(function (w) { return w.defenseId === defenseId; }).length > 1, !success && !!defenseScout.name));
+            if (request.kind === "declare") queueGuildWarDefenseNotice(state, guildData, war, now);
+            else if (!success && defenseScout.name) queueGuildWarNotice(state, guildData, defenseId, buildGuildWarScoutReverse(request.kind, formatGuildDisplay(guild), formatGuildDisplay(defenderGuild), targetNo, attackScout, false, true));
             publishGuildWar(data, guildData, request.kind === "recon" && entry.recon.reward > 0); flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); return true;
         }
-    } catch (error) { if (!error.guildWarInput) throw error; replier.reply("❌ " + error.message + "\n⚔️ "); }
+    } catch (error) {
+        if (!error.guildWarInput) {
+            if (request.kind === "defend") replier.reply("🛡️ " + formatGuildDisplay(guild) + " 방어 참여\n━━━━━━━━━━━━\n⚠️ 방어 참여 처리를 완료하지 못했습니다.\n└ 잠시 후 다시 시도해 주세요.");
+            throw error;
+        }
+        replier.reply("❌ " + error.message + "\n⚔️ ");
+    }
     return true;
 }
 
@@ -71181,15 +71307,19 @@ function buildGuildWarScoutNotice(kind, attackName, defenseName, no, success, at
     var region = guildWarRegion(no);
     var text = "[⚔️ 길드전쟁 선포 ⚔️]\n━━━━━━━━━━━━\n" + region + "\n🎯 공격: " + attackName + "\n⚒️ 방어: " + defenseName + "\n\n";
     text += success ? "🏆 공격 정찰 성공!\n✅ 상대 방어 진형 정보 획득\n✅ 공격 진형 변경 가능" : "❌ 공격 정찰 실패!\n🛡️ 상대 정찰병·방어 진형 정보 비공개";
-    text += "\n\n⏳ 전투 결과까지 " + (minutes || 2) + "분\n🔒 정찰병 변경 불가";
+    text += "\n\n⏳ 전투 시작까지 " + (minutes || 2) + "분\n🔒 정찰병 변경 불가";
     return text + (success ? "\n\n👉 /전쟁공격편성 번호 번호 번호\n📚 상대 방어 진형 전체보기" + allsee + detail : "");
 }
 
-// 방어 정찰병이 실제 감지한 경우에만 역정보·선봉 보너스를 안내하는 함수
-function buildGuildWarScoutReverse(kind, attackName, defenseName, no, scout, multipleDefenses, defenseWin, minutes) {
+// 정찰 공개 범위를 지키고 모든 침공에 확정 방어자의 참여 방법을 안내하는 함수
+function buildGuildWarScoutReverse(kind, attackName, defenseName, no, scout, multipleDefenses, defenseWin, minutes, defenders, hasScout) {
     if (kind === "recon") return "[🚨 적군 정찰 감지 🚨]\n━━━━━━━━━━━━\n🛡️ " + defenseName + "\n\n🔭 " + attackName + " 길드의\n정찰 활동을 발견했습니다!\n\n🏆 정찰 방어 성공!\n━━━━━━━━━━━━\n🔎 적군 정찰 정보 확보\n\n⚔️ 정찰 시도 길드: " + attackName + "\n🔭 적군 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n\n✅ 적군 정찰 정보 공개!\n🛡️ 우리 방어 진형 정보 보호 성공!";
-    if (!defenseWin) return "🚨 " + attackName + " 침공 감지!\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ 우리: " + defenseName + "\n❌ 정찰 방어 혜택 없음\n🔒 방어 진형 변경 불가\n⚒️ 기존 방어 진형 · 선봉 기본 +3% · 중견 +10%\n⏳ 전투 결과까지 " + (minutes || 2) + "분";
-    return "[🚨 길드전쟁 침공 감지 🚨]\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n\n🎯 침공: " + attackName + "\n⚒️ 수비: " + defenseName + "\n\n🏆 정찰 방어 성공!\n━━━━━━━━━━━━\n🔭 적군 정찰병: [" + scout.display + "]\n💞 종합매력: " + numberWithCommas(scout.charm) + "\n\n✅ 적군 침공 사전 감지\n✅ 방어 선봉 캐슬매력 +5%\n\n⏳ 전투 결과까지 " + (minutes || 2) + "분\n🛡️ 기존 방어 진형 자동 적용\n\n💡 필요 시 전투 개시 전\n방어 진형을 변경할 수 있습니다.\n\n👉 현재 진형: /전쟁편성\n👉 진형 변경: /전쟁방어편성 " + (multipleDefenses ? "영지번호 " : "") + "번호 번호 번호";
+    var status = defenseWin ? "🏆 정찰 방어 성공 · 선봉 ⚔️+5%" : hasScout === false ? "🔭 정찰병 미편성 · 정찰 버프 없음" : "❌ 정찰 방어 실패 · 정찰 버프 없음";
+    var text = "🚨 " + attackName + " 침공 감지!\n" + status + "\n━━━━━━━━━━━━\n" + guildWarRegion(no) + "\n⚒️ 우리: " + defenseName + "\n";
+    if (defenseWin) text += "🔭 적 정찰: [" + scout.display + "]\n└ 💞 종합매력: " + numberWithCommas(scout.charm) + "\n";
+    text += "⚔️ 기본: 선봉 +3% · 중견 +10%\n⏳ 전투 시작까지 " + formatGuildWarRemaining((minutes === undefined ? GLOBAL_CONFIG.guildWar.prepareMs / 60000 : minutes) * 60000, 0) + " · 자동 방어\n━━━━━━━━━━━━\n";
+    text += "⚒️ 방어자: " + (defenders || []).map(function (fighter) { return fighter.name ? "[" + fighter.display + "]" : "미편성"; }).join(" · ");
+    return text + "\n🛡️ /방어 → ⚔️+5% · 🛡️+5%\n🎁 개인 🅟5천만\n👉 현재 진형: /전쟁편성";
 }
 
 // 실제 판정 정보로 allsee 아래 경기별 아이템·패시브·크리티컬 상세를 만드는 함수
@@ -71197,11 +71327,11 @@ function buildGuildWarMatchDetail(match) {
     var a = match.attack, d = match.defense, defense = match.defenseRoll, attack = match.attackRoll;
     var text = ["🥇 제1전투 · 선봉전", "🥈 제2전투 · 중견전", "🥉 제3전투 · 대장전"][match.slot] + "\n━━━━━━━━━━━━\n";
     text += "🎯 [" + a.name + "]" + (match.win ? " 🏆 승리✅" : "") + "\n🐾 펫: " + a.pet + "\n💕 대진 확정 당시 캐슬: " + numberWithCommas(a.base) + "\n🆚\n⚒️ [" + d.name + "]" + (!match.win && d.name !== "미편성" ? " 🏆 승리✅" : "") + "\n🐾 펫: " + d.pet + "\n💕 선포 당시 캐슬: " + numberWithCommas(d.base) + "\n";
-    if (match.defenseBuff > 1) text += "⚒️ 방어 위치 캐슬매력 +" + Math.round((match.defenseBuff - 1) * 100) + "% (기본·정찰 합산)\n";
-    text += "🛡️ 방어 판정\n영지절대방어권: " + (defense.item || "없음 (0%)") + "\n💠 길드큐브[4]: +" + defense.cubeRate.toFixed(1) + "%\n🎯 최종 방어확률: " + (defense.probability * 100).toFixed(1) + "%" + (defense.itemRate + defense.cubeRate / 100 > 1 ? " (상한)" : "") + "\n";
+    if (match.defenseBuff > 1) text += "⚔️ 방어 캐슬매력 +" + Math.round((match.defenseBuff - 1) * 100) + "% (기본·정찰·참여 합산)\n";
+    text += "🛡️ 방어 판정\n영지절대방어권: " + (defense.item || "없음 (0%)") + "\n💠 길드큐브[4]: +" + defense.cubeRate.toFixed(1) + "%\n🛡️ 방어 참여: +" + Math.round((defense.participationRate || 0) * 100) + "%\n🎯 최종 방어확률: " + (defense.probability * 100).toFixed(1) + "%" + (defense.itemRate + defense.cubeRate / 100 + (defense.participationRate || 0) > 1 ? " (상한)" : "") + "\n";
     text += !defense.checked ? "⏭️ 방어 유저 부재 · 방어 판정 없음\n" : defense.triggered ? (defense.item ? "✅ 절대방어 발동! 즉시 방어 승리\n" : "✅ 패시브 방어 발동! 즉시 방어 승리\n") : "└ 미발동\n";
     text += "🎒 방어권 소모: " + (defense.consumed ? "1개" : "없음") + "\n";
-    if (defense.triggered) return text + "⏭️ 기습공격권·크리티컬·매력비교 생략\n🏆 방어자 승리 · " + (defense.item ? "절대방어 발동" : "길드큐브 패시브 방어");
+    if (defense.triggered) return text + "⏭️ 기습공격권·크리티컬·매력비교 생략\n🏆 방어자 승리 · " + (defense.item ? "절대방어 발동" : "길드큐브·방어 참여 패시브 방어");
     text += "🔥 기습공격권: " + (attack.item || "없음") + (attack.checked ? attack.triggered ? " 발동!" : " 미발동" : " · 판정 없음") + "\n🎒 공격권 아이템 소모: " + (attack.consumed ? "1개" : "없음") + "\n";
     if (attack.triggered) return text + "⏭️ 펫 크리티컬·매력비교 생략\n🏆 공격자 승리 · 기습공격 발동";
     text += "✨ 펫 크리티컬: " + (a.critical ? "공격 발동" : "공격 미발동") + " / " + (d.critical ? "방어 발동" : "방어 미발동") + "\n📊 최종: " + numberWithCommas(a.final) + (a.final > d.final ? " > " : a.final < d.final ? " < " : " = ") + numberWithCommas(d.final) + "\n";
