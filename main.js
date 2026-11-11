@@ -53130,7 +53130,24 @@ function applyDiamondShopPurchase(data, log, user, accountId, product, bundles, 
     log.diamondShopSales.push(sale);
     addUsedDiamond(log, user, plan.total, { type: "구매", shopSaleId: sale.id, memo: product.name + "x" + numberWithCommas(plan.grant.count) });
 }
-// 일반 상점·관리자 상품 현황을 현재 적용 설정과 다음날 예약으로 구분해 표시하는 함수
+// 원본을 바꾸지 않고 기존 운영일 마감 규칙으로 관리자 예상 시세를 표시하는 함수
+function buildDiamondShopForecast(shop, product) {
+    var label = "다음 00:01 예상 시세: ";
+    if ((product.pending && !product.pending.on) || (!product.on && !product.pending)) return "🔒 " + label + "고정가 💎" + numberWithCommas(product.basePrice);
+    if (!product.on || product.day !== shop.day || !isPointShopSafeCount(product.effective)) return "⏳ " + label + "집계 확인 필요";
+    var frozen = !!shop.frozenDays[String(product.day)]; // 오늘 점검일이면 실제 갱신도 동결
+    if (!frozen && !product.operated && shop.frozenDays[String(product.day)] !== false) return "⏳ " + label + "집계 확인 필요";
+    var next = { day: product.day, price: product.price, percent: product.percent, on: product.on, operated: product.operated,
+        effective: product.effective, baseSales: product.baseSales, basePrice: product.basePrice, pending: product.pending }; // 마감 계산에 필요한 값만 복사
+    advanceDiamondShopDay({ day: shop.day, products: [next], frozenDays: shop.frozenDays }, (shop.day + 1) * GLOBAL_CONFIG.diamondShop.dayMs - GLOBAL_CONFIG.diamondShop.dayOffsetMs);
+    var change = next.percent - product.percent; // 상하한까지 적용한 실제 보정률 변화
+    var reason = frozen ? "점검일 동결 · " : "";
+    if (change === 0) return "➖ " + label + "💎" + numberWithCommas(next.price) + " 유지 (" + reason + "0%p)";
+    return (change > 0 ? "📈 " : "📉 ") + label + "💎" + numberWithCommas(product.price) + " → 💎" + numberWithCommas(next.price) +
+        " (" + (next.price === product.price ? "보정률 " : "") + (change > 0 ? "+" : "") + change + "%p)";
+}
+
+// 일반 상점과 관리자 상품 현황·예상 시세·예약 설정을 구분해 표시하는 함수
 function buildDiamondShopView(shop, member, manage, log, livePrice) {
     var totals = manage ? getDiamondShopDailyTotals(log, shop.day) : null; // 삭제된 상품까지 포함한 당일 완료 통계
     var text = manage ? "💎 다이아상점 관리" : "💎 호이월드 다이아상점";
@@ -53147,8 +53164,12 @@ function buildDiamondShopView(shop, member, manage, log, livePrice) {
             text += " 🔒 고정가";
         }
         text += "\n└ 📅 " + (p.limit === null ? "구매제한 없음" : "오늘 구매 " + bought + "/" + p.limit + "회") + "\n";
-        if (manage) text += "등록 ID " + p.id + " · 기본가 💎" + p.basePrice + " · 기준 B " + p.baseSales + "\n전날 유효 " + (p.previousDay ? p.previousDay.effective : "미기록") + " / 오늘 실판매 " + p.actual + " / 유효 " + p.effective + " / 회수 💎" + p.diamonds + "\n다음 운영일: " + (p.pending ? (p.pending.on ? "ON · B " + p.pending.baseSales : "OFF · 기본가 복귀") : "변경 없음") + "\n";
+        if (manage) {
+            text += "등록 ID " + p.id + " · 기본가 💎" + p.basePrice + " · 기준 B " + p.baseSales + "\n전날 유효 " + (p.previousDay ? p.previousDay.effective : "미기록") + " / 오늘 실판매 " + p.actual + " / 유효 " + p.effective + " / 회수 💎" + p.diamonds + "\n" + buildDiamondShopForecast(shop, p) + "\n";
+            if (p.pending) text += "다음 운영일 설정: " + (p.pending.on ? "ON · B " + p.pending.baseSales : "OFF · 기본가 복귀") + "\n";
+        }
     }
+    if (manage) text += "\n━━━━━━━━━━━━\n📊 기준 B 안내\nB = 상품별 하루 정상 판매량 기준\n\nB 1 기준\n📉 0묶음: -5%p\n➖ 1묶음: 유지\n📈 2묶음 이상: +10%p\n\n※ B값에 따라 상승·하락 기준이 달라집니다.\n※ 판매량은 서버 전체 유효 묶음 수 기준입니다.\n※ 표시 가격은 현재까지의 구매량으로 계산한 예상치입니다.\n※ 실제 시세는 매일 00:01 확정됩니다.\n━━━━━━━━━━━━";
     if (!manage && typeof livePrice === "string") text = text.replace("시세는 매일 00:01", "상품 시세는 매일 00:01").replace("\n💎 보유:", "\n💎 보유 다이아:").replace("\n━━━━━━━━━━━━\n구매:", "\n━━━━━━━━━━━━\n📊 실시간 다이아 시세\n💰 조합 가격: 🅟" + numberWithCommas(livePrice) + "\n" + buildDiamondLiveChange(livePrice, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n━━━━━━━━━━━━\n구매:");
     if (!manage && shop.products.length) text += "\n━━━━━━━━━━━━\n📊 변동 범위: -20% ~ +60%\n※ 상품별 시세 ON/OFF가 다릅니다.\n※ 갯수는 상품 묶음의 구매 수량입니다.\n※ 구매 한도는 계정별 하루 기준입니다.";
     return text;
