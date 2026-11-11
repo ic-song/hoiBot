@@ -5,6 +5,19 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 길드전쟁 UI·참여·교체 규칙 정리 (2026-11-11 개발)
+
+Status: VERIFIED
+
+- 이 절은 아래 과거 길드전쟁 UI·교체·보상 설명보다 우선한다. `buildGuildWarMain`은 가입/미가입 모두 6곳을 접지 않고 표시하고, 공용 공격권·소유 지역번호·전쟁톡·정찰/자폭 잔여량은 가입자에게만 표시한다. 영주 줄은 호월킹덤 점령 중에만 표시한다.
+- `buildGuildWarFormation`은 8슬롯과 길마 기본권·정찰 역할권·공격자 개인 합계를 구분한다. 교체는 사용/총, 행동 횟수는 잔여/총이며 전체보기 패딩은 마지막 범례 뒤 한 번이다. `buildGuildWarRosterDetails`는 `/길드정보` 번호와 현재 직책·캐슬/종합 계산을 유지해 고유 길드원 한 명당 두 줄로 표시한다. 전체 명령·규칙·보상은 `GLOBAL_CONFIG.guildWar.guide`의 7개 장에 통합한다.
+- `commitGuildWarRoster`는 정찰·자폭·공격·방어 후보 전체를 검증한 뒤 유형별 교체를 함께 반영한다. 공격·방어·자폭은 각각 2회, 최초 무료·동일 재입력 무료·해제/초기화/재편성 이력 유지이며 소진한 행동권을 복구하지 않는다. 기존 저장본의 없는 공격/방어 교체 필드만 기존 편성 유무로 시작하고, 존재하는 손상 필드는 `requireGuildWarState`에서 거절한다. `resetGuildWarDay`에서 기존 일일 기준으로 교체 횟수를 초기화한다.
+- `setGuildWarFormation`은 진행 중 방어 인원·자리 변경을 전부 차단한다. 공격 정찰 승리 시 해당 전쟁 기존 3명의 임시 순서 변경은 유지하며 기본 진형/교체 한도에 합산하지 않는다. 전체 길드원 공격 편성·직책 유지·최대2역·공방 중복 금지·개인 선포권 보호는 유지한다.
+- `/방어`는 `getGuildWarRequest`의 정확 일치로만 실행한다. `runGuildWarEntry` → `applyGuildWarDefenseJoin`에서 등록 길드톡·확정 방어자·준비 시간·현재 소속을 검증하고, 시작이 빠른 대상 전투 한 건에만 캐슬+5%·방어확률+5%·개인5천만을 반영한다. `requireGuildWarDefenseJoins`가 전투/계정 중복·기한·보상 기록을 검증한다. `getGuildWarDefenseBonuses`를 UI/실제 `resolveGuildWarMatch`에서 공용으로 사용해 13/8/15/5% 가산을 일치시킨다.
+- 방어 참여는 회원·길드를 `publishGuildWar(data, guildData, true)`의 기존 저널·분리 저장 보호로 함께 확정한 뒤 성공 응답한다. 실패는 기존 롤백/재시작 복구를 유지하며 helper에 파일 IO를 추가하지 않는다. 기본 편성은 길드만, 정찰·자폭 개인 보상은 기존 회원+길드 저장 흐름을 유지한다. DEV/PROD 경로·로드 실패 전파·자동 결과 알림 정책은 유지한다.
+- `queueGuildWarDefenseNotice`/`refreshGuildWarDefenseNotice`는 침공 알림을 대진과 연결하고 발송·재시도 시 실제 남은 준비 시간을 갱신한다. 정찰 성공·실패·부재 모두 실제 방어자와 `/방어` 안내를 제공하되 비공개 상대정보는 노출하지 않는다. 기한 종료·취소·상대 교체 후 지난 대진의 참여 안내는 보내지 않는다. `retargetGuildWar`는 지난 대진의 참여 기록을 이력에 보존하고 새 대진의 참여 상태를 분리한다.
+- 신규 규칙 전쟁의 길드자금은 금광 점령5억/방어2.5억, 기타 점령3억/방어1억·공격실패1억이다. 기존 큐브3 추가율·광산 조각/다이아·무혈입성 보상·전투원 각1억은 유지한다. 단독 정찰·자폭의 실제 실행자 개인 보상은 성패 모두1억, 계정별 종류별 하루1회다. 자폭은 확정 뒤 입력자 직접 결과와 상대톡의 관점별 결과를 한 번씩 보내며 개인 보상은 상대에게 표시하지 않는다.
+
 ## /빼빼로타이틀오픈 [수량]
 
 Status: VERIFIED
