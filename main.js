@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.821"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.822"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -28394,6 +28394,8 @@ replier.reply(
                         return;
                     }
 
+                    if (convertGuildWarehouseDiamondBoxes(guildData)) saveJsonFile(guildData, guildPath);
+
                     // 점령 영지 정보
                     var occupiedTerritoryNames = [];
                     var territoryWarInfo = ensureGuildTerritoryWar(data, guildData);
@@ -29661,6 +29663,8 @@ replier.reply(
                         return;
                     }
 
+                    if (convertGuildWarehouseDiamondBoxes(guildData)) saveJsonFile(guildData, guildPath);
+
                     var memberKeys = Object.keys(g.members || {});
                     var memberCount = memberKeys.length;
 
@@ -29752,8 +29756,6 @@ replier.reply(
                         return;
                     }
 
-                    ensureGuildWarehouseObj(g);
-
                     var memberNumberArgs = msg === "/길드분배" ? [] : msg.trim().split(/\s+/).slice(1);
                     var distributionSelection = getGuildDistributionMembersByNumbers(g, memberNumberArgs, petSkillData);
                     if (!distributionSelection.ok) {
@@ -29774,16 +29776,22 @@ replier.reply(
                         return;
                     }
 
+                    if (convertGuildWarehouseDiamondBoxes(guildData)) saveJsonFile(guildData, guildPath);
+                    ensureGuildWarehouseObj(g);
+
                     var fundEach = Math.floor((g.warehouse.fund || 0) / memberCount);
                     var petSkillBookEach = Math.floor((g.warehouse.petSkillBook || 0) / memberCount);
                     var pendantEach = Math.floor((g.warehouse.pendant || 0) / memberCount);
                     var petEach = Math.floor((g.warehouse.pet || 0) / memberCount);
                     var miniPetEach = Math.floor((g.warehouse.miniPet || 0) / memberCount);
                     var diamondEach = Math.floor((g.warehouse.diamond || 0) / memberCount);
-                    var diamondBoxEach = Math.floor((g.warehouse.diamondBox || 0) / memberCount);
-                    for (var boxMember = 0; boxMember < members.length; boxMember++) if (!isPointShopSafeCount(((data.member[members[boxMember]].bag || {})[GLOBAL_CONFIG.items.diamondBoxName] || 0) + diamondBoxEach)) { replier.reply("❌ 분배할 다이아상자 보관 수량을 확인해주세요."); return; }
+                    for (var diamondMember = 0; diamondMember < members.length; diamondMember++) {
+                        var distributionMember = data.member[members[diamondMember]];
+                        var distributionDiamond = distributionMember ? distributionMember.diamond === undefined ? 0 : distributionMember.diamond : null; // 지급 후에도 정확한 정수 잔액인지 사전 확인
+                        if (!distributionMember || !isPointShopSafeCount(distributionDiamond) || !isPointShopSafeCount(distributionDiamond + diamondEach)) { replier.reply("❌ 분배받을 길드원의 다이아 보유량을 확인해주세요."); return; }
+                    }
 
-                    if (fundEach <= 0 && petSkillBookEach <= 0 && pendantEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0 && diamondBoxEach <= 0) {
+                    if (fundEach <= 0 && petSkillBookEach <= 0 && pendantEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
                         replier.reply("❌ 분배 가능한 길드 자원이 부족합니다.");
                         return;
                     }
@@ -29817,7 +29825,6 @@ replier.reply(
                             addItem(data, memberName, "미니펫 강화석💫", miniPetEach);
                         }
 
-                        if (diamondBoxEach > 0) addItem(data, memberName, GLOBAL_CONFIG.items.diamondBoxName, diamondBoxEach);
                         if (diamondEach > 0) {
                             addDiamond(data, currencyLogData, memberName, diamondEach);
                         }
@@ -29830,7 +29837,6 @@ replier.reply(
                     g.warehouse.pet -= petEach * memberCount;
                     g.warehouse.miniPet -= miniPetEach * memberCount;
                     g.warehouse.diamond -= diamondEach * memberCount;
-                    g.warehouse.diamondBox -= diamondBoxEach * memberCount;
 
                     // 아이템 차감
                     removeItem(data, sender, itemName, 1);
@@ -29852,7 +29858,6 @@ replier.reply(
                     out += "⭐️ " + numberWithCommas(petEach) + "\n";
                     out += "💫 " + numberWithCommas(miniPetEach) + "\n";
                     out += "💎 " + numberWithCommas(diamondEach) + "\n";
-                    out += "다이아상자💎 " + numberWithCommas(diamondBoxEach) + "개\n";
                     out += "━━━━━━━━━━━━\n";
                     out += "분배 후 남은 길드자원\n";
                     out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
@@ -29861,7 +29866,6 @@ replier.reply(
                     out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
                     out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0) + "\n";
                     out += "💎 " + numberWithCommas(Number(g.warehouse.diamond) || 0);
-                    out += "\n다이아상자💎 " + numberWithCommas(g.warehouse.diamondBox) + "개";
                     if (skippedMembers.length > 0) {
                         out += "\n━━━━━━━━━━━━\n";
                         out += "⚠️ 지급 제외: " + skippedMembers.join(", ") + "\n";
@@ -39111,7 +39115,27 @@ function getGuildByIdSafe(guildData, gid) {
     return guildData.guilds[gid] || null;
 }
 
-// 길드 ID로 길드 정보 가져오기 (에러 처리 포함)
+// 모든 길드창고의 다이아상자를 검증 후 같은 수량의 다이아로 한 번만 전환하는 함수
+function convertGuildWarehouseDiamondBoxes(guildData) {
+    if (!guildData || !guildData.guilds || typeof guildData.guilds !== "object" || Array.isArray(guildData.guilds)) throw new Error("길드창고 전환 원본 오류");
+    var changes = []; // 전체 검증을 마치기 전에는 어느 창고도 변경하지 않음
+    for (var gid in guildData.guilds) {
+        if (!Object.prototype.hasOwnProperty.call(guildData.guilds, gid)) continue;
+        var guild = guildData.guilds[gid], warehouse = guild && guild.warehouse;
+        if (!warehouse || !Object.prototype.hasOwnProperty.call(warehouse, "diamondBox")) continue;
+        if (typeof warehouse !== "object" || Array.isArray(warehouse)) throw new Error("길드창고 전환 형식 오류");
+        var boxes = warehouse.diamondBox, diamonds = warehouse.diamond === undefined ? 0 : warehouse.diamond;
+        if (!isPointShopSafeCount(boxes) || !isPointShopSafeCount(diamonds) || !isPointShopSafeCount(diamonds + boxes)) throw new Error("길드창고 다이아상자 전환 수량 확인 필요");
+        changes.push({ warehouse: warehouse, diamonds: diamonds + boxes });
+    }
+    for (var i = 0; i < changes.length; i++) {
+        changes[i].warehouse.diamond = changes[i].diamonds;
+        delete changes[i].warehouse.diamondBox;
+    }
+    return changes.length > 0;
+}
+
+// 길드창고의 기본 자원 구조와 남아 있는 구형 상자 수량을 검증하는 함수
 function ensureGuildWarehouseObj(g) {
     if (!g) return;
     if (!g.warehouse) g.warehouse = { fund: 0, petSkillBook: 0, pendant: 0, pet: 0, miniPet: 0, diamond: 0 };
@@ -39123,8 +39147,7 @@ function ensureGuildWarehouseObj(g) {
     if (typeof g.warehouse.pet !== "number") g.warehouse.pet = 0;
     if (typeof g.warehouse.miniPet !== "number") g.warehouse.miniPet = 0;
     if (typeof g.warehouse.diamond !== "number") g.warehouse.diamond = 0;
-    if (g.warehouse.diamondBox === undefined) g.warehouse.diamondBox = 0;
-    if (!isPointShopSafeCount(g.warehouse.diamondBox)) throw new Error("길드창고 다이아상자 수량 확인 필요");
+    if (g.warehouse.diamondBox !== undefined && !isPointShopSafeCount(g.warehouse.diamondBox)) throw new Error("길드창고 다이아상자 수량 확인 필요");
     ensureGuildTerritoryBoosterCount(g);
 }
 
@@ -39306,8 +39329,7 @@ function buildGuildResourceDisplay(g) {
         " 💫x" +
         numberWithCommas(g.warehouse.miniPet || 0) +
         " 💎x" +
-        numberWithCommas(g.warehouse.diamond || 0) +
-        " 📦다이아상자💎x" + numberWithCommas(g.warehouse.diamondBox || 0) + "\n"
+        numberWithCommas(g.warehouse.diamond || 0) + "\n"
     );
 }
 
@@ -70857,7 +70879,6 @@ function creditGuildWarVictory(guildData, war) {
     var cube = guild ? getGuildContributionCubeData(guild, false).options.territoryPoint / 10 : 0;
     if (modern) amount = war.occupied ? (war.no >= 2 && war.no <= 4 ? rates.goldCapture : rates.capture) : (war.no >= 2 && war.no <= 4 ? rates.goldDefense : rates.defense);
     amount = Math.floor(amount * (1 + cube / 100));
-    var boxes = !modern && gid && war.no === 6 ? GLOBAL_CONFIG.guildWar.mineReward : 0;
     if (gid && !guild) throw new Error("길드전쟁 보상 길드 확인 필요");
     if (guild) {
         if (guild.warehouse === undefined) guild.warehouse = { fund: 0 };
@@ -70865,11 +70886,8 @@ function creditGuildWarVictory(guildData, war) {
         var fund = guild.warehouse.fund === undefined ? 0 : guild.warehouse.fund;
         var held = guild.warehouse.petSkillBook === undefined ? 0 : guild.warehouse.petSkillBook;
         if (!isPointShopSafeAmount(fund) || !isPointShopSafeAmount(fund + amount) || pieces && (!isPointShopSafeCount(held) || !isPointShopSafeCount(held + pieces))) throw new Error("길드전쟁 보상 잔고 오류");
-        var heldBoxes = guild.warehouse.diamondBox === undefined ? 0 : guild.warehouse.diamondBox;
-        if (boxes && (!isPointShopSafeCount(heldBoxes) || !isPointShopSafeCount(heldBoxes + boxes))) throw new Error("길드전쟁 다이아상자 보상 잔고 오류");
         guild.warehouse.fund = fund + amount;
-        if (boxes) guild.warehouse.diamondBox = heldBoxes + boxes;
-        if (modern && war.no === 6) {
+        if (war.no === 6) {
             var diamonds = guild.warehouse.diamond === undefined ? 0 : guild.warehouse.diamond;
             if (!isPointShopSafeCount(diamonds) || !isPointShopSafeCount(diamonds + GLOBAL_CONFIG.guildWar.mineReward)) throw new Error("길드창고 다이아 보상 범위 오류");
             guild.warehouse.diamond = diamonds + GLOBAL_CONFIG.guildWar.mineReward;
@@ -70886,7 +70904,7 @@ function creditGuildWarVictory(guildData, war) {
         war.lossReward = { guildId: war.attackId, amount: rates.loss };
     }
     war.rewardPolicy = GLOBAL_CONFIG.guildWar.rewardPolicy;
-    war.reward = guild ? { guildId: gid, amount: amount, pieces: pieces, boxes: boxes, diamonds: modern && war.no === 6 ? GLOBAL_CONFIG.guildWar.mineReward : 0, cubePercent: cube, kind: war.occupied ? "capture" : "defense" } : null;
+    war.reward = guild ? { guildId: gid, amount: amount, pieces: pieces, boxes: 0, diamonds: war.no === 6 ? GLOBAL_CONFIG.guildWar.mineReward : 0, cubePercent: cube, kind: war.occupied ? "capture" : "defense" } : null;
 }
 
 // 길드원이 탈퇴하면 진행 중 전쟁에서는 재가입하더라도 0매력으로 유지하는 함수
