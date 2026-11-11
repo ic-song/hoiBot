@@ -8824,7 +8824,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `commitGuildWarRoster`는 과거 길마 선포자 미확인을 이유로 공격편성을 차단하지 않는다. 현재 소드마스터·중복·겸직 제한과 공용 공격권/개인 사용 이력은 유지한다. 기존 정찰 전환 보호는 유지한다.
+- `commitGuildWarRoster`는 과거 길마 선포자 미확인을 이유로 공격편성을 차단하지 않는다. 공격 대상은 같은 길드 전체 길드원이며 직책을 변경하지 않는다. 중복·겸직 제한과 공용 공격권/개인 사용 이력은 유지한다. 기존 정찰 전환 보호는 유지한다.
 - `claimGuildWarDailyReward`는 회원 객체의 `guildWarRewards.scout/bomb`에 실제 KST 일자를 기록한다. 단독 정찰만 성공 1억/실패 5,000만P, 자폭은 성공 3억/실패 5,000만P이며 종류별 계정당 하루 한 번이다. 선포·방어·재정찰에는 정찰 보상을 지급하지 않는다. 사용자가 확정한 현행 자폭 30%·길드당 하루 2회를 유지한다.
 - `resolveGuildWarMatch`의 실제 참가자 표식과 `awardGuildWarFighters`는 최종 정상 종료 시 실제 참가자에게 각 1억P를 지급하고 `war.personalRewards`를 보존한다. 라운드/알림 재전송은 재지급하지 않으며 무혈입성·취소·미참여는 제외한다. `snapshotGuildWarSettlement`/`restoreGuildWarSettlement`는 개인 포인트도 복원한다. 기존 길드자금 보상은 별도로 유지한다. `getGuildWarMatchParticipant`는 구기록의 실제 매력·아이템 판정·크리티컬·방어 참가 확인으로 참가 여부를 구분하며, 참가/불참이 구분되지 않는 계정은 `personalRewards.pendingUsers`에 보류한다. `requireGuildWarFighterRewardReceipt`로 지급·보류 중복을 거절하고, `recordGuildWar`는 최근 30건 밖으로 밀려난 보류 전쟁도 원본 경기와 함께 보존한다. 화면은 기존 최근 30건과 실제 지급 인원만 표시한다.
 - `/전쟁정찰`과 정찰병 편성 결과의 선포권 숫자는 `getGuildWarScoutRightCount`로 실제 정찰병의 개인 잔여 한도·미확인 사용분 예약·역할권·공용 공격권을 함께 반영한다. 조회는 원장을 변경하지 않는다.
@@ -8833,6 +8833,7 @@ Status: VERIFIED
 ## Commands and permissions
 - main.js: getGuildWarRequest → runGuildWarEntry. 실행 명령은 전체 문법 일치, 안내문·추가 인수는 미실행. 공개 조회는 /길드전쟁·/길드전쟁가이드, 나머지는 자기 등록 길드톡의 소속 길드원만 사용한다.
 - /전쟁선포 지역번호(1~5)는 길마 기본권1 + 정찰병 역할권1 + 공격 선봉/중견/대장 각1, 하루 총5회. 부길마 직책만으로 선포 불가, 길마 겸직은 기본권부터 소모한다. 역할칸의 소모 이력과 전체 예산을 보존해 편성 교체로 복구되지 않는다.
+- 공격 선봉·중견·대장은 일반 길드원·길마·부길마·소드마스터 모두 가능하다. `commitGuildWarRoster`가 같은 길드 소속·중복·겸직·변경 횟수를 저장 전에 검사하며 `/일괄전쟁편성`도 같은 검증을 사용한다. `reconcileGuildWarRoster`는 소드마스터가 아니라는 이유로 공격 역할을 지우지 않고 탈퇴자만 해제한다. 선포 직전에도 같은 길드의 유효한 공격3명만 요구하며, 실행 권한·등록방·전쟁 중 순서변경·기존 사용량은 유지한다.
 - /전쟁공격편성 번호3개, /전쟁방어편성 번호3개(동시 방어전은 영지번호 추가), /전쟁정찰편성 번호, /전쟁자폭편성 번호는 길마·부길마. 최대 2개 역할 겸직 · 공격/방어 중복 불가. 기본 진형은 전쟁 중 변경 불가, 정찰 승리 측만 2분 준비 중 해당 전쟁의 기존3명 순서 변경 가능.
 - /전쟁편성초기화는 8칸을 해제하고 정찰·자폭 변경 횟수를 사용하며 선포 사용량은 유지. /정찰 길드명은 등록 정찰병만 하루2회, 정찰병 변경은 하루2회(최초무료). /자폭 지역번호는 등록 자폭병만 하루2회·성공30%, 자폭병 변경 하루1회(최초무료).
 - /전쟁기록은 길드별 최근30건의 공격/방어 길드·승리 길드만 표시한다. 취소에는 승자 없음. /전쟁기록 번호는 실행하지 않는다. 내부 상세와 최종 결과 allsee는 유지한다.
@@ -8849,7 +8850,7 @@ Status: VERIFIED
 - applyGuildWarBomb는 성공/실패 모두 하루1회 소모·양쪽 등록방 통보. 전쟁 중 지역·미점령·자기 소유는 미차감 거부. 성공은 소유권null, 일반 전투 보상 없음. 호월킹덤이면 lord 공백·taxRate0 및 기존 영지 참조를 함께 갱신해 영주권한과 사용자 세금 부과 모두 중단한다.
 - occupyGuildWarTerritory는 호월킹덤의 공격 대장 새 영주·기본세율 초기화·전체알림을 기존 방식으로 처리한다. 이미 적립된 세금 누계를 다시 지급하지 않는다.
 - snapshotGuildWarSettlement/restoreGuildWarSettlement는 전쟁의 아이템·창고·점령·영주·역할권·기록·알림을 복원한다. 오류 취소는 해당 전쟁 권한만 환급하고 이전 단계 소모 아이템도 복구한다. 정상 패배·알림 전송 실패는 재판정/환급하지 않는다.
-- resetGuildWarDay는 기존 /리셋의 새 KST 날짜에서만 역할권5·단독정찰2·정찰변경2·자폭1·자폭변경1을 복구하며 진행 전쟁·선포일은 보존한다. detachGuildWarMember/reconcileGuildWarRoster는 탈퇴·직책변경에 따른 기본 역할을 해제하며 전쟁 참가자 탈퇴 표식은 유지한다.
+- resetGuildWarDay는 기존 /리셋의 새 KST 날짜에서만 역할권5·단독정찰2·정찰변경2·자폭1·자폭변경1을 복구하며 진행 전쟁·선포일은 보존한다. detachGuildWarMember/reconcileGuildWarRoster는 탈퇴에 따른 기본 역할을 해제하며 전쟁 참가자 탈퇴 표식은 유지한다.
 
 ## Save and recovery
 - prepareGuildWarPublication → publishGuildWar → cleanupGuildWarPublication의 기존 저널·고정 사본을 재사용한다. 길드만 변경하면 원본/백업3개, 회원 변경은 회원/길드/레이드/로그14개 사본을 보존한다. helper 내부 load/save는 새로 추가하지 않는다.

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.815"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.816"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1202,7 +1202,7 @@ const GLOBAL_CONFIG = {
     ],
     "commandGuide": "/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
     "publicRules": "🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 길드전쟁 · 점령지 6곳\n🎯 하루 역할별 공격권 5회\n🔭 정찰병도 전쟁선포 가능\n⏳ 2분 뒤 선봉전 · 이후 15초 간격\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외)\n💣 자폭 하루 2회 · 성공 확률 30%\n📚 길드전쟁 참여 방법 전체보기" + allsee + "\n【1. 길드톡 등록과 편성】\n길드톡 이름은 마크를 제외한 정확한 길드명\n길마·부길마가 /전쟁톡등록 → /전쟁톡확인\n공격3명은 소드마스터 필수, 방어3명은 공격 역할이 없는 길드원, 정찰병1명은 선택\n최대 2개 역할 겸직 · 공격/방어 중복 불가\n편성 번호는 /길드정보 기준\n전쟁 중 기본 변경 불가 · 편성초기화는 8칸 해제 · 정찰/자폭 변경 횟수 소모 · 사용권 복구 없음\n\n【2. 전쟁선포와 지역】\n[1] 호월킹덤🏰 [2] 동부 금광🪙 [3] 중앙 금광🪙 [4] 서부 금광🪙 [5] 펫스킬 광산📕 [6] 다이아광산💎\n자기 등록 길드톡에서 현재 권한 보유자만 선포\n길드의 여러 지역 동시 공격 · 다른 길드의 같은 지역 동시 공격 가능 · 같은 길드·같은 지역 중복 불가 · 공격 쿨타임/점령보호 없음\n\n【3. 정찰·침공 감지】\n선포 순간 정찰병 개인 종합매력 비교, 동률은 방어 승리\n방어톡 침공 감지는 항상 통보 · 감지와 진형변경 권한은 별개\n공격 정찰 승리: 상대 정찰병·기본 방어3명 닉네임/캐슬 공개, 공격 순서변경 가능\n방어 정찰 승리: 적 정찰병 닉네임/종합매력 공개, 방어 순서변경 및 선봉+5%\n방어 정찰병 없음(0:0 포함): 변경권/정찰버프 없음\n2분 안에 기존3명 순서만 변경 · 동시 방어전은 영지번호 지정\n단독 정찰은 등록정찰병 본인만 길드당2회/일, 정찰병 변경2회/일(최초무료)\n단독 정찰에는 전쟁·선봉버프 없음 · 실패 시 정찰병 정보 역공개\n\n【4. 전투·점령·자폭】\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식\n\n【5. 주요 명령어】\n/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 길드전쟁 · 점령지 6곳\n🎯 하루 역할별 공격권 5회\n🔭 정찰병도 전쟁선포 가능\n⏳ 2분 뒤 선봉전 · 이후 15초 간격\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외)\n💣 자폭 하루 2회 · 성공 확률 30%\n📚 길드전쟁 참여 방법 전체보기" + allsee + "\n【1. 길드톡 등록과 편성】\n길드톡 이름은 마크를 제외한 정확한 길드명\n길마·부길마가 /전쟁톡등록 → /전쟁톡확인\n공격3명은 전체 길드원 가능, 방어3명은 공격 역할이 없는 길드원, 정찰병1명은 선택\n최대 2개 역할 겸직 · 공격/방어 중복 불가\n편성 번호는 /길드정보 기준\n전쟁 중 기본 변경 불가 · 편성초기화는 8칸 해제 · 정찰/자폭 변경 횟수 소모 · 사용권 복구 없음\n\n【2. 전쟁선포와 지역】\n[1] 호월킹덤🏰 [2] 동부 금광🪙 [3] 중앙 금광🪙 [4] 서부 금광🪙 [5] 펫스킬 광산📕 [6] 다이아광산💎\n자기 등록 길드톡에서 현재 권한 보유자만 선포\n길드의 여러 지역 동시 공격 · 다른 길드의 같은 지역 동시 공격 가능 · 같은 길드·같은 지역 중복 불가 · 공격 쿨타임/점령보호 없음\n\n【3. 정찰·침공 감지】\n선포 순간 정찰병 개인 종합매력 비교, 동률은 방어 승리\n방어톡 침공 감지는 항상 통보 · 감지와 진형변경 권한은 별개\n공격 정찰 승리: 상대 정찰병·기본 방어3명 닉네임/캐슬 공개, 공격 순서변경 가능\n방어 정찰 승리: 적 정찰병 닉네임/종합매력 공개, 방어 순서변경 및 선봉+5%\n방어 정찰병 없음(0:0 포함): 변경권/정찰버프 없음\n2분 안에 기존3명 순서만 변경 · 동시 방어전은 영지번호 지정\n단독 정찰은 등록정찰병 본인만 길드당2회/일, 정찰병 변경2회/일(최초무료)\n단독 정찰에는 전쟁·선봉버프 없음 · 실패 시 정찰병 정보 역공개\n\n【4. 전투·점령·자폭】\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 하루 5회\n⭐ 길마 겸직 시 본인 최대 2회 · 길마 기본권 먼저 사용\n⚠️ 부길마 직책만으로 선포 불가 · 편성 변경으로 사용권 복구 불가\n⏳ 2분 준비 → 2:00 선봉 · 2:15 중견 · 2:30 대장\n🏆 3전 2선승 · 3경기 모두 진행 · 선포 당시 캐슬매력\n⚒️ 기본 방어: 선봉 +3% · 중견 +10%\n🔭 정찰 방어 성공 시 최종 선봉 +5% 추가(합계 +8%)\n🎲 동률은 방어 승리 · 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n🥉 대장전은 특수 기습·절대방어 아이템 제외(길드큐브 패시브 유지)\n🎁 금광 점령🅟8억·방어🅟3억 / 기타 점령🅟5억·방어🅟2억 (길드큐브3 추가) · 공격 실패🅟1억(큐브 제외) · 📕 광산 점령·방어 📙 +1개 · 💎 광산 점령·방어 길드창고 다이아 +1\n🏳️ 실제 미점령만 공격권 1회 차감 후 즉시 무혈입성 · 같은 점령 보상\n💣 자폭 2회/일 · 성공30% · 변경1회/일(최초무료) · 최대 2역 겸직 · 공격/방어 중복 불가\n💥 자폭 성공은 미점령 전환 · 전투 보상 없음 · 실패도 상대톡 통보\n🔒 전쟁 중 지역·자기 소유·미점령에는 자폭 불가(횟수 미차감)\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광 시간 생산 없음 · 기존 시간제 영지전과 영지포인트 순위보상은 휴식\n\n【5. 주요 명령어】\n/길드전쟁\n/길드전쟁가이드\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁정찰\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n/전쟁기록",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -69758,11 +69758,10 @@ function validateGuildWarRoles(entry) {
     for (var key in counts) if (Object.prototype.hasOwnProperty.call(counts, key) && counts[key] > 2) throw guildWarInputError("최대 2개 역할만 맡을 수 있습니다. /전쟁정찰해제 또는 /전쟁자폭해제 후 다시 편성해주세요.");
 }
 // 후보 편성의 자격·변경 제한을 모두 검사한 뒤 실제 편성을 한 번 반영하는 함수
-function commitGuildWarRoster(entry, candidate, swords, day) {
+function commitGuildWarRoster(entry, candidate, guild, day) {
     if (entry.personalTransitionDay === day && day !== undefined && entry.scout !== candidate.scout) throw guildWarInputError("이전 길마권의 선포자를 확인할 수 없어 다음 일일 초기화까지 정찰 편성을 유지합니다. 기존 선포권과 진행 전쟁은 유지됩니다.");
     validateGuildWarRoles(candidate);
-    if (candidate.attack.some(function (name) { return !!name; }) && swords.length < 3) throw guildWarInputError("공격 진형 소드마스터 3명을 모두 편성해 주세요.");
-    if (candidate.attack.some(function (name) { return name && swords.indexOf(name) === -1; })) throw guildWarInputError("공격 진형은 현재 소드마스터만 편성할 수 있습니다. 길드 직책은 자동 변경하지 않습니다.");
+    if (candidate.attack.some(function (name) { return name && (!guild.members || !Object.prototype.hasOwnProperty.call(guild.members, name) || !guild.members[name]); })) throw guildWarInputError("같은 길드에 소속된 길드원만 공격 진형에 편성할 수 있습니다.");
     var config = GLOBAL_CONFIG.guildWar, roles = ["scout", "bomber"];
     for (var i = 0; i < roles.length; i++) {
         var role = roles[i], changed = entry[role] !== candidate[role], limit = role === "scout" ? config.scoutChangeLimit : config.bomberChangeLimit;
@@ -69791,7 +69790,7 @@ function setGuildWarBulkFormation(state, guildData, gid, request, skills) {
     });
     var candidate = cloneFreeMarketObject(entry);
     candidate.scout = picked[0]; candidate.bomber = picked[1]; candidate.attack = picked.slice(2, 5); candidate.defense = picked.slice(5);
-    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills), state.day);
+    return commitGuildWarRoster(entry, candidate, guild, state.day);
 }
 // 중단된 대진의 실제 소모품만 별도로 남겨 재정찰 뒤에도 사용 이력을 보존하는 함수
 function archiveGuildWarMatchup(war, now) {
@@ -70041,7 +70040,7 @@ function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)
     text += "🔭 정찰병 [전체 길드원 가능]\n└ [" + (entry.scout ? checkRank(data, petData, guildData, entry.scout) : "미편성") + "]\n└ 🔭 정찰 " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2 · 🔄 변경 " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2\n\n";
     text += "💣 자폭병 [기존 역할 겸직 가능]\n└ [" + (entry.bomber ? checkRank(data, petData, guildData, entry.bomber) : "미편성") + "]\n└ 💣 자폭 " + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2 · 🔄 변경 " + (GLOBAL_CONFIG.guildWar.bomberChangeLimit - entry.bomberChanges) + "/1\n";
     for (var i = 0; i < 6; i++) {
-        if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [소드마스터 전용]" : "⚒️ 방어 진형\n└ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n━━━━━━━━━━━━\n";
+        if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 [전체 길드원 가능]" : "⚒️ 방어 진형\n└ 캐슬매력 버프: 선봉 +3% · 중견 +10%") + "\n━━━━━━━━━━━━\n";
         text += ["🥇 1번 선봉", "🥈 2번 중견", "🥉 3번 대장"][i % 3] + ": [" + (fighters[i] ? checkRank(data, petData, guildData, fighters[i]) : "미편성") + "]\n";
     }
     if (entry.personalTransitionDay === guildData.war24.day) text += "\n⏳ 이전 선포자 확인 불가 · 정찰 편성 변경은 다음 일일 초기화 후 가능\n";
@@ -70667,7 +70666,7 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         if (wars.length) throw guildWarInputError("전쟁 중에는 기본 진형을 초기화할 수 없습니다.");
         var cleared = cloneFreeMarketObject(entry);
         cleared.attack = ["", "", ""]; cleared.defense = ["", "", ""]; cleared.scout = ""; cleared.bomber = "";
-        commitGuildWarRoster(entry, cleared, ensureGuildSwordMasters(guild, skills), state.day);
+        commitGuildWarRoster(entry, cleared, guild, state.day);
         return "✅ 정찰·자폭·공격·방어 8칸을 모두 초기화했습니다.\n해제한 정찰·자폭의 변경 횟수를 사용했으며 전쟁선포권은 복구되지 않습니다.";
     }
     var ordered = getGuildOrderedMemberKeys(guild, skills), targetNo = (request.kind === "defenseFormation" || request.kind === "attackFormation") && args.length === 4 ? args.shift() : null;
@@ -70696,7 +70695,7 @@ function setGuildWarFormation(state, guildData, gid, sender, request, skills, no
         candidate[target] = picked;
         candidate[opposite] = candidate[opposite].map(function (name) { return picked.indexOf(name) === -1 ? name : ""; });
     }
-    return commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills), state.day);
+    return commitGuildWarRoster(entry, candidate, guild, state.day);
 }
 
 // 복구 파일의 회원·분리 저장 참조만 남겨 큰 본문을 메모리에 함께 보관하지 않는 함수
@@ -70960,7 +70959,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             if (!isGuildLeader(guild, sender)) throw guildWarInputError("길마·부길마만 편성을 변경할 수 있습니다.");
             var candidate = cloneFreeMarketObject(entry);
             candidate[request.kind === "clearScout" ? "scout" : "bomber"] = "";
-            var released = commitGuildWarRoster(entry, candidate, ensureGuildSwordMasters(guild, skills), state.day);
+            var released = commitGuildWarRoster(entry, candidate, guild, state.day);
             publishGuildWar(data, guildData, false); replier.reply(released); return true;
         }
         if (request.kind === "formation") { replier.reply(buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true; }
@@ -70973,7 +70972,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             replier.reply("🔭 " + formatGuildDisplay(guild) + " 전쟁정찰\n━━━━━━━━━━━━\n🔭 현재 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n🔄 오늘 남은 정찰병 변경: " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2회\n🔎 오늘 남은 단독 정찰: " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회\n🎯 정찰병 전쟁선포권: " + getGuildWarScoutRightCount(state, guild, entry, gid) + "/1회\n\n👉 정찰병 편성: /전쟁정찰편성 번호\n👉 단독 정찰: /정찰 길드명"); return true;
         }
         if (request.kind === "attackFormation" || request.kind === "defenseFormation" || request.kind === "scoutFormation" || request.kind === "bomberFormation" || request.kind === "clearFormation" || request.kind === "bulkFormation") {
-            if (guildData.territoryWar && guildData.territoryWar.active && guildData.territoryWar.readyGuilds && guildData.territoryWar.readyGuilds[gid] && request.kind === "attackFormation") throw guildWarInputError("기존 길드 영지전 진행 중에는 소드마스터를 변경할 수 없습니다.");
+            if (guildData.territoryWar && guildData.territoryWar.active && guildData.territoryWar.readyGuilds && guildData.territoryWar.readyGuilds[gid] && request.kind === "attackFormation") throw guildWarInputError("기존 길드 영지전 진행 중에는 공격 진형을 변경할 수 없습니다.");
             var formationMessage = setGuildWarFormation(state, guildData, gid, sender, request, skills, Date.now());
             if (request.kind === "scoutFormation") formationMessage += "\n🔭 정찰병: [" + checkRank(data, petData, guildData, entry.scout) + "]\n🎯 남은 정찰병 전쟁선포권: " + getGuildWarScoutRightCount(state, guild, entry, gid) + "/1회";
             if (request.kind === "bomberFormation") formationMessage += "\n💣 자폭병: [" + checkRank(data, petData, guildData, entry.bomber) + "]\n🎯 자폭 성공 확률: 30%";
@@ -70995,8 +70994,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
                 var right = personalRights.filter(function (key) { return !entry.rights[key]; })[0];
                 if (!right || !entry.tickets) throw guildWarInputError(buildGuildWarTicketHelp(data, petData, guildData, gid, sender));
                 if (state.active.some(function (w) { return w.attackId === gid && w.no === targetNo; })) throw guildWarInputError("우리 길드가 이미 같은 지역을 공격 중입니다.");
-                var swords = ensureGuildSwordMasters(guild, skills);
-                if (entry.attack.some(function (name) { return !name || !guild.members[name] || swords.indexOf(name) === -1; })) throw guildWarInputError("공격 진형 소드마스터 3명을 모두 편성해 주세요.");
+                if (entry.attack.some(function (name) { return !name || !Object.prototype.hasOwnProperty.call(guild.members, name) || !guild.members[name]; })) throw guildWarInputError("같은 길드의 공격 진형 3명을 모두 편성해 주세요.");
             } else {
                 if (entry.scout !== sender) throw guildWarInputError("등록 정찰병 본인만 단독 정찰할 수 있습니다.");
                 if (entry.scoutUsed >= GLOBAL_CONFIG.guildWar.scoutLimit) throw guildWarInputError("🔭 남은 단독 정찰 0/2회 · 정찰병 변경으로 복구 불가");
@@ -71098,13 +71096,13 @@ function buildGuildWarMatchDetail(match) {
     return text + (match.win ? "🏆 공격자 승리 · 캐슬매력 우세" : match.reason === "tie" ? "🏆 방어자 승리 · 캐슬매력 동률" : "🏆 방어자 승리 · 캐슬매력 우세");
 }
 
-// 기존 직책 변경·탈퇴로 자격이 사라진 기본 편성만 해제하고 진행 전쟁은 유지하는 함수
+// 탈퇴로 소속이 사라진 기본 편성만 해제하고 진행 전쟁은 유지하는 함수
 function reconcileGuildWarRoster(state, guildData, gid, skills) {
     var entry = state.guilds[gid], guild = getGuildByIdSafe(guildData, gid);
     if (!entry || !guild) return false;
-    var changed = false, swords = ensureGuildSwordMasters(guild, skills);
+    var changed = false;
     for (var i = 0; i < 3; i++) {
-        if (entry.attack[i] && (!guild.members[entry.attack[i]] || swords.indexOf(entry.attack[i]) === -1)) { entry.attack[i] = ""; changed = true; }
+        if (entry.attack[i] && !guild.members[entry.attack[i]]) { entry.attack[i] = ""; changed = true; }
         if (entry.defense[i] && !guild.members[entry.defense[i]]) { entry.defense[i] = ""; changed = true; }
     }
     if (entry.bomber && !guild.members[entry.bomber]) { entry.bomber = ""; changed = true; }
