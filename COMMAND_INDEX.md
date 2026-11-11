@@ -10,7 +10,8 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 Status: VERIFIED
 
 - 이 절은 아래 과거 길드전쟁 UI·교체·보상 설명보다 우선한다. `buildGuildWarMain`은 가입/미가입 모두 6곳을 접지 않고 표시하고, 공용 공격권·소유 지역번호·전쟁톡·정찰/자폭 잔여량은 가입자에게만 표시한다. 영주 줄은 호월킹덤 점령 중에만 표시한다.
-- `buildGuildWarFormation`은 8슬롯과 길마 기본권·정찰 역할권·공격자 개인 합계를 구분한다. 교체는 사용/총, 행동 횟수는 잔여/총이며 전체보기 패딩은 마지막 범례 뒤 한 번이다. `buildGuildWarRosterDetails`는 `/길드정보` 번호와 현재 직책·캐슬/종합 계산을 유지해 고유 길드원 한 명당 두 줄로 표시한다. 전체 명령·규칙·보상은 `GLOBAL_CONFIG.guildWar.guide`의 7개 장에 통합한다.
+- `buildGuildWarFormation`은 8슬롯과 길마 기본권·정찰 역할권·공격자 개인 합계를 구분한다. 정찰·자폭은 횟수를 제목 줄에, 담당자·실행 안내를 다음 줄에 표시한다. 공격·방어 자리는 `🥇선/🥈중/🥉대`로 축약하고 방어 캐슬버프는 한 줄로 표시한다. 교체는 사용/총, 행동 횟수는 잔여/총이며 전체보기 패딩은 `📚 길드원 현황·편성 설명·방법 전체보기` 직후 한 번이다. 겸직 제한·범례·전환 제한 안내와 기존 전체 길드원 상세는 접힌 영역에 보존한다. `/정찰`은 기존 길드명 인자 형식을 유지한다.
+- 자폭 성공확률은 `GLOBAL_CONFIG.guildWar.bombSuccessRate = 0.5`이며 실제 `applyGuildWarBomb` 판정과 편성 완료·가이드·교육·스케줄 안내가 모두 50%로 일치한다. 일일 실행·교체 한도와 보상·점령 처리·저장 흐름은 유지한다. `buildGuildWarRosterDetails`는 `/길드정보` 번호와 현재 직책·캐슬/종합 계산을 유지해 고유 길드원 한 명당 두 줄로 표시한다. 전체 명령·규칙·보상은 `GLOBAL_CONFIG.guildWar.guide`의 7개 장에 통합한다.
 - `commitGuildWarRoster`는 정찰·자폭·공격·방어 후보 전체를 검증한 뒤 유형별 교체를 함께 반영한다. 공격·방어·자폭은 각각 2회, 최초 무료·동일 재입력 무료·해제/초기화/재편성 이력 유지이며 소진한 행동권을 복구하지 않는다. 기존 저장본의 없는 공격/방어 교체 필드만 기존 편성 유무로 시작하고, 존재하는 손상 필드는 `requireGuildWarState`에서 거절한다. `resetGuildWarDay`에서 기존 일일 기준으로 교체 횟수를 초기화한다.
 - `setGuildWarFormation`은 진행 중 방어 인원·자리 변경을 전부 차단한다. 공격 정찰 승리 시 해당 전쟁 기존 3명의 임시 순서 변경은 유지하며 기본 진형/교체 한도에 합산하지 않는다. 전체 길드원 공격 편성·직책 유지·최대2역·공방 중복 금지·개인 선포권 보호는 유지한다.
 - `/방어`는 `getGuildWarRequest`의 정확 일치로만 실행한다. `runGuildWarEntry` → `applyGuildWarDefenseJoin`에서 등록 길드톡·확정 방어자·준비 시간·현재 소속을 검증하고, 시작이 빠른 대상 전투 한 건에만 캐슬+5%·방어확률+5%·개인5천만을 반영한다. `requireGuildWarDefenseJoins`가 전투/계정 중복·기한·보상 기록을 검증한다. `getGuildWarDefenseBonuses`를 UI/실제 `resolveGuildWarMatch`에서 공용으로 사용해 13/8/15/5% 가산을 일치시킨다.
