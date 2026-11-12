@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.840"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.841"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -135,7 +135,7 @@ const PET_SKILL_LIST = [
     { name: "호월신의 총애", grade: "S", rate: 0.3, effect: "하루 한 번 호월신에게 특별한 기도를 올립니다.\n7% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 신성한 기도📙와 중복 장착할 수 없습니다." },
     { name: "장미칼", grade: "A", rate: 0.4, raidExp: 500000, castleExp: 500000, effect: "사악한 마녀의 칼입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "신성한 기도", grade: "A", rate: 0.4, effect: "하루 한 번 호월신에게 신성한 기도를 올립니다.\n5% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
-    { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
+    { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 상대가 1,000만 포인트 이상 보유하면 70% 확률로 1,000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
     { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
     { name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n[길드전쟁] 길드마스터의 개인 전쟁선포권이 1회 증가합니다.\n추가된 1회는 길드 공용 공격권 없이도 사용할 수 있습니다.\n하루 1회이며 재장착·편성 변경으로 복구되지 않습니다.\n\n[길드영지] 길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며,\n길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
@@ -22985,7 +22985,10 @@ replier.reply(
                         }
                     }
                     if (hasPetSkill(petSkillData, sender, "약탈자")) {
-                        if (Math.random() < 0.7) {
+                        // 잔액 부족이나 지급 범위 초과 시 차감·지급·성공 기록을 함께 건너뛴다.
+                        if (Math.random() < 0.7 &&
+                            isFreeMarketPointBalance(data.member[targetName].point) && data.member[targetName].point >= GLOBAL_CONFIG.petSkill.effects.robberStealPoint &&
+                            isFreeMarketPointBalance(data.member[sender].point) && isFreeMarketPointBalance(data.member[sender].point + GLOBAL_CONFIG.petSkill.effects.robberStealPoint)) {
                             if (robberyHistoryData) {
                                 var robberyBatch = getAutoDailyBatchContext();
                                 var robberySnapshotNames = ["member.json", "member_pet.json", GLOBAL_CONFIG.miniPet.robberyHistory.fileName];
@@ -22998,7 +23001,7 @@ replier.reply(
                                     if (robberyBatch) { robberyBatch.robberyPending = true; robberyBatch.robberySnapshots = robberyHistorySnapshots; }
                                 }
                             }
-                            data.member[targetName].point = (data.member[targetName].point || 0) - GLOBAL_CONFIG.petSkill.effects.robberStealPoint;
+                            data.member[targetName].point -= GLOBAL_CONFIG.petSkill.effects.robberStealPoint;
                             addPoint(data, sender, GLOBAL_CONFIG.petSkill.effects.robberStealPoint);
                             var robberyHistory = robberyHistoryData ? getMiniPetRobberyRows(robberyHistoryData, sender, true) : (petData[sender].miniPetRobberyHistory || (petData[sender].miniPetRobberyHistory = []));
                             var robberyEventId = getAttendanceKstDateKey() + ":" + petData[sender].miniPetBattle.count; // 하루 대전 횟수로 식별한 성공 사건
@@ -68776,7 +68779,7 @@ function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData, histo
     if (historyStore && petData[user] && petData[user].miniPetRobberyHistory !== undefined) throw new Error("기존 강탈 기록이 남아 있습니다. /데이터정리를 실행해 주세요.");
     var history = historyStore ? (Object.prototype.hasOwnProperty.call(historyStore.users, user) ? historyStore.users[user] : []) : petData[user] && petData[user].miniPetRobberyHistory ? petData[user].miniPetRobberyHistory : [];
     var recent = history.slice(Math.max(0, history.length - 50)).reverse(); // 최신순 최대 50건
-    var lines = ["약탈자📙 [S]", "[" + checkRank(data, petData, guildData, user) + "]님의 약탈 기록", allsee, "━━━━━━━━━━━━━", "미니펫대전 시 70% 확률로", "상대의 1,000만 포인트를 훔칩니다.", "", "📜 최근 약탈 기록: " + recent.length + "건"];
+    var lines = ["약탈자📙 [S]", "[" + checkRank(data, petData, guildData, user) + "]님의 약탈 기록", allsee, "━━━━━━━━━━━━━", "상대가 1,000만 포인트 이상 보유하면", "미니펫대전 시 70% 확률로", "1,000만 포인트를 훔칩니다.", "", "📜 최근 약탈 기록: " + recent.length + "건"];
     if (!recent.length) return lines.concat(["아직 약탈에 성공한 기록이 없습니다."]).join("\n");
     lines.push("└ 최신순 · 최대 50건 표시", "━━━━━━━━━━━━━");
     for (var i = 0; i < recent.length; i++) lines.push((i + 1) + ". [" + recent[i].target + "] · " + numberWithCommas(recent[i].amount) + " 포인트\n   └ " + recent[i].at);
