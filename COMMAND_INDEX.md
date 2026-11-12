@@ -118,7 +118,7 @@ Status: VERIFIED
 - 펫홈: Main/Info의 `getPetHomeFloorCharm`이 전체 평수당 캐슬·레이드 각각 75,000을 더한다. 평수 기본분에 빌리지·별채 %와 인테리어 장인 10%를 적용하고 기존 최종 배율도 유지한다. `/가구정보`와 확장 안내의 평수 보너스는 해당 버프를 포함한다. `/집짓기` 확인은 환경·입력자·계정·현재 평수·다음 조건을 다시 확인한다. `집뚝딱`/`생각해본다` 및 기존 슬래시 별칭을 지원한다. `/가구정보`/`/집짓기`에 전체보기 평수 세부 정보를 표시한다.
 - `/인형도감추가, 닉네임 인형도감이름 cm 형태 개수`: 기존 Admin/Master 권한. 공식 도감·실존 계정을 유일하게 해석하고 0.1cm·형태·안전한 정수 개수를 검증한다. `parseDollManualAddition`/`applyDollManualAddition`이 최초·중복 수집, 최고 크기, 최초일, 순위, 작업자/전후 로그를 함께 반영한다. 이용권·재화·경험치·자동판매는 적용하지 않는다. 기존 `dollPending.json` 원본 복구 흐름을 사용한다.
 - 시장 전환: `/자유시장전환` 미리보기 → Master의 `/자유시장전환 실행`. `requireFreeMarketSource`/`planFreeMarketConversion`/`validateFreeMarketReturns`로 원본을 보정 없이 검증하고, 고유 백업 폴더에 회원·분리 참조·펫·스킬·홈·시장·상품 정의를 원문 검증 복사한다. 미판매 매물의 실제 보관 정보를 원래 가방에 반환한 뒤 보유 당근·기록된 등록비를 개당 5천만 포인트로 정산한다. 가방·스킬 반환은 실제 저장 이름의 전후 수량 차이가 매물 수량과 일치해야 한다. 시장 스킬 반환은 획득 한도로 자르지 않으며, 구매 전 공간 검사와 일반 획득 한도는 유지한다. 누락된 홈 사용자는 실제 반환 함수의 기본 홈 초기화 흐름을 검증하며, 기존 홈 구조 오류는 그대로 실패한다. 음수 포인트 원본도 보존한다. 등록비 미기록은 거래번호를 별도 확인 목록에 남기며 추정 지급하지 않는다. 완료한 전환은 다시 지급하지 않는다. 전환 전에는 시장 거래를 차단한다. 전환 조회·실행 오류는 저장 확정 래퍼를 거치지 않는 원래 요청 응답으로 실행 방에 알린다.
-- 자유시장: 킹 이상, 등록 한도 1/3/8/10 유지. 다이아 묶음 가격 최소10·등록비 무료. 판매자 현재 회원권 기준 수수료17%/10%를 반올림하고 나머지를 지급한다. `/자유시장`(`ㅈㅈ`), `/자유시장검색`, `/내판매상품`, `/자유시장가격수정`, `/자유시장정보`, 기존 5종 등록·구매·취소·강제취소를 연결한다. 출력과 실행 모두 실제 거래 ID를 사용한다. 검색은 분류·이름, 실제 등급·강화/매력·개당 가격·수량·등록시각을 적용하며 정보가 없으면 뒤로 보낸다. 미개봉 패키지 거래는 허용하고 통화 다이아·상자·폐지 당근은 등록할 수 없다.
+- 자유시장: 킹 이상, 등록 한도 1/3/8/10 유지. 다이아 묶음 신규 등록·가격수정 최소50·등록비 무료(기존10~49 매물 유지). 판매자 현재 회원권 기준 수수료20%/10%를 반올림하고 나머지를 지급한다. `/자유시장`(`ㅈㅈ`), `/자유시장검색`, `/내판매상품`, `/자유시장가격수정`, `/자유시장정보`, 기존 5종 등록·구매·취소·강제취소를 연결한다. 출력과 실행 모두 실제 거래 ID를 사용한다. 검색은 분류·이름, 실제 등급·강화/매력·개당 가격·수량·등록시각을 적용하며 정보가 없으면 뒤로 보낸다. 미개봉 패키지 거래는 허용하고 통화 다이아·상자·폐지 당근은 등록할 수 없다.
 - 시장 확인: 구매 `/거래확인 1|2`, 기존 `자유시장거래`/`자유시장거래취소` 유지. 환경·방·입력자별 최신 요청 하나, 60초. 구매는 원본 매물·가격 지문, 등록은 현재 보관 상태를 재확인한다. 완료 공개 기록은100건이며 예전 포인트 거래를 다이아로 오표시하지 않는다. 목록은 전체보기와 자동 분할 전송을 사용한다.
 - 폐지 당근: 개인 이전5종과 펜던트 호환 별칭·직접 당근 지급을 MQ 전에 차단한다. 일반 아이템 지급 함수와 상점의 신규 당근 지급도 차단한다. 미개봉 패키지는 `normalizeRetiredCarrotPackageReward`/`getPackagePointAward`로 개봉 시 당근 대신 동일 금액 포인트를 지급하고 차감 전에 합산 범위를 검증한다. 기존 직접 개봉4종도 같은 환산율을 적용한다. 황금당근·당근온도는 유지한다.
 - 다이아상점: `ensureDiamondShopV2`가 예전 판매 목록을 보존하고 활성 상품을 비운다. Master의 `/다이아상점추가 상품명 상품갯수 다이아갯수 [하루구매갯수]`로 새 등록부터 시작한다. 정식 아이템 이름과 숫자 조합이 모호하면 거절한다. `/다이아구매`와 기존 `/다이아상점구매`는 같은 구매·퀘스트13 흐름이다. `/다이아명령어`, 추가/삭제, `/다이아시세설정`, `/다이아상점관리`, `/다이아상점판매기록`은 Master 전용이며 MQ 전에 권한을 확인한다. `buildDiamondShopView`는 가격·전일 대비·기본가 대비·오늘 구매를 줄별로 표시하며 고정가는 가격과 구매제한만 표시한다. 전일 가격 기록이 없으면 가격 차이를 만들지 않는다. 상점 운영일과 상자 개봉 부가 안내는 표시하지 않는다.
@@ -6469,13 +6469,14 @@ Status: VERIFIED
 - `/내판매기록`은 진입에서 읽은 시장 데이터의 완료 기록을 본인 판매자 기준으로 먼저 거르고 완료 시각·거래번호 내림차순으로 정렬한 뒤 최대 10건을 표시한다. `buildFreeMarketHistoryMessage`에 판매자를 전달하며 전체 거래현황은 기존 전체 기록을 유지한다. 파일 저장은 추가하지 않는다.
 - `petSkillSearchAliases`의 단독 검색어(`펫스킬북`, `펫 스킬북`, `펫스킬`, 공백 변형)는 `parseFreeMarketSearch.petSkillRelated`를 통해 개별 스킬 원본 매물과 이름에 `펫스킬`이 들어간 가방/패키지 매물을 함께 찾는다. 실제 매물 유형별 정렬·구획은 유지한다. 등급·추가 이름·다른 분류를 명시한 복합 검색은 기존 조건을 적용하며, 여러 분류 단어가 있으면 먼저 명시한 분류를 우선한다. `일반 아이템`은 등급 분리 전에 한 분류로 처리한다.
 - `isFreeMarketTradableItem`은 시장 전용 확정 금지 12종·통화 자체·재화 전용 묶음만 제외하며 일반 아이템/미확정 혼합 패키지는 허용한다. 기존 개인거래 `isTradableItem` 정책을 바꾸지 않는다.
-- `calculateFreeMarketTradeFee`는 총가격을 정수 몫·나머지로 나눠 기존 17%/10% 반올림 수수료를 계산하고 예상 실수령 안내와 실제 구매 확정에 함께 사용한다. `formatFreeMarketUnitPrice`는 순수 표시값만 소수·근삿값으로 계산하며 실제 총액·수수료 계산은 변경하지 않는다. 안전 정수 범위 밖의 금액·수량은 거절한다.
+- `GLOBAL_CONFIG.freeMarket.minPrice`는 신규 5종 등록·가격수정에 묶음 전체 최소50다이아를 적용하고, `legacyMinPrice`는 기존10~49다이아 매물의 조회·구매·취소를 유지한다. `buildFreeMarketMinPriceMessage`가 등록/가격수정의 최소가 미달 UI를 구성하며 기존 전체 닉네임 응답 래퍼를 사용한다. 저장 경로·재료 이동·가격 지문 검증과 과거 완료 내역은 유지한다.
+- `calculateFreeMarketTradeFee`는 총가격을 정수 몫·나머지로 나눠 20%/10% 반올림 수수료를 계산하고 예상 실수령 안내와 실제 구매 확정에 함께 사용한다. `formatFreeMarketUnitPrice`는 순수 표시값만 소수·근삿값으로 계산하며 실제 총액·수수료 계산은 변경하지 않는다. 안전 정수 범위 밖의 금액·수량은 거절한다.
 - `validateFreeMarketBagMergeCounts`는 가방 이름 병합 전의 형식·합산 범위를, `validateFreeMarketReturnStorage`는 수령 가방/스킬가방의 현재 이름·기존 수량+지급 수량을 실제 변경 전에 확인한다. 구매 안내·확정은 보관소 초기화 및 결제 전에 재검증하고 등록도 차감·이름 보정 전에 원본 수량을 검증한다. 누락 회원에게 반환한 것으로 처리하지 않으며, 합산 검증은 복사본만 사용하고 helper에서 파일 IO를 추가하지 않는다.
 - 시장 진입에서 로드한 상품 정의를 `recallFreeMarketBlockedItems`에 넘겨 금지 가방 매물을 전부 검증한 뒤 원래 가방에 반환한다. `beginFreeMarketMutation` → 회원/시장 저장 수집 → `finishFreeMarketMutation`의 확정 원문 게시로 반환과 매물 제거를 함께 반영하고 회원을 다시 로드한다. 별도 회수 안내는 추가하지 않는다. 구매 확정에서도 같은 허용 판정을 반복한다.
 
 - 메인과 목록의 판매가이드 링크는 `/자유시장판매가이드`다. `buildFreeMarketV2List`는 입력자 전체 닉네임과 실제 보유 다이아·활성 거래 건수를 표시하고 기존 물품 목록 앞 지정 위치에 allsee를 한 번 둔다.
 - `/자유시장판매가이드` 및 기존 `자유시장 판매가이드`는 거래 파일 로드·차단 매물 회수·저장 배치 진입 전에 `buildFreeMarketV2Guide`로 안내만 출력한다. 새 명령은 정확히 일치해야 하며 `/자유시장 판매가이드` 별칭은 추가하지 않는다.
-- 가이드는 제목·부제·첫 구분선 뒤 allsee 한 번, 등록5종→펜던트 거래정보→판매관리→거래조건 순서다. 펜던트는 수량 인자가 없으며, 묶음 전체 최소10다이아·수수료17/10%·등록비무료·기존 제한을 안내한다.
+- 가이드는 제목·부제·첫 구분선 뒤 allsee 한 번, 등록5종→펜던트 거래정보→판매관리→거래조건 순서다. 펜던트는 수량 인자가 없으며, 묶음 전체 최소50다이아·수수료20/10%·등록비무료·기존 제한을 안내한다.
 
 ## Command Anchors
 
@@ -6549,7 +6550,7 @@ Status: VERIFIED
 - Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
 - Registration fees consume `🥕당근이세요?` immediately; cancel/force-cancel refunds the stored `carrotFee` only when the seller currently holds `자유시장회원권🏪`
-- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 17%, and sellers holding `자유시장회원권🏪` use 10%
+- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 20%, and sellers holding `자유시장회원권🏪` use 10%
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends the logged member fee rate only when `memberFeeApplied: true`; old 5%/7% rows keep their recorded rate.
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
@@ -8727,7 +8728,7 @@ Status: VERIFIED
 - 모험가 퀘스트14 기본/미완료 안내에 `/홈뱃지큐브 [슬롯] [옵션] [사용횟수]`를 표시한다. 완료 조건·큐브 실행·보상은 유지한다.
 - getFurnitureMaxSlots는 100평까지 기존 규칙, 초과분은 floor((평수-100)/5). 보너스 전 100·104평 21개, 105·109평 22개, 110평 23개, 200평 41개다. 기존 건물주·베란다·프리미엄을 합산하고 현재 평수에서 매번 산출하므로 별도 이전/중복 증가가 없다.
 - GLOBAL_CONFIG.carrotTrade.costs: 일반 1, 미니펫/가구 100, 스킬/펜던트 300. 개인 스킬 거래와 시장 묶음 등록의 수량 배수는 유지한다. 개인 펜던트 마지막 인수는 기존 가방번호다.
-- 자유시장 판매자 수수료 일반 17%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
+- 자유시장 판매자 수수료 일반 20%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
 - tools/test_oct19_ready.js와 tools/test_carrot_community_trade.js는 합성 데이터에서 경계·보너스·수수료·이력·취소·거래 저장 실패를 확인한다.
 - ver_2.659 시장·가구 원문 스냅샷을 같은 명령의 저장 롤백에 연결한다. tools/test_oct19_market_flow.js는 거래 5종의 등록/구매/취소·모든 저장 지점 실패·DEV 격리·관리자 취소를 검증한다. tools/test_oct19_lock_rhino.js는 실제 응답 진입부 잠금과 합성 임계구역을 Java 스레드 20쌍으로 검증한다.
 

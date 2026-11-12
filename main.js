@@ -3096,10 +3096,12 @@ blockedNicknameTerms: [
         mySalesHistoryLimit: 10, // 본인의 최근 판매 완료 기록 표시 개수
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
-        tradeFeeRate: 0.17, // 자유시장 기본 거래 수수료율
+        tradeFeeRate: 0.2, // 자유시장 기본 거래 수수료율
         memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
         memberFeeTag: "자회원🏪(수수료 10%)",
-        minPrice: 10, messageChars: 12000, carrotCompensation: 50000000,
+        minPrice: 50, // 신규 등록·가격수정의 묶음 전체 최소 가격
+        legacyMinPrice: 10, // 기존에 등록된 매물의 조회·구매 허용 최소 가격
+        messageChars: 12000, carrotCompensation: 50000000,
         unitPriceDecimals: 2, // 개당 안내값의 기본 소수 자릿수·불일치 시 근삿값 표시
         furnitureGrades: ["리브", "쁘띠", "부띠끄", "시그니엘", "그랑 루미에르", "로열 루미에르", "아르카나 루미에르"],
         searchGradeAliases: { "로열": "로열 루미에르", "아르카나": "아르카나 루미에르" },
@@ -8264,7 +8266,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (msg === "/자유시장가격수정" || /^\/자유시장가격수정\s+\d+\s+\d+$/.test(msg)) {
                         var marketEditParts = msg.split(/\s+/), marketEdit = getFreeMarketListingById(marketV2, Number(marketEditParts[1])), marketNewPrice = Number(marketEditParts[2]);
-                        if (!marketEdit || marketEdit.seller !== sender || !isPointShopSafeCount(marketNewPrice) || marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply("❌ 본인 매물과 10 이상의 정수 가격을 확인해주세요.\n/자유시장가격수정 거래번호 다이아가격"); return; }
+                        if (!marketEdit || marketEdit.seller !== sender || !isPointShopSafeCount(marketNewPrice)) { replier.reply("❌ 본인 매물과 " + GLOBAL_CONFIG.freeMarket.minPrice + " 이상의 정수 가격을 확인해주세요.\n/자유시장가격수정 거래번호 다이아가격"); return; }
+                        if (marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(true)); return; }
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
                         marketEdit.price = marketNewPrice; saveJsonFile(marketV2, freeMarketPath);
                         replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice)); return;
@@ -8365,10 +8368,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 가방이 비어있습니다.");
                         return;
                     }
-                    if (!isPointShopSafeCount(bagMarketCount) || bagMarketCount < 1 || !isPointShopSafeCount(bagMarketPrice) || bagMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 10다이아 이상의 안전한 정수여야 합니다.");
+                    if (!isPointShopSafeCount(bagMarketCount) || bagMarketCount < 1 || !isPointShopSafeCount(bagMarketPrice)) {
+                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
                         return;
                     }
+                    if (bagMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var bagMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var bagMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketBagData, sender);
                     if (bagMarketActiveCount + 1 > bagMarketLimit) {
@@ -8425,10 +8429,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     var miniMarketCount = parseInt(miniMarketParts[2], 10);
                     var miniMarketPrice = parseInt(miniMarketParts[3], 10);
                     var freeMarketMiniData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    if (!isPointShopSafeCount(miniMarketCount) || miniMarketCount < 1 || !isPointShopSafeCount(miniMarketPrice) || miniMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 10다이아 이상의 안전한 정수여야 합니다.");
+                    if (!isPointShopSafeCount(miniMarketCount) || miniMarketCount < 1 || !isPointShopSafeCount(miniMarketPrice)) {
+                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
                         return;
                     }
+                    if (miniMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var miniMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var miniMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketMiniData, sender);
                     if (miniMarketActiveCount + 1 > miniMarketLimit) {
@@ -8512,10 +8517,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     var furnitureMarketCount = parseInt(furnitureMarketParts[2], 10);
                     var furnitureMarketPrice = parseInt(furnitureMarketParts[3], 10);
                     var freeMarketFurnitureData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    if (!isPointShopSafeCount(furnitureMarketCount) || furnitureMarketCount < 1 || !isPointShopSafeCount(furnitureMarketPrice) || furnitureMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 10다이아 이상의 안전한 정수여야 합니다.");
+                    if (!isPointShopSafeCount(furnitureMarketCount) || furnitureMarketCount < 1 || !isPointShopSafeCount(furnitureMarketPrice)) {
+                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
                         return;
                     }
+                    if (furnitureMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var furnitureMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var furnitureMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketFurnitureData, sender);
                     if (furnitureMarketActiveCount + 1 > furnitureMarketLimit) {
@@ -8588,10 +8594,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     var skillMarketCount = parseInt(skillMarketParts[2], 10);
                     var skillMarketPrice = parseInt(skillMarketParts[3], 10);
                     var freeMarketSkillData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    if (!isPointShopSafeCount(skillMarketCount) || skillMarketCount < 1 || !isPointShopSafeCount(skillMarketPrice) || skillMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 10다이아 이상의 안전한 정수여야 합니다.");
+                    if (!isPointShopSafeCount(skillMarketCount) || skillMarketCount < 1 || !isPointShopSafeCount(skillMarketPrice)) {
+                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
                         return;
                     }
+                    if (skillMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var skillMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var skillMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketSkillData, sender);
                     if (skillMarketActiveCount + 1 > skillMarketLimit) {
@@ -8770,7 +8777,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         return;
                     }
                     var buyPrice = parseInt(buyListing.price, 10) || 0;
-                    if (!isPointShopSafeCount(buyPrice) || buyPrice < GLOBAL_CONFIG.freeMarket.minPrice || !isPointShopSafeCount(data.member[sender].diamond || 0) || (data.member[sender].diamond || 0) < buyPrice) {
+                    if (!isPointShopSafeCount(buyPrice) || buyPrice < GLOBAL_CONFIG.freeMarket.legacyMinPrice || !isPointShopSafeCount(data.member[sender].diamond || 0) || (data.member[sender].diamond || 0) < buyPrice) {
                         replier.reply("❌ 다이아가 부족하거나 판매 가격을 확인해야 합니다.\n필요: 💎" + numberWithCommas(buyPrice) + "\n보유: 💎" + numberWithCommas(data.member[sender].diamond || 0));
                         return;
                     }
@@ -53018,6 +53025,11 @@ function calculateFreeMarketTradeFee(price, rate) {
     if (!isPointShopSafeCount(price) || typeof rate !== "number" || !isPointShopSafeCount(percent) || percent > 100 || rate !== percent / 100) throw new Error("시장 수수료 계산 범위 오류");
     return Math.floor(price / 100) * percent + Math.round((price % 100) * percent / 100);
 }
+// 신규 등록·가격수정의 묶음 전체 최소 가격 미달을 안내하는 함수
+function buildFreeMarketMinPriceMessage(editing) {
+    var minimum = GLOBAL_CONFIG.freeMarket.minPrice;
+    return (editing ? "❌ 가격수정 실패" : "❌ 자유시장 등록 실패") + "\n\n💎 최소 등록가는 " + minimum + "다이아입니다.\n📦 묶음 전체 가격을 " + minimum + "다이아 이상으로 입력해주세요.";
+}
 // 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
 function buildFreeMarketExpectedSettlement(data, seller, price) {
     var rate = getFreeMarketTradeFeeRate(data, seller), fee = calculateFreeMarketTradeFee(price, rate);
@@ -53380,7 +53392,7 @@ function requireFreeMarketSource(market) {
         if (!row || row.status !== "SELLING") continue;
         if (!isPointShopSafeCount(row.id) || row.id < 1 || row.id >= market.nextId || seen[row.id] || typeof row.seller !== "string" || typeof row.itemName !== "string" || !row.itemName || ["bag", "miniPet", "furniture", "skill", "pendant"].indexOf(row.type) === -1 || !isPointShopSafeCount(row.quantity) || row.quantity < 1) throw new Error("자유시장 판매 원본 확인 필요");
         seen[row.id] = true;
-        if (market.version === 2 && (row.currency !== "DIAMOND" || !isPointShopSafeCount(row.price) || row.price < GLOBAL_CONFIG.freeMarket.minPrice)) throw new Error("다이아 판매 가격·통화 원본 확인 필요: " + row.id);
+        if (market.version === 2 && (row.currency !== "DIAMOND" || !isPointShopSafeCount(row.price) || row.price < GLOBAL_CONFIG.freeMarket.legacyMinPrice)) throw new Error("다이아 판매 가격·통화 원본 확인 필요: " + row.id);
         var payload = row.type === "miniPet" ? row.payload && row.payload.pets : row.type === "furniture" ? row.payload && row.payload.furnitures : row.type === "pendant" ? row.payload && row.payload.pendants : null;
         if (["miniPet", "furniture", "pendant"].indexOf(row.type) !== -1 && (!Array.isArray(payload) || payload.length !== row.quantity || payload.some(function (item) { return !item || typeof item !== "object" || Array.isArray(item); }))) throw new Error("자유시장 보관 개체 원본 확인 필요: " + row.id);
     }
@@ -53583,7 +53595,7 @@ function replyFreeMarketV2(replier, message) {
 }
 // 검색 결과·내 판매·전체 매물을 같은 실제 거래번호와 가격으로 표시하는 함수
 function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery) {
-    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n💰 수수료: 일반 17% / 회원권 10%\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
+    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n💰 수수료: 일반 " + (GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "% / 회원권 " + (GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
     out = "[" + checkRank(data, petData, guildData, user) + "] 님\n\n" + out;
     if (!rows.length) out += searchQuery !== undefined ? "검색 결과가 없습니다.\n" + searchQuery : "📭 판매 중인 물품이 없습니다.";
     var previousCategory = null;
@@ -53644,10 +53656,13 @@ function buildFreeMarketV2Guide() {
         "📌 판매 전 확인해주세요",
         "",
         "💎 킹 이상 · 다이아 전용 · 등록비 무료",
-        "💰 판매 수수료: 일반 17% / 회원권 10%",
+        "💰 판매 수수료",
+        "├ 일반 판매자: " + (GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%",
+        "└ 자유시장회원권🏪: " + (GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%",
         "",
         "💎 판매금액은 등록 수량 전체의 다이아 금액입니다.",
-        "- 최소 등록금액: 묶음 전체 💎10개",
+        "💎 최소 등록가",
+        "└ 묶음 전체 가격 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상",
         "- 예: 10개를 100다이아에 등록하면 개당 10다이아입니다.",
         "",
         "🚫 다이아·다이아상자 거래 등록 및 개인거래는 불가합니다."
@@ -64367,7 +64382,8 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
     if (!m) return { ok: false, message: "사용법: /펜던트거래등록 [펜던트가방번호] [판매금액]" };
     var index = parseInt(m[1], 10);
     var price = parseInt(m[2], 10);
-    if (!isPointShopSafeCount(price) || price < GLOBAL_CONFIG.freeMarket.minPrice) return { ok: false, message: "판매금액은 10다이아 이상의 안전한 정수여야 합니다." };
+    if (!isPointShopSafeCount(price)) return { ok: false, message: "판매금액은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다." };
+    if (price < GLOBAL_CONFIG.freeMarket.minPrice) return { ok: false, message: buildFreeMarketMinPriceMessage(false) };
     var activeCount = countFreeMarketActiveListingsBySeller(freeMarketData, sender);
     var limit = getFreeMarketRegisterLimit(data, petSkillData, sender);
     if (activeCount + 1 > limit) return { ok: false, message: "❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + activeCount + "/" + limit + "건\n요청: +1건" };
