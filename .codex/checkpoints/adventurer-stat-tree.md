@@ -1,9 +1,9 @@
 # 모험가 스탯트리 개발
 
 - 작업 키: adventurer-stat-tree
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 6
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 체크포인트 버전: 7
 - 마지막 갱신: 2026-11-12 Asia/Seoul
 - 목표/승인: READY https://app.notion.com/8f4393bdd7aa8358aa37813f893eb9ed 레거시 스탯트리 개발·검증. 기존 유저의 도입 현재 레벨-1점을 최초 1회, 이후 실제 레벨업당 1점. 교육·평수 효과 수정은 제외. 후속 사용자 요청으로 스탯 운영 반영·노션 속성 갱신이 승인됨.
 - 위치: C:/Users/user/.codex/worktrees/hoiBot-adventurer-stat-tree, feature/adventurer-stat-tree. prod 기준8421e078/ver_2.827.
@@ -17,5 +17,8 @@
 - Git 완료: ed080d5af017b65f9e1e4febf3e91c5a82323b6c 개발 커밋이 origin/feature/adventurer-stat-tree와 일치함을 확인. https://github.com/ic-song/hoiBot/pull/275 초안 PR 생성. 본 최종 기록도 같은 source 브랜치에 추가 commit/push한다.
 - 운영 진행: 계삭 후 퀘스트 오류 보고를 우선 처리한 origin/feature/prod=52107779/ver_2.828을 포함한 원격 source643c09de를 충돌 없이 통합했다. 그 긴급 수정의 검증은 별도476 assert이며 현재 운영 사건과 동일성은 오류 원문 미수신으로 미확인이다.
 - 통합 검증: ver_2.829 source에서 기존 검증39함수·스탯 전처리/명령·Info가 개발 커밋과 동일함을 대조. 통합 Rhino에서 스탯4751+계삭476 assert와 main/Info 전체 compileString 재통과, Node 구문/UTF-8/버전 연속성 확인. 임시 hoibot-stat-deploy 검증 폴더도 source commit 전 삭제.
-- 다음 행동: source push→prod 원격 확인→스탯 Notion DEV/2026-11-12/ver_2.829 갱신. 노션 본문과 교육 기획은 보존한다.
-- 제한: Android/LDPlayer 연결·업로드·컴파일 없음. HW 개발은 이 채팅에서 하지 않는다. source만 push했으며 prod 반영·Notion 본문/상태/일자/버전 변경·Kakao 알림 없음. 정리 후보는 운영 반영 인계가 남아 아니요로 보존.
+- 운영 완료: source와 origin/feature/prod=19af25ff2c99f6d9b1d092073bb81d0ac0e6d814, main/개발자노트 ver_2.829·스탯/계삭 커밋 포함 확인. PR275 MERGED 확인.
+- Notion 완료: 8f4393bdd7aa8358aa37813f893eb9ed 상태=🧪 DEV, 운영반영일=2026-11-12, 운영반영버전=ver_2.829 재조회 확인. 본문·예정일 유지, 교육 문서 미변경.
+- 알림: hoibot-playmcp-version-notifier 기준으로 도구 확인, PlayMCP 나에게 보내기 도구 없음으로 건너뜀.
+- 다음 행동: 이번 스탯 운영 반영/Notion 갱신 필수 작업 없음. 최종 기록을 source push 후 prod에 반영한다. 실제 Android 업로드·컴파일·카카오 전체 목록 확인은 운영자 영역이며 수행하지 않았다.
+- 제한: Android/LDPlayer 연결·업로드·컴파일 없음. HW 개발은 이 채팅에서 하지 않는다. source/prod 반영과 Notion 3속성 갱신을 완료했다. Notion 본문 수정·Kakao 알림 없음. 기존 회원 실데이터를 직접 읽거나 수정하지 않았다.
