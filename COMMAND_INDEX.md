@@ -5,11 +5,11 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
-## 보급대·보급 지원·군량미 (2026-11-13, ver_2.836)
+## 보급대·보급 지원·군량미 (2026-11-13, ver_2.838)
 
 Status: VERIFIED
 
-- 진입: 정확한 무인수 /길드보급 → getGuildWarRequest → runGuildWarEntry → applyGuildWarSupply. 기존 응답 MQ·전체 데이터 잠금 안에서 최신 회원과 실제 길드 소속을 재확인한다. 등록 길드톡·출석·정지·개인톡의 공통 조건을 유지하며 수량·안내문이 붙으면 지급하지 않는다. 전투원과 보급대 모두 참여할 수 있고 전쟁 중·공용/개인 선포권 소진 중에도 지원 가능하다.
+- 진입: 정확한 무인수 /길드보급 → getGuildWarRequest → runGuildWarEntry → applyGuildWarSupply. 기존 응답 MQ·전체 데이터 잠금 안에서 최신 회원과 실제 길드 소속을 재확인한다. 등록 길드톡·출석·정지·개인톡의 공통 조건을 유지하며 수량·안내문이 붙으면 지급하지 않는다. 사용자 후속 확정으로 보급대만 참여할 수 있다. getGuildWarSupplyMembers로 실제 최신 정찰·자폭·공격3·방어3 역할 중 하나라도 있으면 저장 전에 거부하며 일반 직책만 있는 회원은 허용한다. 편성 변경 시 당일 지원 기록은 유지한다. 전쟁 중·공용/개인 선포권 소진 중에도 보급대는 지원 가능하다.
 - GLOBAL_CONFIG.guildWar.supply는 개인 포인트 200,000,000·군량미1·전환단위100을 정의한다. 회원의 guildSupplyDay를 getVaultRobberyDay 기준으로 확인하므로 회원 데이터 이관·길드 이동·편성 변경·재시작·동일 주기 초기화로 재지원할 수 없다. helpers에서 신규 IO를 하지 않는다.
 - getGuildWarSupplyRice는 war24.guilds[gid].supplyRice 부재만0으로 읽고 손상은 오류로 전파한다. 합산값의 몫은 calculateGuildWarExtraTickets로 기존 정규화된 큰 정수 문자열 extraTickets에 더하고 나머지는 보존한다. 기존 적립량은 축소하지 않으며 실물 아이템·개인 선포권·기본권·지휘관권을 지급/차감/복구하지 않는다. 기존 일일/관리자 초기화는 군량미와 추가권을 유지한다.
 - 회원 지원 기록·개인 포인트·길드 군량미·추가권은 publishGuildWar(data, guildData, true)로 기존 회원/길드 게시·복구 범위에 함께 저장한 뒤 응답한다. 저장 전 오류는 성공 응답 없이 중단하고 기존 롤백/재시작 복구를 따르며, 성공 응답 실패 후 재입력도 회원 기록으로 중복 차단한다.
