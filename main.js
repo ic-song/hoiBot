@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.834"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.835"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -138,7 +138,7 @@ const PET_SKILL_LIST = [
     { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
     { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
-    { name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n[길드전쟁] 길드마스터의 개인 전쟁선포권이 1회 증가합니다.\n\n[길드영지] 길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며,\n길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
+    { name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n[길드전쟁] 길드마스터의 개인 전쟁선포권이 1회 증가합니다.\n추가된 1회는 길드 공용 공격권 없이도 사용할 수 있습니다.\n하루 1회이며 재장착·편성 변경으로 복구되지 않습니다.\n\n[길드영지] 길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며,\n길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
     { name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n[길드전쟁] 공격 진형 선봉·중견·대장의 전투 캐슬이\n각각 3% 증가합니다.\n\n[길드영지] 영지전에 참여 가능한 소드마스터 인원이\n1명 추가됩니다." },
     { name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
     { name: "창조림", grade: "S", rate: 1.0, raidExp: 500000, castleExp: 500000, charmCondition: "creationMiniPet", effect: "[창조] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +50만 · 레이드매력 +50만\n└ 종합매력 +100만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +25만 · 레이드매력 +25만\n└ 종합매력 +50만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다." },
@@ -1202,7 +1202,7 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back2.json"
     ],
     "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 6곳\n🎯 기본 공격권 하루 5회 · 추가 공격권 영구 보관\n🔭 정찰 정보 확인 · 방어 참여 시스템\n🔄 공격·방어·자폭 인원 교체: 각각 하루 2회\n⏳ 선포 2분 후 전투 시작\n🏆 3전 2선승 · 3경기 모두 진행\n💣 자폭 2회/일 · 성공확률 50%\n🛡️ 피격 시 방어자는 2분 안에 /방어\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 정찰 결과 무관\n\n📚 참여방법·보상·명령어 전체보기" + allsee + "\n【1. 전쟁 준비와 편성】\n━━━━━━━━━━━━\n🔔 길드톡 이름은 마크를 제외한 정확한 길드명\n└ 길마·부길마: /전쟁톡등록 → /전쟁톡확인\n👥 정찰 1명 · 자폭 1명 · 공격 3명 · 방어 3명\n🎯 공격 3명: 전체 길드원 편성 가능\n⚒️ 방어 3명: 전체 길드원 가능 · 공격 진형과 중복 불가\n🔭 정찰병: 일반 길드원도 편성 가능\n💣 자폭병: 기존 역할과 겸직 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 편성 번호는 /길드정보의 길드원 번호 사용\n🔒 전쟁 중 기본 편성 변경 제한\n🔄 공격·방어·자폭 인원 교체: 길드별 각각 하루 2회\n└ 최초 편성 무료 · 유형별 교체 횟수 별도 관리\n└ 공격 측 정찰 승리 후 순서 변경은 별도 규칙\n└ 방어 측은 선포 시 확정된 인원·자리로 대응\n🔄 편성초기화는 8개 슬롯 해제\n└ 초기화·재편성으로 교체 횟수나 소진한 선포권 복구 불가\n※ 🎯·🔄·🔭·💣(잔여/총)\n└ 길마·정찰은 해당 역할권 · 공격 진형은 개인 선포권 합계\n\n【2. 전쟁선포와 공격권】\n━━━━━━━━━━━━\n🪙 [1] 동부 금광\n🪙 [2] 중앙 금광\n🪙 [3] 서부 금광\n📕 [4] 펫스킬 광산\n💎 [5] 다이아 광산\n🏰 [6] 호월킹덤\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 길드 하루 5회\n⭐ 개인 선포권은 길마·정찰·공격·전투지휘관 권리를 합산(최대 4회)\n└ 길마 기본 선포권 먼저 사용 · 충전은 개인 권리 증가 없음\n└ 개인 기본권 소진 후에도 유자격자는 추가 공용권 1회로 선포 가능\n⚠️ 부길마 직책만으로는 선포 불가\n⚠️ 편성 변경으로 소진한 선포권 복구 불가\n📣 등록된 자기 길드톡에서 권한 보유자만 선포\n⚔️ 여러 지역 동시 공격 가능\n└ 다른 길드의 동일 지역 동시 공격 가능\n└ 같은 길드의 동일 지역 중복 공격은 불가\n⏱️ 공격 쿨타임·점령보호 없음\n\n【3. 정찰·침공 감지】\n━━━━━━━━━━━━\n🔭 선포 즉시 양측 정찰병의 개인 종합매력 비교\n└ 동률은 방어 정찰 승리\n🚨 방어 길드톡에 침공 감지 항상 통보\n└ 침공 감지 자체는 진형 변경권이 아님\n🎯 공격 정찰 승리 시\n└ 상대 정찰병 및 기본 방어 3명의 닉네임·캐슬 정보 공개\n└ 공격 진형 3명 순서 변경 가능\n⚒️ 방어 정찰 승리 시\n└ 상대 정찰병 닉네임·종합매력 공개\n└ 최종 방어 선봉 캐슬 +5%p 추가\n⚠️ 방어 정찰병이 없을 때(0:0 포함)는 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 승패로 변경하지 않음\n⏳ 공격 측 정찰 승리 시 2분 안에 공격 순서 변경 가능\n└ 기존 공격 3명 유지, 순서만 변경\n🛡️ 감지 성공·실패 및 정찰병 부재 모두 /방어 안내\n└ 해당 전투의 방어자가 2분 준비 시간 안에 입력\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 동일 전투 중복 수령 불가\n🔍 단독 정찰은 등록된 정찰병 본인만 실행\n└ 길드당 하루 2회 · 정찰병 변경 하루 2회(최초 무료)\n└ 단독 정찰에는 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n【4. 전투 진행과 판정】\n━━━━━━━━━━━━\n⏳ 선포 후 2분 준비\n└ 2:00 선봉전 → 2:15 중견전 → 2:30 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n⚔️ 캐슬매력은 전쟁선포 당시 기준\n⚒️ 기본 방어 패시브: 선봉 +3% · 중견 +10%\n🔭 방어 정찰 성공 시 최종 선봉 +5%p 추가(선봉 총 +8%)\n🎲 판정 순서: 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n└ 캐슬 동률 등 기존 동률 규칙은 방어 승리\n🥉 대장전에는 특수 기습·절대방어 아이템 미적용\n└ 길드큐브 패시브는 유지\n🧳 기습·절대방어 아이템은 길드창고에서 자동 사용 · 발동 시만 소모\n🎁 기부: /길드기부 번호 수량 · 조회: /길드창고\n└ 펫무쌍은 개인 가방 아이템 사용\n\n【5. 점령 보상과 혜택】\n━━━━━━━━━━━━\n🎁 금광 점령 성공: 길드자금 🅟5억\n⚒️ 금광 방어 성공: 길드자금 🅟2.5억\n🎁 기타 지역 점령 성공: 길드자금 🅟3억\n⚒️ 기타 지역 방어 성공: 길드자금 🅟1억\n💔 공격 실패: 길드자금 🅟1억\n⚔️🛡️ 공격/방어 편성 6명: 각 개인 🅟1억\n└ 정상적으로 대전 완료 시 각자 지급(승패 무관)\n🔭 정찰병 개인 보상: 성공·실패 모두 🅟1억\n└ 계정별 하루 1회 수령 유지\n💣 자폭병 개인 보상: 🅟1억\n└ 기존 보상 지급 조건 및 하루 1회 수령 유지\n🛡️ /방어 참여 개인 보상: 🅟5천만 별도 지급\n└ 동일 전투에서 같은 계정에 중복 지급하지 않음\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에만 적용\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n🏰 호월킹덤 점령 중: 점령 길드원 전체 탐험 성공확률 +5%p\n🎲 점령·방어 길드자금에 기존 길드큐브3 추가율을 한 번 적용\n└ 공격 실패 보상에는 길드큐브 미지급\n🏳️ 실제 미점령 지역 공격 시 공격권 1회 차감 후 즉시 무혈입성\n└ 정상 점령 성공과 동일한 점령 보상 적용\n\n【6. 자폭 및 특수 규칙】\n━━━━━━━━━━━━\n💣 자폭: 길드당 하루 2회 · 성공확률 50%\n🔄 자폭병 교체: 하루 2회(최초 편성 무료)\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n💥 자폭 성공 시 지역을 미점령으로 전환\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n🎁 자폭병 개인 보상: 🅟1억 · 하루 1회\n🚨 자폭 실패도 상대 길드톡에 통보\n🔒 전쟁 진행 중 지역·자기 소유 지역·미점령 지역 자폭 불가\n└ 불가 조건에서는 자폭 횟수 미차감\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광의 시간당 생산 보상 없음\n※ 기존 시간제 영지전 및 영지포인트 순위 보상 휴식\n\n【7. 전체 명령어】\n━━━━━━━━━━━━\n📍 전쟁 조회\n━━━━━━━━━━━━\n/길드전쟁\n/길드전쟁가이드\n/전쟁지도\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n/전쟁기록\n\n👥 진형 편성\n━━━━━━━━━━━━\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰\n━━━━━━━━━━━━\n/방어\n/전쟁정찰\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n\n🔔 길드톡 관리\n━━━━━━━━━━━━\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【진격 경로·충전 공격권】\n━━━━━━━━━━━━\n🗺️ /전쟁지도: 진격 경로 · /길드전쟁: 전체 운영 현황\n🪙 금광 1곳 → 📕펫스킬 또는 💎다이아 광산 → 🏰호월킹덤\n└ 핵심 광산 보유 시 금광을 잃어도 킹덤 진격 가능\n⚔️ 전쟁선포·자폭은 대상별 진격 조건 적용 · 정찰은 미적용\n🏳️ 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ 이미 선포한 전쟁은 진격 거점을 잃어도 정상 진행\n🎯 /전쟁공격사용 숫자: 길드원 누구나 아이템으로 추가 공격권 충전\n└ 개인권 잔여 시 기본권 우선 · 개인권 소진 시 추가권만 소모\n└ 기본권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴해도 충전한 공격권은 길드에 유지 · 아이템 반환 없음\n👑 현재 길마 장착 스킬: 전투지휘관 개인 선포권+1 · 기사단 공격+3% · 징집 방어+2%\n└ 선포 당시 효과 고정 · 스킬 변경으로 진행 전투에 중복 반영 없음\n📣 점령 전체알림은 호월킹덤만 · 모든 지역 당사자 길드톡 결과는 유지",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 6곳\n🎯 기본 공격권 하루 5회 · 추가 공격권 영구 보관\n🔭 정찰 정보 확인 · 방어 참여 시스템\n🔄 공격·방어·자폭 인원 교체: 각각 하루 2회\n⏳ 선포 2분 후 전투 시작\n🏆 3전 2선승 · 3경기 모두 진행\n💣 자폭 2회/일 · 성공확률 50%\n🛡️ 피격 시 방어자는 2분 안에 /방어\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 정찰 결과 무관\n\n📚 참여방법·보상·명령어 전체보기" + allsee + "\n【1. 전쟁 준비와 편성】\n━━━━━━━━━━━━\n🔔 길드톡 이름은 마크를 제외한 정확한 길드명\n└ 길마·부길마: /전쟁톡등록 → /전쟁톡확인\n👥 정찰 1명 · 자폭 1명 · 공격 3명 · 방어 3명\n🎯 공격 3명: 전체 길드원 편성 가능\n⚒️ 방어 3명: 전체 길드원 가능 · 공격 진형과 중복 불가\n🔭 정찰병: 일반 길드원도 편성 가능\n💣 자폭병: 기존 역할과 겸직 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 편성 번호는 /길드정보의 길드원 번호 사용\n🔒 전쟁 중 기본 편성 변경 제한\n🔄 공격·방어·자폭 인원 교체: 길드별 각각 하루 2회\n└ 최초 편성 무료 · 유형별 교체 횟수 별도 관리\n└ 공격 측 정찰 승리 후 순서 변경은 별도 규칙\n└ 방어 측은 선포 시 확정된 인원·자리로 대응\n🔄 편성초기화는 8개 슬롯 해제\n└ 초기화·재편성으로 교체 횟수나 소진한 선포권 복구 불가\n※ 🎯·🔄·🔭·💣(잔여/총)\n└ 길마·정찰은 해당 역할권 · 공격 진형은 개인 선포권 합계\n\n【2. 전쟁선포와 공격권】\n━━━━━━━━━━━━\n🪙 [1] 동부 금광\n🪙 [2] 중앙 금광\n🪙 [3] 서부 금광\n📕 [4] 펫스킬 광산\n💎 [5] 다이아 광산\n🏰 [6] 호월킹덤\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 길드 하루 5회\n⭐ 개인 선포권은 길마·정찰·공격·전투지휘관 권리를 합산(최대 4회)\n└ 길마 기본 선포권 먼저 사용 · 충전은 개인 권리 증가 없음\n└ 전투지휘관 추가1회는 길마 전용 · 공용권 없이 사용 · 하루1회\n└ 스킬 재장착·편성 변경으로 사용한 지휘관권 복구 불가\n└ 개인 기본권 소진 후에도 유자격자는 추가 공용권 1회로 선포 가능\n⚠️ 부길마 직책만으로는 선포 불가\n⚠️ 편성 변경으로 소진한 선포권 복구 불가\n📣 등록된 자기 길드톡에서 권한 보유자만 선포\n⚔️ 여러 지역 동시 공격 가능\n└ 다른 길드의 동일 지역 동시 공격 가능\n└ 같은 길드의 동일 지역 중복 공격은 불가\n⏱️ 공격 쿨타임·점령보호 없음\n\n【3. 정찰·침공 감지】\n━━━━━━━━━━━━\n🔭 선포 즉시 양측 정찰병의 개인 종합매력 비교\n└ 동률은 방어 정찰 승리\n🚨 방어 길드톡에 침공 감지 항상 통보\n└ 침공 감지 자체는 진형 변경권이 아님\n🎯 공격 정찰 승리 시\n└ 상대 정찰병 및 기본 방어 3명의 닉네임·캐슬 정보 공개\n└ 공격 진형 3명 순서 변경 가능\n⚒️ 방어 정찰 승리 시\n└ 상대 정찰병 닉네임·종합매력 공개\n└ 최종 방어 선봉 캐슬 +5%p 추가\n⚠️ 방어 정찰병이 없을 때(0:0 포함)는 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 승패로 변경하지 않음\n⏳ 공격 측 정찰 승리 시 2분 안에 공격 순서 변경 가능\n└ 기존 공격 3명 유지, 순서만 변경\n🛡️ 감지 성공·실패 및 정찰병 부재 모두 /방어 안내\n└ 해당 전투의 방어자가 2분 준비 시간 안에 입력\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 동일 전투 중복 수령 불가\n🔍 단독 정찰은 등록된 정찰병 본인만 실행\n└ 길드당 하루 2회 · 정찰병 변경 하루 2회(최초 무료)\n└ 단독 정찰에는 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n【4. 전투 진행과 판정】\n━━━━━━━━━━━━\n⏳ 선포 후 2분 준비\n└ 2:00 선봉전 → 2:15 중견전 → 2:30 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n⚔️ 캐슬매력은 전쟁선포 당시 기준\n⚒️ 기본 방어 패시브: 선봉 +3% · 중견 +10%\n🔭 방어 정찰 성공 시 최종 선봉 +5%p 추가(선봉 총 +8%)\n🎲 판정 순서: 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n└ 캐슬 동률 등 기존 동률 규칙은 방어 승리\n🥉 대장전에는 특수 기습·절대방어 아이템 미적용\n└ 길드큐브 패시브는 유지\n🧳 기습·절대방어 아이템은 길드창고에서 자동 사용 · 발동 시만 소모\n🎁 기부: /길드기부 번호 수량 · 조회: /길드창고\n└ 펫무쌍은 개인 가방 아이템 사용\n\n【5. 점령 보상과 혜택】\n━━━━━━━━━━━━\n🎁 금광 점령 성공: 길드자금 🅟5억\n⚒️ 금광 방어 성공: 길드자금 🅟2.5억\n🎁 기타 지역 점령 성공: 길드자금 🅟3억\n⚒️ 기타 지역 방어 성공: 길드자금 🅟1억\n💔 공격 실패: 길드자금 🅟1억\n⚔️🛡️ 공격/방어 편성 6명: 각 개인 🅟1억\n└ 정상적으로 대전 완료 시 각자 지급(승패 무관)\n🔭 정찰병 개인 보상: 성공·실패 모두 🅟1억\n└ 계정별 하루 1회 수령 유지\n💣 자폭병 개인 보상: 🅟1억\n└ 기존 보상 지급 조건 및 하루 1회 수령 유지\n🛡️ /방어 참여 개인 보상: 🅟5천만 별도 지급\n└ 동일 전투에서 같은 계정에 중복 지급하지 않음\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에만 적용\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n🏰 호월킹덤 점령 중: 점령 길드원 전체 탐험 성공확률 +5%p\n🎲 점령·방어 길드자금에 기존 길드큐브3 추가율을 한 번 적용\n└ 공격 실패 보상에는 길드큐브 미지급\n🏳️ 실제 미점령 지역 공격 시 공격권 1회 차감 후 즉시 무혈입성\n└ 정상 점령 성공과 동일한 점령 보상 적용\n\n【6. 자폭 및 특수 규칙】\n━━━━━━━━━━━━\n💣 자폭: 길드당 하루 2회 · 성공확률 50%\n🔄 자폭병 교체: 하루 2회(최초 편성 무료)\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n💥 자폭 성공 시 지역을 미점령으로 전환\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n🎁 자폭병 개인 보상: 🅟1억 · 하루 1회\n🚨 자폭 실패도 상대 길드톡에 통보\n🔒 전쟁 진행 중 지역·자기 소유 지역·미점령 지역 자폭 불가\n└ 불가 조건에서는 자폭 횟수 미차감\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광의 시간당 생산 보상 없음\n※ 기존 시간제 영지전 및 영지포인트 순위 보상 휴식\n\n【7. 전체 명령어】\n━━━━━━━━━━━━\n📍 전쟁 조회\n━━━━━━━━━━━━\n/길드전쟁\n/길드전쟁가이드\n/전쟁지도\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n/전쟁기록\n\n👥 진형 편성\n━━━━━━━━━━━━\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰\n━━━━━━━━━━━━\n/방어\n/전쟁정찰\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n\n🔔 길드톡 관리\n━━━━━━━━━━━━\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【진격 경로·충전 공격권】\n━━━━━━━━━━━━\n🗺️ /전쟁지도: 진격 경로 · /길드전쟁: 전체 운영 현황\n🪙 금광 1곳 → 📕펫스킬 또는 💎다이아 광산 → 🏰호월킹덤\n└ 핵심 광산 보유 시 금광을 잃어도 킹덤 진격 가능\n⚔️ 전쟁선포·자폭은 대상별 진격 조건 적용 · 정찰은 미적용\n🏳️ 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ 이미 선포한 전쟁은 진격 거점을 잃어도 정상 진행\n🎯 /전쟁공격사용 숫자: 길드원 누구나 아이템으로 추가 공격권 충전\n└ 개인권 잔여 시 기본권 우선 · 개인권 소진 시 추가권만 소모\n└ 기본권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴해도 충전한 공격권은 길드에 유지 · 아이템 반환 없음\n👑 현재 길마 장착 스킬: 전투지휘관 개인 선포권+1 · 기사단 공격+3% · 징집 방어+2%\n└ 선포 당시 효과 고정 · 스킬 변경으로 진행 전투에 중복 반영 없음\n📣 점령 전체알림은 호월킹덤만 · 모든 지역 당사자 길드톡 결과는 유지",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -70781,9 +70781,23 @@ function getGuildWarPersonalUseCount(entry, usage, user, data) {
     return personal + consumed - known;
 }
 
-// 개인 기본권 잔여 여부에 따라 실제 사용할 공용 공격권을 정하는 함수
+// 기존 저장본은 유지하고 공용권 없이 사용한 지휘관 횟수만 검증하는 함수
+function getGuildWarCommanderFreeUsed(entry) {
+    var used = entry.commanderFreeUsed === undefined ? 0 : entry.commanderFreeUsed;
+    if (!isPointShopSafeCount(used) || used > 1 || used && (!entry.rights || entry.rights.commander !== true)) throw new Error("길드전쟁 지휘관 추가권 기록 오류");
+    return used;
+}
+// 현재 길마가 장착한 지휘관의 미사용 개인 추가권을 반환하는 함수
+function getGuildWarCommanderRightCount(state, guild, entry, gid, skills, data) {
+    var personal = getGuildWarPersonalAvailability(state, guild, entry, gid, guild.master, skills, data);
+    return personal.remaining > 0 && personal.unused.indexOf("commander") !== -1 && getGuildWarCommanderFreeUsed(entry) === 0 ? 1 : 0;
+}
+
+// 개인 기본권·지휘관 추가권·공용 잔고에 따라 실제 소비 원천을 정하는 함수
 function getGuildWarDeclarationTicket(entry, personal) {
     var extra = requireGuildWarExtraTickets(entry);
+    var commander = personal.remaining > 0 && personal.unused.indexOf("commander") !== -1 && getGuildWarCommanderFreeUsed(entry) === 0; // 공용권과 별개인 미사용 지휘관1회
+    if (commander && (personal.unused[0] === "commander" || entry.tickets === 0)) return { right: "commander", source: "commander", personal: true, before: extra, after: extra };
     if (!personal.total || entry.tickets === 0 && extra === "0" || personal.remaining === 0 && extra === "0") return null;
     var normal = personal.remaining > 0, source = normal && entry.tickets > 0 ? "base" : "extra";
     return { right: normal ? personal.unused[0] : "extra", source: source, personal: normal, before: extra,
@@ -70808,13 +70822,15 @@ function applyGuildWarDeclarationTicket(state, guild, entry, gid, user, skills, 
         if (ticket.source === "extra") entry.extraUsed++; // 개인 역할권을 쓴 추가권만 기존 기본권 합계에서 제외
     }
     if (ticket.source === "base") entry.tickets--;
-    else entry.extraTickets = ticket.after;
+    else if (ticket.source === "extra") entry.extraTickets = ticket.after;
+    else entry.commanderFreeUsed = 1; // 지휘관 추가1회는 길드 기본·충전권을 소비하지 않음
     ticket.accountId = accountId; ticket.memberChanged = identity.changed;
     return ticket;
 }
 
-// 실제 추가권 소비 전후 잔액을 선포 성공 후 표시하는 함수
+// 실제 지휘관·충전 추가권의 소비 원천을 선포 성공 후 표시하는 함수
 function buildGuildWarDeclarationTicketMessage(war) {
+    if (war.ticketSource === "commander") return "\n⚔️ 전쟁선포 진행!\n\n🎯 사용 공격권: 전투형 지휘관 개인 추가권 1회\n👑 지휘관 추가권: 1회 → 0회\n※ 길드 기본·추가 공격권은 차감하지 않습니다.";
     return "\n⚔️ 전쟁선포 진행!\n\n🎯 사용 공격권: 길드 추가 공격권 1회\n🏰 길드 추가 공격권: " + numberWithCommas(war.extraTicketsBefore) + "회 → " + numberWithCommas(war.extraTicketsAfter) + "회";
 }
 // 길드원에게 현재 배정된 선포권을 길마 기본권 우선으로 반환하는 함수
@@ -70859,6 +70875,7 @@ function refundGuildWarTicket(state, war) {
     if (war.ticketSource === "extra") entry.extraTickets = calculateGuildWarExtraTickets(entry, 1); // 영구 추가권은 일일 초기화 이후 취소돼도 원래 길드에 환급
     if (state.day !== war.day || war.personalTicket === false) return;
     if (war.right && war.ticketEpoch === entry.ticketEpoch && entry.rights[war.right]) {
+        if (war.ticketSource === "commander" && getGuildWarCommanderFreeUsed(entry) !== 1) throw new Error("길드전쟁 환급할 지휘관 추가권 기록 누락");
         entry.rights[war.right] = false;
         var declaredUser = getGuildWarDeclaredUser(war);
         if (war.declaredAccountId) {
@@ -70866,6 +70883,7 @@ function refundGuildWarTicket(state, war) {
             entry.personalByAccount[war.declaredAccountId]--;
         } else if (declaredUser && entry.personalDeclarations && entry.personalDeclarations[declaredUser] > 0) entry.personalDeclarations[declaredUser]--;
         if (war.ticketSource === "extra") entry.extraUsed--;
+        else if (war.ticketSource === "commander") entry.commanderFreeUsed = 0;
         else entry.tickets = Math.min(GLOBAL_CONFIG.guildWar.dailyTickets, entry.tickets + 1);
     }
 }
@@ -70976,7 +70994,7 @@ function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)
         var remaining = key ? (!entry.rights[key] && personal.remaining > 0 ? 1 : 0) : personal.remaining;
         return "[" + checkRank(data, petData, guildData, name) + "]" + (total ? "🎯(" + remaining + "/" + total + ")" : "");
     }
-    var text = "🗺️ " + formatGuildDisplay(guild) + " 전쟁편성\n━━━━━━━━━━━━\n👥 전쟁 편성: " + fighters.concat([entry.scout, entry.bomber]).filter(function (n) { return !!n; }).length + "/8칸\n" + buildGuildWarTicketLine(entry) + "\n\n👑 길드마스터 " + (effects.commander ? "[전투지휘관📙+1회]" : "[기본 선포권]") + "\n└ " + display(guild.master, "master") + "\n\n";
+    var text = "🗺️ " + formatGuildDisplay(guild) + " 전쟁편성\n━━━━━━━━━━━━\n👥 전쟁 편성: " + fighters.concat([entry.scout, entry.bomber]).filter(function (n) { return !!n; }).length + "/8칸\n" + buildGuildWarTicketLine(entry) + "\n\n👑 길드마스터 " + "[기본 선포권]" + (effects.commander ? " [전투지휘관📙+1회]" : "") + "\n└ " + display(guild.master, "master") + (effects.commander ? " · 지휘관🎯(" + getGuildWarCommanderRightCount(guildData.war24, guild, entry, gid, skills, data) + "/1)" : "") + "\n\n";
     text += "🔭 정찰병: 🔭(" + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2) · 🔄(" + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/" + GLOBAL_CONFIG.guildWar.scoutChangeLimit + ")\n└ " + display(entry.scout, "scout") + " /정찰 길드이름\n\n";
     text += "💣 자폭병: 💣(" + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2) · 🔄(" + (GLOBAL_CONFIG.guildWar.bomberChangeLimit - entry.bomberChanges) + "/" + GLOBAL_CONFIG.guildWar.bomberChangeLimit + ")\n└ " + (entry.bomber ? "[" + checkRank(data, petData, guildData, entry.bomber) + "]" : "미편성") + " /자폭 번호\n";
     for (var i = 0; i < 6; i++) {
@@ -70985,7 +71003,7 @@ function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)
     }
     text += "\n📚 길드원 현황·편성 설명·방법 전체보기" + allsee;
     if (entry.personalTransitionDay === guildData.war24.day) text += "\n⏳ 이전 선포자 확인 불가 · 정찰 편성 변경은 다음 일일 초기화 후 가능\n";
-    return text + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n※ 🎯·🔄·🔭·💣(잔여/총)\n※ 공격 진형의 🎯는 개인 선포권 잔여/총 합계\n※ 길마·정찰·전투지휘관 권리가 개인 합계에 포함될 수 있음\n\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n━━━━━━━━━━━━\n🛠️ 주요 편성 명령어\n" + GLOBAL_CONFIG.guildWar.formationGuide + "\n\n📖 기타 명령어: /길드전쟁가이드\n※ 길드원 번호는 /길드정보 기준";
+    return text + "\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n※ 🎯·🔄·🔭·💣(잔여/총)\n※ 공격 진형의 🎯는 개인 선포권 잔여/총 합계\n※ 길마·정찰·전투지휘관 권리가 개인 합계에 포함될 수 있음\n※ 지휘관 추가1회는 공용 공격권을 차감하지 않음\n\n" + buildGuildWarRosterDetails(data, petData, guildData, gid, homeData, skills) + "\n\n━━━━━━━━━━━━\n🛠️ 주요 편성 명령어\n" + GLOBAL_CONFIG.guildWar.formationGuide + "\n\n📖 기타 명령어: /길드전쟁가이드\n※ 길드원 번호는 /길드정보 기준";
 }
 
 // 유효한 자폭 한 번의 소유권·횟수·양쪽 통보를 함께 변경하는 함수
@@ -71178,8 +71196,9 @@ function requireGuildWarDefenseJoins(war) {
 
 // 새 선포의 고유 계정과 실제 소비한 공격권 기록을 검증하는 함수
 function requireGuildWarDeclarationReceipt(war) {
-    if (war.personalTicket === undefined) return;
-    if (typeof war.personalTicket !== "boolean" || typeof war.declaredAccountId !== "string" || !war.declaredAccountId || ["base", "extra"].indexOf(war.ticketSource) < 0) throw new Error("길드전쟁 선포 계정·공격권 기록 오류");
+    if (war.personalTicket === undefined) { if (war.ticketSource === "commander") throw new Error("길드전쟁 지휘관 선포 영수증 누락"); return; }
+    if (typeof war.personalTicket !== "boolean" || typeof war.declaredAccountId !== "string" || !war.declaredAccountId || ["base", "extra", "commander"].indexOf(war.ticketSource) < 0) throw new Error("길드전쟁 선포 계정·공격권 기록 오류");
+    if (war.ticketSource === "commander" && (war.personalTicket !== true || war.right !== "commander")) throw new Error("길드전쟁 지휘관 소모 기록 오류");
     if (war.personalTicket ? !Object.prototype.hasOwnProperty.call(createGuildWarRights(), war.right) : war.right !== "extra" || war.ticketSource !== "extra") throw new Error("길드전쟁 개인·추가권 소비 기록 오류");
     if (war.ticketSource === "extra" && (typeof war.extraTicketsBefore !== "string" || !/^[1-9]\d*$/.test(war.extraTicketsBefore) || typeof war.extraTicketsAfter !== "string" || !/^(?:0|[1-9]\d*)$/.test(war.extraTicketsAfter))) throw new Error("길드전쟁 추가 공격권 전후 기록 오류");
     if (war.ticketSource === "extra" && calculateGuildWarExtraTickets({ extraTickets: war.extraTicketsBefore }, -1) !== war.extraTicketsAfter) throw new Error("길드전쟁 추가 공격권 차감 이력 불일치");
@@ -71202,7 +71221,7 @@ function requireGuildWarState(state) {
         var war = state.active[i];
         if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
         if (war.reward !== undefined || war.rewardPolicy !== undefined) throw new Error("이미 정산된 전쟁이 진행 목록에 남아 있습니다.");
-        if (war.ticketSource !== undefined && war.ticketSource !== "base" && war.ticketSource !== "extra") throw new Error("길드전쟁 소모 공격권 종류 오류");
+        if (war.ticketSource !== undefined && war.ticketSource !== "base" && war.ticketSource !== "extra" && war.ticketSource !== "commander") throw new Error("길드전쟁 소모 공격권 종류 오류");
         if (war.skillSnapshot !== undefined && (!war.skillSnapshot || [0, GLOBAL_CONFIG.guildWar.masterSkills.attackPercent].indexOf(war.skillSnapshot.attack) < 0 || [0, GLOBAL_CONFIG.guildWar.masterSkills.defensePercent].indexOf(war.skillSnapshot.defense) < 0)) throw new Error("길드전쟁 스킬 스냅샷 오류");
         requireGuildWarDefenseJoins(war);
         requireGuildWarDeclarationReceipt(war);
@@ -71247,8 +71266,9 @@ function requireGuildWarState(state) {
         for (var key in rights) if (Object.prototype.hasOwnProperty.call(rights, key)) {
             if (key === "commander" && state.campaignVersion === undefined && daily.rights[key] === undefined) continue; if (typeof daily.rights[key] !== "boolean") throw new Error("길드전쟁 역할권 오류"); if (daily.rights[key]) used++; }
         if (state.campaignVersion !== undefined) getGuildWarPersonalUseCount(daily, getGuildWarPersonalUsage(state, null, daily, entryId), "", null); // 구 이력과 계정별 기본 사용량의 합계 검증
-        var expectedTickets = GLOBAL_CONFIG.guildWar.dailyTickets - daily.carryUsed - used + (state.campaignVersion === undefined ? 0 : daily.extraUsed); // 역할 소모 중 추가 공격권 사용분만 기본권에서 제외
-        if (state.campaignVersion !== undefined && daily.extraUsed > used || daily.tickets !== (state.campaignVersion === undefined ? Math.max(0, expectedTickets) : expectedTickets)) throw new Error("길드전쟁 공격권 합계 오류");
+        var commanderFreeUsed = getGuildWarCommanderFreeUsed(daily); // 실제 공용권을 쓰지 않은 지휘관 선포만 기본권 합계에서 제외
+        var expectedTickets = GLOBAL_CONFIG.guildWar.dailyTickets - daily.carryUsed - used + (state.campaignVersion === undefined ? 0 : daily.extraUsed) + commanderFreeUsed;
+        if (state.campaignVersion !== undefined && daily.extraUsed + commanderFreeUsed > used || daily.tickets !== (state.campaignVersion === undefined ? Math.max(0, expectedTickets) : expectedTickets)) throw new Error("길드전쟁 공격권 합계 오류");
     }
     for (var recordGuild in state.records) if (Object.prototype.hasOwnProperty.call(state.records, recordGuild)) {
         var records = state.records[recordGuild];
@@ -71274,7 +71294,7 @@ function getGuildWarEntry(state, gid) {
     var fresh = !Object.prototype.hasOwnProperty.call(state.guilds, gid);
     if (fresh) state.guilds[gid] = { attack: ["", "", ""], defense: ["", "", ""], scout: "", bomber: "", scoutAssigned: false, bomberAssigned: false, tickets: GLOBAL_CONFIG.guildWar.dailyTickets, rights: createGuildWarRights(), carryUsed: 0, ticketEpoch: 0, scoutUsed: 0, scoutChanges: 0, bombUsed: 0, bomberChanges: 0, room: null, roomValid: false, recon: null };
     var entry = state.guilds[gid];
-    if (fresh && state.campaignVersion === GLOBAL_CONFIG.guildWar.campaign.version) { entry.extraTickets = "0"; entry.extraUsed = 0; }
+    if (fresh && state.campaignVersion === GLOBAL_CONFIG.guildWar.campaign.version) { entry.extraTickets = "0"; entry.extraUsed = 0; entry.commanderFreeUsed = 0; }
     return entry;
 }
 
@@ -71703,6 +71723,7 @@ function resetGuildWarDay(guildData, now) {
     for (var gid in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, gid)) {
         var entry = state.guilds[gid];
         delete entry.personalTransitionDay;
+        entry.commanderFreeUsed = 0;
         entry.personalByAccount = {}; entry.personalDeclarationAccounts = {};
         entry.personalDeclarations = {}; entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.rights = createGuildWarRights(); entry.carryUsed = 0; entry.ticketEpoch++;
         if (state.campaignVersion !== undefined) entry.extraUsed = 0;
@@ -72036,6 +72057,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         }
         if (request.kind === "resetTickets") {
             if (!isMasterIdentity(sender)) throw guildWarInputError("MASTER 전용 명령입니다.");
+            entry.commanderFreeUsed = 0;
             entry.personalByAccount = {}; entry.personalDeclarationAccounts = {};
             entry.personalDeclarations = {}; entry.rights = createGuildWarRights(); entry.tickets = GLOBAL_CONFIG.guildWar.dailyTickets; entry.carryUsed = 0; entry.ticketEpoch++; entry.extraUsed = 0;
             publishGuildWar(data, guildData, false); replier.reply("✅ 해당 길드의 공격권만 5회로 초기화했습니다. 진행 전쟁·점령·기록·보상 유지"); return true;
@@ -72089,7 +72111,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             if (request.kind === "declare") {
                 var personal = getGuildWarPersonalAvailability(state, guild, entry, gid, sender, skills, data);
                 if (!personal.total) throw guildWarInputError("길드마스터·정찰병·공격 선봉/중견/대장만 선포할 수 있습니다.");
-                if (entry.tickets === 0 && requireGuildWarExtraTickets(entry) === "0") { replier.reply(buildGuildWarNoTickets(entry)); return true; }
+                if (!getGuildWarDeclarationTicket(entry, personal) && entry.tickets === 0 && requireGuildWarExtraTickets(entry) === "0") { replier.reply(buildGuildWarNoTickets(entry)); return true; }
                 if (!personal.remaining && requireGuildWarExtraTickets(entry) === "0") { replier.reply(buildGuildWarTicketHelp(data, petData, guildData, gid, sender, skills)); return true; }
                 if (!getGuildWarAdvance(state, gid, targetNo).allowed) { replier.reply(buildGuildWarAdvanceFailure(state, gid, targetNo, false)); return true; }
                 if (state.active.some(function (w) { return w.attackId === gid && w.no === targetNo; })) throw guildWarInputError("우리 길드가 이미 같은 지역을 공격 중입니다.");
@@ -72119,7 +72141,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
                     occupyGuildWarTerritory(data, guildData, war, now); creditGuildWarVictory(guildData, war);
                     war.ownerName = war.attackName; recordGuildWar(state, guildData, war);
                     publishGuildWar(data, guildData, true);
-                    if (war.ticketSource === "extra") replier.reply(buildGuildWarDeclarationTicketMessage(war));
+                    if (war.ticketSource === "extra" || war.ticketSource === "commander") replier.reply(buildGuildWarDeclarationTicketMessage(war));
                     flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); return true;
                 }
                 state.active.push(war);
@@ -72129,7 +72151,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             if (request.kind === "declare") queueGuildWarDefenseNotice(state, guildData, war, now);
             else if (!success && defenseScout.name) queueGuildWarNotice(state, guildData, defenseId, buildGuildWarScoutReverse(request.kind, formatGuildDisplay(guild), formatGuildDisplay(defenderGuild), targetNo, attackScout, false, true));
             publishGuildWar(data, guildData, request.kind === "declare" ? ticket.memberChanged : entry.recon.reward > 0);
-            if (request.kind === "declare" && war.ticketSource === "extra") replier.reply(buildGuildWarDeclarationTicketMessage(war));
+            if (request.kind === "declare" && (war.ticketSource === "extra" || war.ticketSource === "commander")) replier.reply(buildGuildWarDeclarationTicketMessage(war));
             flushGuildWarNotices(guildData, ctx); scheduleGuildWarWork(ctx); return true;
         }
     } catch (error) {
