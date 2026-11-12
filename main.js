@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.842"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.843"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -2280,8 +2280,29 @@ const GLOBAL_CONFIG = {
             "혼자 신난", "갑자기 진지한", "쓸데없이 비장한", "비밀이 많은", "주인공이 되고 싶은", "행운을 배달하는", "대박을 꿈꾸는", "소식을 물고 온", "공지를 들고 온", "여러분을 기다린"
         ]
     },
-    package: { // 통합 패키지 설정
-        maxUseOnce: 1000 // 한 번에 사용할 수 있는 최대 패키지 수량
+    package: {
+        maxUseOnce: 1000,
+        legacyPackages: [
+            {"id":"legacy_direct_01","name":"기존 형욱이패키지4🍼","itemName":"형욱이패키지4🍼(/주인탓입니다4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"펫먹이🍼","count":3000},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":100},{"type":"item","name":"펫먹이상자📦(/상자오픈)","count":100},{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":700},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":700}]},
+            {"id":"legacy_direct_02","name":"기존 초보자 스타터패키지🌟[1]","itemName":"초보자 스타터패키지🌟[1](/초보오픈1)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"양념치킨🐔","count":100},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":30},{"type":"item","name":"펫먹이🍼","count":700},{"type":"point","count":100000000}]},
+            {"id":"legacy_direct_03","name":"기존 초보자 스타터패키지🌟[2]","itemName":"초보자 스타터패키지🌟[2](/초보오픈2)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"양념치킨🐔","count":100},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":700},{"type":"point","count":100000000}]},
+            {"id":"legacy_direct_04","name":"기존 초보자 스타터패키지🌟[3]","itemName":"초보자 스타터패키지🌟[3](/초보오픈3)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":100},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":700},{"type":"point","count":100000000}]},
+            {"id":"legacy_direct_05","name":"기존 초보자 스타터패키지🌟[4]","itemName":"초보자 스타터패키지🌟[4](/초보오픈4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"point","count":100000000}]},
+            {"id":"legacy_direct_06","name":"기존 초보자 스타터패키지🌟[5]","itemName":"초보자 스타터패키지🌟[5](/초보오픈5)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":1000},{"type":"point","count":100000000}]},
+            {"id":"legacy_direct_07","name":"기존 초보자 스타터패키지🌟[6]","itemName":"초보자 스타터패키지🌟[6](/초보오픈6)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"럭키박스🍀(/럭키오픈)","count":30},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":1000},{"type":"point","count":100000000}]},
+            {"id":"legacy_direct_08","name":"기존 광산패키지🪨[4]","itemName":"광산패키지🪨[4](/광산오픈4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"돌멩이🪨","count":50000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":500},{"type":"item","name":"경찰과 도둑🚨(/삐뽀삐뽀)","count":50},{"type":"point","count":300000000}]},
+            {"id":"legacy_direct_09","name":"기존 광산패키지🪨[5]","itemName":"광산패키지🪨[5](/광산오픈5)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"돌멩이🪨","count":50000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":500},{"type":"item","name":"경찰과 도둑🚨(/삐뽀삐뽀)","count":50},{"type":"item","name":"땅문서📜","count":5},{"type":"point","count":300000000}]},
+            {"id":"legacy_direct_10","name":"기존 펫스윗홈패키지🏡[2]","itemName":"펫스윗홈패키지🏡[2](/홈패키지오픈2)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":220},{"type":"item","name":"땅문서📜","count":2},{"type":"item","name":"돌멩이🪨","count":2000},{"type":"item","name":"캐슬코인🥇","count":50},{"type":"item","name":"레이드타격대인장👑(+600👾)","count":1},{"type":"point","count":200000000}]},
+            {"id":"legacy_direct_11","name":"기존 미니펫강화석패키지💫","itemName":"미니펫강화석패키지💫(/미강오픈)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"미니펫 강화석💫","count":1000},{"type":"item","name":"미니펫강화확률UP🐷(30%)","count":50}]},
+            {"id":"legacy_direct_12","name":"기존 시련의상자😈","itemName":"시련의상자😈(/시련오픈)","enabled":true,"blockCastle":false,"rewards":[{"type":"item","name":"시탑 공략서📜","count":20},{"type":"item","name":"시탑 부스터🔮","count":15},{"type":"item","name":"주사위🎲(/해피)","count":10},{"type":"item","name":"시련의탑리셋권😈","count":3}]},
+            {"id":"legacy_direct_13","name":"기존 펫탐험패키지⛰️[1]","itemName":"펫탐험패키지⛰️[1](/펫탐험오픈1)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"탐험확률UP🗻(50%)","count":20},{"type":"item","name":"탐험확률UP🗻(40%)","count":35},{"type":"item","name":"탐험확률UP🗻(30%)","count":50},{"type":"item","name":"펫던전 입장권🌋","count":40},{"type":"item","name":"보물지도🗺️","count":50}]},
+            {"id":"legacy_direct_14","name":"기존 부처님오신날🇰🇷","itemName":"부처님오신날🇰🇷(/오픈하면부처가됩니다)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"펫던전 입장권🌋","count":100},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":5000},{"type":"item","name":"탐험확률UP🗻(50%)","count":100},{"type":"item","name":"월간상자🌸(/월간오픈)","count":1},{"type":"item","name":"주간상자🌼","count":1}]},
+            {"id":"legacy_direct_15","name":"기존 파워가정의달패키지🧑‍🧑‍🧒‍🧒[4]","itemName":"파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"땅문서📜","count":5},{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":1000},{"type":"item","name":"주간상자🌼","count":1},{"type":"item","name":"양념치킨🐔","count":500},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":700},{"type":"item","name":"펫먹이🍼","count":500},{"type":"item","name":"펫 강화석⭐","count":300},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":30},{"type":"item","name":"미니펫 강화석💫","count":100},{"type":"item","name":"길드공헌훈장🌟(/길드공헌 숫자)","count":10},{"type":"point","count":1000000000}]},
+            {"id":"legacy_direct_16","name":"기존 파워가정의달패키지🧑‍🧑‍🧒‍🧒[3]","itemName":"파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"땅문서📜","count":5},{"type":"item","name":"돌멩이🪨","count":15000},{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":300},{"type":"item","name":"1달러스토어🤑(/1일1후원)","count":10},{"type":"item","name":"주간상자🌼","count":1},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":500},{"type":"item","name":"확성기📢(/알림 내용 30자)","count":5},{"type":"item","name":"펫먹이🍼","count":500},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":50},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"미니펫 강화석💫","count":100},{"type":"point","count":1000000000}]},
+            {"id":"legacy_direct_17","name":"기존 도파민패키지🤩[1]","itemName":"도파민패키지🤩[1](/도파민오픈1)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":5000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":10000},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":150}]},
+            {"id":"legacy_direct_18","name":"기존 도파민패키지🤩[2]","itemName":"도파민패키지🤩[2](/도파민오픈2)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":4000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":7000},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":200}]},
+            {"id":"legacy_direct_19","name":"기존 어린이날패키지🚸","itemName":"어린이날패키지🚸(/오픈하면어린이가됩니다)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"타이틀선물권💝(/타이틀선물 닉네임 내용)","count":2},{"type":"item","name":"탐험확률UP🗻(40%)","count":15},{"type":"item","name":"1달러스토어🤑(/1일1후원)","count":5},{"type":"item","name":"경찰과 도둑🚨(/삐뽀삐뽀)","count":10},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":20},{"type":"item","name":"펫먹이🍼","count":1000},{"type":"item","name":"보물지도🗺️","count":30},{"type":"item","name":"펫 강화석⭐","count":500},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":3000}]}
+        ]
     },
     admin: { // 관리자 보상 설정
         dailyPayoutPoint: 300000000
@@ -9605,8 +9626,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     "리리 여",
                     "콩두 여"
                 ]; // 권한을 가진 사용자 목록
-                if (msg.startsWith("/경매마감 ") && (authorizedUsers5.includes(sender) || isOrderLogRoomBot(sender))) {
-                    var regex = /\/경매마감\s+(\d+)\s*$/;
+                if ((msg === "/경매마감" || /^\/경매마감\s+\d+$/.test(msg)) && (authorizedUsers5.includes(sender) || isOrderLogRoomBot(sender))) {
+                    var regex = /^\/경매마감\s+(\d+)$/;
                     var match = msg.match(regex);
                     if (!match) {
                         replier.reply("커멘드 확인해주세요. /경매마감 [경매등록번호]");
@@ -9621,10 +9642,15 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (auctionItem.highestBidder !== "") {
                         let highestBidder = auctionItem.highestBidder;
                         let refundAmount = Math.floor(auctionItem.highestBid * 0.5);
-                        if (!data.member[highestBidder].point) {
-                            data.member[highestBidder].point = 0;
+                        var closingBidder = data.member[highestBidder];
+                        var closingBidCost = auctionItem.highestBidCost === undefined ? auctionItem.highestBid : auctionItem.highestBidCost;
+                        if (!isPointShopSafeCount(auctionItem.highestBid) || !isPointShopSafeCount(closingBidCost) ||
+                            !isPointShopSafeCount(refundAmount) || !closingBidder || !isFreeMarketPointBalance(closingBidder.point) ||
+                            !isFreeMarketPointBalance(closingBidder.point + refundAmount)) {
+                            replier.reply("❌ 경매 환급 금액 또는 잔액이 올바르지 않아 마감하지 않았습니다.");
+                            return;
                         }
-                        data.member[highestBidder].point += refundAmount;
+                        closingBidder.point += refundAmount;
                         var message =
                             "[" +
                             auctionItem.biditemName +
@@ -12158,116 +12184,6 @@ replier.reply(
                 }
 
 
-                if (msg.startsWith("/초보2, ")) {
-                    var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
-                        replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-                    } else {
-                        if (commandParts.length !== 2) {
-                            replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보2, 사용자아이디");
-                        } else {
-                            var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옵니다.
-                            if (!data.member.hasOwnProperty(targetUserId)) {
-                                replier.reply("해당 사용자를 찾을 수 없습니다.");
-                            } else {
-                                if (data.member[targetUserId].bag["초보자 스타터패키지🌟[2](/초보오픈2)"] === undefined) {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[2](/초보오픈2)"] = 1;
-                                } else {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[2](/초보오픈2)"] += 1;
-                                }
-                                replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[2](/초보오픈2)가 지급되었습니다.");
-                            }
-                        }
-                    }
-                }
-                if (msg.startsWith("/초보3, ")) {
-                    var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
-                        replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-                    } else {
-                        if (commandParts.length !== 2) {
-                            replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보3, 사용자아이디");
-                        } else {
-                            var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옵니다.
-                            if (!data.member.hasOwnProperty(targetUserId)) {
-                                replier.reply("해당 사용자를 찾을 수 없습니다.");
-                            } else {
-                                if (data.member[targetUserId].bag["초보자 스타터패키지🌟[3](/초보오픈3)"] === undefined) {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[3](/초보오픈3)"] = 1;
-                                } else {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[3](/초보오픈3)"] += 1;
-                                }
-                                replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[3](/초보오픈3)가 지급되었습니다.");
-                            }
-                        }
-                    }
-                }
-                if (msg.startsWith("/초보4, ")) {
-                    var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
-                        replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-                    } else {
-                        if (commandParts.length !== 2) {
-                            replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보4, 사용자아이디");
-                        } else {
-                            var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옵니다.
-                            if (!data.member.hasOwnProperty(targetUserId)) {
-                                replier.reply("해당 사용자를 찾을 수 없습니다.");
-                            } else {
-                                if (data.member[targetUserId].bag["초보자 스타터패키지🌟[4](/초보오픈4)"] === undefined) {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[4](/초보오픈4)"] = 1;
-                                } else {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[4](/초보오픈4)"] += 1;
-                                }
-                                replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[4](/초보오픈4)가 지급되었습니다.");
-                            }
-                        }
-                    }
-                }
-                if (msg.startsWith("/초보5, ")) {
-                    var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
-                        replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-                    } else {
-                        if (commandParts.length !== 2) {
-                            replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보5, 사용자아이디");
-                        } else {
-                            var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옵니다.
-                            if (!data.member.hasOwnProperty(targetUserId)) {
-                                replier.reply("해당 사용자를 찾을 수 없습니다.");
-                            } else {
-                                if (data.member[targetUserId].bag["초보자 스타터패키지🌟[5](/초보오픈5)"] === undefined) {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[5](/초보오픈5)"] = 1;
-                                } else {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[5](/초보오픈5)"] += 1;
-                                }
-                                replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[5](/초보오픈5)가 지급되었습니다.");
-                            }
-                        }
-                    }
-                }
-                if (msg.startsWith("/초보6, ")) {
-                    var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
-                        replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-                    } else {
-                        if (commandParts.length !== 2) {
-                            replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보6, 사용자아이디");
-                        } else {
-                            var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옵니다.
-                            if (!data.member.hasOwnProperty(targetUserId)) {
-                                replier.reply("해당 사용자를 찾을 수 없습니다.");
-                            } else {
-                                if (data.member[targetUserId].bag["초보자 스타터패키지🌟[6](/초보오픈6)"] === undefined) {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[6](/초보오픈6)"] = 1;
-                                } else {
-                                    data.member[targetUserId].bag["초보자 스타터패키지🌟[6](/초보오픈6)"] += 1;
-                                }
-                                replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[6](/초보오픈6)가 지급되었습니다.");
-                            }
-                        }
-                    }
-                }
                 if (msg.startsWith("/초보7, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
                     if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
@@ -13666,31 +13582,6 @@ replier.reply(
                         }
                     }
                 }
-                if (msg.trim().startsWith("/미강,") || msg.trim().match(/^\/미강\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/미강(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["미니펫강화석패키지💫(/미강오픈)"] === undefined) {
-                                    data.member[userId].bag["미니펫강화석패키지💫(/미강오픈)"] = amount;
-                                } else {
-                                    data.member[userId].bag["미니펫강화석패키지💫(/미강오픈)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 미니펫강화석패키지💫(/미강오픈) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
                 if (msg.trim().startsWith("/미니엘리트,") || msg.trim().match(/^\/미니엘리트\d*,/)) {
                     if (isMaster(sender)) {
                         var parts = msg.match(/^\/미니엘리트(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
@@ -14336,81 +14227,6 @@ replier.reply(
                                     data.member[userId].bag["전설의돌 뽑기🩶[2](/전돌뽑기 숫자)"] += amount;
                                 }
                                 replier.reply(userId + "님에게 전설의돌 뽑기🩶[2]\(/전돌뽑기 숫자) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
-                if (msg.trim().startsWith("/펫탐,") || msg.trim().match(/^\/펫탐\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/펫탐(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] === undefined) {
-                                    data.member[userId].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] = amount;
-                                } else {
-                                    data.member[userId].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 펫탐험패키지⛰️[1](/펫탐험오픈1) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
-                if (msg.trim().startsWith("/도파민,") || msg.trim().match(/^\/도파민\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/도파민(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["도파민패키지🤩[1](/도파민오픈1)"] === undefined) {
-                                    data.member[userId].bag["도파민패키지🤩[1](/도파민오픈1)"] = amount;
-                                } else {
-                                    data.member[userId].bag["도파민패키지🤩[1](/도파민오픈1)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 도파민패키지🤩[1](/도파민오픈1) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
-                if (msg.trim().startsWith("/도파민민") || msg.trim().match(/^\/도파민민\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/도파민민(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["도파민패키지🤩[2](/도파민오픈2)"] === undefined) {
-                                    data.member[userId].bag["도파민패키지🤩[2](/도파민오픈2)"] = amount;
-                                } else {
-                                    data.member[userId].bag["도파민패키지🤩[2](/도파민오픈2)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 도파민패키지🤩[2](/도파민오픈2) " + amount + "개를 지급했습니다.");
                             } else {
                                 replier.reply("유저 아이디를 확인해 주세요.");
                             }
@@ -15459,34 +15275,6 @@ replier.reply(
                         replier.reply("유저 아이디를 확인해 주세요.");
                     }
                 }
-                if (msg === "/주인탓입니다4") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["형욱이패키지4🍼(/주인탓입니다4)"] !== undefined && data.member[sender].bag["형욱이패키지4🍼(/주인탓입니다4)"] > 0) {
-                            if (data.member[sender].bag["형욱이패키지4🍼(/주인탓입니다4)"] > 1) {
-                                data.member[sender].bag["형욱이패키지4🍼(/주인탓입니다4)"]--;
-                            } else {
-                                delete data.member[sender].bag["형욱이패키지4🍼(/주인탓입니다4)"];
-                            }
-                            let WeekItems = {
-                                "펫먹이🍼": 3000,
-                                "펫먹이특식🥡(/특식오픈)": 100,
-                                "펫먹이상자📦(/상자오픈)": 100,
-                                "미니펫뽑기🐹(/미니펫오픈)": 700,
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 700
-                            };
-                            for (let item in WeekItems) {
-                                addItemToBag(data.member[sender].bag, item, WeekItems[item]);
-                            }
-                            let openMsg = "형욱이패키지🍼를 오픈합니다!\nhttps://ibb.co/Y4PP0LGj\n\n";
-                            for (let item in WeekItems) {
-                                openMsg += item + " " + WeekItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg);
-                        } else {
-                            replier.reply("형욱이패키지🍼가 없습니다. 후원해 주세요.");
-                        }
-                    }
-                }
 
 
                 if (msg.trim() === "/안녕하세요?" || /^\/안녕하세요\? [1-9]\d*$/.test(msg.trim())) {
@@ -15972,271 +15760,12 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/초보오픈1") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["초보자 스타터패키지🌟[1](/초보오픈1)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[1](/초보오픈1)"] > 0) {
-                            if (data.member[sender].bag["초보자 스타터패키지🌟[1](/초보오픈1)"] > 1) {
-                                data.member[sender].bag["초보자 스타터패키지🌟[1](/초보오픈1)"]--;
-                            } else {
-                                delete data.member[sender].bag["초보자 스타터패키지🌟[1](/초보오픈1)"];
-                            }
-                            let starterItems = {
-                                "티어 승급티켓🎟": 10,
-                                "양념치킨🐔": 100,
-                                "펫먹이특식🥡(/특식오픈)": 30,
-                                "펫먹이🍼": 700
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 100000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "초보자 스타터패키지🌟[1] 패키지오픈!!\n\n";
-                            openMsg += "첫 후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/초보오픈2") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["초보자 스타터패키지🌟[2](/초보오픈2)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[2](/초보오픈2)"] > 0) {
-                            if (data.member[sender].bag["초보자 스타터패키지🌟[2](/초보오픈2)"] > 1) {
-                                data.member[sender].bag["초보자 스타터패키지🌟[2](/초보오픈2)"]--;
-                            } else {
-                                delete data.member[sender].bag["초보자 스타터패키지🌟[2](/초보오픈2)"];
-                            }
-                            let starterItems = {
-                                "티어 승급티켓🎟": 10,
-                                "양념치킨🐔": 100,
-                                "펫먹이특식🥡(/특식오픈)": 35,
-                                "펫먹이🍼": 700
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 100000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "초보자 스타터패키지🌟[2] 패키지오픈!!\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/초보오픈3") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["초보자 스타터패키지🌟[3](/초보오픈3)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[3](/초보오픈3)"] > 0) {
-                            if (data.member[sender].bag["초보자 스타터패키지🌟[3](/초보오픈3)"] > 1) {
-                                data.member[sender].bag["초보자 스타터패키지🌟[3](/초보오픈3)"]--;
-                            } else {
-                                delete data.member[sender].bag["초보자 스타터패키지🌟[3](/초보오픈3)"];
-                            }
-                            let starterItems = {
-                                "티어 승급티켓🎟": 10,
-                                "펫 강화석⭐": 200,
-                                "양념치킨🐔": 100,
-                                "펫먹이특식🥡(/특식오픈)": 35,
-                                "펫먹이🍼": 700
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 100000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "초보자 스타터패키지🌟[3] 패키지오픈!!\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/초보오픈4") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["초보자 스타터패키지🌟[4](/초보오픈4)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[4](/초보오픈4)"] > 0) {
-                            if (data.member[sender].bag["초보자 스타터패키지🌟[4](/초보오픈4)"] > 1) {
-                                data.member[sender].bag["초보자 스타터패키지🌟[4](/초보오픈4)"]--;
-                            } else {
-                                delete data.member[sender].bag["초보자 스타터패키지🌟[4](/초보오픈4)"];
-                            }
-                            let starterItems = {
-                                "티어 승급티켓🎟": 10,
-                                "펫 강화석⭐": 200,
-                                "양념치킨🐔": 200,
-                                "펫먹이특식🥡(/특식오픈)": 35
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 100000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "초보자 스타터패키지🌟[4] 패키지오픈!!\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/초보오픈5") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["초보자 스타터패키지🌟[5](/초보오픈5)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[5](/초보오픈5)"] > 0) {
-                            if (data.member[sender].bag["초보자 스타터패키지🌟[5](/초보오픈5)"] > 1) {
-                                data.member[sender].bag["초보자 스타터패키지🌟[5](/초보오픈5)"]--;
-                            } else {
-                                delete data.member[sender].bag["초보자 스타터패키지🌟[5](/초보오픈5)"];
-                            }
-                            let starterItems = {
-                                "티어 승급티켓🎟": 10,
-                                "펫 강화석⭐": 200,
-                                "양념치킨🐔": 200,
-                                "펫먹이특식🥡(/특식오픈)": 35,
-                                "펫먹이🍼": 1000
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 100000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "초보자 스타터패키지🌟[5] 패키지오픈!!\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/초보오픈6") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["초보자 스타터패키지🌟[6](/초보오픈6)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[6](/초보오픈6)"] > 0) {
-                            if (data.member[sender].bag["초보자 스타터패키지🌟[6](/초보오픈6)"] > 1) {
-                                data.member[sender].bag["초보자 스타터패키지🌟[6](/초보오픈6)"]--;
-                            } else {
-                                delete data.member[sender].bag["초보자 스타터패키지🌟[6](/초보오픈6)"];
-                            }
-                            let starterItems = {
-                                "티어 승급티켓🎟": 10,
-                                "럭키박스🍀(/럭키오픈)": 30,
-                                "펫 강화석⭐": 200,
-                                "양념치킨🐔": 200,
-                                "펫먹이특식🥡(/특식오픈)": 35,
-                                "펫먹이🍼": 1000
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 100000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "초보자 스타터패키지🌟[6] 패키지오픈!!\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
 
 
 
 
 
 
-                if (msg === "/광산오픈4") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["광산패키지🪨[4](/광산오픈4)"] !== undefined && data.member[sender].bag["광산패키지🪨[4](/광산오픈4)"] > 0) {
-                            if (data.member[sender].bag["광산패키지🪨[4](/광산오픈4)"] > 1) {
-                                data.member[sender].bag["광산패키지🪨[4](/광산오픈4)"]--;
-                            } else {
-                                delete data.member[sender].bag["광산패키지🪨[4](/광산오픈4)"];
-                            }
-                            let starterItems = {
-                                "돌멩이🪨": 50000,
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
-                                "경찰과 도둑🚨(/삐뽀삐뽀)": 50
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 300000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
-                        }
-                    }
-                }
-                if (msg === "/광산오픈5") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["광산패키지🪨[5](/광산오픈5)"] !== undefined && data.member[sender].bag["광산패키지🪨[5](/광산오픈5)"] > 0) {
-                            if (data.member[sender].bag["광산패키지🪨[5](/광산오픈5)"] > 1) {
-                                data.member[sender].bag["광산패키지🪨[5](/광산오픈5)"]--;
-                            } else {
-                                delete data.member[sender].bag["광산패키지🪨[5](/광산오픈5)"];
-                            }
-                            let starterItems = {
-                                "돌멩이🪨": 50000,
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
-                                "경찰과 도둑🚨(/삐뽀삐뽀)": 50,
-                                "땅문서📜": 5,
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 300000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
-                        }
-                    }
-                }
                 // ==============================
                 // /낚시오픈 전용 (메모리 data.member 기준으로 원복 버전)
                 //30% 낚시대 부러짐(실패)
@@ -16591,37 +16120,6 @@ replier.reply(
                         }
                     }
                 }
-                if (msg === "/홈패키지오픈2") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["펫스윗홈패키지🏡[2](/홈패키지오픈2)"] !== undefined && data.member[sender].bag["펫스윗홈패키지🏡[2](/홈패키지오픈2)"] > 0) {
-                            if (data.member[sender].bag["펫스윗홈패키지🏡[2](/홈패키지오픈2)"] > 1) {
-                                data.member[sender].bag["펫스윗홈패키지🏡[2](/홈패키지오픈2)"]--;
-                            } else {
-                                delete data.member[sender].bag["펫스윗홈패키지🏡[2](/홈패키지오픈2)"];
-                            }
-                            let starterItems = {
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 220,
-                                "땅문서📜": 2,
-                                "돌멩이🪨": 2000,
-                                "캐슬코인🥇": 50,
-                                "레이드타격대인장👑(+600👾)": 1
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let memberPoint = 200000000;
-                            data.member[sender].point += memberPoint;
-                            let openMsg = "🏡🏡펫스윗홈 월드2🏡🏡\n";
-                            openMsg += "🏡🏡🏡🏡🏡🏡🏡🏡\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
                 if (msg === "/황제패키지오픈3") {
                     if (!castleSiegeFlag) {
                         let member = data.member[sender];
@@ -16911,32 +16409,6 @@ replier.reply(
                             replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
                         } else {
                             replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + "후원관련은 밑에 링크를 확인해주세요.\n" + "https://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/미강오픈") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["미니펫강화석패키지💫(/미강오픈)"] !== undefined && data.member[sender].bag["미니펫강화석패키지💫(/미강오픈)"] > 0) {
-                            if (data.member[sender].bag["미니펫강화석패키지💫(/미강오픈)"] > 1) {
-                                data.member[sender].bag["미니펫강화석패키지💫(/미강오픈)"]--;
-                            } else {
-                                delete data.member[sender].bag["미니펫강화석패키지💫(/미강오픈)"];
-                            }
-                            let starterItems = {
-                                "미니펫 강화석💫": 1000,
-                                "미니펫강화확률UP🐷(30%)": 50
-                            };
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-                            let openMsg = "💫💫💫💫💫미니펫 월드💫💫💫💫💫\n";
-                            openMsg += "💫💫💫💫💫💫💫💫💫💫💫💫💫\n\n";
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-                            replier.reply(openMsg);
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
                         }
                     }
                 }
@@ -17947,31 +17419,6 @@ replier.reply(
                 }
 
 
-                if (msg === "/시련오픈") {
-                    if (data.member[sender].bag["시련의상자😈(/시련오픈)"] !== undefined && data.member[sender].bag["시련의상자😈(/시련오픈)"] > 0) {
-                        if (data.member[sender].bag["시련의상자😈(/시련오픈)"] > 1) {
-                            data.member[sender].bag["시련의상자😈(/시련오픈)"]--;
-                        } else {
-                            delete data.member[sender].bag["시련의상자😈(/시련오픈)"];
-                        }
-                        var rewardItems = {
-                            "시탑 공략서📜": 20,
-                            "시탑 부스터🔮": 15,
-                            "주사위🎲(/해피)": 10,
-                            "시련의탑리셋권😈": 3
-                        };
-                        for (var item in rewardItems) {
-                            addItemToBag(data.member[sender].bag, item, rewardItems[item]);
-                        }
-                        let openMsg = "시련의상자😈(/시련오픈) 오픈!!\n\n";
-                        for (let item in rewardItems) {
-                            openMsg += item + " " + rewardItems[item] + "개\n";
-                        }
-                        replier.reply(openMsg);
-                    } else {
-                        replier.reply("ㅇㅇ?");
-                    }
-                }
                 if (msg === "/전도르오픈") {
                     if (data.member[sender].bag["전도르 익스펙토 패트로넘🧙(/전도르오픈)"] !== undefined && data.member[sender].bag["전도르 익스펙토 패트로넘🧙(/전도르오픈)"] > 0) {
                         if (data.member[sender].bag["전도르 익스펙토 패트로넘🧙(/전도르오픈)"] > 1) {
@@ -22611,6 +22058,11 @@ replier.reply(
                         replier.reply("❌ 입찰 금액 또는 보유 포인트가 올바르지 않아 입찰하지 않았습니다.");
                         return;
                     }
+                    var bidPointAfter = data.member[sender].point - bidTotalCost; // 확정할 차감 후 잔액
+                    if (!isPointShopSafeAmount(bidPointAfter) || !isPointShopSafeCount(auctionItem.endTime)) {
+                        replier.reply("❌ 입찰 후 잔액 또는 경매 시간을 확인할 수 없어 입찰하지 않았습니다.");
+                        return;
+                    }
                     let remainingTime = auctionItem.endTime - Date.now();
                     if (remainingTime <= 0) {
                         replier.reply("[" + auctionItem.biditemName + "] 경매 시간이 이미 마감되었습니다.");
@@ -22642,7 +22094,7 @@ replier.reply(
                             }
                             previousBidder.point += previousBidCost;
                         }
-                        data.member[sender].point -= bidTotalCost;
+                        data.member[sender].point = bidPointAfter;
                         auctionItem.highestBid = bidAmount;
                         auctionItem.highestBidCost = bidCost;
                         auctionItem.highestBidder = sender;
@@ -32290,16 +31742,12 @@ replier.reply(
                 if (
                     msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
                     msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
-                    msg.trim().startsWith("/가정정정,") || msg.trim().match(/^\/가정정정\d*,/) ||
-                    msg.trim().startsWith("/가정정정정,") || msg.trim().match(/^\/가정정정정\d*,/) ||
                     msg.trim().startsWith("/가정정정정정,") || msg.trim().match(/^\/가정정정정정\d*,/) ||
                     msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
-                    msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
-                    msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
-                    msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
+                    msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/)
                 ) {
                     if (isMaster(sender)) {
-                        var parts = msg.match(/^\/(가정|가정정|가정정정|가정정정정|가정정정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+                        var parts = msg.match(/^\/(가정|가정정|가정정정정정|노동|어버)(\d*)?,\s*(.+)$/);
 
                         if (parts) {
                             var command = parts[1];
@@ -32317,20 +31765,12 @@ replier.reply(
                                 packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)";
                             } else if (command === "가정정") {
                                 packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)";
-                            } else if (command === "가정정정") {
-                                packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)";
-                            } else if (command === "가정정정정") {
-                                packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)";
                             } else if (command === "가정정정정정") {
                                 packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)";
                             } else if (command === "노동") {
                                 packageName = "노동절패키지🪏(/일어나돈벌어야지)";
-                            } else if (command === "어린") {
-                                packageName = "어린이날패키지🚸(/오픈하면어린이가됩니다)";
                             } else if (command === "어버") {
                                 packageName = "어버이날패키지🧧(/오픈하면어른이됩니다)";
-                            } else if (command === "부처") {
-                                packageName = "부처님오신날🇰🇷(/오픈하면부처가됩니다)";
                             }
 
                             if (data.member[userId] !== undefined) {
@@ -32354,309 +31794,7 @@ replier.reply(
                     }
                 }
 
-                if (msg === "/펫탐험오픈1") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] !== undefined && data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] > 0) {
-                            if (data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] > 1) {
-                                data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"]--;
-                            } else {
-                                delete data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"];
-                            }
 
-                            let petExploreItems = {
-                                "탐험확률UP🗻(50%)": 20,
-                                "탐험확률UP🗻(40%)": 35,
-                                "탐험확률UP🗻(30%)": 50,
-                                "펫던전 입장권🌋": 40,
-                                "보물지도🗺️": 50
-                            };
-
-                            for (let item in petExploreItems) {
-                                addItemToBag(data.member[sender].bag, item, petExploreItems[item]);
-                            }
-
-                            let openMsg = "펫탐험패키지⛰️[1] 패키지오픈!!\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-
-                            for (let item in petExploreItems) {
-                                openMsg += item + " " + petExploreItems[item] + "개\n";
-                            }
-
-                            replier.reply(openMsg);
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
-                        }
-                    }
-                }
-                if (msg === "/오픈하면부처가됩니다") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] !== undefined && data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 0) {
-                            if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 1) {
-                                data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"]--;
-                            } else {
-                                delete data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"];
-                            }
-
-                            let guildStarterItems = {
-                                "펫던전 입장권🌋": 100,
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 5000,
-                                "탐험확률UP🗻(50%)": 100,
-                                "월간상자🌸(/월간오픈)": 1,
-                                "주간상자🌼": 1
-                            };
-
-                            for (let item in guildStarterItems) {
-                                addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
-                            }
-
-                            let openMsg = "하이!\nhttps://ibb.co/Swv59rpb\n\n";
-                            openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                            for (let item in guildStarterItems) {
-                                openMsg += item + " " + guildStarterItems[item] + "개\n";
-                            }
-
-                            replier.reply(openMsg);
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
-                        }
-                    }
-                }
-                if (msg === "/나한테잘하자4") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] > 0) {
-                            if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] > 1) {
-                                data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"]--;
-                            } else {
-                                delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"];
-                            }
-
-                            let starterItems = {
-                                "땅문서📜": 5,
-                                "미니펫뽑기🐹(/미니펫오픈)": 1000,
-                                "주간상자🌼": 1,
-                                "양념치킨🐔": 500,
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 700,
-                                "펫먹이🍼": 500,
-                                "펫 강화석⭐": 300,
-                                "호이베이스볼⚾️(/투수던집니다)": 30,
-                                "미니펫 강화석💫": 100,
-                                "길드공헌훈장🌟(/길드공헌 숫자)": 10
-
-                            };
-
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-
-                            let memberPoint = 1000000000;
-                            data.member[sender].point += memberPoint;
-
-                            let openMsg = "https://ibb.co/PstSX3hV\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
-                        }
-                    }
-                }
-                if (msg === "/나한테잘하자3") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 0) {
-                            if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 1) {
-                                data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"]--;
-                            } else {
-                                delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"];
-                            }
-
-                            let starterItems = {
-                                "땅문서📜": 5,
-                                "돌멩이🪨": 15000,
-                                "미니펫뽑기🐹(/미니펫오픈)": 300,
-                                "1달러스토어🤑(/1일1후원)": 10,
-                                "주간상자🌼": 1,
-                                "펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
-                                "확성기📢(/알림 내용 30자)": 5,
-                                "펫먹이🍼": 500,
-                                "호이베이스볼⚾️(/투수던집니다)": 50,
-                                "양념치킨🐔": 200,
-                                "미니펫 강화석💫": 100
-
-                            };
-
-                            for (let item in starterItems) {
-                                addItemToBag(data.member[sender].bag, item, starterItems[item]);
-                            }
-
-                            let memberPoint = 1000000000;
-                            data.member[sender].point += memberPoint;
-
-                            let openMsg = "https://ibb.co/PstSX3hV\n\n";
-                            openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-                            openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-                            openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-
-                            for (let item in starterItems) {
-                                openMsg += item + " " + starterItems[item] + "개\n";
-                            }
-
-                            replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
-                        }
-                    }
-                }
-
-                if (msg === "/도파민오픈1") {
-                    if (castleSiegeFlag) return;
-
-                    var member = data.member[sender];
-                    if (!member) return;
-
-                    var packItem = "도파민패키지🤩[1](/도파민오픈1)";
-
-                    if (!member.bag) {
-                        member.bag = {};
-                    }
-
-                    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
-                        return;
-                    }
-
-                    // 패키지 1개 차감
-                    if (member.bag[packItem] > 1) {
-                        member.bag[packItem]--;
-                    } else {
-                        delete member.bag[packItem];
-                    }
-
-                    var rewardItems = {
-                        "미니펫뽑기🐹(/미니펫오픈)": 5000,
-                        "펫스윗홈인테리어샵🖼️(/샵오픈)": 10000,
-                        "호이베이스볼⚾️(/투수던집니다)": 150
-                    };
-
-                    for (var item in rewardItems) {
-                        addItemToBag(member.bag, item, rewardItems[item]);
-                    }
-
-                    var openMsg = "도파민이 폭발합니다🤩\n";
-                    openMsg += "https://ibb.co/c5ddT9L\n";
-                    openMsg += "짜릿한 구성품이 쏟아집니다!\n\n";
-                    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                    for (var rewardName in rewardItems) {
-                        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
-                    }
-
-                    replier.reply(openMsg);
-                }
-                if (msg === "/도파민오픈2") {
-                    if (castleSiegeFlag) return;
-
-                    var member = data.member[sender];
-                    if (!member) return;
-
-                    var packItem = "도파민패키지🤩[2](/도파민오픈2)";
-
-                    if (!member.bag) {
-                        member.bag = {};
-                    }
-
-                    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
-                        return;
-                    }
-
-                    // 패키지 1개 차감
-                    if (member.bag[packItem] > 1) {
-                        member.bag[packItem]--;
-                    } else {
-                        delete member.bag[packItem];
-                    }
-
-                    var rewardItems = {
-                        "미니펫뽑기🐹(/미니펫오픈)": 4000,
-                        "펫스윗홈인테리어샵🖼️(/샵오픈)": 7000,
-                        "호이베이스볼⚾️(/투수던집니다)": 200,
-
-                    };
-
-                    for (var item in rewardItems) {
-                        addItemToBag(member.bag, item, rewardItems[item]);
-                    }
-
-                    var openMsg = "도파민이 폭발합니다🤩\n";
-                    openMsg += "https://ibb.co/c5ddT9L\n";
-                    openMsg += "짜릿한 구성품이 쏟아집니다!\n\n";
-                    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                    for (var rewardName in rewardItems) {
-                        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
-                    }
-
-                    replier.reply(openMsg);
-                }
-                if (msg === "/오픈하면어린이가됩니다") {
-                    if (castleSiegeFlag) return;
-
-                    var member = data.member[sender];
-                    if (!member) return;
-
-                    var packItem = "어린이날패키지🚸(/오픈하면어린이가됩니다)";
-
-                    if (!member.bag) {
-                        member.bag = {};
-                    }
-
-                    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
-                        return;
-                    }
-
-                    // 패키지 1개 차감
-                    if (member.bag[packItem] > 1) {
-                        member.bag[packItem]--;
-                    } else {
-                        delete member.bag[packItem];
-                    }
-
-                    var rewardItems = {};
-                    rewardItems[GLOBAL_CONFIG.titleGift.itemName] = 2;
-                    rewardItems["탐험확률UP🗻(40%)"] = 15;
-                    rewardItems["1달러스토어🤑(/1일1후원)"] = 5;
-                    rewardItems["경찰과 도둑🚨(/삐뽀삐뽀)"] = 10;
-                    rewardItems["호이베이스볼⚾️(/투수던집니다)"] = 20;
-                    rewardItems["펫먹이🍼"] = 1000;
-                    rewardItems["보물지도🗺️"] = 30;
-                    rewardItems["펫 강화석⭐"] = 500;
-                    rewardItems["펫스윗홈인테리어샵🖼️(/샵오픈)"] = 3000;
-
-                    for (var item in rewardItems) {
-                        addItemToBag(member.bag, item, rewardItems[item]);
-                    }
-
-                    var openMsg = "어린이날 선물이 도착했습니다🚸\n";
-                    openMsg += "https://ibb.co/Ngb0GYNF\n";
-                    openMsg += "오늘만큼은 모두가 어린이입니다!\n\n";
-                    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                    for (var rewardName in rewardItems) {
-                        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
-                    }
-
-                    replier.reply(openMsg);
-                }
                
 
                 //@# =====================
@@ -47721,7 +46859,7 @@ function normalizePassDurationItemName(name) {
     return name === GLOBAL_CONFIG.passDuration.legacyPremiumItem ? GLOBAL_CONFIG.passDuration.tickets[5].itemName : name;
 }
 
-// 운영 중인 패키지를 보존하며 기간권 6종의 고정 구성만 카탈로그에 제공하는 함수
+// 운영 중인 패키지 번호를 보존하며 기간권과 기존 보유 패키지의 구성을 제공하는 함수
 function getPassDurationPackageCatalog(packages) {
     if (!Array.isArray(packages)) throw new Error("패키지 목록 형식 오류");
     var result = packages.slice(), configs = GLOBAL_CONFIG.passDuration.tickets;
@@ -47732,6 +46870,15 @@ function getPassDurationPackageCatalog(packages) {
             found = true;
         }
         if (!found) result.push({ id: "pass_duration_" + config.key + "_" + config.days, name: config.packageName, enabled: true, rewards: [{ type: "item", name: config.itemName, count: 1 }] });
+    }
+    var legacyPackages = GLOBAL_CONFIG.package.legacyPackages;
+    for (var legacyIndex = 0; legacyIndex < legacyPackages.length; legacyIndex++) {
+        var legacyPackage = legacyPackages[legacyIndex], legacyFound = false;
+        for (var existingIndex = 0; existingIndex < result.length; existingIndex++) {
+            if (getPackageBagItemName(result[existingIndex]) === legacyPackage.itemName) legacyFound = true;
+            else if (result[existingIndex].id === legacyPackage.id) throw new Error("기존 패키지 식별자가 중복되었습니다.");
+        }
+        if (!legacyFound) result.push(JSON.parse(JSON.stringify(legacyPackage)));
     }
     return result;
 }
@@ -51447,15 +50594,12 @@ function grantPackageToUser(data, sender, msg, packageInfoData, packageLogData) 
 
 // 패키지 사용 명령어 파싱 함수
 function parsePackageUseCommand(msg) {
-    var parts = String(msg || "").trim().split(/\s+/); // /패키지사용 번호 갯수 토큰
-    if (parts.length < 2 || parts.length > 3) return null;
-    var bagNumber = parseInt(parts[1], 10); // 패키지가방 번호
-    var count = parts.length >= 3 ? parseInt(parts[2], 10) : 1; // 사용 수량, 생략 시 1개
-    if (isNaN(bagNumber) || isNaN(count)) return null;
-    return {
-        bagNumber: bagNumber,
-        count: count
-    };
+    var match = /^\/패키지사용\s+(\d+)(?:\s+(\d+))?$/.exec(String(msg || "").trim());
+    if (!match) return null;
+    var bagNumber = Number(match[1]); // 패키지가방 표시 번호
+    var count = match[2] === undefined ? 1 : Number(match[2]); // 생략 시 1개 사용
+    if (!isPointShopSafeCount(bagNumber) || !isPointShopSafeCount(count)) return null;
+    return { bagNumber: bagNumber, count: count };
 }
 
 // 패키지 사용 전 보상 타입과 사용 조건 검사 함수
@@ -51510,6 +50654,29 @@ function applyPackageRewards(data, user, packageInfo, useCount, halloween) {
     return rewardLines;
 }
 
+// 패키지 차감 전 지급 수량과 지급 후 가방의 안전 범위를 확인하는 함수
+function validatePackageRewardStock(data, user, packageInfo, useCount) {
+    var member = data.member[user], itemName = getPackageBagItemName(packageInfo);
+    var held = member.bag[itemName];
+    if (!isPointShopSafeCount(held) || !isPointShopSafeCount(useCount) || useCount < 1 || held < useCount) throw new Error("보유 패키지 수량을 확인해주세요.");
+    var plannedBag = {}, rewards = packageInfo.rewards || []; // 실제 가방 변경 없이 지급 결과를 먼저 계산
+    for (var key in member.bag) if (Object.prototype.hasOwnProperty.call(member.bag, key)) plannedBag[key] = member.bag[key];
+    plannedBag[itemName] = held - useCount;
+    for (var i = 0; i < rewards.length; i++) {
+        var reward = normalizeRetiredCarrotPackageReward(rewards[i]);
+        if (!reward || reward.type !== "item" || reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem || reward.name === GLOBAL_CONFIG.halloween.currencyName) continue;
+        var baseCount = typeof reward.count === "number" ? reward.count : typeof reward.count === "string" && /^\d+$/.test(reward.count) ? Number(reward.count) : NaN;
+        var count = baseCount * useCount; // 기본 수량과 사용 개수를 곱한 실제 지급량
+        if (!isPointShopSafeCount(baseCount) || baseCount < 1 || !isPointShopSafeCount(count)) throw new Error("패키지 구성품 수량을 확인해주세요.");
+        var name = normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(reward.name));
+        if (name === GLOBAL_CONFIG.petSkill.oldTraitBookItemName) name = GLOBAL_CONFIG.petSkill.bookItemName;
+        name = normalizePendantTransitionBagItem(plannedBag, name);
+        var current = plannedBag[name] === undefined ? 0 : plannedBag[name]; // 같은 이름의 여러 보상을 순서대로 합산
+        if (!isPointShopSafeCount(current) || !isPointShopSafeCount(current + count)) throw new Error("패키지 구성품 보유 수량의 안전한 처리 범위를 초과했습니다.");
+        plannedBag[name] = current + count;
+    }
+}
+
 // 유저 패키지 사용 처리 함수
 function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData, halloween) {
     var parsed = parsePackageUseCommand(msg); // 사용 명령어 파싱 결과
@@ -51527,6 +50694,9 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
     if (validationMessage) return { ok: false, message: "❌ " + validationMessage };
 
     try {
+        assertPackageLogData(packageLogData);
+        if (!isPointShopSafeCount(packageLogData.lastId) || !isPointShopSafeCount(packageLogData.lastId + 1)) throw new Error("패키지 사용 기록 번호를 확인해주세요.");
+        validatePackageRewardStock(data, sender, packageInfo, parsed.count);
         validatePassDurationPackageStock(data, sender, packageInfo, parsed.count);
         getPackagePointAward(packageInfo, parsed.count, data.member[sender].point);
     } catch (pointError) { return { ok: false, message: "❌ " + pointError.message }; }
