@@ -6852,7 +6852,7 @@ Status: VERIFIED
 - `applyDiamondLiveBaselinePolicy`, `parseDiamondLiveBaselineValue`, `changeDiamondLiveBaseline`
 - `collectDiamondLiveOwned`, `collectDiamondLiveReserved`, `getDiamondLiveSnapshot`
 - `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`, `getDiamondLiveCancelAlias`
-- `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveStatisticsChange`, `formatDiamondLiveStatisticsAmount`, `buildDiamondLiveStatisticsDetail`, `calculateDiamondLivePriceDetails`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
+- `getDiamondLiveMaterials`, `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveStatisticsChange`, `formatDiamondLiveStatisticsAmount`, `buildDiamondLiveStatisticsDetail`, `calculateDiamondLivePriceDetails`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
 
 ## Data Usage
 
@@ -6869,8 +6869,9 @@ Status: VERIFIED
 - 신규 기준은 포인트15조와 당시 다이아·회원 총량으로 생성한다. 기존 기준은 별도 기록 검증 후 최초 한 번만 포인트15조로 변경하고 `pointBasisVersion:2`를 함께 저장한다. 이후 MASTER 변경값은 재시작·날짜 변경·조회로 덮어쓰지 않는다. 다이아·회원 기준 및 실제 회원 재화는 이 변경으로 바꾸지 않는다.
 - `/포인트기준설정 금액`, `/다이아기준설정 개수`는 MASTER만 1~9,007,199,254,740,991의 정확한 정수 한 개를 쉼표 없이 입력할 수 있다. 무인수는 현재 저장값·사용법만 조회하며 잘못된 인수·접미 설명·권한 오류는 저장하지 않는다. 설정은 해당 기준 하나만 바꾸고 `baselineHistory`에 변경 전후·처리자·시각을 기록한다. 개인 재화·회원 기준·가격 하한은 유지한다.
 - 기준 최초 생성·1회 정책 변경·MASTER 변경은 별도 기준 기록과 member를 같은 `beginFreeMarketMutation`/`finishFreeMarketMutation` 확정 게시에 포함한다. 실패 시 성공을 알리지 않으며 미완료 확정 journal은 읽기를 차단하고 기존 복구 경로로 게시한다. 새 저장 파일·helper IO는 없다.
-- `/다이아조합`·`/다이아조합법`: 현재 시세 조회. `/다이아조합 양의정수`: 재료 차감 없이60초 확인, 새 신청은 같은 계정의 이전 대기를 교체한다. 신청가·수량·총액·방 문맥을 저장한다. `/다이아조합선택 1|2`는 계정·유효기한·접수시각·재료를 검증하며 기존 유효 신청은 시세나 기준이 바뀌어도 신청가를 보장한다. 패치 전 하한 미만 신청은 취소·재신청 안내하며 몰래 인상하거나 저가 체결하지 않는다.
+- `/다이아조합`·`/다이아조합법`: 현재 시세와 두 재료 기준 최대 변환 가능 수량을 조회한다. `/다이아조합 양의정수`: 신청 즉시 재료를 검사하고 충분할 때만 재료 차감 없이60초 확인한다. 부족하면 확인창 없이 실제 부족분만 표시하고 가능한 수량의 재입력 명령을 안내한다(0개는 재료 확보 안내). 새 신청은 같은 계정의 이전 대기를 교체하며, 재료 부족으로 거절된 새 신청도 이전 대기를 해제해 다른 수량이 체결되지 않게 한다. 신청가·수량·총액·방 문맥을 저장한다. `/다이아조합선택 1|2`는 계정·유효기한·접수시각·재료를 검증하며 기존 유효 신청은 시세나 기준이 바뀌어도 신청가를 보장한다. 패치 전 하한 미만 신청은 취소·재신청 안내하며 몰래 인상하거나 저가 체결하지 않는다.
 - 앞뒤 공백을 제거한 `변환하기`는 확인1, `안하기`는 본인의 대기가 있는 방 또는 같은 방의 최근60초 조합 문맥에서 취소2로 조기에 연결한다. DEV 접두어도 처리한다. 다른 콘텐츠의 취소와 단독숫자1·2는 선점하지 않으며 기존 출석·정지·전투 제한을 따른다. 반복 확인·취소는 결과를 안내하고 추가 차감하지 않는다.
+- `getDiamondLiveMaterials`는 신청·조회·확정에 같은 BigInteger 계산을 사용한다. 확정 때는 저장된 신청가로 재검사하며 부족분과 최대 수량을 다시 안내한다. UI 기능 용어는 명령어를 제외하고 변환으로 통일한다.
 - 성공은 돌 차감·포인트 차감·정식 다이아상자 지급·대기 제거를 같은 회원 원문으로 게시한다. 확인·완료는 실제 지급물인 상자를 표시한다. 저장 오류는 롤백 후 전체 닉네임과 오류 안내를 전송하되 확정 게시 여부를 확인하지 못한 경우 무차감을 단언하지 않는다.
 - `/포인트통계`, `/포인트다이아통계`, `/포인트통계다이아`는 같은 MASTER 전용 통계다. 정확한 명령 일치로만 조회하며 공통 초기화 전 권한 검사·입력 정리·전체 닉네임 응답에 같은 별칭을 연결한다. 기존 보유 포인트·상자·환산액·제외량·회원·두 기준값 변경 안내를 유지한다.
 - `buildDiamondLiveStatistics`는 회원 수 증감률·재화 총량 증감률·최종 가격 등락률을 구분하고 제목 아래 구분선을 배치한다. 실제 증감이 있으나 소수 첫째 자리에서 0.0%가 되는 경우 통계에서만 방향과 `0.1% 미만`을 표시한다. 전체보기 패딩은 마지막 상세 안내 뒤 한 번이며 원본 전체 숫자와 보유·상자·제외량을 재집계하지 않는다.
