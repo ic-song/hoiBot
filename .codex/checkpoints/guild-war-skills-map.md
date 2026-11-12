@@ -2,8 +2,8 @@
 
 - 작업 키: guild-war-skills-map
 - 작업 상태: 작업 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 5
+- 정리 후보: 예
+- 체크포인트 버전: 6
 - 마지막 갱신: 2026-11-12 Asia/Seoul
 - 목표: READY 기획 5건 개발 완료 후 사용자 요청에 따라 운영 소스 반영 및 노션 상태·반영일·버전 동기화.
 - 사용자 확정: 개인 선포권은 역할권 모두 합산. 지휘관 장착 길마는 길마+정찰+공격+스킬 최대4회. 공용 기본5회와 충전분은 별개.
@@ -11,7 +11,7 @@
 - 위치: C:/Users/user/Desktop/hoiBot, feature/guild-war-skills-map. 기준 feature/prod=180e83abad0e10524439ac326710f5c7a2ab2a60.
 - 앞선 3건 로컬 커밋: 다이아3a6bcdef(feature/diamond-conversion), 대전보상7eeb86b(feature/daily-battle-rewards), 시장5a3faaf(feature/free-market-fees). 운영/노션상태 미변경.
 - 검토: 기존 상태 version2/expansionVersion1, 개인 최대2회·5개 역할권·기본5회. 신규 권리·추가 공격권과 지역 재배치를 별도 일회 전환 표시로 검증하며 기존 진행 전투를 취소하지 않는다.
-- 다음 행동: feature/nov12-ready-review에서 버전·개발자노트 검증 후 source push→prod 반영/원격확인→Notion DEV/실제일/버전 동기화. 아래 운영 반영 진행 기록을 기준으로 재개한다.
+- 다음 행동: 개발·Git 운영반영·Notion 동기화 완료. 추가 개발 없음. Android 업로드·컴파일 및 실제 길드톡 확인은 운영자 수행 범위다.
 - 구현: main.js에 campaignVersion 일회 지역 재배치, 문자열 큰 정수 추가권, 여섯 역할권·개인 합산, 스킬 스냅샷, 지도·소진·진격·침공 UI 연결. 명령 인덱스·등록부 동기화 완료. 이번 로컬 작업 커밋에 함께 보존.
 - 검증: node --check main.js, git diff --check, UTF-8 확인, Rhino 1.7.15 전체 source compileString 통과. 실제 helper/명령·합성 저장으로 6038개 assert 통과(소유 상태729조합, 개인4회, 큰 정수 충전, 다음날/운영 초기화 보존·환급, 기존 진행 전투/영주/보상·번호 이관, 효과 고정, 침공/소진 UI, 회원/길드/완료표식 저장 실패 전체 취소). 저장 저수준·환경 API는 일부 모의이며 Android 실제 callback·파일 IO·길드톡 E2E는 미검증. 임시 검증 파일 삭제 완료.
 - Git: 새 체크포인트 로컬 파일. 아직 푸시 없음. Android/LDPlayer 접근·업로드·컴파일 금지.
@@ -30,4 +30,7 @@
 - 사용자 요청: 5건 운영반영하고 노션 상태도 업데이트. 2026-11-12 KST 승인 확인.
 - 원격 재확인: origin/feature/prod=180e83abad0e10524439ac326710f5c7a2ab2a60, 추가 운영 변경 없음. 노션 5건 모두 READY 및 예정일 유지 확인.
 - source 준비: 항목별 개발자노트 2.823~2.827 추가, main.js HoiBotVersion=2.827. 개발 본문 변경 없음.
-- 원격 prod 검증과 노션 3개 속성 동기화는 아직 진행 전. Android/LDPlayer 접근·업로드·컴파일은 수행하지 않는다.
+- 원격 검증 완료: source와 origin/feature/prod가 eb7c09f89aa19221598d2a13d70a8ea9a5ef7955로 일치. 5개 개발 커밋 포함·버전/개발자노트 ver_2.827 확인. PR https://github.com/ic-song/hoiBot/pull/274 MERGED 확인.
+- Notion 완료: b40393bdd7aa83b4921781e0a0951470, 895393bdd7aa8207945401df0f1ebfb1, 605393bdd7aa822cb01f81f134e650fc, 54f393bdd7aa831c959d015077d01d0a, ad9393bdd7aa82319d4701a019c6f102 모두 상태=🧪 DEV, 운영반영일=2026-11-12, 운영반영버전=ver_2.827 재조회 확인. 본문·예정일 유지.
+- 알림: PlayMCP 카카오 나에게 보내기 도구 없음으로 건너뜀. Android/LDPlayer 접근·업로드·컴파일 미수행.
+- 마무리: 본 완료 기록은 원래 source 브랜치에서 별도 문서 커밋·push 후 prod에 반영한다. 실행 소스·버전은 eb7c09f8과 동일하며 추가 버전 증가는 없다. 임시 PR 본문 삭제 완료, 기존 다른 작업의 미추적 체크포인트 9개 보존.
