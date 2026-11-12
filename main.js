@@ -1003,6 +1003,7 @@ var guildWarTimers = {}; // 환경별 금광 적립·전쟁 예정 시각 예약
 var howolDramaSessions = {}; // 확인 화면은 재컴파일 시 취소되며 진행 원본은 보존
 var howolDramaPublishingThread = new java.lang.ThreadLocal();
 var petHomeUpgradeSessions = {}; // 환경·회원별 집 확장 확인 대기
+var adventureStatSessions = {}; // 환경·방·회원별 스탯 투자 확인 대기
 var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 확장 자료 게시 중 일반 접근 차단
 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
@@ -2139,6 +2140,48 @@ const GLOBAL_CONFIG = {
         labels: { bag: "🥕 당근거래", miniPet: "🐹 미니펫 당근거래", furniture: "🪑 가구 당근거래", skill: "📙 스킬 당근거래", pendant: "📿 펜던트 당근거래" },
         communityRoom: room5,
         communityLink: "https://open.kakao.com/o/gvG4xl6h"
+    },
+    adventureStats: {
+        maxStage: 100,
+        maxSafe: 9007199254740991,
+        trees: [
+            {
+                key: "strength",
+                name: "힘",
+                emoji: "💪",
+                icon: "⚔️",
+                effect: "캐슬 보너스",
+                rewards: [0.6,1.2,2.3,3.4,4.5,5.6,6.7,7.8,8.9,11,11.5,12,12.5,13,13.5,14,14.5,15,15.5,16,16.5,17,17.5,18,18.5,19,19.5,20,20.5,21,21.1,21.2,21.3,21.4,21.5,21.6,21.7,21.8,21.9,22,22.1,22.2,22.3,22.4,22.5,22.6,22.7,22.8,22.9,23,23.1,23.2,23.3,23.4,23.5,23.6,23.7,23.8,23.9,24,24.1,24.2,24.3,24.4,24.5,24.6,24.7,24.8,24.9,25,25.1,25.2,25.3,25.4,25.5,25.6,25.7,25.8,25.9,26,26.1,26.2,26.3,26.4,26.5,26.6,26.7,26.8,26.9,27,27.1,27.2,27.3,27.4,27.5,27.6,27.7,27.8,27.9,28],
+                names: ["일단 등록은 했다","빈 봉도 무겁다","하체는 내일부터","한 세트만 더","출석부에 내 이름","계단이 원수다","한 세트만 더라면서요","손목 스트랩 장착","관장님도 인정","빈 봉이 이젠 가볍네","프로틴은 물처럼","셔츠가 작아졌네","회식 다음 날도 하체","바벨아, 더 없니?","관장님은 쉬세요","벤치가 삐걱","원판은 다다익선","헬스장 등기 이전","3대는 준비운동","관장님이 고개 끄덕","관장님이 질문하네","오늘도 중량 갱신","자세부터 다듬자","원판 꽂는 소리","근육으로 인사해요","덤벨이 가벼워지네","벨트 구멍이 바뀌네","회원님 한 세트 더?","오늘도 도전 중량","원판 좀 더 꽂아","운동복은 일상복","출석부도 감탄","오운완은 기본","엘리베이터는 휴식","계단도 워밍업","장바구니도 덤벨","쌀포대는 가벼워","생수는 양손으로","택배는 내가 들게","3대 몇 치세요?","소파 위치 또 바꿔?","집에서도 자세 체크","거울 앞 긴급회의","거울이 단골을 알아","땀수건도 훈장","물병까지 헬스룩","닭가슴살과 의리","오늘도 밥은 챙겨","반찬보다 단백질","회원님, 선수세요?","쉐이커가 출근증","회식 뒤엔 스트레칭","휴가에도 운동복","호텔부터 헬스장","운동 가면 연락 돼","취미란에 쇠질","주말 약속은 랙 앞","헬스장 VIP","정수기 앞 대장","관장님도 중량 질문","관장님과 눈인사","운동기구 단골손님","기다리며 스쿼트","근육에도 연륜","인생도 한 세트","락커가 본가","출석이 체질","월요일은 가슴","거울 앞 정기모임","내 사진이 입구에","스트랩이 넥타이","악수는 살살요","바벨과 장기계약","운동복이 정장","오늘도 본전 뽑기","달력보다 출석표","계단도 세트로","엘리베이터 휴가","호흡까지 정자세","바벨이 먼저 항복","지퍼야 힘내라","벨트는 예의입니다","손바닥에 경력직","명함 대신 등판","바벨과 눈맞춤","운동일지 베스트셀러","세트 사이 철학자","휴일에도 쇠요일","약속 장소는 랙","원판이 모자라네","바벨은 정시출근","닭가슴살 동문회","스쿼트와 재계약","인생도 점진과부하","자세가 자기소개","중량 앞에 겸손","졸업 없는 체육관","쇠질은 평생직장","관장님 은퇴 보류","오늘도 중력이 졌다"],
+                ranks: ["헬린이 회원님","출석 회원님","단골 회원님","근육질 회원님","중량 고수 회원님","헬스장 에이스 회원님","선수급 회원님","관장급 회원님","괴력의 회원님","근육 전설 회원님","쇠질의 신 회원님","헬스의 신 회원님"],
+                stories: ["등록만 하고 사라지던 회원님, 이젠 출석부에 매일 이름이 있네요!","회원님, 빈 봉이 가볍다니요? 이제 운동은 시작입니다!","트레이너가 중량 대신 회원님을 바라봅니다.","회원님, 원판을 더 달라고요? 제 허리가 먼저 쉬겠습니다!","헬스장 에이스 출석! 기구가 먼저 자리를 비웁니다.","회원님, 선수세요? 등록증 말고 대회 출전증이 필요하겠는데요!","관장님도 중량을 물어봅니다. 이제 상담 방향이 바뀌었네요!","악수는 살살 부탁드립니다. 출석 체크도 조심스럽네요!","바벨이 먼저 항복했습니다. 오늘은 중량보다 기록이 무겁네요!","쇠질의 신 등장! 헬스장 분위기가 달라졌습니다.","회원님, 오늘은 중력까지 PT를 등록했습니다!"]
+            },
+            {
+                key: "focus",
+                name: "집중",
+                emoji: "🎯",
+                icon: "👾",
+                effect: "레이드 보너스",
+                rewards: [0.9,1.8,3.45,5.1,6.75,8.4,10.05,11.7,13.35,16.5,17.25,18,18.75,19.5,20.25,21,21.75,22.5,23.25,24,24.75,25.5,26.25,27,27.75,28.5,29.25,30,30.75,31.5,31.65,31.8,31.95,32.1,32.25,32.4,32.55,32.7,32.85,33,33.15,33.3,33.45,33.6,33.75,33.9,34.05,34.2,34.35,34.5,34.65,34.8,34.95,35.1,35.25,35.4,35.55,35.7,35.85,36,36.15,36.3,36.45,36.6,36.75,36.9,37.05,37.2,37.35,37.5,37.65,37.8,37.95,38.1,38.25,38.4,38.55,38.7,38.85,39,39.15,39.3,39.45,39.6,39.75,39.9,40.05,40.2,40.35,40.5,40.65,40.8,40.95,41.1,41.25,41.4,41.55,41.7,41.85,42],
+                names: ["레이드 회사 합격","신입 헌터 첫 출근","사원증부터 챙기자","교육 끝, 바로 현장","수습 끝, 정식 발령","출장지가 던전이네","잔몹은 제가 맡죠","첫 처치 보고합니다","보스 앞에서도 침착","첫 공략으로 주임 진급","던전 출근도 익숙해","선배님, 길은 알아요","잔몹 정리는 칼같이","공략 보고는 세 줄로","보스의 틈이 보인다","단독 출동 신청","지원 없이 해볼게요","보스실까지 혼자서","보스 처리 중입니다","단독 공략, 대리 진급","사내 게시판에 내 이름","대리 명함 받았습니다","어려운 현장은 제게","막힌 공략도 뚫는다","신입들은 내 뒤로","선배도 믿고 맡긴다","긴급 출동은 내 담당","위기 현장 해결사","부장님이 먼저 찾네","실적으로 과장 달았다","레이드팀장 발령","팀원부터 챙깁니다","회의는 출동 전에","앞장은 제가 섭니다","보스방도 인솔합니다","작전 끝, 따라오세요","퇴근길은 제가 뚫죠","보스는 제가 맡죠","전원 무사 귀환","특수레이드 차장 발령","심층 던전 출동 명령","들어오자 문이 닫혔다","퇴로는 나중에 찾는다","첫 보스, 처리 완료","잠깐, 보스가 또 있네","팀원들은 내 뒤로","지원까지 못 기다린다","둘째 보스도 쓰러졌다","마지막 보스, 네 차례다","보스 셋 잡고 부장 진급","본부 직속 출동 명령","레이드 현장 총책임","경보가 왜 또 울려","예상보다 큰 보스","철수는 팀원들 먼저","나머지는 제가 맡죠","혼자 남은 대형 레이드","지원 도착 전 끝났네","보고서에 단독 처리","레이드 본부장 취임","사장실 직통 호출","특급 의뢰는 내 책상","출동하면 해결됩니다","내 사번이 해결책","사내 최강 헌터","타사에서 긴급 요청","합동 레이드 특별 초빙","대표님이 직접 배웅","회사 간판 달고 출동","현장 뛰는 이사님","전사 비상소집","전 직원 대피 완료","입구는 제가 막습니다","작전 변경, 단독 진입","지원팀은 퇴근하세요","전멸 위기, 혼자 수습","보스도 정리해고","회사는 제가 지킵니다","피해 보고서, 이상 없음","회사 살리고 상무 진급","해외 지사 긴급 호출","통역 전에 공략 끝","국경 넘는 출근길","세계가 보내는 의뢰서","시차보다 빠른 해결","본사보다 유명한 사원","세계 레이드 지명 요청","의뢰서는 내 이름으로","재난도 출장 처리","전 세계가 찾는 전무","평가표가 모자랍니다","등급보다 이름값","사규에 없는 전투력","최종 보스 처리 완료","작전명은 내 이름","전사 출동, 혼자 갑니다","아무도 못 맡던 의뢰","회사 역사가 된 사원","신입 때 그 사원 맞죠?","오늘도 전설이 출근"],
+                ranks: ["신입 헌터","정식 헌터","주임 헌터","대리 헌터","과장 헌터","차장 헌터","부장 헌터","본부장 헌터","이사 헌터","상무 헌터","전무 헌터","대표 헌터"],
+                stories: ["수습 끝! 이제 진짜 레이드 현장에 투입됩니다.","첫 던전 보스 토벌 성공! 공략 실적을 인정받았습니다.","혼자 보스방을 통과했습니다. 대리 진급 서류가 도착했습니다!","긴급 현장 해결 실적 인정! 과장 발령입니다.","특수 레이드까지 인솔합니다. 차장으로 임명됐습니다!","지원팀이 도착했을 때, 보스 셋은 이미 쓰러져 있었습니다.","이번 임무는 본부장님 단독 처리로 기록하겠습니다.","대표님이 출동을 배웅하네요. 현장 뛰는 이사님!","회사 살리고 상무 진급! 보스도 퇴근했습니다.","전 세계 의뢰가 쏟아집니다. 전무 헌터로 진급!","최종 보스는 끝났지만, 대표 헌터의 출근은 계속됩니다."]
+            },
+            {
+                key: "bond",
+                name: "교감",
+                emoji: "🐾",
+                icon: "⭐",
+                effect: "펫강화",
+                rewards: [1,2,3,4,5,6,7,8,9,10,11,11,12,12,13,13,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,21,21,21,22,22,22,22,22,23,23,23,23,23,24,24,24,24,24,25,25,25,25,25,26,26,26,26,26,27,27,27,27,27,28,28,28,28,28,29,29,29,29,29,30,30,30,30,30,31,31,31,31,31,32,32,32,32,32,33,33,33,33,33,34,34,34,34,34],
+                names: ["간식 없으면 초면","부르면 귀만 움직임","간식은 먼저 달래","앉아를 가르쳤는데","앉아 했더니 내가 앉음","훈련받는 쪽은 나","산책은 내가 끌려감","내 침대가 왜 좁지?","주인은 일단 나였는데","내 월급이 꼬리 흔듦","간식은 투자였다","우리 애가 또 했네","쓰다듬으면 더 당당","집사는 응원 담당","발바닥에 힘 좀 줘","칭찬은 크게 해요","옆집 펫도 인정","산책이 행차가 됐네","전설을 키웠네요","보스 잡고 간식 청구","집사는 매니저","우리 애가 곧 기준","천재 펫 육아일기","동네가 팬클럽","세계가 산책 코스","간식으로 맺은 운명","집사가 덕을 봅니다","우주 최강 산책왕","전설도 쓰다듬어","집사는 봉지나 들어","간식통만 봐도 척","간식 봉지 지휘자","칭찬은 무제한","뽀뽀도 대장급","집사 어깨 으쓱","우리 애 사진 볼래?","폰 배경도 우리 애","용량은 사진 탓","앨범이 전부 우리 애","우리 애 안 져요","발바닥도 자신감","꼬리로 인사 끝","산책길 단골 인사","동네 어른도 반해","이름보다 애 이름","산책줄 챙겼는데","도착하니 보스방","집사만 긴장했네","공 물어오란 뜻이었어","물어온 게 보스네","사료보다 애정","밥그릇이 명예석","물그릇은 지정석","잠꼬대도 당당해","낮잠 자는 대장님","집사는 자리 양보","소파의 실소유주","집사 침대 공동명의","리모컨은 집사 몫","보스야, 손 줘","앉아는 보스가 한다","기다려도 제법하네","보스도 간식 줄 서네","간식은 내가 먹는다","집사보다 말 잘 듣네","간식 봉지 경호원","산책 줄은 왕관","발도장이 서명","털까지 당당하다","보스 잡고 발 닦자","소파는 내 자리","산책길 귀빈 대접","간식은 눈으로 주문","배 까면 회의 끝","우쭈쭈가 공식 언어","주인님은 펫입니다","집사는 통역 중","발소리만 들어도 척","간식 창고 단골손님","그거 최종 보스야, 내려놔","발바닥에 품격","이름표가 훈장","빗질도 의전이다","숨소리도 당당해","집사는 출입증","낮잠 자리 예약 완료","코끝으로 출석체크","산책길 레드카펫","우리 집 홍보대사","보스가 배를 깠다","간식 협상 대표","애교는 기본 소양","꼬리로 결재합니다","산책 담당은 집사","산책로는 내 구역","집사는 촬영만 해","제 역할은 봉지 뜯기","저도 허락받고 앉아요","잠깐, 누가 집사였지?","우리 집 펫은 접니다"],
+                ranks: ["초보 집사","간식 담당 집사","눈치 보는 집사","펫바라기 집사","간식 배달 집사","펫 전담 집사","보스 줍는 집사","전설의 집사","펫 비서실장 집사","최강 펫의 집사","전설을 모시는 집사","영원한 집사"],
+                stories: ["앉아를 가르쳤습니다. 지금 제가 앉아서 기다리고 있습니다.","간식값으로 번 전투력입니다. 집사는 빈 봉지만 들고 왔습니다.","보스를 잡고 돌아온 펫이 간식을 청구합니다. 결제는 집사가 합니다.","세계가 알아보는 펫, 집사는 봉지 들기 담당입니다.","산책을 나갔는데 팬미팅을 하고 왔습니다.","산책 다녀왔습니다. 공 대신 보스를 물어왔네요.","보스에게 손을 시켰더니 진짜 손을 주네요. 대단한 우리 애!","보스는 쓰러졌고, 집사는 발 닦을 물을 준비합니다.","그거 최종 보스잖아! 우리 애는 장난감인 줄 아네요.","보스가 먼저 배를 보였습니다. 집사도 놀랐습니다.","보스는 우리 애가 잡았고, 저는 ‘기다려’를 배웠습니다."]
+            }
+        ],
+        itemName: "모험가 스탯포인트🆙(/스탯포인트 횟수)",
+        confirmationMs: 60000,
+        rankStages: [0,5,10,20,30,40,50,60,70,80,90,100]
     },
     level: { // 모험가 레벨 리뉴얼 설정
         expBase: 1000,
@@ -4526,6 +4569,17 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         if (!ctx.manualResetConfirmed && isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) {
             if (/^\/밸런스(?:\s|$)/.test(msg)) replier.reply("이유에 사용할 수 없는 문구가 있어요. 바꿔서 다시 입력해 주세요.");
             return;
+        }
+        // 숫자 확인도 원래 스탯 명령의 방·출석·정지 검사를 그대로 통과시킨다.
+        var adventureStatAnswer = null, adventureStatKey = getAdventureStatSessionKey(sender, room, ctx.isDev);
+        var adventureStatPending = adventureStatSessions[adventureStatKey];
+        var adventureStatChoice = ctx.isDev && /^\/[12]$/.test(msg) ? msg.substring(1) : msg;
+        if (adventureStatPending) {
+            delete adventureStatSessions[adventureStatKey]; // 다른 입력·중복 응답에서는 이전 확인을 다시 실행하지 않음
+            if (/^[12]$/.test(adventureStatChoice) && adventureStatPending.isGroupChat === isGroupChat) {
+                adventureStatAnswer = { quote: adventureStatPending, choice: adventureStatChoice };
+                msg = adventureStatPending.command;
+            }
         }
         // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.
         var carrotTradeAnswer = null;
@@ -7208,6 +7262,37 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
 
+
+        if (msg === "/스탯" || /^\/스탯(?:포인트)?[ \t]/.test(msg) || msg === "/스탯포인트") {
+            var statNick = "[" + checkRank(data, petData, guildData, sender) + "] 님";
+            var statRequest = parseAdventureStatRequest(msg), statMember = data.member[sender];
+            if (!statRequest) { replier.reply(buildAdventureStatError(statNick, { error: /^\/스탯포인트(?:[ \t]|$)/.test(msg) ? "itemInput" : "input" })); return; }
+            if (statRequest.action === "main") { replier.reply(buildAdventureStatMain(statNick, statMember)); return; }
+            if (statRequest.action === "detail") { replier.reply(buildAdventureStatDetail(statNick, statMember, statRequest.tree)); return; }
+            if (adventureStatAnswer) {
+                var statQuote = adventureStatAnswer.quote;
+                if (Date.now() >= statQuote.expiresAt || statQuote.identity !== getAdventureStatIdentity(statMember)) { replier.reply(statNick + "\n❌ 스탯 투자 확인이 만료되었거나 계정이 변경되었습니다.\n포인트는 소모되지 않았습니다.\n👉 스탯트리 정보: /스탯"); return; }
+                if (adventureStatAnswer.choice === "2") { replier.reply(buildAdventureStatCancelled(statNick, statMember, statRequest.tree)); return; }
+                if (statQuote.state !== JSON.stringify(getAdventureStatState(statMember))) { replier.reply(statNick + "\n❌ 스탯 잔고 또는 진행도가 바뀌어 이전 확인을 취소했습니다.\n포인트는 소모되지 않았습니다.\n👉 스탯트리 정보: /스탯"); return; }
+            }
+            var statPlan = statRequest.action === "item" ? prepareAdventureStatItem(statMember, statRequest.count) : prepareAdventureStatInvestment(statMember, petData[sender], statRequest.tree, statRequest.count);
+            if (statPlan.error) { replier.reply(buildAdventureStatError(statNick, statPlan)); return; }
+            if (statRequest.action === "invest" && !adventureStatAnswer) {
+                adventureStatSessions[adventureStatKey] = { command: msg, identity: getAdventureStatIdentity(statMember), state: JSON.stringify(getAdventureStatState(statMember)), expiresAt: Date.now() + GLOBAL_CONFIG.adventureStats.confirmationMs, isGroupChat: isGroupChat };
+                replier.reply(buildAdventureStatConfirmation(statNick, statPlan)); return;
+            }
+            statMember.adventureStats = statPlan.state;
+            if (statRequest.action === "item") removeItem(data, sender, GLOBAL_CONFIG.adventureStats.itemName, statPlan.count);
+            else if (statPlan.upgrade !== null) petData[sender].upgrade = statPlan.upgrade;
+            try { publishAdventureMutation(data, petData); }
+            catch (statSaveError) {
+                try { replier.reply(buildAdventurePublicationFailureMessage(statNick, false)); } catch (statReplyError) {}
+                throw statSaveError;
+            }
+            if (statRequest.action === "item") replier.reply(statNick + "\n🎒 모험가 스탯포인트🆙 사용 완료!\n━━━━━━━━━━━━\n사용한 아이템: " + numberWithCommas(statPlan.count) + "개\n🆙 획득한 스탯 포인트: " + numberWithCommas(statPlan.count) + "개\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(statPlan.state.points) + "개\n━━━━━━━━━━━━\n👉 스탯트리 정보: /스탯");
+            else replier.reply(statPlan.complete ? buildAdventureStatCompleted(statNick, statPlan) : buildAdventureStatApplied(statNick, statPlan));
+            return;
+        }
 
         {
             var isSignupPetFlow = !!getAdventureOnboardingMemberState(data, sender) || msg === "/모험시작" || msg === "/호여!!";
@@ -10654,6 +10739,7 @@ replier.reply(
                         if (data.member[targetUserAttr]) {
                             const user2 = data.member[targetUserAttr];
                             if (attributeType === "lv") {
+                                ensureAdventureStatState(user2); // 운영자 레벨 설정은 최초 소급분만 보존
                                 user2.lv += msg.startsWith("/속성증가") ? attributeChange : -attributeChange;
                             } else if (attributeType === "point") {
                                 user2.point += msg.startsWith("/속성증가") ? attributeChange : -attributeChange;
@@ -10990,6 +11076,7 @@ replier.reply(
                     var levelEditBeforeLevel = Math.max(1, parseInt(data.member[levelEditTarget].lv, 10) || 1);
                     var levelEditBeforeExp = Math.max(0, Number(data.member[levelEditTarget].exp) || 0);
                     var levelEditBeforeTierRemainder = data.member[levelEditTarget].tierExperienceRemainder; // 레벨 수정에서 보존할 티어 경험치 잔여값
+                    ensureAdventureStatState(data.member[levelEditTarget]); // 직접 설정으로 소급 포인트가 다시 늘지 않게 고정
                     data.member[levelEditTarget].lv = levelEditValue;
                     saveJsonFile(data, filePath);
                     var verifiedLevelEditData = loadJsonFile(filePath);
@@ -42569,6 +42656,210 @@ function getTierExperienceBonus(data, user) {
     return tier && Number(tier.experienceBonus) > 0 ? Number(tier.experienceBonus) : 0;
 }
 
+// 회원의 스탯 잔고와 여섯 진행값을 저장 없이 검증·복사하는 함수
+function getAdventureStatState(member) {
+    var config = GLOBAL_CONFIG.adventureStats, saved = member && member.adventureStats;
+    var level = Math.max(1, parseInt(member && member.lv, 10) || 1); // 미참여자의 최초 소급 잔고 기준
+    var state = { points: saved === undefined ? level - 1 : saved && saved.points };
+    if (!isAdventureStatCount(state.points)) throw new Error("스탯 포인트 원본 확인 필요");
+    for (var i = 0; i < config.trees.length; i++) {
+        var key = config.trees[i].key, value = saved === undefined ? [0, 0] : saved && saved[key];
+        if (!Array.isArray(value) || value.length !== 2 || !isAdventureStatCount(value[0]) || !isAdventureStatCount(value[1]) || value[0] > config.maxStage || (value[0] === config.maxStage ? value[1] !== 0 : value[1] >= value[0] + 1)) throw new Error("스탯 진행 원본 확인 필요");
+        state[key] = [value[0], value[1]];
+    }
+    return state;
+}
+
+// 스탯에 사용하는 안전한 음이 아닌 정수인지 확인하는 함수
+function isAdventureStatCount(value) {
+    return typeof value === "number" && isFinite(value) && value >= 0 && Math.floor(value) === value && value <= GLOBAL_CONFIG.adventureStats.maxSafe;
+}
+
+// 실제 회원 변경 직전에 최초 소급 잔고를 한 번 확정하는 함수
+function ensureAdventureStatState(member) {
+    var state = getAdventureStatState(member);
+    if (member.adventureStats === undefined) member.adventureStats = state;
+    return member.adventureStats;
+}
+
+// 완료한 단계의 보상을 합산해 표시와 실제 계산에 함께 사용하는 함수
+function getAdventureStatBonus(member, treeIndex) {
+    var state = getAdventureStatState(member), tree = GLOBAL_CONFIG.adventureStats.trees[treeIndex];
+    var completed = state[tree.key][0], total = 0; // 부분 투자는 효과에 포함하지 않음
+    for (var i = 0; i < completed; i++) total += Math.round(tree.rewards[i] * 100);
+    return total / 100;
+}
+
+// 현재 투자 단계만 한 줄로 표시하는 함수
+function buildAdventureStatProgress(state) {
+    var trees = GLOBAL_CONFIG.adventureStats.trees, parts = [];
+    for (var i = 0; i < trees.length; i++) {
+        var value = state[trees[i].key], completed = value[0] === GLOBAL_CONFIG.adventureStats.maxStage;
+        parts.push(trees[i].emoji + " " + trees[i].name + "(" + (completed ? value[0] : value[1]) + "/" + (completed ? value[0] : value[0] + 1) + ")");
+    }
+    return parts.join(" ");
+}
+
+// 스탯 조회와 투자·아이템 사용의 전체 입력 형식을 해석하는 함수
+function parseAdventureStatRequest(msg) {
+    var item = String(msg).match(/^\/스탯포인트(?:[ \t]+(\d+))?$/);
+    if (item) return { action: "item", count: item[1] === undefined ? null : Number(item[1]) };
+    var match = String(msg).match(/^\/스탯(?:[ \t]+(힘|집중|교감)(?:[ \t]+(\d+))?)?$/);
+    if (!match) return null;
+    var trees = GLOBAL_CONFIG.adventureStats.trees, index = -1;
+    for (var i = 0; i < trees.length; i++) if (trees[i].name === match[1]) index = i;
+    return { action: match[2] !== undefined ? "invest" : index < 0 ? "main" : "detail", tree: index, count: match[2] === undefined ? null : Number(match[2]) };
+}
+
+// 환경·방·입력자별 스탯 확인 대기를 구분하는 함수
+function getAdventureStatSessionKey(sender, room, isDev) {
+    return JSON.stringify([isDev === true, String(room), String(sender)]);
+}
+
+// 확인 중 다른 계정으로 바뀌었는지 비교할 기존 식별값을 만드는 함수
+function getAdventureStatIdentity(member) {
+    return JSON.stringify([member && member.serverRaidAccount ? member.serverRaidAccount.id : null, member && member.join]);
+}
+
+// 현재 단계의 잔여량과 포인트를 확인해 확정 전 계획을 만드는 함수
+function prepareAdventureStatInvestment(member, pet, treeIndex, count) {
+    var state = getAdventureStatState(member), tree = GLOBAL_CONFIG.adventureStats.trees[treeIndex];
+    if (!tree || !isAdventureStatCount(count) || count < 1) return { error: "input" };
+    var progress = state[tree.key], stage = progress[0] + 1;
+    if (progress[0] === GLOBAL_CONFIG.adventureStats.maxStage) return { error: "complete", state: state, tree: treeIndex };
+    if (count > stage - progress[1]) return { error: "excess", state: state, tree: treeIndex };
+    if (count > state.points) return { error: "points", state: state, tree: treeIndex, count: count };
+    var before = [progress[0], progress[1]], complete = progress[1] + count === stage;
+    var upgrade = null; // 교감 단계 완료 때만 실제 강화값을 변경
+    if (complete && treeIndex === 2) {
+        if (!pet || !pet.petname) return { error: "pet" };
+        var currentUpgrade = pet.upgrade === undefined ? 0 : Number(pet.upgrade);
+        upgrade = currentUpgrade + tree.rewards[stage - 1];
+        if (!isAdventureStatCount(currentUpgrade) || !isAdventureStatCount(upgrade)) return { error: "upgrade" };
+    }
+    state.points -= count;
+    if (complete) { progress[0] = stage; progress[1] = 0; }
+    else progress[1] += count;
+    return { state: state, tree: treeIndex, before: before, stage: stage, count: count, complete: complete, upgrade: upgrade };
+}
+
+// 아이템 수량과 스탯 잔고를 차감 전 검증하는 함수
+function prepareAdventureStatItem(member, count) {
+    var state = getAdventureStatState(member), itemName = GLOBAL_CONFIG.adventureStats.itemName;
+    if (!isAdventureStatCount(count) || count < 1) return { error: "itemInput" };
+    var stock = member.bag && member.bag[itemName] !== undefined ? Number(member.bag[itemName]) : 0;
+    if (!isAdventureStatCount(stock)) throw new Error("스탯 포인트 아이템 원본 확인 필요");
+    if (stock < count) return { error: "itemStock" };
+    if (!isAdventureStatCount(state.points + count)) return { error: "balance" };
+    state.points += count;
+    return { state: state, count: count };
+}
+
+// 완료 단계에 따른 스탯 성장 호칭을 반환하는 함수
+function getAdventureStatRank(treeIndex, completed) {
+    var config = GLOBAL_CONFIG.adventureStats, rank = 0;
+    for (var i = 1; i < config.rankStages.length; i++) if (completed >= config.rankStages[i]) rank = i;
+    return config.trees[treeIndex].ranks[rank];
+}
+
+// 한 단계의 확정 보상만 원문의 정밀도로 표시하는 함수
+function formatAdventureStatReward(treeIndex, stage) {
+    var tree = GLOBAL_CONFIG.adventureStats.trees[treeIndex], reward = tree.rewards[stage - 1];
+    return tree.icon + " " + tree.effect + " +" + (treeIndex === 2 ? reward + "강" : reward.toFixed(2) + "%");
+}
+
+// 현재 스탯트리 세 계열의 진행 상황을 원문 레이아웃으로 표시하는 함수
+function buildAdventureStatMain(nick, member) {
+    var state = getAdventureStatState(member), trees = GLOBAL_CONFIG.adventureStats.trees;
+    var out = nick + "\n🌳 모험가 스탯트리\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(state.points) + "개\n━━━━━━━━━━━━\n📌 스탯 적용 방법: /스탯 스탯이름 개수\n👉 예시: /스탯 힘 1\n💡 힘·집중·교감 모두 함께 성장 가능\n━━━━━━━━━━━━\n🌱 현재 스탯트리 진행도\n" + buildAdventureStatProgress(state) + "\n\n📚 스탯트리 상세정보" + allsee + "\n🌱 최근 스탯 성장\n";
+    for (var i = 0; i < trees.length; i++) {
+        var tree = trees[i], progress = state[tree.key], stage = progress[0] + 1;
+        var last = i === trees.length - 1, prefix = last ? "  " : "│ ";
+        out += (last ? "└ " : "├ ") + tree.emoji + " " + tree.name + "\n" + prefix + "🏅 성장 등급: " + getAdventureStatRank(i, progress[0]) + "\n";
+        if (progress[0] === GLOBAL_CONFIG.adventureStats.maxStage) out += prefix + "✅ 100/100단계 달성\n";
+        else out += prefix + "🔓 진행 중: " + stage + "단계 (" + progress[1] + "/" + stage + ")\n" + prefix + tree.names[stage - 1] + "\n" + prefix + "└ 완성 시: " + formatAdventureStatReward(i, stage) + "\n";
+        out += prefix + "📚 전체 스탯트리 정보: /스탯 " + tree.name;
+        if (!last) out += "\n│\n";
+    }
+    return out;
+}
+
+// 분야별 현재·다음 단계와 100개 전체 단계를 표시하는 함수
+function buildAdventureStatDetail(nick, member, treeIndex) {
+    var state = getAdventureStatState(member), tree = GLOBAL_CONFIG.adventureStats.trees[treeIndex];
+    var progress = state[tree.key], stage = progress[0] + 1, maximum = GLOBAL_CONFIG.adventureStats.maxStage;
+    var bonus = getAdventureStatBonus(member, treeIndex);
+    var out = nick + "\n" + tree.emoji + " " + tree.name + " 스탯트리 정보\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(state.points) + "개\n━━━━━━━━━━━━\n🏅 성장 등급: " + getAdventureStatRank(treeIndex, progress[0]) + "\n📈 " + tree.name + " " + progress[0] + "/100단계 완료\n";
+    out += tree.icon + " 모험가 " + tree.effect + (treeIndex === 2 ? " 보너스" : "") + ": +" + (treeIndex === 2 ? numberWithCommas(bonus) + "강" : bonus.toFixed(2) + "%") + "\n\n";
+    if (progress[0] === maximum) out += "✅ 100/100단계 달성\n🎉 모든 " + tree.name + " 스탯트리를 완성했습니다!\n";
+    else {
+        out += "🌱 현재 진행 중인 스탯트리\n🔓 " + stage + "단계 · " + tree.names[stage - 1] + " (" + progress[1] + "/" + stage + ")\n└ 완성 시: " + formatAdventureStatReward(treeIndex, stage) + "\n";
+        if (stage < maximum) out += "\n⏭️ 다음 스탯트리\n🔒 " + (stage + 1) + "단계 · " + tree.names[stage] + " (0/" + (stage + 1) + ")\n└ 완성 시: " + formatAdventureStatReward(treeIndex, stage + 1) + "\n";
+        out += "━━━━━━━━━━━━\n📌 스탯 적용 방법: /스탯 " + tree.name + " 개수\n👉 예시: /스탯 " + tree.name + " " + Math.max(1, Math.min(state.points, stage - progress[1])) + "\n";
+    }
+    out += "\n📚 전체 스탯트리 정보" + allsee;
+    for (var n = 1; n <= maximum; n++) {
+        var done = n <= progress[0], active = n === stage;
+        out += "\n" + (done ? "✅ " : active ? "🔓 " : "🔒 ") + n + "단계 · " + tree.names[n - 1] + " (" + (done ? n : active ? progress[1] : 0) + "/" + n + ")\n└ " + formatAdventureStatReward(treeIndex, n);
+    }
+    return out;
+}
+
+// 투자 전후 진행도와 취소 불가 조건을 확인 화면으로 표시하는 함수
+function buildAdventureStatConfirmation(nick, plan) {
+    var tree = GLOBAL_CONFIG.adventureStats.trees[plan.tree], before = plan.before[1], after = before + plan.count;
+    return nick + "\n🌳 모험가 스탯트리 적용 확인\n━━━━━━━━━━━━\n" + tree.emoji + " " + tree.name + " · " + tree.effect + " 증가\n🔓 " + plan.stage + "단계 · " + tree.names[plan.stage - 1] + "\n📈 진행도: (" + before + "/" + plan.stage + ") → (" + after + "/" + plan.stage + ")\n🆙 사용 예정: 스탯 포인트 " + plan.count + "개\n🆙 적용 후 남은 포인트: " + numberWithCommas(plan.state.points) + "개\n└ 완성 시: " + formatAdventureStatReward(plan.tree, plan.stage) + "\n━━━━━━━━━━━━\n⚠️ 스탯 투자 주의사항\n투자한 스탯 포인트는 초기화하거나\n다른 스탯트리로 변경할 수 없습니다.\n\n📌 정말 스탯을 적용하시겠습니까?\n1. ✅ 스탯 찍기 / 2. ❌ 안 찍기";
+}
+
+// 확정한 부분 투자 결과만 표시하는 함수
+function buildAdventureStatApplied(nick, plan) {
+    var tree = GLOBAL_CONFIG.adventureStats.trees[plan.tree], after = plan.before[1] + plan.count;
+    return nick + "\n✅ " + tree.name + " 스탯 포인트 적용 완료!\n━━━━━━━━━━━━\n" + tree.emoji + " " + plan.stage + "단계 · " + tree.names[plan.stage - 1] + "\n📈 진행도: (" + plan.before[1] + "/" + plan.stage + ") → (" + after + "/" + plan.stage + ")\n🆙 사용한 스탯 포인트: " + plan.count + "개\n🆙 남은 스탯 포인트: " + numberWithCommas(plan.state.points) + "개\n💡 단계 완성까지 " + (plan.stage - after) + "개 남았습니다.\n━━━━━━━━━━━━\n👉 스탯트리 정보: /스탯 " + tree.name;
+}
+
+// 스탯 취소 당시의 실제 잔고와 진행을 표시하는 함수
+function buildAdventureStatCancelled(nick, member, treeIndex) {
+    var state = getAdventureStatState(member), tree = GLOBAL_CONFIG.adventureStats.trees[treeIndex], progress = state[tree.key];
+    return nick + "\n❌ 스탯 포인트 적용을 취소했습니다.\n━━━━━━━━━━━━\n" + tree.emoji + " " + tree.name + " · " + Math.min(100, progress[0] + 1) + "단계 (" + progress[1] + "/" + Math.min(100, progress[0] + 1) + ")\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(state.points) + "개\n💡 스탯 포인트는 소모되지 않았습니다.\n👉 스탯트리 정보: /스탯";
+}
+
+// 단계 완성·호칭 변경·콘셉트 축하 문구를 한 번 표시하는 함수
+function buildAdventureStatCompleted(nick, plan) {
+    var config = GLOBAL_CONFIG.adventureStats, tree = config.trees[plan.tree], stage = plan.stage;
+    var rank = getAdventureStatRank(plan.tree, stage), beforeRank = getAdventureStatRank(plan.tree, stage - 1);
+    var special = config.rankStages.indexOf(stage) - 1, ending = stage === config.maxStage;
+    var out = nick + "\n" + tree.emoji + " " + tree.name + " 스탯트리 " + (ending ? "100단계 달성!" : "단계 상승!") + "\n━━━━━━━━━━━━\n✅ " + (ending ? "" : stage + "단계 · ") + tree.names[stage - 1] + " (" + stage + "/" + stage + ")\n└ " + formatAdventureStatReward(plan.tree, stage) + " 적용\n";
+    if (special >= 0) {
+        if (plan.tree === 1 && stage === 10) out += "\n🎖️ 레이드 회사 진급!\n💼 " + beforeRank + " → " + rank + "\n";
+        else if (plan.tree === 1) out += "🎖️ " + beforeRank + " → " + rank + "\n";
+        else out += (plan.tree === 2 && stage === 5 ? "\n" : "") + "🏅 성장 등급: " + beforeRank + " → " + rank + "\n";
+        var story = tree.stories[special];
+        if (plan.tree === 0 && stage === 5) story = "등록만 하고 사라지던 회원님,\n이젠 출석부에 매일 이름이 있네요!";
+        if (plan.tree === 1 && stage === 10) story = "첫 던전 보스 토벌 성공!\n공략 실적을 인정받았습니다.";
+        if (plan.tree === 1 && stage === 50) story = "지원팀이 도착했을 때,\n보스 셋은 이미 쓰러져 있었습니다.";
+        if (plan.tree === 2 && stage === 5) story = "앉아를 가르쳤습니다.\n지금 제가 앉아서 기다리고 있습니다.";
+        if (plan.tree === 2 && stage === 50) story = "산책 다녀왔습니다.\n공 대신 보스를 물어왔네요.";
+        if (plan.tree === 2 && ending) story = "보스는 우리 애가 잡았고,\n저는 ‘기다려’를 배웠습니다.";
+        out += (plan.tree === 0 ? "🏋️ " : "") + "“" + story + "”\n";
+    } else {
+        out += "\n" + (plan.tree === 0 ? "🏋️ “회원님, 계단쯤은 이제 가볍죠?\n엘리베이터는 오늘도 쉬겠습니다!”" : plan.tree === 1 ? "“던전 공략은 오늘도 계속됩니다!”" : "“펫은 강해지고, 집사는 오늘도 훈련 중입니다.”") + "\n";
+    }
+    if (!ending && (special < 0 || plan.tree === 1 && stage === 10)) out += "━━━━━━━━━━━━\n🌱 다음 스탯트리\n🔓 " + (stage + 1) + "단계 · " + tree.names[stage] + " (0/" + (stage + 1) + ")\n└ 완성 시: " + formatAdventureStatReward(plan.tree, stage + 1) + "\n";
+    else if (plan.tree === 2 && stage === 5) out += "━━━━━━━━━━━━\n";
+    return out + (ending ? "👉 스탯트리 정보: /스탯 " : "👉 다음 성장: /스탯 ") + tree.name;
+}
+
+// 투자 검증 오류와 아이템 입력 안내를 개인화해 표시하는 함수
+function buildAdventureStatError(nick, result) {
+    var type = result.error, state = result.state, tree = GLOBAL_CONFIG.adventureStats.trees[result.tree];
+    if (type === "complete") return nick + "\n🌳 모험가 스탯트리\n━━━━━━━━━━━━\n" + tree.emoji + " " + tree.name + " · ✅ 100/100단계 달성\n🏅 성장 등급: " + getAdventureStatRank(result.tree, 100) + "\n🎉 모든 " + tree.name + " 스탯트리를 완성했습니다!\n👉 전체 스탯트리 정보: /스탯 " + tree.name;
+    if (type === "points") return nick + "\n❗ 스탯 포인트가 부족합니다.\n━━━━━━━━━━━━\n입력한 적용 개수: " + result.count + "개\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(state.points) + "개\n" + (state.points > 0 ? "👉 " + state.points + "개 적용: /스탯 " + tree.name + " " + state.points + "\n" : "") + "👉 스탯트리 정보: /스탯";
+    if (type === "excess") { var progress = state[tree.key], stage = progress[0] + 1, remaining = stage - progress[1]; return nick + "\n❗ 현재 단계에 필요한 포인트를 초과했습니다.\n━━━━━━━━━━━━\n" + tree.emoji + " " + stage + "단계 · " + tree.names[stage - 1] + " (" + progress[1] + "/" + stage + ")\n🆙 완성까지 필요한 포인트: " + remaining + "개\n👉 올바른 입력: /스탯 " + tree.name + " " + remaining; }
+    if (type === "itemInput") return nick + "\n❗ 사용할 아이템 개수를 입력해 주세요.\n━━━━━━━━━━━━\n🎒 모험가 스탯포인트🆙\n💡 아이템 1개당 스탯 포인트 1개 획득\n📌 사용 방법: /스탯포인트 횟수\n👉 입력 예시: /스탯포인트 1";
+    if (type !== "input") return nick + "\n❗ " + (type === "pet" ? "펫을 등록한 뒤 교감 단계를 완성해 주세요." : type === "itemStock" ? "모험가 스탯포인트🆙 아이템이 부족합니다." : "적용 가능한 수량을 초과했습니다.") + "\n👉 스탯트리 정보: /스탯";
+    return nick + "\n❗ 스탯 이름과 적용 개수를 확인해 주세요.\n━━━━━━━━━━━━\n📌 스탯 적용 방법\n💪 /스탯 힘 개수\n🎯 /스탯 집중 개수\n🐾 /스탯 교감 개수\n\n👉 예시: /스탯 힘 1\n👉 전체 안내: /스탯";
+}
+
 // 현재 레벨에서 다음 레벨까지 필요한 경험치를 반환하는 함수
 function getLevelRequiredExperience(level) {
     var currentLevel = Math.max(1, parseInt(level, 10) || 1);
@@ -42789,6 +43080,9 @@ function processAdventureLevelUps(member) {
     var safetyCount = 0;
     while (member.exp >= getLevelRequiredExperience(member.lv) && safetyCount < 10000) {
         member.exp = roundToTwo(member.exp - getLevelRequiredExperience(member.lv));
+        var levelStatState = ensureAdventureStatState(member); // 현재 레벨의 최초 소급분을 레벨 변경 전에 확정
+        if (!isAdventureStatCount(levelStatState.points + 1)) throw new Error("스탯 포인트 적립 범위 오류");
+        levelStatState.points++;
         member.lv++;
         member.point += GLOBAL_CONFIG.level.bonusPoint;
         var promotionType = member.lv % 100 === 0 ? "major" : member.lv % 10 === 0 ? "normal" : "level";
@@ -42803,41 +43097,34 @@ function formatAdventureLevelPercent(value) {
     return String(Math.round((Number(value) || 0) * 100) / 100);
 }
 
-// 한 번의 경험치 획득으로 발생한 최고 승급 알림과 상세 내역을 만드는 함수
+// 실제 레벨업 보상과 승급 산출 내역을 중복 없이 표시하는 함수
 function buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps) {
     if (!levelUps || levelUps.length === 0) return "";
-    var highest = levelUps[0];
-    for (var i = 1; i < levelUps.length; i++) {
-        var currentPriority = levelUps[i].type === "major" ? 3 : levelUps[i].type === "normal" ? 2 : 1;
-        var highestPriority = highest.type === "major" ? 3 : highest.type === "normal" ? 2 : 1;
-        if (currentPriority > highestPriority || (currentPriority === highestPriority && levelUps[i].level > highest.level)) highest = levelUps[i];
+    var highest = levelUps[0], config = GLOBAL_CONFIG.level;
+    var totalCharm = 0; // 실제로 통과한 모든 레벨의 기본·승급 증가분
+    for (var i = 0; i < levelUps.length; i++) {
+        var priority = levelUps[i].type === "major" ? 3 : levelUps[i].type === "normal" ? 2 : 1;
+        var previousPriority = highest.type === "major" ? 3 : highest.type === "normal" ? 2 : 1;
+        if (priority >= previousPriority) highest = levelUps[i];
+        totalCharm += config.baseCharmPercent + (levelUps[i].type === "major" ? config.majorPromotionPercent : levelUps[i].type === "normal" ? config.normalPromotionPercent : 0);
     }
-    var heading = highest.type === "major" ? "🏆 대승급 달성!" : highest.type === "normal" ? "🎖️ 승급 달성!" : "✨ 레벨업!";
-    var finalLevel = data && data.member && data.member[user] ? Math.max(1, parseInt(data.member[user].lv, 10) || 1) : levelUps[levelUps.length - 1].level; // 모든 레벨업 처리 후 실제 최종 레벨
-    var totalCharmIncrease = 0; // 이번 다중 레벨업에서 캐슬·레이드 각각 증가한 누적 보너스
-    for (var bonusIndex = 0; bonusIndex < levelUps.length; bonusIndex++) {
-        totalCharmIncrease += GLOBAL_CONFIG.level.baseCharmPercent;
-        if (levelUps[bonusIndex].type === "normal") totalCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
-        else if (levelUps[bonusIndex].type === "major") totalCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
+    var finalLevel = Math.max(1, parseInt(data.member[user].lv, 10) || 1), beforeLevel = levelUps[0].level - 1;
+    var kind = highest.type === "major" ? "대승급" : highest.type === "normal" ? "승급" : "레벨업";
+    var heading = highest.type === "major" ? "🏆 모험가 대승급 달성!" : highest.type === "normal" ? "🎖️ 모험가 승급 달성!" : "✨ 모험가 레벨업!";
+    var multiple = levelUps.length > 1;
+    var out = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\n🌟 Lv." + beforeLevel + " → Lv." + finalLevel + (multiple ? " (" + levelUps.length + "레벨 상승)" : "") + "\n" + getAdventureLevelTitle(finalLevel) + "\n━━━━━━━━━━━━\n🎁 이번 " + kind + " 보상\n🅟 포인트 +" + numberWithCommas(levelUps.length * config.bonusPoint) + "\n⚔️ 캐슬 +" + totalCharm.toFixed(2) + "% · 👾 레이드 +" + totalCharm.toFixed(2) + "%\n🆙 스탯 포인트 +" + numberWithCommas(levelUps.length) + "개 획득!\n━━━━━━━━━━━━\n";
+    if (highest.type === "level") { var next = (Math.floor(finalLevel / 10) + 1) * 10; out += "🎯 다음 승급: Lv." + next + " (" + (next - finalLevel) + "레벨 남음)\n"; }
+    else if (!multiple) out += highest.type === "major" ? "👑 새로운 대승급 칭호를 획득했습니다!\n" : "🏅 새로운 승급 칭호가 적용되었습니다!\n";
+    out += "🌳 스탯트리 확인: /스탯";
+    if (!multiple && highest.type === "level") return out;
+    out += "\n📋 이번 레벨업 상세" + allsee + "\n";
+    if (!multiple) return out + "📈 " + kind + " 보너스 산출 내역\n├ 🌟 기본 성장: 캐슬 +" + config.baseCharmPercent.toFixed(2) + "% · 레이드 +" + config.baseCharmPercent.toFixed(2) + "%\n└ " + (highest.type === "major" ? "🏆 대승급" : "🎖️ 승급") + " 추가: 캐슬 +" + (highest.type === "major" ? config.majorPromotionPercent : config.normalPromotionPercent).toFixed(2) + "% · 레이드 +" + (highest.type === "major" ? config.majorPromotionPercent : config.normalPromotionPercent).toFixed(2) + "%";
+    out += "📈 레벨별 보너스 산출 내역";
+    for (var n = 0; n < levelUps.length; n++) {
+        out += "\nLv." + levelUps[n].level + " · 기본 성장: 캐슬 +" + config.baseCharmPercent.toFixed(2) + "% · 레이드 +" + config.baseCharmPercent.toFixed(2) + "%";
+        if (levelUps[n].type !== "level") { var major = levelUps[n].type === "major", extra = major ? config.majorPromotionPercent : config.normalPromotionPercent; out += "\n         " + (major ? "🏆 대승급" : "🎖️ 승급") + " 추가: 캐슬 +" + extra.toFixed(2) + "% · 레이드 +" + extra.toFixed(2) + "%"; }
     }
-    var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\n🌟 현재 레벨: Lv." + finalLevel + "\n\n" + getAdventureLevelTitle(finalLevel);
-    message += "\n레벨업 " + numberWithCommas(levelUps.length) + "회 · 포인트 🅟" + numberWithCommas(levelUps.length * GLOBAL_CONFIG.level.bonusPoint) + " 지급";
-    message += "\n⚔️ 캐슬 +" + formatAdventureLevelPercent(totalCharmIncrease) + "% · 👾 레이드 +" + formatAdventureLevelPercent(totalCharmIncrease) + "%";
-    if (finalLevel % 10 !== 0) {
-        var nextPromotionLevel = Math.ceil(finalLevel / 10) * 10; // 최종 레벨 이후 가장 가까운 승급 레벨
-        message += "\n🎯 Lv." + nextPromotionLevel + " 승급까지 " + (nextPromotionLevel - finalLevel) + "레벨!";
-    }
-    message += "\n\n📋 이번 레벨업 상세" + allsee;
-    for (var detailIndex = 0; detailIndex < levelUps.length; detailIndex++) {
-        var detailCharmIncrease = GLOBAL_CONFIG.level.baseCharmPercent;
-        if (levelUps[detailIndex].type === "normal") detailCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
-        else if (levelUps[detailIndex].type === "major") detailCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
-        var detailBonusText = "기본 +" + formatAdventureLevelPercent(GLOBAL_CONFIG.level.baseCharmPercent) + "%";
-        if (levelUps[detailIndex].type === "normal") detailBonusText += " · 승급 추가 +" + formatAdventureLevelPercent(GLOBAL_CONFIG.level.normalPromotionPercent) + "%";
-        else if (levelUps[detailIndex].type === "major") detailBonusText += " · 대승급 추가 +" + formatAdventureLevelPercent(GLOBAL_CONFIG.level.majorPromotionPercent) + "%";
-        message += "\nLv." + levelUps[detailIndex].level + " · " + levelUps[detailIndex].title + " · " + detailBonusText + " · 각각 +" + formatAdventureLevelPercent(detailCharmIncrease) + "%";
-    }
-    return message;
+    return out;
 }
 
 // 한 번의 레벨업 목록에서 가장 높은 대승급 레벨을 반환하는 함수
@@ -42911,6 +43198,7 @@ function isAdventureLevelResetResultValid(before, after) {
     for (var i = 0; i < users.length; i++) {
         var member = expected.member[users[i]];
         if (!member || !after.member[users[i]]) return false;
+        ensureAdventureStatState(member); // 레벨 초기화가 기존 소급 잔고를 지우거나 다시 지급하지 않게 보존
         member.lv = 1;
         member.exp = 0;
         member.tierExperienceRemainder = 0;
@@ -43083,6 +43371,7 @@ function applyAdventureLevelReset(data, backupPath) {
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
         var member = data.member[user];
+        ensureAdventureStatState(member); // 레벨 초기화가 기존 소급 잔고를 지우거나 다시 지급하지 않게 보존
         member.lv = 1;
         member.exp = 0;
         member.tierExperienceRemainder = 0;
@@ -51638,6 +51927,7 @@ function getPetModeCharmPercent(memberName, data, guildData, mode, excludeHomeBa
     var percent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, mode);
     percent += getGuildContributionCubeMemberPercent(data, guildData, memberName, mode);
     percent += getAdventureLevelCharmPercent(member ? member.lv : 1);
+    percent += getAdventureStatBonus(member, mode === "castle" ? 0 : 1);
     var questState = member ? member.adventureQuest : null;
     var questPercentKey = mode === "castle" ? "castlePercent" : "raidPercent"; // 콘텐츠별 누적 퀘스트 보너스
     percent += questState && questState.totals ? Number(questState.totals[questPercentKey]) || 0 : 0;
@@ -57162,8 +57452,10 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var questTotals = data && data.member && data.member[user] && data.member[user].adventureQuest ? data.member[user].adventureQuest.totals : null;
     var castleQuestPercent = questTotals ? Number(questTotals.castlePercent) || 0 : 0;
     var raidQuestPercent = questTotals ? Number(questTotals.raidPercent) || 0 : 0;
-    var castleTotalPercent = adventureLevelPercent + castleHomeDetail.appliedPercent + guildCastlePercent + castleQuestPercent; // 캐슬의 모든 합산 퍼센트
-    var raidTotalPercent = adventureLevelPercent + raidHomeDetail.appliedPercent + guildRaidPercent + raidQuestPercent; // 레이드의 모든 합산 퍼센트
+    var statMember = data && data.member ? data.member[user] : null;
+    var castleStatPercent = getAdventureStatBonus(statMember, 0), raidStatPercent = getAdventureStatBonus(statMember, 1); // 완료한 힘·집중의 모드별 누적 보너스
+    var castleTotalPercent = adventureLevelPercent + castleStatPercent + castleHomeDetail.appliedPercent + guildCastlePercent + castleQuestPercent; // 캐슬의 모든 합산 퍼센트
+    var raidTotalPercent = adventureLevelPercent + raidStatPercent + raidHomeDetail.appliedPercent + guildRaidPercent + raidQuestPercent; // 레이드의 모든 합산 퍼센트
     var expectedCastle = applyPercentWithExactFloor(castleBase, castleTotalPercent); // 표시 수식으로 재계산한 캐슬매력
     var expectedRaid = applyPercentWithExactFloor(raidBase, raidTotalPercent); // 표시 수식으로 재계산한 레이드매력
     var actualCastle = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
@@ -57200,6 +57492,7 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("[캐슬매력]");
     lines.push("기본 매력: " + numberWithCommas(castleBase));
     lines.push("모험가 레벨: +" + formatAdventureLevelPercent(adventureLevelPercent) + "%");
+    lines.push("스탯트리 힘: +" + formatAdventureLevelPercent(castleStatPercent) + "%");
     lines.push("퀘스트: +" + formatAdventureQuestPercent(castleQuestPercent) + "%");
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(castleHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildCastlePercent));
@@ -57210,6 +57503,7 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("[레이드매력]");
     lines.push("기본 매력: " + numberWithCommas(raidBase));
     lines.push("모험가 레벨: +" + formatAdventureLevelPercent(adventureLevelPercent) + "%");
+    lines.push("스탯트리 집중: +" + formatAdventureLevelPercent(raidStatPercent) + "%");
     lines.push("퀘스트: +" + formatAdventureQuestPercent(raidQuestPercent) + "%");
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(raidHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildRaidPercent));

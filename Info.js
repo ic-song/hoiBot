@@ -9,6 +9,36 @@ const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
+    adventureStats: {
+        maxStage: 100,
+        maxSafe: 9007199254740991,
+        trees: [
+            {
+                key: "strength",
+                name: "힘",
+                emoji: "💪",
+                icon: "⚔️",
+                effect: "캐슬 보너스",
+                rewards: [0.6,1.2,2.3,3.4,4.5,5.6,6.7,7.8,8.9,11,11.5,12,12.5,13,13.5,14,14.5,15,15.5,16,16.5,17,17.5,18,18.5,19,19.5,20,20.5,21,21.1,21.2,21.3,21.4,21.5,21.6,21.7,21.8,21.9,22,22.1,22.2,22.3,22.4,22.5,22.6,22.7,22.8,22.9,23,23.1,23.2,23.3,23.4,23.5,23.6,23.7,23.8,23.9,24,24.1,24.2,24.3,24.4,24.5,24.6,24.7,24.8,24.9,25,25.1,25.2,25.3,25.4,25.5,25.6,25.7,25.8,25.9,26,26.1,26.2,26.3,26.4,26.5,26.6,26.7,26.8,26.9,27,27.1,27.2,27.3,27.4,27.5,27.6,27.7,27.8,27.9,28]
+            },
+            {
+                key: "focus",
+                name: "집중",
+                emoji: "🎯",
+                icon: "👾",
+                effect: "레이드 보너스",
+                rewards: [0.9,1.8,3.45,5.1,6.75,8.4,10.05,11.7,13.35,16.5,17.25,18,18.75,19.5,20.25,21,21.75,22.5,23.25,24,24.75,25.5,26.25,27,27.75,28.5,29.25,30,30.75,31.5,31.65,31.8,31.95,32.1,32.25,32.4,32.55,32.7,32.85,33,33.15,33.3,33.45,33.6,33.75,33.9,34.05,34.2,34.35,34.5,34.65,34.8,34.95,35.1,35.25,35.4,35.55,35.7,35.85,36,36.15,36.3,36.45,36.6,36.75,36.9,37.05,37.2,37.35,37.5,37.65,37.8,37.95,38.1,38.25,38.4,38.55,38.7,38.85,39,39.15,39.3,39.45,39.6,39.75,39.9,40.05,40.2,40.35,40.5,40.65,40.8,40.95,41.1,41.25,41.4,41.55,41.7,41.85,42]
+            },
+            {
+                key: "bond",
+                name: "교감",
+                emoji: "🐾",
+                icon: "⭐",
+                effect: "펫강화",
+                rewards: [1,2,3,4,5,6,7,8,9,10,11,11,12,12,13,13,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,21,21,21,22,22,22,22,22,23,23,23,23,23,24,24,24,24,24,25,25,25,25,25,26,26,26,26,26,27,27,27,27,27,28,28,28,28,28,29,29,29,29,29,30,30,30,30,30,31,31,31,31,31,32,32,32,32,32,33,33,33,33,33,34,34,34,34,34]
+            }
+        ]
+    },
     storage: { pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     howolDrama: { pendingName: "howolDramaPending.json" },
     halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
@@ -368,6 +398,43 @@ function applyInfoPercentWithExactFloor(value, percent) {
 	return baseValue + wholeUnits * thousandthPercent + Math.floor(remainder * thousandthPercent / 100000);
 }
 
+// 회원의 스탯 잔고와 여섯 진행값을 저장 없이 검증·복사하는 함수
+function getAdventureStatState(member) {
+    var config = GLOBAL_CONFIG.adventureStats, saved = member && member.adventureStats;
+    var level = Math.max(1, parseInt(member && member.lv, 10) || 1); // 미참여자의 최초 소급 잔고 기준
+    var state = { points: saved === undefined ? level - 1 : saved && saved.points };
+    if (!isAdventureStatCount(state.points)) throw new Error("스탯 포인트 원본 확인 필요");
+    for (var i = 0; i < config.trees.length; i++) {
+        var key = config.trees[i].key, value = saved === undefined ? [0, 0] : saved && saved[key];
+        if (!Array.isArray(value) || value.length !== 2 || !isAdventureStatCount(value[0]) || !isAdventureStatCount(value[1]) || value[0] > config.maxStage || (value[0] === config.maxStage ? value[1] !== 0 : value[1] >= value[0] + 1)) throw new Error("스탯 진행 원본 확인 필요");
+        state[key] = [value[0], value[1]];
+    }
+    return state;
+}
+
+// 스탯에 사용하는 안전한 음이 아닌 정수인지 확인하는 함수
+function isAdventureStatCount(value) {
+    return typeof value === "number" && isFinite(value) && value >= 0 && Math.floor(value) === value && value <= GLOBAL_CONFIG.adventureStats.maxSafe;
+}
+
+// 완료한 단계의 보상을 합산해 표시와 실제 계산에 함께 사용하는 함수
+function getAdventureStatBonus(member, treeIndex) {
+    var state = getAdventureStatState(member), tree = GLOBAL_CONFIG.adventureStats.trees[treeIndex];
+    var completed = state[tree.key][0], total = 0; // 부분 투자는 효과에 포함하지 않음
+    for (var i = 0; i < completed; i++) total += Math.round(tree.rewards[i] * 100);
+    return total / 100;
+}
+
+// 현재 투자 단계만 한 줄로 표시하는 함수
+function buildAdventureStatProgress(state) {
+    var trees = GLOBAL_CONFIG.adventureStats.trees, parts = [];
+    for (var i = 0; i < trees.length; i++) {
+        var value = state[trees[i].key], completed = value[0] === GLOBAL_CONFIG.adventureStats.maxStage;
+        parts.push(trees[i].emoji + " " + trees[i].name + "(" + (completed ? value[0] : value[1]) + "/" + (completed ? value[0] : value[0] + 1) + ")");
+    }
+    return parts.join(" ");
+}
+
 // Info에서 /레벨 출력 메시지를 만드는 함수
 function buildInfoLevelMessage(data, petData, guildData, user) {
 	var member = data.member[user];
@@ -390,6 +457,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var gauge = "";
 	for (var i = 0; i < 10; i++) gauge += i < filled ? "■" : "□";
 	var summary = getInfoAdventureLevelSummary(level);
+	var statState = getAdventureStatState(member); // 조회는 최초 소급 잔고도 저장 없이 계산
 	var promotionCount = Math.floor(level / 10); // 대승급을 포함한 전체 10레벨 단위 승급 차수
 	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
 	var nextMajor = (Math.floor(level / 100) + 1) * 100;
@@ -400,19 +468,22 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		"🌟 Lv." + numberWithCommas(level) + " [" + gauge + "]\n" +
 		"📊 EXP: " + formatInfoAdventureExperience(exp) + " / " + formatInfoAdventureExperience(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
 		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n\n" +
+		"🌳 모험가 스탯트리\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(statState.points) + "개\n" + buildAdventureStatProgress(statState) + "\n" +
+		(statState.points > 0 ? "✨ 투자 가능한 스탯 포인트가 있습니다!\n" : "") + "👉 스탯트리 정보 /스탯\n\n" +
 		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
 		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음\n" +
 		"━━━━━━━━━━━━\n" +
+		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
 		"🧭 모험가 퀘스트 · " + questCompleted + "/100단계 완료\n" +
 		questStatus + "\n\n" +
 		"👉 진행 안내 /모험가퀘스트\n" +
 		"👉 전체 기록 /퀘스트기록\n" +
 		"👉 타이틀 장착 /퀘스트타이틀\n" +
 		"━━━━━━━━━━━━\n" +
-		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
-		"🎒 모험가 레벨 보너스\n" +
-		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
-		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
+		"🎒 모험가 성장 보너스\n" +
+		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent + getAdventureStatBonus(member, 0)) + "%\n" +
+		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent + getAdventureStatBonus(member, 1)) + "%\n" +
+		"⭐ 모험가 펫강화 보너스: +" + numberWithCommas(getAdventureStatBonus(member, 2)) + "강\n" +
 		"━━━━━━━━━━━━\n" +
 		"🧭 모험가 퀘스트 보너스\n" +
 		"⚔️ 퀘스트 캐슬 보너스: +" + formatInfoAdventureQuestPercent(questCastlePercent) + "%\n" +
@@ -2427,6 +2498,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
 	castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
 	castleCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
+	castleCubePercent += getAdventureStatBonus(data && data.member ? data.member[memberName] : null, 0);
 	var castleQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
 	castleCubePercent += castleQuestState && castleQuestState.totals ? Number(castleQuestState.totals.castlePercent) || 0 : 0;
 	var castleResult = applyInfoPercentWithExactFloor(castleTotal, castleCubePercent);
@@ -2468,6 +2540,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
 	raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
 	raidCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
+	raidCubePercent += getAdventureStatBonus(data && data.member ? data.member[memberName] : null, 1);
 	var raidQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
 	raidCubePercent += raidQuestState && raidQuestState.totals ? Number(raidQuestState.totals.raidPercent) || 0 : 0;
 	var raidResult = applyInfoPercentWithExactFloor(raidTotal, raidCubePercent);
