@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.827"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.829"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -4926,12 +4926,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 return;
             }
         }
-        if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg)) && isMasterIdentity(sender) && data.migrations && data.migrations[GLOBAL_CONFIG.adventureQuest.history.markerKey] === true) {
-            var adventureDeletionPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName);
-            var adventureDeletionText = FileStream.read(adventureDeletionPath, "utf-8");
-            var adventureDeletionStore = requireAdventureRecordStore(loadJsonFile(adventureDeletionPath));
-            Object.defineProperty(data, "__adventureRecordContext", { value: { store: adventureDeletionStore, text: adventureDeletionText, deletion: true }, configurable: true, enumerable: false });
-        }
+
         if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg) || msg === "/데이터정리") && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists() && (isMasterIdentity(sender) || (msg === "/데이터정리" && isAdminIdentity(sender)))) {
             ctx.dollDeletion = { index: requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json")), stores: [], snapshots: [], dirty: false };
             ctx.dollDeletion.indexSnapshot = createJsonRollbackSnapshot(ctx.dollDeletion.index);
@@ -5891,6 +5886,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         commonStepStart = Date.now();
         if (!data) data = loadJsonFile(filePath);
         addResponseTiming("member.json 로드", commonStepStart);
+        // 정지·개인톡 검사에서 다시 읽은 최종 회원에 삭제 기록 문맥을 연결한다.
+        if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg)) && isMasterIdentity(sender) && data.migrations && data.migrations[GLOBAL_CONFIG.adventureQuest.history.markerKey] === true) {
+            var adventureDeletionPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName);
+            var adventureDeletionText = FileStream.read(adventureDeletionPath, "utf-8");
+            var adventureDeletionStore = requireAdventureRecordStore(loadJsonFile(adventureDeletionPath));
+            Object.defineProperty(data, "__adventureRecordContext", { value: { store: adventureDeletionStore, text: adventureDeletionText, deletion: true }, configurable: true, enumerable: false });
+        }
         var pointShopBootstrapChanged = syncStoneBoxShopItems(data); // 돌멩이 단가와 상자 가격 동기화
         var incomingServerChanged = room === room15 && isGroupChat === true && assignUnspecifiedMemberServer(data, sender, roomToServer[room]); // 신규 방은 짧은 일반 채팅에서도 미지정 소속을 결정
         if (pointShopBootstrapChanged || incomingServerChanged) saveJsonFile(data, filePath);
