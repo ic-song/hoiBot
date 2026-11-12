@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.836"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.837"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -42853,9 +42853,9 @@ function buildAdventureStatProgress(state) {
     var trees = GLOBAL_CONFIG.adventureStats.trees, parts = [];
     for (var i = 0; i < trees.length; i++) {
         var value = state[trees[i].key], completed = value[0] === GLOBAL_CONFIG.adventureStats.maxStage;
-        parts.push(trees[i].emoji + " " + trees[i].name + "(" + (completed ? value[0] : value[1]) + "/" + (completed ? value[0] : value[0] + 1) + ")");
+        parts.push(trees[i].emoji + trees[i].name + "(" + (completed ? value[0] : value[1]) + "/" + (completed ? value[0] : value[0] + 1) + ")");
     }
-    return parts.join(" ");
+    return parts.join("");
 }
 
 // 스탯 조회와 투자·아이템 사용의 전체 입력 형식을 해석하는 함수
