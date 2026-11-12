@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.831"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.832"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1022,6 +1022,15 @@ const GLOBAL_CONFIG = {
             { key: "premium", days: 30, command: "/호패프리미엄30일오픈", itemName: "호이패스 프리미엄 30일👑(/호패프리미엄30일오픈)", packageName: "호이패스 프리미엄 30일 패키지👑" }
         ]
     },
+    guildCombatItems: {
+        maxSafe: 9007199254740991,
+        items: [
+            {"name":"기습공격권🔥(10%)","legacy":"영지기습공격권🔥(10%)","reward":5000000,"rewardLabel":"500만"},
+            {"name":"기습공격권🔥(40%)","legacy":"영지기습공격권🔥(40%)","reward":10000000,"rewardLabel":"1,000만"},
+            {"name":"절대방어권🛡(20%)","legacy":"영지절대방어권🛡(20%)","reward":5000000,"rewardLabel":"500만"},
+            {"name":"절대방어권🛡(50%)","legacy":"영지절대방어권🛡(50%)","reward":10000000,"rewardLabel":"1,000만"}
+        ]
+    },
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     commandQueue: {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
@@ -1193,18 +1202,18 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back2.json"
     ],
     "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 6곳\n🎯 기본 공격권 하루 5회 · 추가 공격권 영구 보관\n🔭 정찰 정보 확인 · 방어 참여 시스템\n🔄 공격·방어·자폭 인원 교체: 각각 하루 2회\n⏳ 선포 2분 후 전투 시작\n🏆 3전 2선승 · 3경기 모두 진행\n💣 자폭 2회/일 · 성공확률 50%\n🛡️ 피격 시 방어자는 2분 안에 /방어\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 정찰 결과 무관\n\n📚 참여방법·보상·명령어 전체보기" + allsee + "\n【1. 전쟁 준비와 편성】\n━━━━━━━━━━━━\n🔔 길드톡 이름은 마크를 제외한 정확한 길드명\n└ 길마·부길마: /전쟁톡등록 → /전쟁톡확인\n👥 정찰 1명 · 자폭 1명 · 공격 3명 · 방어 3명\n🎯 공격 3명: 전체 길드원 편성 가능\n⚒️ 방어 3명: 전체 길드원 가능 · 공격 진형과 중복 불가\n🔭 정찰병: 일반 길드원도 편성 가능\n💣 자폭병: 기존 역할과 겸직 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 편성 번호는 /길드정보의 길드원 번호 사용\n🔒 전쟁 중 기본 편성 변경 제한\n🔄 공격·방어·자폭 인원 교체: 길드별 각각 하루 2회\n└ 최초 편성 무료 · 유형별 교체 횟수 별도 관리\n└ 공격 측 정찰 승리 후 순서 변경은 별도 규칙\n└ 방어 측은 선포 시 확정된 인원·자리로 대응\n🔄 편성초기화는 8개 슬롯 해제\n└ 초기화·재편성으로 교체 횟수나 소진한 선포권 복구 불가\n\n【2. 전쟁선포와 공격권】\n━━━━━━━━━━━━\n🪙 [1] 동부 금광\n🪙 [2] 중앙 금광\n🪙 [3] 서부 금광\n📕 [4] 펫스킬 광산\n💎 [5] 다이아 광산\n🏰 [6] 호월킹덤\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 길드 하루 5회\n⭐ 개인 선포권은 길마·정찰·공격·전투지휘관 권리를 합산(최대 4회)\n└ 길마 기본 선포권 먼저 사용 · 충전은 개인 권리 증가 없음\n└ 개인 기본권 소진 후에도 유자격자는 추가 공용권 1회로 선포 가능\n⚠️ 부길마 직책만으로는 선포 불가\n⚠️ 편성 변경으로 소진한 선포권 복구 불가\n📣 등록된 자기 길드톡에서 권한 보유자만 선포\n⚔️ 여러 지역 동시 공격 가능\n└ 다른 길드의 동일 지역 동시 공격 가능\n└ 같은 길드의 동일 지역 중복 공격은 불가\n⏱️ 공격 쿨타임·점령보호 없음\n\n【3. 정찰·침공 감지】\n━━━━━━━━━━━━\n🔭 선포 즉시 양측 정찰병의 개인 종합매력 비교\n└ 동률은 방어 정찰 승리\n🚨 방어 길드톡에 침공 감지 항상 통보\n└ 침공 감지 자체는 진형 변경권이 아님\n🎯 공격 정찰 승리 시\n└ 상대 정찰병 및 기본 방어 3명의 닉네임·캐슬 정보 공개\n└ 공격 진형 3명 순서 변경 가능\n⚒️ 방어 정찰 승리 시\n└ 상대 정찰병 닉네임·종합매력 공개\n└ 최종 방어 선봉 캐슬 +5%p 추가\n⚠️ 방어 정찰병이 없을 때(0:0 포함)는 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 승패로 변경하지 않음\n⏳ 공격 측 정찰 승리 시 2분 안에 공격 순서 변경 가능\n└ 기존 공격 3명 유지, 순서만 변경\n🛡️ 감지 성공·실패 및 정찰병 부재 모두 /방어 안내\n└ 해당 전투의 방어자가 2분 준비 시간 안에 입력\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 동일 전투 중복 수령 불가\n🔍 단독 정찰은 등록된 정찰병 본인만 실행\n└ 길드당 하루 2회 · 정찰병 변경 하루 2회(최초 무료)\n└ 단독 정찰에는 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n【4. 전투 진행과 판정】\n━━━━━━━━━━━━\n⏳ 선포 후 2분 준비\n└ 2:00 선봉전 → 2:15 중견전 → 2:30 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n⚔️ 캐슬매력은 전쟁선포 당시 기준\n⚒️ 기본 방어 패시브: 선봉 +3% · 중견 +10%\n🔭 방어 정찰 성공 시 최종 선봉 +5%p 추가(선봉 총 +8%)\n🎲 판정 순서: 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n└ 캐슬 동률 등 기존 동률 규칙은 방어 승리\n🥉 대장전에는 특수 기습·절대방어 아이템 미적용\n└ 길드큐브 패시브는 유지\n\n【5. 점령 보상과 혜택】\n━━━━━━━━━━━━\n🎁 금광 점령 성공: 길드자금 🅟5억\n⚒️ 금광 방어 성공: 길드자금 🅟2.5억\n🎁 기타 지역 점령 성공: 길드자금 🅟3억\n⚒️ 기타 지역 방어 성공: 길드자금 🅟1억\n💔 공격 실패: 길드자금 🅟1억\n⚔️🛡️ 공격/방어 편성 6명: 각 개인 🅟1억\n└ 정상적으로 대전 완료 시 각자 지급(승패 무관)\n🔭 정찰병 개인 보상: 성공·실패 모두 🅟1억\n└ 계정별 하루 1회 수령 유지\n💣 자폭병 개인 보상: 🅟1억\n└ 기존 보상 지급 조건 및 하루 1회 수령 유지\n🛡️ /방어 참여 개인 보상: 🅟5천만 별도 지급\n└ 동일 전투에서 같은 계정에 중복 지급하지 않음\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에만 적용\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n🏰 호월킹덤 점령 중: 점령 길드원 전체 탐험 성공확률 +5%p\n🎲 점령·방어 길드자금에 기존 길드큐브3 추가율을 한 번 적용\n└ 공격 실패 보상에는 길드큐브 미지급\n🏳️ 실제 미점령 지역 공격 시 공격권 1회 차감 후 즉시 무혈입성\n└ 정상 점령 성공과 동일한 점령 보상 적용\n\n【6. 자폭 및 특수 규칙】\n━━━━━━━━━━━━\n💣 자폭: 길드당 하루 2회 · 성공확률 50%\n🔄 자폭병 교체: 하루 2회(최초 편성 무료)\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n💥 자폭 성공 시 지역을 미점령으로 전환\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n🎁 자폭병 개인 보상: 🅟1억 · 하루 1회\n🚨 자폭 실패도 상대 길드톡에 통보\n🔒 전쟁 진행 중 지역·자기 소유 지역·미점령 지역 자폭 불가\n└ 불가 조건에서는 자폭 횟수 미차감\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광의 시간당 생산 보상 없음\n※ 기존 시간제 영지전 및 영지포인트 순위 보상 휴식\n\n【7. 전체 명령어】\n━━━━━━━━━━━━\n📍 전쟁 조회\n━━━━━━━━━━━━\n/길드전쟁\n/길드전쟁가이드\n/전쟁지도\n/전쟁공격사용 숫자\n/전쟁기록\n\n👥 진형 편성\n━━━━━━━━━━━━\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰\n━━━━━━━━━━━━\n/방어\n/전쟁정찰\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n\n🔔 길드톡 관리\n━━━━━━━━━━━━\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【진격 경로·충전 공격권】\n━━━━━━━━━━━━\n🗺️ /전쟁지도: 진격 경로 · /길드전쟁: 전체 운영 현황\n🪙 금광 1곳 → 📕펫스킬 또는 💎다이아 광산 → 🏰호월킹덤\n└ 핵심 광산 보유 시 금광을 잃어도 킹덤 진격 가능\n⚔️ 전쟁선포·자폭은 대상별 진격 조건 적용 · 정찰은 미적용\n🏳️ 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ 이미 선포한 전쟁은 진격 거점을 잃어도 정상 진행\n🎯 /전쟁공격사용 숫자: 길드원 누구나 아이템으로 추가 공격권 충전\n└ 개인권 잔여 시 기본권 우선 · 개인권 소진 시 추가권만 소모\n└ 기본권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴해도 충전한 공격권은 길드에 유지 · 아이템 반환 없음\n👑 현재 길마 장착 스킬: 전투지휘관 개인 선포권+1 · 기사단 공격+3% · 징집 방어+2%\n└ 선포 당시 효과 고정 · 스킬 변경으로 진행 전투에 중복 반영 없음\n📣 점령 전체알림은 호월킹덤만 · 모든 지역 당사자 길드톡 결과는 유지",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 6곳\n🎯 기본 공격권 하루 5회 · 추가 공격권 영구 보관\n🔭 정찰 정보 확인 · 방어 참여 시스템\n🔄 공격·방어·자폭 인원 교체: 각각 하루 2회\n⏳ 선포 2분 후 전투 시작\n🏆 3전 2선승 · 3경기 모두 진행\n💣 자폭 2회/일 · 성공확률 50%\n🛡️ 피격 시 방어자는 2분 안에 /방어\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 정찰 결과 무관\n\n📚 참여방법·보상·명령어 전체보기" + allsee + "\n【1. 전쟁 준비와 편성】\n━━━━━━━━━━━━\n🔔 길드톡 이름은 마크를 제외한 정확한 길드명\n└ 길마·부길마: /전쟁톡등록 → /전쟁톡확인\n👥 정찰 1명 · 자폭 1명 · 공격 3명 · 방어 3명\n🎯 공격 3명: 전체 길드원 편성 가능\n⚒️ 방어 3명: 전체 길드원 가능 · 공격 진형과 중복 불가\n🔭 정찰병: 일반 길드원도 편성 가능\n💣 자폭병: 기존 역할과 겸직 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 편성 번호는 /길드정보의 길드원 번호 사용\n🔒 전쟁 중 기본 편성 변경 제한\n🔄 공격·방어·자폭 인원 교체: 길드별 각각 하루 2회\n└ 최초 편성 무료 · 유형별 교체 횟수 별도 관리\n└ 공격 측 정찰 승리 후 순서 변경은 별도 규칙\n└ 방어 측은 선포 시 확정된 인원·자리로 대응\n🔄 편성초기화는 8개 슬롯 해제\n└ 초기화·재편성으로 교체 횟수나 소진한 선포권 복구 불가\n\n【2. 전쟁선포와 공격권】\n━━━━━━━━━━━━\n🪙 [1] 동부 금광\n🪙 [2] 중앙 금광\n🪙 [3] 서부 금광\n📕 [4] 펫스킬 광산\n💎 [5] 다이아 광산\n🏰 [6] 호월킹덤\n🎯 길마 기본 1회 + 정찰병 1회 + 공격 3명 각 1회 = 길드 하루 5회\n⭐ 개인 선포권은 길마·정찰·공격·전투지휘관 권리를 합산(최대 4회)\n└ 길마 기본 선포권 먼저 사용 · 충전은 개인 권리 증가 없음\n└ 개인 기본권 소진 후에도 유자격자는 추가 공용권 1회로 선포 가능\n⚠️ 부길마 직책만으로는 선포 불가\n⚠️ 편성 변경으로 소진한 선포권 복구 불가\n📣 등록된 자기 길드톡에서 권한 보유자만 선포\n⚔️ 여러 지역 동시 공격 가능\n└ 다른 길드의 동일 지역 동시 공격 가능\n└ 같은 길드의 동일 지역 중복 공격은 불가\n⏱️ 공격 쿨타임·점령보호 없음\n\n【3. 정찰·침공 감지】\n━━━━━━━━━━━━\n🔭 선포 즉시 양측 정찰병의 개인 종합매력 비교\n└ 동률은 방어 정찰 승리\n🚨 방어 길드톡에 침공 감지 항상 통보\n└ 침공 감지 자체는 진형 변경권이 아님\n🎯 공격 정찰 승리 시\n└ 상대 정찰병 및 기본 방어 3명의 닉네임·캐슬 정보 공개\n└ 공격 진형 3명 순서 변경 가능\n⚒️ 방어 정찰 승리 시\n└ 상대 정찰병 닉네임·종합매력 공개\n└ 최종 방어 선봉 캐슬 +5%p 추가\n⚠️ 방어 정찰병이 없을 때(0:0 포함)는 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 승패로 변경하지 않음\n⏳ 공격 측 정찰 승리 시 2분 안에 공격 순서 변경 가능\n└ 기존 공격 3명 유지, 순서만 변경\n🛡️ 감지 성공·실패 및 정찰병 부재 모두 /방어 안내\n└ 해당 전투의 방어자가 2분 준비 시간 안에 입력\n└ 🛡️ 절대방어 확률 +5% · ⚔️ 캐슬매력 +5%\n└ 개인 보상 🅟5천만 · 동일 전투 중복 수령 불가\n🔍 단독 정찰은 등록된 정찰병 본인만 실행\n└ 길드당 하루 2회 · 정찰병 변경 하루 2회(최초 무료)\n└ 단독 정찰에는 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n【4. 전투 진행과 판정】\n━━━━━━━━━━━━\n⏳ 선포 후 2분 준비\n└ 2:00 선봉전 → 2:15 중견전 → 2:30 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n⚔️ 캐슬매력은 전쟁선포 당시 기준\n⚒️ 기본 방어 패시브: 선봉 +3% · 중견 +10%\n🔭 방어 정찰 성공 시 최종 선봉 +5%p 추가(선봉 총 +8%)\n🎲 판정 순서: 방어권/큐브 → 기습권 → 펫 크리티컬 → 캐슬 비교\n└ 캐슬 동률 등 기존 동률 규칙은 방어 승리\n🥉 대장전에는 특수 기습·절대방어 아이템 미적용\n└ 길드큐브 패시브는 유지\n🧳 기습·절대방어 아이템은 길드창고에서 자동 사용 · 발동 시만 소모\n🎁 기부: /길드기부 번호 수량 · 조회: /길드창고\n└ 펫무쌍은 개인 가방 아이템 사용\n\n【5. 점령 보상과 혜택】\n━━━━━━━━━━━━\n🎁 금광 점령 성공: 길드자금 🅟5억\n⚒️ 금광 방어 성공: 길드자금 🅟2.5억\n🎁 기타 지역 점령 성공: 길드자금 🅟3억\n⚒️ 기타 지역 방어 성공: 길드자금 🅟1억\n💔 공격 실패: 길드자금 🅟1억\n⚔️🛡️ 공격/방어 편성 6명: 각 개인 🅟1억\n└ 정상적으로 대전 완료 시 각자 지급(승패 무관)\n🔭 정찰병 개인 보상: 성공·실패 모두 🅟1억\n└ 계정별 하루 1회 수령 유지\n💣 자폭병 개인 보상: 🅟1억\n└ 기존 보상 지급 조건 및 하루 1회 수령 유지\n🛡️ /방어 참여 개인 보상: 🅟5천만 별도 지급\n└ 동일 전투에서 같은 계정에 중복 지급하지 않음\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에만 적용\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아광산 점령·방어 성공: 길드창고 다이아 +1\n🏰 호월킹덤 점령 중: 점령 길드원 전체 탐험 성공확률 +5%p\n🎲 점령·방어 길드자금에 기존 길드큐브3 추가율을 한 번 적용\n└ 공격 실패 보상에는 길드큐브 미지급\n🏳️ 실제 미점령 지역 공격 시 공격권 1회 차감 후 즉시 무혈입성\n└ 정상 점령 성공과 동일한 점령 보상 적용\n\n【6. 자폭 및 특수 규칙】\n━━━━━━━━━━━━\n💣 자폭: 길드당 하루 2회 · 성공확률 50%\n🔄 자폭병 교체: 하루 2회(최초 편성 무료)\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n💥 자폭 성공 시 지역을 미점령으로 전환\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n🎁 자폭병 개인 보상: 🅟1억 · 하루 1회\n🚨 자폭 실패도 상대 길드톡에 통보\n🔒 전쟁 진행 중 지역·자기 소유 지역·미점령 지역 자폭 불가\n└ 불가 조건에서는 자폭 횟수 미차감\n👑 호월킹덤 미점령 동안 영주 권한·세금 징수 중단\n※ 금광의 시간당 생산 보상 없음\n※ 기존 시간제 영지전 및 영지포인트 순위 보상 휴식\n\n【7. 전체 명령어】\n━━━━━━━━━━━━\n📍 전쟁 조회\n━━━━━━━━━━━━\n/길드전쟁\n/길드전쟁가이드\n/전쟁지도\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n/전쟁기록\n\n👥 진형 편성\n━━━━━━━━━━━━\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 [지역번호] 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰\n━━━━━━━━━━━━\n/방어\n/전쟁정찰\n/정찰 길드명\n/전쟁선포 지역번호\n/자폭 지역번호\n\n🔔 길드톡 관리\n━━━━━━━━━━━━\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【진격 경로·충전 공격권】\n━━━━━━━━━━━━\n🗺️ /전쟁지도: 진격 경로 · /길드전쟁: 전체 운영 현황\n🪙 금광 1곳 → 📕펫스킬 또는 💎다이아 광산 → 🏰호월킹덤\n└ 핵심 광산 보유 시 금광을 잃어도 킹덤 진격 가능\n⚔️ 전쟁선포·자폭은 대상별 진격 조건 적용 · 정찰은 미적용\n🏳️ 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ 이미 선포한 전쟁은 진격 거점을 잃어도 정상 진행\n🎯 /전쟁공격사용 숫자: 길드원 누구나 아이템으로 추가 공격권 충전\n└ 개인권 잔여 시 기본권 우선 · 개인권 소진 시 추가권만 소모\n└ 기본권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴해도 충전한 공격권은 길드에 유지 · 아이템 반환 없음\n👑 현재 길마 장착 스킬: 전투지휘관 개인 선포권+1 · 기사단 공격+3% · 징집 방어+2%\n└ 선포 당시 효과 고정 · 스킬 변경으로 진행 전투에 중복 반영 없음\n📣 점령 전체알림은 호월킹덤만 · 모든 지역 당사자 길드톡 결과는 유지",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
             "successRate": 0.8
         },
         {
-            "name": "영지절대방어권🛡(50%)",
+            "name": "절대방어권🛡(50%)",
             "successRate": 0.5
         },
         {
-            "name": "영지절대방어권🛡(20%)",
+            "name": "절대방어권🛡(20%)",
             "successRate": 0.2
         }
     ],
@@ -1218,11 +1227,11 @@ const GLOBAL_CONFIG = {
             "successRate": 0.6
         },
         {
-            "name": "영지기습공격권🔥(40%)",
+            "name": "기습공격권🔥(40%)",
             "successRate": 0.4
         },
         {
-            "name": "영지기습공격권🔥(10%)",
+            "name": "기습공격권🔥(10%)",
             "successRate": 0.1
         }
     ]
@@ -2280,8 +2289,8 @@ const GLOBAL_CONFIG = {
         territoryPayoutLogMax: 500,
         territoryAuditLogMax: 500,
         territoryDailyRewards: [
-            { name: "영지기습공격권🔥(40%)", count: 2 },
-            { name: "영지절대방어권🛡(50%)", count: 2 },
+            { name: "기습공격권🔥(40%)", count: 2 },
+            { name: "절대방어권🛡(50%)", count: 2 },
             { name: "🌪️ 전쟁불안정 증폭권(/불안정)", count: 1 },
             { name: "다이아상자💎(/다이아상자오픈)", count: 1 },
             { name: "피뢰침⚡(자동 벼락 방지)", count: 1 }
@@ -5229,6 +5238,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         if (GLOBAL_CONFIG.guildWar.legacyPaused && /^(?:\/(?:길드영지(?:준비|확인|시작|순서)?|영지공격|영지온|영지오프|영지종료보상)(?:\s|$)|영지종료보상$)/.test(msg)) {
             replier.reply("🏰 기존 길드영지전은 휴식 중입니다.\n⚔️ 신규 24시간 길드전쟁 베타테스트 진행 중\n🏰 현황: /길드전쟁\n📖 가이드: /길드전쟁가이드"); return;
         }
+        if (runGuildCombatEntry(ctx, sender, room, msg, replier, data, request)) return;
         if (runGuildWarEntry(ctx, sender, room, msg, replier, Date.now(), data)) return;
         if (runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, miniGameRequestAt, serverRaidEvent)) return;
 
@@ -14246,8 +14256,8 @@ replier.reply(
                                     data.member[userId].bag = {};
                                 }
 
-                                var attackItem = "영지기습공격권🔥(40%)";
-                                var defenseItem = "영지절대방어권🛡(50%)";
+                                var attackItem = "기습공격권🔥(40%)";
+                                var defenseItem = "절대방어권🛡(50%)";
 
                                 if (data.member[userId].bag[attackItem] === undefined) {
                                     data.member[userId].bag[attackItem] = amount;
@@ -20192,7 +20202,7 @@ replier.reply(
                                 delete data.member[sender].bag["랜덤박스💝"];
                             }
                             // 랜덤 아이템 목록
-                            var items2 = ["잡템상자☠", "치킨상자🐔", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
+                            var items2 = ["잡템상자☠", "치킨상자🐔", "치킨상자🐔", "펫먹이🍼", "절대방어권🛡(20%)", "기습공격권🔥(10%)"];
                             let acquiredItems = {}; // 여러 아이템을 저장할 객체
                             for (let i = 0; i < openCount; i++) {
                                 // openCount만큼 반복
@@ -33745,6 +33755,7 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
     return {
         reply: function (message) {
+            message = normalizeGuildCombatName(message);
             return replier.reply(ctx.header(formatHalloweenMessage(formatNicknameRankMessage(message), ctx)));
         }
     };
@@ -35076,6 +35087,7 @@ function loadJsonFile(path, memberStoreMode) {
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             var loadedData = isProtectedManagedJsonPath(path) ? parseManagedJsonContent(fileContent, path) : parseJsonContent(fileContent, path);
+            loadedData = normalizeGuildCombatLoadedData(path, loadedData);
             if (path === resolveActiveDataPath(filePath)) getCurrentContext().diamondLiveMemberText = String(fileContent);
             if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
                 try {
@@ -35107,7 +35119,7 @@ function loadJsonFile(path, memberStoreMode) {
         if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = null;
         return null;
     } catch (e) {
-        if (e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName())) || /^packageGrant(?:Stats(?:_back2?)?|Pending)\.json$/.test(String(new java.io.File(path).getName())) || /^dailyRankingPayout(?:Pending|_back2?)?\.json$/.test(String(new java.io.File(path).getName()))) throw e;
+        if (e.guildCombatItemFailure || e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName())) || /^packageGrant(?:Stats(?:_back2?)?|Pending)\.json$/.test(String(new java.io.File(path).getName())) || /^dailyRankingPayout(?:Pending|_back2?)?\.json$/.test(String(new java.io.File(path).getName()))) throw e;
         var errorObj = {
             system: "loadJsonFile",
             path: path,
@@ -35122,7 +35134,7 @@ function loadJsonFile(path, memberStoreMode) {
         if (recoveryResult) {
             if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") return loadJsonFile(path, memberStoreMode); // 복구한 회원 파일도 같은 분리 참조를 엄격히 확인
             if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = recoveryResult.data;
-            return recoveryResult.data;
+            return normalizeGuildCombatLoadedData(path, recoveryResult.data);
         }
         throw e;
     } finally {
@@ -39411,8 +39423,146 @@ function contributeGuildTerritoryBooster(data, petData, guildData, sender, count
     };
 }
 
+
+// 네 전투 아이템의 구 명칭을 수량·효과 변경 없이 현재 이름으로 바꾸는 함수
+function normalizeGuildCombatName(value) {
+    if (typeof value !== "string") return value;
+    var items = GLOBAL_CONFIG.guildCombatItems.items;
+    for (var i = 0; i < items.length; i++) value = value.split(items[i].legacy).join(items[i].name);
+    return value;
+}
+// 기존 정수 문자열을 포함해 전투 아이템 수량과 보상 범위를 확인하는 함수
+function requireGuildCombatCount(value) {
+    if (typeof value === "string" && /^(?:0|[1-9]\d*)$/.test(value)) value = Number(value);
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > GLOBAL_CONFIG.guildCombatItems.maxSafe) { var error = new Error("전투 아이템 수량·보상 확인 필요"); error.guildCombatItemFailure = true; throw error; }
+    return value;
+}
+// 가방·창고의 구 명칭만 병합하고 기부나 보상 없이 기존 수량을 보존하는 함수
+function normalizeGuildCombatBag(bag) {
+    if (bag === undefined) return false;
+    if (!bag || typeof bag !== "object" || Array.isArray(bag)) { var error = new Error("전투 아이템 보관함 형식 오류"); error.guildCombatItemFailure = true; throw error; }
+    var items = GLOBAL_CONFIG.guildCombatItems.items, pending = [], changed = false;
+    for (var i = 0; i < items.length; i++) if (Object.prototype.hasOwnProperty.call(bag, items[i].legacy)) {
+        var oldCount = requireGuildCombatCount(bag[items[i].legacy]);
+        var newCount = Object.prototype.hasOwnProperty.call(bag, items[i].name) ? requireGuildCombatCount(bag[items[i].name]) : 0;
+        pending.push({ item: items[i], count: requireGuildCombatCount(oldCount + newCount) });
+    }
+    for (var j = 0; j < pending.length; j++) { bag[pending[j].item.name] = pending[j].count; delete bag[pending[j].item.legacy]; changed = true; }
+    return changed;
+}
+// 현재 상품·설명의 이름 참조를 변환하며 충돌한 항목은 임의 덮어쓰지 않는 함수
+function normalizeGuildCombatCatalog(value) {
+    if (typeof value === "string") return normalizeGuildCombatName(value);
+    if (!value || typeof value !== "object") return value;
+    var result = Array.isArray(value) ? [] : {};
+    for (var key in value) if (Object.prototype.hasOwnProperty.call(value, key)) {
+        var name = normalizeGuildCombatName(key), converted = normalizeGuildCombatCatalog(value[key]);
+        if (Object.prototype.hasOwnProperty.call(result, name) && JSON.stringify(result[name]) !== JSON.stringify(converted)) { var error = new Error("전투 아이템 명칭 전환 충돌"); error.guildCombatItemFailure = true; throw error; }
+        result[name] = converted;
+    }
+    return result;
+}
+// 읽은 현재 회원·창고·상품 자료만 변환하고 백업·파일 IO는 건드리지 않는 함수
+function normalizeGuildCombatLoadedData(path, loaded) {
+    if (!loaded) return loaded;
+    var name = String(path).replace(/\\/g, "/").split("/").pop();
+    if (name === "member.json" && loaded.member) {
+        for (var user in loaded.member) if (Object.prototype.hasOwnProperty.call(loaded.member, user)) normalizeGuildCombatBag(loaded.member[user].bag);
+    } else if (name === "guildData.json" && loaded.guilds) {
+        for (var gid in loaded.guilds) if (Object.prototype.hasOwnProperty.call(loaded.guilds, gid)) normalizeGuildCombatBag(loaded.guilds[gid].warehouse);
+        if (loaded.shop) loaded.shop = normalizeGuildCombatCatalog(loaded.shop);
+    } else if (["itemInfo.json", "itemList.json", "packageInfo.json", "freeMarket.json"].indexOf(name) !== -1) loaded = normalizeGuildCombatCatalog(loaded);
+    return loaded;
+}
+
+// 길드창고를 명시적으로 확인하고 없는 보관함만 준비하는 함수
+function getGuildCombatInventory(guildData, gid) {
+    var guild = getGuildByIdSafe(guildData, gid);
+    if (!guild) throw new Error("전투 아이템 소속 길드 확인 필요");
+    if (guild.warehouse === undefined) guild.warehouse = { fund: 0 };
+    normalizeGuildCombatBag(guild.warehouse);
+    return guild.warehouse;
+}
+// 선택한 길드창고의 실제 아이템 잔액만 반환하는 함수
+function getGuildCombatItemCount(guildData, gid, name) {
+    var inventory = getGuildCombatInventory(guildData, gid);
+    name = normalizeGuildCombatName(name);
+    return inventory[name] === undefined ? 0 : requireGuildCombatCount(inventory[name]);
+}
+// 발동 시 같은 길드의 잔액을 재확인해 기존 수량만 차감하는 함수
+function decreaseGuildCombatItem(guildData, gid, name) {
+    name = normalizeGuildCombatName(name);
+    var count = getGuildCombatItemCount(guildData, gid, name);
+    if (count < 1) throw new Error("길드 전투 아이템 잔액 부족");
+    getGuildCombatInventory(guildData, gid)[name] = count - 1;
+}
+// 기부 고정 번호와 개당 보상을 안내하는 함수
+function buildGuildCombatDonationGuide() {
+    var items = GLOBAL_CONFIG.guildCombatItems.items, lines = ["🎁 길드창고 기부", "━━━━━━━━━━━━"];
+    for (var i = 0; i < items.length; i++) lines.push((i + 1) + ". " + items[i].name + " ·🅟" + items[i].rewardLabel);
+    return lines.join("\n") + "\n\n/길드기부 번호 수량\n※ 번호는 위 기부용 고정 번호입니다.\n※ 수량은 1 이상의 정수로 입력해주세요.";
+}
+// 소속 길드원에게만 실제 창고 잔액과 고정 기부 번호를 표시하는 함수
+function buildGuildCombatWarehouse(guildData, gid) {
+    var guild = getGuildByIdSafe(guildData, gid), items = GLOBAL_CONFIG.guildCombatItems.items;
+    var text = "🧳 길드창고\n━━━━━━━━━━━━\n" + buildGuildResourceDisplay(guild, false).replace(/x/g, "×");
+    text += "\n【길드전쟁·길드영지 사용 아이템】";
+    for (var i = 0; i < items.length; i++) text += "\n" + (i + 1) + ". " + items[i].name + " ×" + numberWithCommas(getGuildCombatItemCount(guildData, gid, items[i].name)) + " ·🅟" + items[i].rewardLabel;
+    return text + "\n\n※ 기부 보상은 아이템 1개당 지급됩니다.\n※ 길드전쟁·길드영지전에서 보유 아이템을 자동 사용합니다.\n※ 효과 발동 시에만 소모됩니다.\n※ 펫무쌍은 개인 가방의 아이템을 사용합니다.\n\n🎁 기부: /길드기부 번호 수량";
+}
+// 기부 한 건의 차감·적립·보상을 사전 검증하고 같은 접수의 재처리는 보존하는 함수
+function applyGuildCombatDonation(data, guildData, sender, number, count, requestId, nickname) {
+    var member = data.member[sender], gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
+    if (!member || !guild || !guild.members || !guild.members[sender]) throw guildWarInputError("먼저 길드에 가입해주세요.");
+    if (typeof requestId !== "string" || !requestId) throw new Error("기부 접수 식별자 확인 필요");
+    var receipts = member.guildCombatDonationReceipts;
+    if (receipts !== undefined && (!receipts || typeof receipts !== "object" || Array.isArray(receipts))) throw new Error("길드기부 영수증 형식 오류");
+    if (receipts && Object.prototype.hasOwnProperty.call(receipts, "$" + requestId)) {
+        var receipt = receipts["$" + requestId];
+        if (!receipt || receipt.accountId !== getGuildWarAccountId(data, sender) || receipt.number !== number || receipt.count !== count || typeof receipt.reply !== "string") throw new Error("길드기부 접수 내용 불일치");
+        return { changed: false, text: receipt.reply };
+    }
+    if (!isPointShopSafeCount(number) || number < 1 || number > GLOBAL_CONFIG.guildCombatItems.items.length || !isPointShopSafeCount(count) || count < 1) throw guildWarInputError(buildGuildCombatDonationGuide());
+    var item = GLOBAL_CONFIG.guildCombatItems.items[number - 1];
+    var bag = member.bag;
+    normalizeGuildCombatBag(bag);
+    var held = bag && bag[item.name] !== undefined ? requireGuildCombatCount(bag[item.name]) : 0;
+    if (held < count) throw guildWarInputError("❌ 아이템 수량이 부족합니다.\n보유: " + numberWithCommas(held) + "개");
+    var inventory = getGuildCombatInventory(guildData, gid), stored = getGuildCombatItemCount(guildData, gid, item.name);
+    var after = requireGuildCombatCount(stored + count), reward = requireGuildCombatCount(count * item.reward); // 세 변경을 적용하기 전 수량·개인 보상 범위 확인
+    var point = requireGuildCombatCount(member.point), pointAfter = requireGuildCombatCount(point + reward);
+    var text = "[" + nickname + "] 님\n🎁 길드창고 기부 완료!\n━━━━━━━━━━━━\n" + item.name + " ×" + numberWithCommas(count) + "\n\n🎒 내 보유: " + numberWithCommas(held) + " → " + numberWithCommas(held - count) + "개\n🧳 길드 보유: " + numberWithCommas(stored) + " → " + numberWithCommas(after) + "개\n\n💰 기부 보상: 🅟" + numberWithCommas(reward) + "\n\n※ 기부한 아이템은 길드에 귀속됩니다.";
+    var accountId = ensureGuildWarAccountId(data, sender).id; // 표시용 이름과 분리된 실제 기부 계정
+    bag[item.name] = held - count; if (!bag[item.name]) delete bag[item.name];
+    inventory[item.name] = after; member.point = pointAfter;
+    if (!receipts) member.guildCombatDonationReceipts = receipts = {};
+    receipts["$" + requestId] = { accountId: accountId, number: number, count: count, guildId: gid, reply: text };
+    return { changed: true, text: text };
+}
+// 기존 명령 잠금 안에서 창고 조회 또는 기부를 게시한 뒤에만 성공을 안내하는 함수
+function runGuildCombatEntry(ctx, sender, room, msg, replier, data, request) {
+    if (msg !== "/길드창고" && msg !== "/길드기부" && !/^\/길드기부\s/.test(msg)) return false;
+    if (!data.member[sender]) { replier.reply("먼저 /모험시작을 진행해주세요."); return true; }
+    var guildData = loadJsonFile(guildPath), petData = loadJsonFile(memberPetPath);
+    if (!hasAttendedToday(data, sender) && !isAttendanceFreeCommand(msg, sender)) { replier.reply(buildAttendanceRequiredMessage(data, petData, guildData, sender)); return true; }
+    var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
+    if (!guild || !guild.members || !guild.members[sender]) { replier.reply("먼저 길드에 가입해주세요."); return true; }
+    if (msg === "/길드창고") { replier.reply(buildGuildCombatWarehouse(guildData, gid)); return true; }
+    var parsed = /^\/길드기부\s+([1-4])\s+([1-9]\d*)$/.exec(msg);
+    if (!parsed) { replier.reply(buildGuildCombatDonationGuide()); return true; }
+    if (!request.guildCombatDonationId) request.guildCombatDonationId = request.callbackEvent && !request.callbackEvent.invalid && request.callbackEvent.id ? "event:" + request.callbackEvent.id : "request:" + String(java.util.UUID.randomUUID());
+    try {
+        if (request.guildCombatDonationAccountId && request.guildCombatDonationAccountId !== getGuildWarAccountId(data, sender)) throw new Error("기부 접수 계정 불일치");
+        var result = applyGuildCombatDonation(data, guildData, sender, Number(parsed[1]), Number(parsed[2]), request.guildCombatDonationId, checkRank(data, petData, guildData, sender));
+        if (result.changed) { initializeGuildWar(data, guildData, Date.now()); publishGuildWar(data, guildData, true); }
+        request.guildCombatDonationAccountId = getGuildWarAccountId(data, sender);
+        replier.reply(result.text);
+    } catch (error) { if (!error.guildWarInput) throw error; replier.reply(error.message); }
+    return true;
+}
+
 // 길드 자금과 창고 자원 표시 문자열 생성 함수
-function buildGuildResourceDisplay(g) {
+function buildGuildResourceDisplay(g, includeGuide) {
     ensureGuildWarehouseObj(g);
     return (
         "길드자금🌾: 🅟" +
@@ -39426,7 +39576,7 @@ function buildGuildResourceDisplay(g) {
         " 💫x" +
         numberWithCommas(g.warehouse.miniPet || 0) +
         " 💎x" +
-        numberWithCommas(g.warehouse.diamond || 0) + "\n"
+        numberWithCommas(g.warehouse.diamond || 0) + "\n" + (includeGuide === false ? "" : "📦 상세 확인: /길드창고\n└ 기습·방어 아이템은 전략 정보로 비공개입니다.\n")
     );
 }
 
@@ -41124,6 +41274,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
 
 // 영지전 공격 시 특수 아이템 체크
 function getGuildTerritorySpecialItem(userBag, candidates) {
+    normalizeGuildCombatBag(userBag);
     for (var i = 0; i < candidates.length; i++) {
         if (userBag && userBag[candidates[i].name] && userBag[candidates[i].name] > 0) {
             return candidates[i];
@@ -41134,6 +41285,8 @@ function getGuildTerritorySpecialItem(userBag, candidates) {
 
 // 영지전 아이템 사용 후 감소 처리
 function decreaseGuildTerritoryItem(data, user, itemName) {
+    itemName = normalizeGuildCombatName(itemName);
+    if (data.member[user]) normalizeGuildCombatBag(data.member[user].bag);
     if (!data.member[user] || !data.member[user].bag || !data.member[user].bag[itemName]) return;
     data.member[user].bag[itemName] -= 1;
     if (data.member[user].bag[itemName] <= 0) delete data.member[user].bag[itemName];
@@ -41270,7 +41423,7 @@ function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attac
 
 // 디버깅 모드에서 영지 방어권과 기습방어 큐브 확률의 합산 내역 생성
 function buildGuildTerritoryAmbushDefenseDebugMessage(data, petData, guildData, defenderName, defenseItem, guildCubeAmbushDefensePercent) {
-    var defenseItemPercent = defenseItem ? defenseItem.successRate * 100 : 0; // 보유 중인 최우선 영지절대방어권 확률
+    var defenseItemPercent = defenseItem ? defenseItem.successRate * 100 : 0; // 보유 중인 최우선 절대방어권 확률
     var combinedPercent = Math.min(100, defenseItemPercent + guildCubeAmbushDefensePercent); // 방어권과 큐브의 단순 합산 확인값
     var defenderDisplay = defenderName ? checkRank(data, petData, guildData, defenderName) : "방어자 없음";
     var defenseItemDisplay = defenseItem ? defenseItem.label : "미보유";
@@ -41278,7 +41431,7 @@ function buildGuildTerritoryAmbushDefenseDebugMessage(data, petData, guildData, 
     return "🛡️ 영지공격 기습방어 디버깅\n" +
         "━━━━━━━━━━━━━━━\n" +
         "방어자: [" + defenderDisplay + "]\n" +
-        "영지절대방어권: " + defenseItemDisplay + " = " + defenseItemPercent.toFixed(1) + "%\n" +
+        "절대방어권: " + defenseItemDisplay + " = " + defenseItemPercent.toFixed(1) + "%\n" +
         "기습방어 큐브: +" + guildCubeAmbushDefensePercent.toFixed(1) + "%\n" +
         "단순 합산: " + defenseItemPercent.toFixed(1) + "% + " + guildCubeAmbushDefensePercent.toFixed(1) + "% = " + combinedPercent.toFixed(1) + "%\n" +
         "※ 실제 전투에서는 절대방어권을 먼저 판정하고, 기습공격이 발동하면 큐브를 별도로 판정합니다.";
@@ -41320,18 +41473,18 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     }
 
     var defenseItems = [
-        { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" },
-        { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" },
-        { name: "영지절대방어권🛡(20%)", successRate: 0.2, label: "절대🛡(20%)" },
-        { name: "영지절대방어권🛡(20%)", successRate: 0.2, label: "절대🛡(20%)" }
+        { name: "절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" },
+        { name: "절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" },
+        { name: "절대방어권🛡(20%)", successRate: 0.2, label: "절대🛡(20%)" },
+        { name: "절대방어권🛡(20%)", successRate: 0.2, label: "절대🛡(20%)" }
     ];
     var offenseItems = [
-        { name: "영지기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" },
-        { name: "영지기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" },
-        { name: "영지기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" },
-        { name: "영지기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" }
+        { name: "기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" },
+        { name: "기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" },
+        { name: "기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" },
+        { name: "기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" }
     ];
-    var defenseItem = defenderName && data.member[defenderName] ? getGuildTerritorySpecialItem(data.member[defenderName].bag, defenseItems) : null;
+    var defenseItem = defenderName && data.member[defenderName] ? getGuildTerritorySpecialItem(getGuildCombatInventory(guildData, ter.ownerGuildId), defenseItems) : null;
     var guildCubeAmbushDefensePercent = defenderName ? getGuildContributionCubeMemberPercent(data, guildData, defenderName, "ambushDefense") : 0;
     if (isDebuggerFlag) {
         debuggerLog(buildGuildTerritoryAmbushDefenseDebugMessage(data, petData, guildData, defenderName, defenseItem, guildCubeAmbushDefensePercent));
@@ -41339,7 +41492,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     if (defenderName && data.member[defenderName]) {
         // 방어 아이템
         if (defenseItem && Math.random() <= defenseItem.successRate) {
-            decreaseGuildTerritoryItem(data, defenderName, defenseItem.name);
+            decreaseGuildCombatItem(guildData, ter.ownerGuildId, defenseItem.name);
 
             out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
             //		out += baseInfo;
@@ -41352,10 +41505,10 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         }
     }
 
-    var offenseItem = getGuildTerritorySpecialItem(data.member[sender].bag, offenseItems);
+    var offenseItem = getGuildTerritorySpecialItem(getGuildCombatInventory(guildData, attackerGuildInfo.guildId), offenseItems);
     if (offenseItem && Math.random() <= offenseItem.successRate) {
         // 공격 아이템
-        decreaseGuildTerritoryItem(data, sender, offenseItem.name);
+        decreaseGuildCombatItem(guildData, attackerGuildInfo.guildId, offenseItem.name);
         if (guildCubeAmbushDefensePercent > 0 && Math.random() < guildCubeAmbushDefensePercent / 100) {
             out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
             out += "[💠 길드공헌 큐브] 기습방어 +" + guildCubeAmbushDefensePercent.toFixed(1) + "% 발동!\n";
@@ -44356,7 +44509,8 @@ function normalizeUniversalCollectionKeyBagItems(bag) {
 
 // 아이템명 전환 훅
 function normalizePendantTransitionBagItem(bag, itemName) {
-    itemName = normalizePendantTransitionItemName(itemName);
+    normalizeGuildCombatBag(bag);
+    itemName = normalizeGuildCombatName(normalizePendantTransitionItemName(itemName));
     normalizeUniversalCollectionKeyBagItems(bag);
     if (itemName === GLOBAL_CONFIG.petSkill.slots.legacyExpansionItemName) return GLOBAL_CONFIG.petSkill.slots.expansionItemName;
     if (itemName === GLOBAL_CONFIG.universalBox.legacyPetSkillKeyItemName) return GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
@@ -45590,14 +45744,14 @@ function processPetMusouLightning(musou, data, petData, guildData) {
 // 펫무쌍 방어권→공격권→종합매력 순서로 점령 결투를 판정하는 함수
 function resolvePetMusouBattle(data, petData, musou, attackerName, defenderName) {
     var defenseItem = getGuildTerritorySpecialItem(data.member[defenderName].bag, [
-        { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" }
+        { name: "절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" }
     ]);
     if (defenseItem && Math.random() <= defenseItem.successRate) {
         decreaseGuildTerritoryItem(data, defenderName, defenseItem.name);
         return { attackerWin: false, defenseItem: defenseItem, offenseItem: null, attacker: null, defender: null };
     }
     var offenseItem = getGuildTerritorySpecialItem(data.member[attackerName].bag, [
-        { name: "영지기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" }
+        { name: "기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" }
     ]);
     if (offenseItem && Math.random() <= offenseItem.successRate) {
         decreaseGuildTerritoryItem(data, attackerName, offenseItem.name);
@@ -47727,8 +47881,8 @@ function processUserIDCommand(msg, data, operator) {
                 "대상: " + userIDText + "\n" +
                 "만료일: " + passEndText + "\n\n" +
                 "일일 지급 구성\n" +
-                "└ 영지기습공격권🔥(40%) x2\n" +
-                "└ 영지절대방어권🛡(50%) x2\n" +
+                "└ 기습공격권🔥(40%) x2\n" +
+                "└ 절대방어권🛡(50%) x2\n" +
                 "└ 🌪️ 전쟁불안정 증폭권(/불안정) x1\n" +
                 "└ 다이아상자💎(/다이아상자오픈) x1\n" +
                 "└ 피뢰침⚡(자동 벼락 방지) 1개\n" +
@@ -51724,10 +51878,10 @@ function generateBagOutput(bagItems, includeDonationNotice) {
             "탐험확률UP🗻(20%)",
             "탐험확률UP🗻(10%)",
 
-            "영지기습공격권🔥(10%)",
-            "영지기습공격권🔥(40%)",
-            "영지절대방어권🛡(20%)",
-            "영지절대방어권🛡(50%)",
+            "기습공격권🔥(10%)",
+            "기습공격권🔥(40%)",
+            "절대방어권🛡(20%)",
+            "절대방어권🛡(50%)",
             "🌋 대균열 유도권(/대균열)",
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
@@ -52871,7 +53025,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
         if (bag["랜덤박스💝"]) {
             let count = bag["랜덤박스💝"];
             delete bag["랜덤박스💝"];
-            let items = ["잡템상자☠", "치킨상자🐔", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
+            let items = ["잡템상자☠", "치킨상자🐔", "치킨상자🐔", "펫먹이🍼", "절대방어권🛡(20%)", "기습공격권🔥(10%)"];
             let acquired = {},
                 msg = "";
             for (let i = 0; i < count; i++) {
@@ -70259,7 +70413,7 @@ function initializeGuildWarExpansion(data, guildData, now) {
     if (!data || !data.member) throw new Error("길드전쟁 확장 전환 회원 원본 확인 필요");
     for (var i = 0; i < state.active.length; i++) {
         var war = state.active[i];
-        restoreGuildWarBattleItems(data, war); refundGuildWarTicket(state, war);
+        restoreGuildWarBattleItems(data, war, guildData); refundGuildWarTicket(state, war);
         war.cancelled = true; war.occupied = false; war.finished = now;
         war.reason = "규칙 전환으로 공격·방어 양측 무효 · 승패·보상 없음 · 소모 아이템 복구";
         war.ownerName = formatGuildDisplay(getGuildByIdSafe(guildData, state.territories[String(war.no)].owner));
@@ -70714,15 +70868,20 @@ function refundGuildWarTicket(state, war) {
     }
 }
 
-// 취소된 전쟁에서 확정 소모한 특수 아이템만 원래 유저에게 복구하는 함수
-function restoreGuildWarBattleItems(data, war) {
+// 취소 전쟁의 확정 소모분을 실제 원천 길드 또는 구 개인 가방에 한 번 복구하는 함수
+function restoreGuildWarBattleItems(data, war, guildData) {
     if (war.itemsRestored) return;
     var history = war.matchupHistory || [];
-    for (var h = 0; h < history.length; h++) restoreGuildWarBattleItems(data, history[h]);
+    for (var h = 0; h < history.length; h++) restoreGuildWarBattleItems(data, history[h], guildData);
     var matches = war.matches || [];
     for (var i = 0; i < matches.length; i++) {
         var match = matches[i], rolls = [match.attackRoll, match.defenseRoll], fighters = [war.attack[i], war.defense[i]];
         for (var side = 0; side < 2; side++) if (rolls[side] && rolls[side].consumed) {
+            if (rolls[side].guildId) {
+                var inventory = getGuildCombatInventory(guildData, rolls[side].guildId), itemName = normalizeGuildCombatName(rolls[side].item);
+                inventory[itemName] = requireGuildCombatCount(getGuildCombatItemCount(guildData, rolls[side].guildId, itemName) + 1);
+                continue;
+            }
             var member = data.member[fighters[side].name];
             if (!member || !member.bag) throw new Error("길드전쟁 소모 아이템 복구 대상 확인 필요");
             addItemToBag(member.bag, rolls[side].item, 1);
@@ -70967,7 +71126,7 @@ function initializeGuildWar(data, guildData, now) {
         }
         for (var i = 0; i < state.active.length; i++) {
             var war = state.active[i], attacker = getGuildWarEntry(state, war.attackId);
-            restoreGuildWarBattleItems(data, war);
+            restoreGuildWarBattleItems(data, war, guildData);
             if (war.day === day && state.day === day) {
                 if (attacker.carryUsed < 1) throw new Error("전환 전쟁과 당일 공격권 사용량이 일치하지 않습니다.");
                 attacker.carryUsed--;
@@ -71054,6 +71213,7 @@ function requireGuildWarState(state) {
                 if (!storedMatch || storedMatch.slot !== completed || typeof storedMatch.win !== "boolean" || !storedMatch.attackRoll || !storedMatch.defenseRoll) throw new Error("길드전쟁 확정 경기 오류");
                 var storedRolls = [storedMatch.attackRoll, storedMatch.defenseRoll];
                 for (var rollNo = 0; rollNo < storedRolls.length; rollNo++) if (typeof storedRolls[rollNo].consumed !== "boolean" || typeof storedRolls[rollNo].item !== "string" || storedRolls[rollNo].consumed && !storedRolls[rollNo].item) throw new Error("길드전쟁 아이템 소모 기록 오류");
+                for (var sourceNo = 0; sourceNo < storedRolls.length; sourceNo++) if (storedRolls[sourceNo].guildId !== undefined && (typeof storedRolls[sourceNo].guildId !== "string" || storedRolls[sourceNo].guildId !== (sourceNo === 0 ? war.attackId : war.defenseId))) throw new Error("길드전쟁 아이템 소모 길드 오류");
                 if (storedMatch.win) storedWins++;
             }
             if (war.wins !== storedWins) throw new Error("길드전쟁 확정 승수 오류");
@@ -71153,7 +71313,8 @@ function snapshotGuildWarFighter(data, petData, homeData, skillData, guildData, 
     fighter.name = name || ""; fighter.display = name ? checkRank(data, petData, guildData, name) : "미편성";
     fighter.items = [];
     var items = GLOBAL_CONFIG.guildWar.defenseItems.concat(GLOBAL_CONFIG.guildWar.attackItems);
-    for (var i = 0; valid && i < items.length; i++) if (data.member[name].bag && data.member[name].bag[items[i].name] > 0) fighter.items.push(items[i].name);
+    var itemGuildId = valid ? getMyGuildId(data, name) : null; // 선포 당시 소속 길드창고의 적용 후보 고정
+    for (var i = 0; valid && itemGuildId && i < items.length; i++) if (getGuildCombatItemCount(guildData, itemGuildId, items[i].name) > 0) fighter.items.push(items[i].name);
     fighter.cubeDefense = valid ? getGuildContributionCubeMemberPercent(data, guildData, name, "ambushDefense") : 0;
     return fighter;
 }
@@ -71170,10 +71331,10 @@ function isGuildWarFighterPresent(data, guildData, gid, fighter) {
     return !!(fighter.name && !fighter.left && guild && guild.members && guild.members[fighter.name] && data.member[fighter.name]);
 }
 
-// 선포 당시 보유했고 실제 전투 시점에도 남아 있는 우선 특수 아이템을 찾는 함수
-function getGuildWarAvailableItem(data, fighter, candidates) {
-    var bag = data.member[fighter.name] && data.member[fighter.name].bag;
-    return getGuildTerritorySpecialItem(bag, candidates.filter(function (item) { return fighter.items.indexOf(item.name) !== -1; }));
+// 선포 당시 길드창고에 있었고 실제 전투 시점에도 남은 우선 아이템을 찾는 함수
+function getGuildWarAvailableItem(guildData, gid, fighter, candidates) {
+    var inventory = getGuildCombatInventory(guildData, gid);
+    return getGuildTerritorySpecialItem(inventory, candidates.filter(function (item) { return fighter.items.some(function (name) { return normalizeGuildCombatName(name) === item.name; }); }));
 }
 
 // 해당 전투에서 확정된 방어 참여 기록을 찾는 함수
@@ -71235,8 +71396,8 @@ function resolveGuildWarMatch(data, guildData, war, slot, random) {
     var attackBase = attackPresent ? attacker.baseExp : 0, defenseBase = defensePresent ? defender.baseExp : 0;
     var attackBuff = 1 + (war.skillSnapshot ? war.skillSnapshot.attack / 100 : 0); // 선포 때 고정한 공격 진형 가산율
     var defenseBonuses = getGuildWarDefenseBonuses(war, slot), defenseBuff = 1 + defenseBonuses.total / 100; // 위치·정찰·참여 버프 가산
-    var defenseItem = defensePresent && slot !== 2 ? getGuildWarAvailableItem(data, defender, GLOBAL_CONFIG.guildWar.defenseItems) : null;
-    var attackItem = attackPresent && slot !== 2 ? getGuildWarAvailableItem(data, attacker, GLOBAL_CONFIG.guildWar.attackItems) : null;
+    var defenseItem = defensePresent && slot !== 2 ? getGuildWarAvailableItem(guildData, war.defenseId, defender, GLOBAL_CONFIG.guildWar.defenseItems) : null;
+    var attackItem = attackPresent && slot !== 2 ? getGuildWarAvailableItem(guildData, war.attackId, attacker, GLOBAL_CONFIG.guildWar.attackItems) : null;
     var cubeRate = defensePresent ? defender.cubeDefense : 0, itemRate = defenseItem ? defenseItem.successRate : 0;
     if (typeof cubeRate !== "number" || !isFinite(cubeRate) || cubeRate < 0) throw new Error("길드전쟁 큐브 확률 오류");
     var participationRate = defensePresent && defenseBonuses.joined ? GLOBAL_CONFIG.guildWar.defenseParticipation.defenseRate : 0;
@@ -71251,14 +71412,15 @@ function resolveGuildWarMatch(data, guildData, war, slot, random) {
     };
     if (defensePresent && probability > 0 && random() < probability) {
         result.defenseRoll.triggered = true;
-        if (defenseItem) { decreaseGuildTerritoryItem(data, defender.name, defenseItem.name); result.defenseRoll.consumed = true; result.effect = defenseItem.name; result.reason = "defenseItem"; }
+        if (defenseItem) { decreaseGuildCombatItem(guildData, war.defenseId, defenseItem.name); result.defenseRoll.guildId = war.defenseId; result.defenseRoll.consumed = true; result.effect = defenseItem.name; result.reason = "defenseItem"; }
         else { result.effect = participationRate ? "길드큐브·방어 참여 합산 방어" : "길드큐브[4] 패시브 방어"; result.reason = "cube"; }
         return result;
     }
     if (attackItem) {
         result.attackRoll.checked = true;
         if (random() < attackItem.successRate) {
-            decreaseGuildTerritoryItem(data, attacker.name, attackItem.name);
+            decreaseGuildCombatItem(guildData, war.attackId, attackItem.name);
+            result.attackRoll.guildId = war.attackId;
             result.attackRoll.triggered = true; result.attackRoll.consumed = true;
             result.win = true; result.effect = attackItem.name; result.reason = "attackItem";
             return result;
@@ -71344,10 +71506,21 @@ function transferGuildWarTerritory(state, no, gid, now) {
     territory.owner = gid; territory.since = now; territory.incomeAt = now; territory.income = 0;
 }
 
+// 이전 대진까지 실제 소비한 길드창고를 정산 복원 사본에 포함하는 함수
+function getGuildWarItemSourceGuildIds(war) {
+    var ids = [], matches = war.matches || [], history = war.matchupHistory || [];
+    for (var i = 0; i < matches.length; i++) {
+        var rolls = [matches[i].attackRoll, matches[i].defenseRoll];
+        for (var side = 0; side < rolls.length; side++) if (rolls[side] && rolls[side].consumed && rolls[side].guildId && ids.indexOf(rolls[side].guildId) === -1) ids.push(rolls[side].guildId);
+    }
+    for (var h = 0; h < history.length; h++) { var previous = getGuildWarItemSourceGuildIds(history[h]); for (var p = 0; p < previous.length; p++) if (ids.indexOf(previous[p]) === -1) ids.push(previous[p]); }
+    return ids;
+}
+
 // 전쟁 한 건이 변경할 점령·아이템·자금·기록만 복구용으로 보관하는 함수
 function snapshotGuildWarSettlement(data, guildData, state, war) {
     var snapshot = { war: JSON.stringify(war), territory: JSON.stringify(state.territories[String(war.no)]), notices: state.notices.slice(0), bags: [], guilds: {} };
-    var fighters = war.attack.concat(war.defense), ids = [war.attackId, war.defenseId];
+    var fighters = war.attack.concat(war.defense), ids = [war.attackId, war.defenseId].concat(getGuildWarItemSourceGuildIds(war));
     for (var h = 0; war.matchupHistory && h < war.matchupHistory.length; h++) fighters = fighters.concat(war.matchupHistory[h].attack, war.matchupHistory[h].defense);
     for (var f = 0; f < fighters.length; f++) {
         var name = fighters[f].name, member = data.member[name];
@@ -71446,7 +71619,7 @@ function processGuildWars(data, guildData, now, random, disbandId, sources) {
         } catch (error) {
             war = restoreGuildWarSettlement(data, guildData, state, snapshot);
             try {
-                restoreGuildWarBattleItems(data, war); war.cancelled = true; war.occupied = false; war.finished = now;
+                restoreGuildWarBattleItems(data, war, guildData); war.cancelled = true; war.occupied = false; war.finished = now;
                 war.reason = "전투 처리 오류 · 점령·보상 없음 · 소모 아이템 복구";
                 if (!attackGone) refundGuildWarTicket(state, war);
                 war.ownerName = formatGuildDisplay(getGuildByIdSafe(guildData, state.territories[String(war.no)].owner));
@@ -72029,7 +72202,7 @@ function buildGuildWarMatchDetail(match) {
     var text = ["🥇 제1전투 · 선봉전", "🥈 제2전투 · 중견전", "🥉 제3전투 · 대장전"][match.slot] + "\n━━━━━━━━━━━━\n";
     text += "🎯 [" + a.name + "]" + (match.win ? " 🏆 승리✅" : "") + "\n🐾 펫: " + a.pet + "\n💕 대진 확정 당시 캐슬: " + numberWithCommas(a.base) + "\n🆚\n⚒️ [" + d.name + "]" + (!match.win && d.name !== "미편성" ? " 🏆 승리✅" : "") + "\n🐾 펫: " + d.pet + "\n💕 선포 당시 캐슬: " + numberWithCommas(d.base) + "\n";
     if (match.defenseBuff > 1) text += "⚔️ 방어 캐슬매력 +" + Math.round((match.defenseBuff - 1) * 100) + "% (기본·정찰·참여·스킬 합산)\n";
-    text += "🛡️ 방어 판정\n영지절대방어권: " + (defense.item || "없음 (0%)") + "\n💠 길드큐브[4]: +" + defense.cubeRate.toFixed(1) + "%\n🛡️ 방어 참여: +" + Math.round((defense.participationRate || 0) * 100) + "%\n🎯 최종 방어확률: " + (defense.probability * 100).toFixed(1) + "%" + (defense.itemRate + defense.cubeRate / 100 + (defense.participationRate || 0) > 1 ? " (상한)" : "") + "\n";
+    text += "🛡️ 방어 판정\n절대방어권: " + (defense.item || "없음 (0%)") + "\n💠 길드큐브[4]: +" + defense.cubeRate.toFixed(1) + "%\n🛡️ 방어 참여: +" + Math.round((defense.participationRate || 0) * 100) + "%\n🎯 최종 방어확률: " + (defense.probability * 100).toFixed(1) + "%" + (defense.itemRate + defense.cubeRate / 100 + (defense.participationRate || 0) > 1 ? " (상한)" : "") + "\n";
     text += !defense.checked ? "⏭️ 방어 유저 부재 · 방어 판정 없음\n" : defense.triggered ? (defense.item ? "✅ 절대방어 발동! 즉시 방어 승리\n" : "✅ 패시브 방어 발동! 즉시 방어 승리\n") : "└ 미발동\n";
     text += "🎒 방어권 소모: " + (defense.consumed ? "1개" : "없음") + "\n";
     if (defense.triggered) return text + "⏭️ 기습공격권·크리티컬·매력비교 생략\n🏆 방어자 승리 · " + (defense.item ? "절대방어 발동" : "길드큐브·방어 참여 패시브 방어");

@@ -3,7 +3,7 @@
 - 작업 키: ready-war-education-items
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 5
+- 체크포인트 버전: 6
 - 마지막 갱신: 2026-11-12 Asia/Seoul
 - 목표/승인: 사용자 지정 순서 ①길드전쟁 공격권·개인 선포 락 ②교육2·8번 ③길드창고·전투 아이템 기부/사용처를 각각 상세 검토→개발→기획 재대조→정상/예외 테스트→source push→prod 원격 확인→Notion DEV/일자/버전까지 완료한다. 각 페이지 본문은 수정하지 않는다.
 - 대상: 177393bdd7aa8374bc6a816af5a3b775, 611393bdd7aa82e48fa7012c04628da8, 9c1393bdd7aa83f28a280166edbaff02. 모두 READY 속성/DB 스키마 확인. 기획 수정일은 각각2026-11-12T09:18:35.212Z,2026-11-06T16:00:13.423Z,2026-11-12T09:31:08.216Z.
@@ -17,3 +17,8 @@
 
 - 1번 완료: 64f12ff2를 source feature/war-ticket-lock-fix에 먼저 push하고 origin/feature/prod 동일 SHA와 ver_2.830 확인. Notion DEV/2026-11-12/ver_2.830 DB 확인. PlayMCP 부재로 알림 생략. gh 미인증으로 PR 생성은 불가했으며 Git 반영은 완료. 원래 remote bugFix 미반영 작업은 보존.
 - 2번 진행: source feature/education-stat-home, 노션 최종 문구2·8번과 기존10챕터/수료 정책 보존. 선행 평수 기획580393bdd7aa829ba4f801ff1d83df75와 달리 적용되던 빌리지·인테리어 배율을 Main/Info·정보/확장/진단에서 제외. 기존 최종 배율·재료/주택 저장 유지. Rhino3229 assert 통과. Android 실제 조회는 운영자 영역.
+
+- 2번 완료: 28411584 source feature/education-stat-home push 후 origin/feature/prod 동일 SHA/ver_2.831 확인. Notion DEV/2026-11-12/ver_2.831 확인. Rhino/Node3229·전체 Main/Info 컴파일·구문·UTF-8·diff 통과. 전용 TEMP 삭제.
+- 3번 진행: feature/guild-combat-item-donation. 네 이름 호환·현행 자료 읽기 전환, 창고 조회/기부·개당 보상·접수 영수증·고유 계정, 전쟁/영지 창고 발동 차감·펫무쌍 개인 유지, 원천 길드 환급/이전 대진 snapshot 보호. 기획23항목 대조. 현재 Rhino472 assert 및 실제6종 로컬 스냅샷 변환 통과. 기존 saveJsonFile·펫무쌍 판정은 이름 외 동일. 낮은 IO·환경 API는 모의이며 실제 Android는 미검증.
+- 3번 중복 한계: MQ 동일 접수/선택적 기존 이벤트ID·응답 실패 재처리는 멱등. 기본7인수는 별도 중복 콜백과 사용자가 보낸 새 동일 문구를 구별할 ID가 없어 시간 제한을 만들지 않는다. 사용자에게 한계 설명 완료.
+- 다음: 최신 source 전체 컴파일·Node/Rhino 및 예외 검증→전용 TEMP 정리→ver_2.832 source push→prod 원격 확인→Notion DEV/일자/버전 갱신.

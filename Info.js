@@ -8,6 +8,15 @@ const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
+    guildCombatItems: {
+        maxSafe: 9007199254740991,
+        items: [
+            {"name":"기습공격권🔥(10%)","legacy":"영지기습공격권🔥(10%)","reward":5000000,"rewardLabel":"500만"},
+            {"name":"기습공격권🔥(40%)","legacy":"영지기습공격권🔥(40%)","reward":10000000,"rewardLabel":"1,000만"},
+            {"name":"절대방어권🛡(20%)","legacy":"영지절대방어권🛡(20%)","reward":5000000,"rewardLabel":"500만"},
+            {"name":"절대방어권🛡(50%)","legacy":"영지절대방어권🛡(50%)","reward":10000000,"rewardLabel":"1,000만"}
+        ]
+    },
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     adventureStats: {
         maxStage: 100,
@@ -1981,6 +1990,58 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		applyItemInfoContext(productionItemInfoData);
 	}
 }
+
+// 네 전투 아이템의 구 명칭을 수량·효과 변경 없이 현재 이름으로 바꾸는 함수
+function normalizeGuildCombatName(value) {
+    if (typeof value !== "string") return value;
+    var items = GLOBAL_CONFIG.guildCombatItems.items;
+    for (var i = 0; i < items.length; i++) value = value.split(items[i].legacy).join(items[i].name);
+    return value;
+}
+// 기존 정수 문자열을 포함해 전투 아이템 수량과 보상 범위를 확인하는 함수
+function requireGuildCombatCount(value) {
+    if (typeof value === "string" && /^(?:0|[1-9]\d*)$/.test(value)) value = Number(value);
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > GLOBAL_CONFIG.guildCombatItems.maxSafe) { var error = new Error("전투 아이템 수량·보상 확인 필요"); error.guildCombatItemFailure = true; throw error; }
+    return value;
+}
+// 가방·창고의 구 명칭만 병합하고 기부나 보상 없이 기존 수량을 보존하는 함수
+function normalizeGuildCombatBag(bag) {
+    if (bag === undefined) return false;
+    if (!bag || typeof bag !== "object" || Array.isArray(bag)) { var error = new Error("전투 아이템 보관함 형식 오류"); error.guildCombatItemFailure = true; throw error; }
+    var items = GLOBAL_CONFIG.guildCombatItems.items, pending = [], changed = false;
+    for (var i = 0; i < items.length; i++) if (Object.prototype.hasOwnProperty.call(bag, items[i].legacy)) {
+        var oldCount = requireGuildCombatCount(bag[items[i].legacy]);
+        var newCount = Object.prototype.hasOwnProperty.call(bag, items[i].name) ? requireGuildCombatCount(bag[items[i].name]) : 0;
+        pending.push({ item: items[i], count: requireGuildCombatCount(oldCount + newCount) });
+    }
+    for (var j = 0; j < pending.length; j++) { bag[pending[j].item.name] = pending[j].count; delete bag[pending[j].item.legacy]; changed = true; }
+    return changed;
+}
+// 현재 상품·설명의 이름 참조를 변환하며 충돌한 항목은 임의 덮어쓰지 않는 함수
+function normalizeGuildCombatCatalog(value) {
+    if (typeof value === "string") return normalizeGuildCombatName(value);
+    if (!value || typeof value !== "object") return value;
+    var result = Array.isArray(value) ? [] : {};
+    for (var key in value) if (Object.prototype.hasOwnProperty.call(value, key)) {
+        var name = normalizeGuildCombatName(key), converted = normalizeGuildCombatCatalog(value[key]);
+        if (Object.prototype.hasOwnProperty.call(result, name) && JSON.stringify(result[name]) !== JSON.stringify(converted)) { var error = new Error("전투 아이템 명칭 전환 충돌"); error.guildCombatItemFailure = true; throw error; }
+        result[name] = converted;
+    }
+    return result;
+}
+// 읽은 현재 회원·창고·상품 자료만 변환하고 백업·파일 IO는 건드리지 않는 함수
+function normalizeGuildCombatLoadedData(path, loaded) {
+    if (!loaded) return loaded;
+    var name = String(path).replace(/\\/g, "/").split("/").pop();
+    if (name === "member.json" && loaded.member) {
+        for (var user in loaded.member) if (Object.prototype.hasOwnProperty.call(loaded.member, user)) normalizeGuildCombatBag(loaded.member[user].bag);
+    } else if (name === "guildData.json" && loaded.guilds) {
+        for (var gid in loaded.guilds) if (Object.prototype.hasOwnProperty.call(loaded.guilds, gid)) normalizeGuildCombatBag(loaded.guilds[gid].warehouse);
+        if (loaded.shop) loaded.shop = normalizeGuildCombatCatalog(loaded.shop);
+    } else if (["itemInfo.json", "itemList.json", "packageInfo.json", "freeMarket.json"].indexOf(name) !== -1) loaded = normalizeGuildCombatCatalog(loaded);
+    return loaded;
+}
+
 // 서버6의 이전 표기를 현재 명칭으로 맞추는 함수
 function normalizeInfoServerLabel(serverName) {
 	return serverName === "호이서버6[2030]" ? "호이서버6[30]" : (serverName || "");
@@ -2201,6 +2262,7 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
 	return {
 		reply: function (message) {
+            message = normalizeGuildCombatName(message);
 			return replier.reply(ctx.header(formatHalloweenMessage(formatNicknameRankMessage(message), ctx)));
 		}
 	};
@@ -2312,9 +2374,10 @@ function loadJsonFile(path) {
 		let file = new java.io.File(path);
 		if (file.exists()) {
 			let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-			return JSON.parse(fileContent);
+			return normalizeGuildCombatLoadedData(path, JSON.parse(fileContent));
 		}
 	} catch (error) {
+        if (error.guildCombatItemFailure) throw error;
 		// const randomNumber = Math.floor(Math.random() * 90 + 10);
 		// save("호이랜드/로그", "Log_Load_" + randomNumber + ".txt", "Error while saving JSON file: " + error.message);
 		// replier.reply(error.message);
@@ -3799,10 +3862,10 @@ function generateBagOutput(bagItems) {
             "탐험확률UP🗻(20%)",
             "탐험확률UP🗻(10%)",
 
-            "영지기습공격권🔥(10%)",
-            "영지기습공격권🔥(40%)",
-            "영지절대방어권🛡(20%)",
-            "영지절대방어권🛡(50%)",
+            "기습공격권🔥(10%)",
+            "기습공격권🔥(40%)",
+            "절대방어권🛡(20%)",
+            "절대방어권🛡(50%)",
             "🌋 대균열 유도권(/대균열)",
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
