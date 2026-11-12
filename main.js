@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.838"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.839"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -60809,7 +60809,8 @@ function collectDiamondLiveOwned(data, operatorId, identities) {
         if (!bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("회원 가방 집계 오류");
         var box = bag[GLOBAL_CONFIG.items.diamondBoxName] === undefined ? 0 : bag[GLOBAL_CONFIG.items.diamondBoxName];
         var pointBox = bag[GLOBAL_CONFIG.diamondLive.pointBoxName] === undefined ? 0 : bag[GLOBAL_CONFIG.diamondLive.pointBoxName];
-        if (!isPointShopSafeCount(point) || !isPointShopSafeCount(pointBox) || !isPointShopSafeCount(diamond) || !isPointShopSafeCount(box)) throw new Error("재화 집계 수량 오류");
+        // 약탈 등으로 발생하는 음수 포인트도 실제 잔고 그대로 합산하며 아이템 수량은 음수를 허용하지 않는다.
+        if (!isFreeMarketPointBalance(point) || Math.floor(point) !== point || !isPointShopSafeCount(pointBox) || !isPointShopSafeCount(diamond) || !isPointShopSafeCount(box)) throw new Error("재화 집계 수량 오류");
         var row = { id: id, points: String(point), pointBoxes: String(pointBox), diamonds: String(diamond), boxes: String(box) };
         byName[user] = id;
         if (byId["$" + id]) {
@@ -60992,12 +60993,12 @@ function buildDiamondLiveChange(current, baseline) {
 function getDiamondLiveMaterials(member, count, price) {
     if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return getDiamondLiveMaterials(member, count, price); });
     if (!isPointShopSafeCount(count) || count < 1) throw new Error("변환 수량을 정확히 입력해주세요.");
-    if (!member || !member.bag || typeof member.bag !== "object" || Array.isArray(member.bag) || !isPointShopSafeCount(member.point)) throw new Error("변환 재료 정보 오류");
+    if (!member || !member.bag || typeof member.bag !== "object" || Array.isArray(member.bag) || !isFreeMarketPointBalance(member.point) || Math.floor(member.point) !== member.point) throw new Error("변환 재료 정보 오류");
     var stone = member.bag[GLOBAL_CONFIG.items.legendStoneName] === undefined ? 0 : member.bag[GLOBAL_CONFIG.items.legendStoneName];
     if (!isPointShopSafeCount(stone)) throw new Error("변환 재료 보유 수량 오류");
     var unitPrice = requireDiamondLiveInteger(price, true), points = new java.math.BigInteger(String(member.point));
     var total = unitPrice.multiply(new java.math.BigInteger(String(count))); // 신청 수량의 정확한 총 포인트
-    var maxCount = points.divide(unitPrice).min(new java.math.BigInteger(String(stone))); // 두 재료로 모두 충당 가능한 수량
+    var maxCount = points.divide(unitPrice).max(new java.math.BigInteger("0")).min(new java.math.BigInteger(String(stone))); // 음수 잔액은 변환 가능 수량 0으로 안내
     return { count: count, price: price, total: String(total.toString()), missingStone: Math.max(0, count - stone),
         missingPoint: String(total.subtract(points).max(new java.math.BigInteger("0")).toString()), maxCount: Number(String(maxCount.toString())) };
 }

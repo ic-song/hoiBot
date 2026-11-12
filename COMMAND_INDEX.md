@@ -6898,6 +6898,7 @@ Status: VERIFIED
 - `initializeDiamondLiveState`, `requireDiamondLiveState`, `verifyDiamondLiveReceipt`, `buildDiamondLiveReceipt`
 - `applyDiamondLiveBaselinePolicy`, `parseDiamondLiveBaselineValue`, `changeDiamondLiveBaseline`
 - `collectDiamondLiveOwned`, `collectDiamondLiveReserved`, `getDiamondLiveSnapshot`
+- `collectDiamondLiveOwned`는 포인트를 안전 범위의 부호 있는 정수 잔액으로 검증해 음수도 원래 값 그대로 합산한다. 포인트상자·다이아·다이아상자는 계속 음이 아닌 안전 정수만 허용한다. `getDiamondLiveMaterials`도 같은 잔액 검증을 사용하며 음수 잔액의 최대 변환량은0, 부족액은 총 비용에서 실제 잔고를 뺀 정확한 큰 정수다. 집계 기준·운영자 제외·회원 잔액·아이템과 저장 흐름은 바꾸지 않는다.
 - `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`, `getDiamondLiveCancelAlias`
 - `getDiamondLiveMaterials`, `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveStatisticsChange`, `formatDiamondLiveStatisticsAmount`, `buildDiamondLiveStatisticsDetail`, `calculateDiamondLivePriceDetails`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
 
