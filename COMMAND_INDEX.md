@@ -2653,6 +2653,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Threshold-based mini-pet cleanup and sale command
+- 숫자 기준 매력 전체 형식만 실행한다. `getSafeSalePoint`와 `isSafePointSaleCredit`로 모든 대상의 가격·합산 보상·지급 후 잔액을 검사한 후 가방을 교체한다. 잘못된 값이 하나라도 있으면 포인트·가방을 변경하지 않는다.
 - `창조`, `창세`, `태초+`, `태초`, and elite mini-pets are protected from cleanup sale
 - Inspect this branch first for reports about unexpected bulk removals
 
@@ -5223,6 +5224,7 @@ Status: VERIFIED
 - `data.member[sender].point`
 ## Save Flow
 - Removes selected mini-pet, adds points, saves member data and `petData`
+- Before removal, `getSafeSalePoint` validates a nonnegative safe-integer price (numeric strings allowed), and `isSafePointSaleCredit` checks the wallet and credit result. Missing/zero mini-pet prices retain the 100,000-point default. Invalid data aborts without a point or bag mutation.
 ## Related Commands
 - `/미니펫가방`
 - `/미니펫가방정리`
@@ -5254,6 +5256,7 @@ Status: VERIFIED
 ## AI Notes
 - Accepted as `/미니펫지정판매 [start]~[end]`; suffix guide text must not execute.
 - Uses the same default mini-pet sale price fallback as `/미니펫판매`.
+- `/미니펫지정판매`·`/미니펫등급정리`는 모든 판매 대상의 가격과 합계를 검증하고 지급 후 잔액을 확인한 다음 가방을 변경한다. 대상 외 미니펫은 검증·판매하지 않는다.
 
 ---
 
@@ -8325,6 +8328,7 @@ Status: VERIFIED
 
 - 정상 입찰 시 할인 적용 여부에 따라 입찰 포인트와 수수료를 차감하고 경매 최고 입찰 정보를 갱신한 뒤 응답 마지막의 `saveJsonFile(data, filePath)`로 저장한다.
 - 기존 최고 입찰자가 밀리면 `highestBidCost`를 환급하며, 이 필드가 없는 기존 경매 데이터는 `highestBid`를 환급한다.
+- `parseSafePointAmount`로 입찰액을 변환 전에 검사한다. `GLOBAL_CONFIG.auction.bidFee`를 포함한 차감액·현재 잔액·환급액·환급 후 잔액이 안전한 범위일 때만 환급과 신규 차감을 함께 적용한다. 잘못 저장된 환급액을 표시 금액으로 대체하지 않는다.
 
 ## Related Commands
 
@@ -9040,3 +9044,15 @@ Status: VERIFIED
 - Main/Info `getEquippedNonTierPetSkillExp`가 장착된 서로 다른 스킬의 매력을 합산하고 소멸 후 제외한다. 동일 스킬 중복 장착 거절은 기존대로 유지한다. Info의 `GLOBAL_CONFIG.petSkill.charmSkills`도 같은 수치다.
 - SSS는 확률표·오픈 결과·가방·컬렉션·자유시장 등급 검색/정렬에서 SS보다 먼저 표시한다. 삼성전자 컬렉션은 사용자 확정으로 최대3개, 1개당 홈뱃지 큐브💟1,500개(총4,500개). SS/S 컬렉션 규칙은 유지한다.
 - `/펫스킬컬렉션등록` → `등록`은 재료 차감 중 이름 정규화가 교체한 현재 컬렉션을 다시 참조해 등록 횟수와 보상을 함께 반영한다. 만능열쇠 다중 선택도 같은 SSS3개 한도·보상을 따른다. 기존 명령·저장 파일·DEV/PROD 경로를 재사용한다.
+
+---
+
+# 운영자 포인트 변경·미니펫 타이틀 판매 안전 검사
+
+Status: VERIFIED
+
+- `main.js`: `/속성증가`·`/속성감소 [유저명] point [정수]`, `/포인트수정 [유저명] [정수]`, `/미니펫타이틀판매 [번호]`의 전체 입력 형식을 검사한다. 설명 접미문은 실행하지 않는다.
+- 운영자 수량은 `parseSafePointAmount`로 0~9,007,199,254,740,991의 정수만 허용한다. 포인트 속성 변경은 기존 값과 결과도 검사해 0 미만·안전 범위 초과를 거절한다. 기존 레벨·권한 규칙은 유지한다.
+- `/포인트수정`은 MASTER만 실행하며 0 설정과 기존 잘못된 잔액의 명시적 수정을 허용한다. 검증 실패 시 기존 회원 값을 보존한다.
+- 미니펫 타이틀은 `getSafeSalePoint(..., 0)`과 `isSafePointSaleCredit` 검사 후 목록 제거·포인트 지급·기존 두 파일 저장을 실행한다. 0원 타이틀, 장착 중 판매 금지와 기존 저장 경로는 유지한다.
+- 두 판매 검증 helper에는 파일 IO가 없다. 정상 판매는 기존 음수 잔액도 실제 보상만큼만 증가시키며 임의 초기화하지 않는다. 나락상자와 공통 `addPoint`의 손실 정책은 변경하지 않는다.

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.841"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.842"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1008,6 +1008,7 @@ var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 �
 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    auction: { bidFee: 700000 },
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
     diamondLive: { pointWeight: 150000000, diamondWeight: 200000000, roundingUnit: 1000000, confirmationMs: 60000, correctionPercent: 50, operatorName: "호이 남", baselineFile: "diamondLiveBaseline.json", pointBaseline: "15000000000000", minimumPrice: "350000000", pointBoxName: "1억포인트상자🪙(/포인트상자오픈)", pointBoxValue: "100000000" },
     passDuration: { // 기존 두 패스의 기간권·미개봉 패키지 정의
@@ -10744,20 +10745,30 @@ replier.reply(
                         replier.reply("올바른 명령어 형식을 사용해주세요. 예: /가방추가 [유저명], [아이템명] [갯수]");
                     }
                 }
-                if ((msg.startsWith("/속성증가") || msg.startsWith("/속성감소")) && isMaster(sender)) {
-                    var regex = /\/속성(?:증가|감소)\s+([^]+)\s+(lv|point)\s+(\d+)\s*$/;
+                if ((msg === "/속성증가" || msg === "/속성감소" || /^\/속성(?:증가|감소)\s+.+\s+(?:lv|point)\s+\d+$/.test(msg)) && isMaster(sender)) {
+                    var regex = /^\/속성(?:증가|감소)\s+(.+?)\s+(lv|point)\s+(\d+)$/;
                     var match = msg.match(regex);
                     if (match) {
                         var targetUserAttr = match[1];
                         const attributeType = match[2];
-                        const attributeChange = parseInt(match[3]);
+                        var attributeAmount = parseSafePointAmount(match[3]);
+                        if (!attributeAmount.ok) {
+                            replier.reply("❌ 변경 수량이 너무 큽니다. 더 작은 정수로 입력해주세요.");
+                            return;
+                        }
+                        const attributeChange = attributeAmount.amount;
                         if (data.member[targetUserAttr]) {
                             const user2 = data.member[targetUserAttr];
                             if (attributeType === "lv") {
                                 ensureAdventureStatState(user2); // 운영자 레벨 설정은 최초 소급분만 보존
                                 user2.lv += msg.startsWith("/속성증가") ? attributeChange : -attributeChange;
                             } else if (attributeType === "point") {
-                                user2.point += msg.startsWith("/속성증가") ? attributeChange : -attributeChange;
+                                var attributePointAfter = user2.point + (/^\/속성증가\s/.test(msg) ? attributeChange : -attributeChange); // 변경 후 잔액을 먼저 확인
+                                if (!isFreeMarketPointBalance(user2.point) || !isPointShopSafeAmount(attributePointAfter)) {
+                                    replier.reply("❌ 포인트가 음수가 되거나 안전한 범위를 벗어나 변경하지 않았습니다.");
+                                    return;
+                                }
+                                user2.point = attributePointAfter;
                             }
                             replier.reply(
                                 "[" +
@@ -22579,8 +22590,9 @@ replier.reply(
                         return;
                     }
                     let biditemNumber = parseInt(bidMatch[1], 10);
-                    let bidAmount = parseInt(bidMatch[2], 10);
-                    if (isNaN(biditemNumber) || isNaN(bidAmount) || biditemNumber <= 0 || bidAmount <= 0) {
+                    var parsedBidAmount = parseSafePointAmount(bidMatch[2]);
+                    let bidAmount = parsedBidAmount.amount;
+                    if (!isPointShopSafeCount(biditemNumber) || biditemNumber <= 0 || !parsedBidAmount.ok || bidAmount <= 0) {
                         replier.reply("올바른 번호와 금액을 입력하세요.");
                         return;
                     }
@@ -22593,6 +22605,12 @@ replier.reply(
                     let hasBidDiscount = hasPetSkill(petSkillData, sender, "입찰의 귀재");
                     let bidDiscount = hasBidDiscount ? Math.round(bidAmount * 0.1) : 0; // 반올림한 입찰 할인 포인트
                     let bidCost = bidAmount - bidDiscount; // 실제 차감할 할인 적용 입찰 포인트
+                    var bidTotalCost = bidCost + GLOBAL_CONFIG.auction.bidFee; // 수수료를 포함한 실제 총 차감액
+                    if (!isPointShopSafeCount(highestBid) || !isPointShopSafeCount(bidCost) ||
+                        !isPointShopSafeCount(bidTotalCost) || !isPointShopSafeAmount(data.member[sender].point)) {
+                        replier.reply("❌ 입찰 금액 또는 보유 포인트가 올바르지 않아 입찰하지 않았습니다.");
+                        return;
+                    }
                     let remainingTime = auctionItem.endTime - Date.now();
                     if (remainingTime <= 0) {
                         replier.reply("[" + auctionItem.biditemName + "] 경매 시간이 이미 마감되었습니다.");
@@ -22600,7 +22618,7 @@ replier.reply(
                     }
                     if (sender == auctionItem.highestBidder) {
                         replier.reply("자신이 이미 최상위 입찰자입니다.");
-                    } else if (bidCost + 700000 > data.member[sender].point) {
+                    } else if (bidTotalCost > data.member[sender].point) {
                         replier.reply("포인트가 부족하여 입찰할 수 없습니다.");
                     } else if (bidAmount <= highestBid) {
                         replier.reply("더 높은 포인트로 입찰해야 합니다.");
@@ -22615,11 +22633,16 @@ replier.reply(
                         replier.reply("이미 해당 레이드장비를\nMax치 만큼 보유 중입니다.");
                     } else {
                         if (auctionItem.highestBidder !== "" && data.member[auctionItem.highestBidder]) {
-                            var previousBidCost = typeof auctionItem.highestBidCost === "number" ? auctionItem.highestBidCost : highestBid; // 종전 최고 입찰자의 실제 차감액
-                            data.member[auctionItem.highestBidder].point += previousBidCost;
+                            var previousBidCost = auctionItem.highestBidCost === undefined ? highestBid : auctionItem.highestBidCost; // 기록이 없는 과거 입찰만 표시 금액으로 환급
+                            var previousBidder = data.member[auctionItem.highestBidder];
+                            if (!isPointShopSafeCount(previousBidCost) || !isFreeMarketPointBalance(previousBidder.point) ||
+                                !isFreeMarketPointBalance(previousBidder.point + previousBidCost)) {
+                                replier.reply("❌ 이전 입찰의 환급 금액을 확인할 수 없어 입찰하지 않았습니다.");
+                                return;
+                            }
+                            previousBidder.point += previousBidCost;
                         }
-                        data.member[sender].point -= bidCost;
-                        data.member[sender].point -= 700000;
+                        data.member[sender].point -= bidTotalCost;
                         auctionItem.highestBid = bidAmount;
                         auctionItem.highestBidCost = bidCost;
                         auctionItem.highestBidder = sender;
@@ -24613,7 +24636,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg.indexOf("/미니펫가방정리") === 0) {
+                if (msg === "/미니펫가방정리" || /^\/미니펫가방정리\s+\d+$/.test(msg)) {
                     var parts = String(msg).trim().split(/\s+/);
 
                     var basicPrice = 100000; // 10만
@@ -24643,7 +24666,11 @@ replier.reply(
 
                         if (!isProtectedGrade && charm <= threshold) {
                             soldCount++;
-                            var price = parseInt(pet && pet.price, 10) || basicPrice;
+                            var price = getSafeSalePoint(pet && pet.price, basicPrice);
+                            if (price === null || !isPointShopSafeCount(earnedPoint + price)) {
+                                replier.reply("❌ 판매가격이 올바르지 않아 정리하지 않았습니다.");
+                                return;
+                            }
                             earnedPoint += price;
 
                             removedNames.push(pet.name + pet.emoji + " (매력 " + charm + ")");
@@ -24657,6 +24684,10 @@ replier.reply(
                         return;
                     }
 
+                    if (!isSafePointSaleCredit(data.member[sender], earnedPoint)) {
+                        replier.reply("❌ 판매가격 또는 포인트가 올바르지 않아 판매하지 않았습니다.");
+                        return;
+                    }
                     petData[sender].miniPetBag = newBag;
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
 
@@ -24669,7 +24700,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg.indexOf("/미니펫등급정리") === 0) {
+                if (msg === "/미니펫등급정리" || /^\/미니펫등급정리\s+.+$/.test(msg)) {
                     var parts = String(msg).trim().split(/\s+/);
                     var basicPrice = 100000; // 10만
 
@@ -24700,7 +24731,11 @@ replier.reply(
 
                         if (petIndex !== -1 && petIndex <= targetIndex) {
                             soldCount++;
-                            var price = parseInt(pet && pet.price, 10) || basicPrice;
+                            var price = getSafeSalePoint(pet && pet.price, basicPrice);
+                            if (price === null || !isPointShopSafeCount(earnedPoint + price)) {
+                                replier.reply("❌ 판매가격이 올바르지 않아 정리하지 않았습니다.");
+                                return;
+                            }
                             earnedPoint += price;
                         } else {
                             newBag.push(pet);
@@ -24712,6 +24747,10 @@ replier.reply(
                         return;
                     }
 
+                    if (!isSafePointSaleCredit(data.member[sender], earnedPoint)) {
+                        replier.reply("❌ 판매가격 또는 포인트가 올바르지 않아 판매하지 않았습니다.");
+                        return;
+                    }
                     petData[sender].miniPetBag = newBag;
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
 
@@ -24749,7 +24788,11 @@ replier.reply(
                         var rangePet = rangeBag[rangeIdx];
                         var rangeSortIndex = parseInt(rangePet && rangePet.sortIndex, 10);
                         if (!isNaN(rangeSortIndex) && rangeSortIndex >= miniPetStartNo && rangeSortIndex <= miniPetEndNo) {
-                            var rangePrice = parseInt(rangePet && rangePet.price, 10) || 100000;
+                            var rangePrice = getSafeSalePoint(rangePet && rangePet.price, 100000);
+                            if (rangePrice === null || !isPointShopSafeCount(rangeEarnedPoint + rangePrice)) {
+                                replier.reply("❌ 판매가격이 올바르지 않아 판매하지 않았습니다.");
+                                return;
+                            }
                             rangeEarnedPoint += rangePrice;
                             rangeSoldCount++;
                             rangeSoldNames.push(rangePet.name + rangePet.emoji);
@@ -24763,6 +24806,10 @@ replier.reply(
                         return;
                     }
 
+                    if (!isSafePointSaleCredit(data.member[sender], rangeEarnedPoint)) {
+                        replier.reply("❌ 판매가격 또는 포인트가 올바르지 않아 판매하지 않았습니다.");
+                        return;
+                    }
                     petData[sender].miniPetBag = rangeNewBag;
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
                     addPoint(data, sender, rangeEarnedPoint);
@@ -24793,7 +24840,11 @@ replier.reply(
                         replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n해당 번호(" + petIndex + ")의 미니펫을 찾을 수 없습니다.");
                         return;
                     }
-                    let price = pet.price || 100000; // 미니펫 판매금액
+                    let price = getSafeSalePoint(pet.price, 100000); // 정상적인 판매가격만 지급
+                    if (!isSafePointSaleCredit(data.member[sender], price)) {
+                        replier.reply("❌ 판매가격 또는 포인트가 올바르지 않아 판매하지 않았습니다.");
+                        return;
+                    }
                     addPoint(data, sender, price);
                     // 실제 가방에서 제거
                     let removeIndex = bag.indexOf(pet);
@@ -30836,22 +30887,29 @@ replier.reply(
                     return;
                 }
 
-                if (msg.indexOf("/포인트수정 ") === 0) {
+                if (msg === "/포인트수정" || /^\/포인트수정\s+.+\s+-?\d+$/.test(msg)) {
                     if (!isMaster(sender)) {
                         return;
                     }
 
                     var editPointArgs = msg.substring("/포인트수정".length).trim().split(/\s+/);
-                    var newPointAmount = parseInt(editPointArgs[editPointArgs.length - 1], 10);
+                    var editPointText = editPointArgs[editPointArgs.length - 1];
+                    var editPointParsed = parseSafePointAmount(editPointText);
+                    var newPointAmount = editPointParsed.amount;
                     var targetPointUser = editPointArgs.slice(0, -1).join(" ").trim();
 
-                    if (!targetPointUser || isNaN(newPointAmount)) {
+                    if (!targetPointUser) {
                         replier.reply("사용법: /포인트수정 유저명 금액");
                         return;
                     }
 
-                    if (newPointAmount < 0) {
+                    if (editPointText.charAt(0) === "-") {
                         replier.reply("❌ 포인트는 0 이상만 설정할 수 있습니다.");
+                        return;
+                    }
+
+                    if (!editPointParsed.ok) {
+                        replier.reply("❌ 포인트가 너무 큽니다. 더 작은 정수로 입력해주세요.");
                         return;
                     }
 
@@ -31222,7 +31280,7 @@ replier.reply(
 
                     replier.reply("✅ [" + targetName + "]님의 미니펫 타이틀\n" + "[" + targetTitle.name + "]\n" + "제거가 완료되었습니다.");
                 }
-                if (msg.indexOf("/미니펫타이틀판매 ") === 0) {
+                if (msg === "/미니펫타이틀판매" || /^\/미니펫타이틀판매\s+\d+\s*$/.test(msg)) {
                     if (castleSiegeFlag) return;
 
                     var saleMatch = msg.match(/^\/미니펫타이틀판매\s+(\d+)\s*$/);
@@ -31267,7 +31325,11 @@ replier.reply(
 
                     var target = list[index - 1];
 
-                    var salePrice = parseInt(target.price || 0, 10);
+                    var salePrice = getSafeSalePoint(target.price, 0);
+                    if (!isSafePointSaleCredit(data.member[sender], salePrice)) {
+                        replier.reply("❌ 판매가격 또는 포인트가 올바르지 않아 판매하지 않았습니다.");
+                        return;
+                    }
 
                     // 장착중인 미니펫 타이틀은 판매 불가
                     if (userTitle.num === index) {
@@ -56073,8 +56135,22 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 function hasPoint(data, user, amount) {
     return data.member[user].point >= amount;
 }
-//  사용자에게 포인트를 더하거나 차감하는 함수
-// delta > 0 → 포인트 증가, delta < 0 → 포인트 차감
+// 저장된 판매가격을 검증하고 기존 기본 판매가를 적용하는 함수
+function getSafeSalePoint(rawPrice, defaultPoint) {
+    if (rawPrice === undefined || rawPrice === null || rawPrice === "") return defaultPoint;
+    if (typeof rawPrice !== "number" && (typeof rawPrice !== "string" || !/^\d+$/.test(rawPrice))) return null;
+    var price = Number(rawPrice);
+    if (!isPointShopSafeCount(price)) return null;
+    return price === 0 ? defaultPoint : price;
+}
+
+// 판매 보상과 지급 후 포인트가 안전한 범위인지 확인하는 함수
+function isSafePointSaleCredit(member, rewardPoint) {
+    return !!member && isPointShopSafeCount(rewardPoint) && isFreeMarketPointBalance(member.point) &&
+        isFreeMarketPointBalance(member.point + rewardPoint);
+}
+
+// 사용자에게 포인트를 더하거나 차감하는 함수 (음수 delta는 차감)
 function addPoint(data, user, delta) {
     data.member[user].point += delta;
 }
