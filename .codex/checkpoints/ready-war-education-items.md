@@ -1,24 +1,24 @@
 # 노션 길드전쟁 버그·교육·길드 아이템 순차 반영
 
 - 작업 키: ready-war-education-items
-- 작업 상태: 진행 중
-- 정리 후보: 아니요
-- 체크포인트 버전: 6
+- 작업 상태: 완료
+- 정리 후보: 예
+- 체크포인트 버전: 7
 - 마지막 갱신: 2026-11-12 Asia/Seoul
-- 목표/승인: 사용자 지정 순서 ①길드전쟁 공격권·개인 선포 락 ②교육2·8번 ③길드창고·전투 아이템 기부/사용처를 각각 상세 검토→개발→기획 재대조→정상/예외 테스트→source push→prod 원격 확인→Notion DEV/일자/버전까지 완료한다. 각 페이지 본문은 수정하지 않는다.
-- 대상: 177393bdd7aa8374bc6a816af5a3b775, 611393bdd7aa82e48fa7012c04628da8, 9c1393bdd7aa83f28a280166edbaff02. 모두 READY 속성/DB 스키마 확인. 기획 수정일은 각각2026-11-12T09:18:35.212Z,2026-11-06T16:00:13.423Z,2026-11-12T09:31:08.216Z.
-- 위치/기준: C:/Users/user/.codex/worktrees/hoiBot-war-ticket-lock-fix, fresh local feature/bugFix from feature/prod89f01e42/ver_2.829. 원래 remote feature/bugFix=b45affeb 미반영 사용자 작업은 보존하고 이번 source는 별도 remote feature/war-ticket-lock-fix로 공유한다.
-- 범위: main.js, Info.js(필요 시), COMMAND_INDEX.md, COMMAND_REGISTRY.md(명령 계약 변경 시), ERROR_FIX_LOG.md, data/hoiBotChangeLog.json, 본 체크포인트. 운영 스냅샷·타 작업 파일 보존. 검증 자료는 TEMP/hoibot-war-ticket-lock 전용 폴더에 두고 각 검증 완료 후 삭제.
-- 1번 의도: 개인 기본권 소진·추가권 있음이면 기존 유자격자만 추가권을 직접 소비한다. 기본권/개인 사용량 불변, 무권한 우회 금지. 지휘관 현재 길마1회 및 역할권 합산 유지. 계정 ID별 사용 이력과 UI 공용잔액 대조.
-- 1번 구현: 개인권 소진이면 기본권과 개인 사용량을 유지하고 추가권만 직접 소비. 일반 개인권 잔여는 기존 기본권 우선 및 기본0일 때 추가권+개인권 소비 유지. 신규 선포는 고유 계정 ID로 이력, 구 이름별 이력은 ID 연결해 보존. 추가권 전후잔액/소비종류·개인권 소비여부를 전쟁에 기록. 양쪽 추가권 환급·일일/관리자 초기화·편성 개인 합계·가이드/충전/선포 메시지 연결.
-- 1번 검증: 현재 Rhino726 assert 통과(정책조합/고유ID/닉변/편성/500회 큰 정수/마지막1개 경쟁/공개 명령/초기화 환급/무혈/게시 준비·회원·길드·완료표식 오류). 저수준 IO·환경 API 일부 모의, 실제 runtime/실제 제보자의 데이터 귀속은 미확인.
-- 다음 행동: 1번 기획18QA 재대조·Rhino726/Node724·전체 Rhino 컴파일·Node 구문·diff 검사 통과. ver_2.830 source push→prod 검증→Notion 갱신 뒤 2·3번 순차 진행. 정산 snapshot/restore는 entry 전체 직렬화로 신규 이력도 보존한다.
-- 제한: Android/LDPlayer 접근·업로드·컴파일 금지. HW 개발·원격 runtime QA는 하지 않는다. 실제 운영 로그가 없으면 제보 개인/길드의 잘못된 귀속을 확정하지 않는다.
+- 승인 범위: 사용자 지정 순서로 세 기획 상세 검토→개발→기획 재대조→정상/예외 검증→source push→feature/prod 원격 확인→Notion 상태/운영반영일/버전 갱신. 본문 수정 없음.
 
-- 1번 완료: 64f12ff2를 source feature/war-ticket-lock-fix에 먼저 push하고 origin/feature/prod 동일 SHA와 ver_2.830 확인. Notion DEV/2026-11-12/ver_2.830 DB 확인. PlayMCP 부재로 알림 생략. gh 미인증으로 PR 생성은 불가했으며 Git 반영은 완료. 원래 remote bugFix 미반영 작업은 보존.
-- 2번 진행: source feature/education-stat-home, 노션 최종 문구2·8번과 기존10챕터/수료 정책 보존. 선행 평수 기획580393bdd7aa829ba4f801ff1d83df75와 달리 적용되던 빌리지·인테리어 배율을 Main/Info·정보/확장/진단에서 제외. 기존 최종 배율·재료/주택 저장 유지. Rhino3229 assert 통과. Android 실제 조회는 운영자 영역.
+| 순서 | 기획 ID | 소스 반영 커밋 | 운영 버전 | 검증 | Notion 최종 속성 |
+| --- | --- | --- | --- | --- | --- |
+| 1. 개인권 소진 후 추가 공격권 | 177393bdd7aa8374bc6a816af5a3b775 | 64f12ff292dfd2026b6fb403f90582b7e1302ba3 | ver_2.830 | Rhino726 / Node724 | DEV / 2026-11-12 / ver_2.830 |
+| 2. 교육2·8 및 평수 선행 효과 | 611393bdd7aa82e48fa7012c04628da8 | 284115840ffa6add2da9f2f491528f2eab5c549f | ver_2.831 | Rhino/Node 각3229 | DEV / 2026-11-12 / ver_2.831 |
+| 3. 전투 아이템 이름·기부·창고 사용 | 9c1393bdd7aa83f28a280166edbaff02 | 10fb1305111a28df5de0241d4418ca2743f6f967 | ver_2.832 | Rhino/Node 각472 | DEV / 2026-11-12 / ver_2.832 |
 
-- 2번 완료: 28411584 source feature/education-stat-home push 후 origin/feature/prod 동일 SHA/ver_2.831 확인. Notion DEV/2026-11-12/ver_2.831 확인. Rhino/Node3229·전체 Main/Info 컴파일·구문·UTF-8·diff 통과. 전용 TEMP 삭제.
-- 3번 진행: feature/guild-combat-item-donation. 네 이름 호환·현행 자료 읽기 전환, 창고 조회/기부·개당 보상·접수 영수증·고유 계정, 전쟁/영지 창고 발동 차감·펫무쌍 개인 유지, 원천 길드 환급/이전 대진 snapshot 보호. 기획23항목 대조. 현재 Rhino472 assert 및 실제6종 로컬 스냅샷 변환 통과. 기존 saveJsonFile·펫무쌍 판정은 이름 외 동일. 낮은 IO·환경 API는 모의이며 실제 Android는 미검증.
-- 3번 중복 한계: MQ 동일 접수/선택적 기존 이벤트ID·응답 실패 재처리는 멱등. 기본7인수는 별도 중복 콜백과 사용자가 보낸 새 동일 문구를 구별할 ID가 없어 시간 제한을 만들지 않는다. 사용자에게 한계 설명 완료.
-- 다음: 최신 source 전체 컴파일·Node/Rhino 및 예외 검증→전용 TEMP 정리→ver_2.832 source push→prod 원격 확인→Notion DEV/일자/버전 갱신.
+- 원격: 각 소스 브랜치를 먼저 push하고 동일 커밋을 feature/prod에 순차 fast-forward/push, origin/feature/prod의 커밋·HoiBotVersion·개발자노트 버전을 확인했다. 최종 기능 커밋10fb1305. 2026-11-12 DB 재조회로 세 Notion 속성 및 기존 계획일 보존 확인.
+- 소스 브랜치: feature/war-ticket-lock-fix, feature/education-stat-home, feature/guild-combat-item-donation. 원래 origin/feature/bugFix=b45affeb 미반영 사용자 작업과 backup/feature-bugFix-unreflected-20261107 보존. 이번 fresh local bugFix는 이름을 소스 브랜치로 전환 후 삭제했다.
+- 1번: 역할 합산은 유지하고 개인권 소진 시 추가권만 직접 소비. 고유 ID별 사용량/구 이름 이력 연결, 충전/개인 합계/소비 영수증·같은 원천 일회 환급. 실제 제보자의 잘못된 개인 귀속은 운영 로그 없이 확정하지 않는다.
+- 2번: 교육 최종 문구2·8번과 기존10챕터·보상/수료·allsee 보존. 연결된 평수 기획580393bdd7aa829ba4f801ff1d83df75와 대조해 평수에 빌리지·인테리어 배율을 적용하던 차이를 Main/Info·정보/확장/진단에서 수정. 기존 집·가구·빌리지 효과와 레벨/퀘스트/큐브 최종 보정, 재료·확장 저장 유지. 선행 페이지는 DB 행이 없는 별도 페이지로 본문·상태 수정 없음.
+- 3번: 네 아이템은 수량·효과 보존 이름 전환. /길드창고·고정1~4번호 /길드기부, 개당500만/1000만 개인 보상과 원자 게시. 전쟁/영지만 창고 확인·발동 소비, 펫무쌍은 이름 외 기존 개인 전투 로직 동일. 이전 대진 창고까지 환급·snapshot 복원 보호. 신규 설정·방 제한·사업 한도·회수 기능 없음. 기존 안전 정수 범위 유지.
+- 중복 한계: MQ 동일 접수/선택적 기존 이벤트ID와 저장 후 응답 실패 재처리는 멱등. 기본7인수에서는 별도 중복 콜백과 새 동일 문구를 구별할 메시지 ID가 없으므로 임의 시간 제한을 두지 않는다. 사용자에게 설명 완료.
+- 공통 검증: 변경 시점 Main/Info 전체 Rhino 컴파일·Node 구문·UTF-8·git diff 검사 통과. 실제6종 로컬 자료 읽기 전환 검사. 저장 준비/회원/길드/완료표식·응답 실패, 정책/권한·부족/경계·재시작·초기화/구 기록·대진 변경·마지막 재고를 포함. 저수준 IO·환경 API 일부는 모의이다. 모든 작업 전용 TEMP 검증/PR 본문 자료 삭제. 실제 Android/LDPlayer 업로드·컴파일·실행은 수행하지 않았다.
+- PR/알림: 앞 두 반영 당시 gh 미인증으로 PR 생성 불가, Git 반영 완료. 세 번째는 기존 Git 인증을 재사용해 PR277 생성. PlayMCP 도구 부재로 버전 알림 생략.
+- 남은 후속: 운영자가 ver_2.832 소스를 MessengerBot에 업로드·컴파일하고 실제 카카오 명령을 확인한다. Codex가 생산 runtime에 직접 연결하지 않는다.
