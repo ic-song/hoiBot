@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.833"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.834"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -4579,10 +4579,12 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             if (/^\/밸런스(?:\s|$)/.test(msg)) replier.reply("이유에 사용할 수 없는 문구가 있어요. 바꿔서 다시 입력해 주세요.");
             return;
         }
-        // 숫자 확인도 원래 스탯 명령의 방·출석·정지 검사를 그대로 통과시킨다.
+        // 숫자·화면 선택 문구 모두 원래 스탯 명령의 방·출석·정지 검사를 그대로 통과시킨다.
         var adventureStatAnswer = null, adventureStatKey = getAdventureStatSessionKey(sender, room, ctx.isDev);
         var adventureStatPending = adventureStatSessions[adventureStatKey];
-        var adventureStatChoice = ctx.isDev && /^\/[12]$/.test(msg) ? msg.substring(1) : msg;
+        var adventureStatChoice = ctx.isDev && /^\/(?:[12]|스탯 찍기|안 찍기)$/.test(msg) ? msg.substring(1) : msg;
+        if (adventureStatChoice === "스탯 찍기") adventureStatChoice = "1";
+        else if (adventureStatChoice === "안 찍기") adventureStatChoice = "2";
         if (adventureStatPending) {
             delete adventureStatSessions[adventureStatKey]; // 다른 입력·중복 응답에서는 이전 확인을 다시 실행하지 않음
             if (/^[12]$/.test(adventureStatChoice) && adventureStatPending.isGroupChat === isGroupChat) {
