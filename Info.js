@@ -2471,7 +2471,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData);
 	let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
 	var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
-	homeExp += getPetHomeFloorCharm(homeData && homeData[memberName]);
+
 	var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
 	if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
@@ -2480,8 +2480,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 평수를 포함해 계산한 별채 추가분
-	homeExp += homeCharm.bonus;
+	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 평수와 분리해 계산한 별채 추가분
+	homeExp += homeCharm.bonus + homeCharm.floor; // 기존 집·가구 배율 계산 뒤 평수 기본분을 한 번 가산
 
 	// 펫 스킬
 	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp", equippedSkillNames);
@@ -2516,14 +2516,14 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
 	let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
 	var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
-	homeExp += getPetHomeFloorCharm(homeData && homeData[memberName]);
+
 	var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
 	if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
-	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 평수를 포함해 계산한 별채 추가분
-	homeExp += homeCharm.bonus;
+	var homeCharm = getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames); // 평수와 분리해 계산한 별채 추가분
+	homeExp += homeCharm.bonus + homeCharm.floor; // 기존 집·가구 배율 계산 뒤 평수 기본분을 한 번 가산
 
 	// 펫스킬
 	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp", equippedSkillNames);
@@ -4387,17 +4387,16 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNam
     var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
     var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
-    var floorCharm = getPetHomeFloorCharm(home); // 평수 기본 매력도 빌리지·인테리어 계산에 포함
-    var base = furniture + royal + arcana + floorCharm; // 별채 버프 대상인 한 모드의 기본 합계
+    var floorCharm = getPetHomeFloorCharm(home); // 기존 집·가구 효과 뒤에 더하는 평수 기본 추가분
+    var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
     var percent = state.grand.level * GLOBAL_CONFIG.petHomeVillage.grandPercent + state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
     if (equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1) percent += GLOBAL_CONFIG.petHomeVillage.dreamPercent; // 스킬 10%p를 레벨 버프에 합산
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
-    var oldHome = Number(home.exp || 0) + furniture + floorCharm;
+    var oldHome = Number(home.exp || 0) + furniture;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    var floorApplied = floorCharm + bonus - Math.floor((base - floorCharm) * percent / 100); // 평수가 늘린 기본·별채 매력
-    if (equipped.indexOf("인테리어 장인") !== -1) floorApplied += interior - (Math.floor((oldHome - floorCharm) * 1.1) - (oldHome - floorCharm)); // 평수가 늘린 인테리어 매력
+    var floorApplied = floorCharm; // 평수는 빌리지·인테리어 배율에서 제외
     return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, floor: floorCharm, floorApplied: floorApplied, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
-        castle: base + bonus + interior, raid: base + bonus + interior, total: (base + bonus + interior) * 2 };
+        castle: base + bonus + interior + floorCharm, raid: base + bonus + interior + floorCharm, total: (base + bonus + interior + floorCharm) * 2 };
 }
 
 function getHomeTotalExp(homeData, username) {
