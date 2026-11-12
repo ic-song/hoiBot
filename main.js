@@ -2829,7 +2829,7 @@ const GLOBAL_CONFIG = {
         dailyQuestDollTicketReward: 1, // 일반 일퀘 인형 이용권 보상
         dailyQuestDungeonTicketReward: 1, // 일반 일퀘 펫던전 입장권 보상
         dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
-        battlePointReward: 50000000, // 정상 완료한 캐슬·미니펫대전의 입력자 보상
+        battlePointReward: 25000000, // 정상 완료한 캐슬·미니펫대전의 입력자 보상
         weeklyQuestExperienceReward: 500, // 주간퀘스트 경험치 보상
         castleBattleExperience: { win: 100, lose: 25 }, // 캐슬대전 승패 경험치
         miniPetBattleExperience: { win: 100, lose: 25 }, // 미니펫대전 승패 경험치

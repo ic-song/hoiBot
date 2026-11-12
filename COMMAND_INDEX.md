@@ -728,7 +728,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- 정상 완료한 입력자에게 `awardDailyBattlePoints`로 승패 무관 50,000,000P를 지급한다. 실제 지급액과 결과 UI는 `GLOBAL_CONFIG.daily.battlePointReward`를 사용하며 경험치·CP·리셋권은 유지한다.
+- 정상 완료한 입력자에게 `awardDailyBattlePoints`로 승패 무관 25,000,000P를 지급한다. 실제 지급액과 결과 UI는 `GLOBAL_CONFIG.daily.battlePointReward`를 사용하며 경험치·CP·리셋권은 유지한다.
 
 ## Command Anchors
 
@@ -2617,7 +2617,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- 정상 완료 보상은 `awardDailyBattlePoints`의 50,000,000P로 고정한다. 완료 보상의 야수의 본능 2배 계산·안내는 적용하지 않으며 기존 경험치·아이템·별도 약탈 효과와 횟수 정책은 유지한다.
+- 정상 완료 보상은 `awardDailyBattlePoints`의 25,000,000P로 고정한다. 완료 보상의 야수의 본능 2배 계산·안내는 적용하지 않으며 기존 경험치·아이템·별도 약탈 효과와 횟수 정책은 유지한다.
 
 ## Command Anchors
 
