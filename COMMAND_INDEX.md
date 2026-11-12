@@ -5558,6 +5558,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
+- 모든 포인트 상품 구매의 첫 성공 응답은 저장 완료 후 기존 createRequesterReplier로 실제 구매자의 전체 닉네임을 한 번 붙인다. 구매 완료 제목과 빈 줄 없이 이어지며 기존 본문과 추가 보너스/쿠폰 메시지는 유지한다.
 - 구매·쿠폰·보너스·펫 외형/성격 변경 완료 메시지는 길드·회원·펫 저장이 끝난 뒤 출력한다. 저장 실패 시 기존 명령 트랜잭션이 세금·차감·쿠폰·지급을 되돌린다.
 - 티켓 이름을 포함한 상품은 구매 수량만큼 보유 쿠폰을 높은 할인율부터 티켓 1개당 1장씩 적용하고, 구매가 성공한 뒤 할인율별 적용 수량을 차감한다. 보유 쿠폰이 부족하면 보유 수량까지만 할인하며 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt

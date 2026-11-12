@@ -21876,8 +21876,9 @@ replier.reply(
                             }
                             saveJsonFile(data, filePath);
                             saveJsonFile(petData, memberPetPath);
+                            var pointShopBuyerReplier = createRequesterReplier(replier, checkRank(data, petData, guildData, sender), sender); // 저장 완료 후 실제 구매자의 첫 응답 헤더 구성
                             for (var pointShopReplyIndex = 0; pointShopReplyIndex < pointShopSuccessMessages.length; pointShopReplyIndex++) {
-                                replier.reply(pointShopSuccessMessages[pointShopReplyIndex]);
+                                (pointShopReplyIndex === 0 ? pointShopBuyerReplier : replier).reply(pointShopSuccessMessages[pointShopReplyIndex]);
                             }
                             if (pointShopDiscountSkill === "VIP블랙카드") {
                                 replier.reply("💳 VIP블랙카드📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 VIP 결제\n말없이 블랙카드를 계산대에 올려놓습니다.\n직원이 허리를 숙입니다.\n상품가 30% 할인👑");
