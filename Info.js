@@ -439,9 +439,9 @@ function buildAdventureStatProgress(state) {
     var trees = GLOBAL_CONFIG.adventureStats.trees, parts = [];
     for (var i = 0; i < trees.length; i++) {
         var value = state[trees[i].key], completed = value[0] === GLOBAL_CONFIG.adventureStats.maxStage;
-        parts.push(trees[i].emoji + " " + trees[i].name + "(" + (completed ? value[0] : value[1]) + "/" + (completed ? value[0] : value[0] + 1) + ")");
+        parts.push(trees[i].emoji + trees[i].name + "(" + (completed ? value[0] : value[1]) + "/" + (completed ? value[0] : value[0] + 1) + ")");
     }
-    return parts.join(" ");
+    return parts.join("");
 }
 
 // Info에서 /레벨 출력 메시지를 만드는 함수
