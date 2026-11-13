@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.847"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.848"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -70332,7 +70332,8 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             replier.reply(defenseJoinResult.text); return true;
         }
         if (request.kind === "supply") {
-            if (!hasAttendedToday(data, sender)) { replier.reply(buildAttendanceRequiredMessage(data, loadJsonFile(memberPetPath), guildData, sender)); return true; }
+            // 출석 안내에 이미 포함된 닉네임을 유지하고 전쟁 응답 헤더를 덧붙이지 않는다.
+            if (!hasAttendedToday(data, sender)) { directReply.reply(buildAttendanceRequiredMessage(data, loadJsonFile(memberPetPath), guildData, sender)); return true; }
             var supplyResult = applyGuildWarSupply(data, guildData, gid, sender, now);
             if (supplyResult.changed) publishGuildWar(data, guildData, true);
             replier.reply(supplyResult.text); return true;
