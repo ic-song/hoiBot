@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.843"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.844"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -7277,7 +7277,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         if (msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
             var skillQuery = msg.replace("/펫스킬정보", "").trim();
             if (!skillQuery) {
-                replier.reply("사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)");
+                var skillUsage = "사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회";
+                if (isAdmin(sender) || isMaster(sender)) skillUsage += "\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)";
+                replier.reply(skillUsage);
                 return;
             }
             // 스킬명과 회원 닉네임이 같아도 스킬 정보 조회를 우선한다.
@@ -53278,7 +53280,7 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
         var category = getFreeMarketCategory(row);
         if (searchQuery !== undefined && category !== previousCategory) out += "\n【" + GLOBAL_CONFIG.freeMarket.categoryLabels[category] + "】\n";
         previousCategory = category;
-        out += "\n[" + row.id + "] " + getFreeMarketItemText(row) + "\n└ 💎 " + numberWithCommas(row.price) + "개" + (row.quantity > 1 ? " (개당 " + formatFreeMarketUnitPrice(row.price, row.quantity) + ")" : "") + " | [" + checkRank(data, petData, guildData, row.seller) + "]\n└ " + formatFreeMarketDisplayTime(row.createdAt, row.createdAtMs) + "\n";
+        out += "\n[" + row.id + "] " + getFreeMarketItemText(row) + "\n└ 💎 " + numberWithCommas(row.price) + "개 | [" + checkRank(data, petData, guildData, row.seller) + "]\n└ " + formatFreeMarketDisplayTime(row.createdAt, row.createdAtMs) + "\n";
     }
     return out;
 }
