@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.846"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.847"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -4750,6 +4750,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var initialMemberLoadStartMs = Date.now();
         updateResponseQueueStage(request, "회원 자료 로드");
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
+        var adventureStatEntryRequest = parseAdventureStatRequest(msg);
+        var adventureStatMemberSnapshot = adventureStatEntryRequest && adventureStatEntryRequest.action === "invest" ? { data: data, transaction: getDataSaveTransaction(), path: resolveActiveDataPath(filePath) } : null; // 같은 투자 요청의 잠금 안에서 읽은 검증 원본
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
         // 전환 조회·실행은 공통 보정이 원본을 바꾸기 전에 검증하고 종료한다.
         if (msg === "/자유시장전환" || msg === "/자유시장전환 실행") {
@@ -5221,7 +5223,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
 
         if (!isGroupChat) {
-            data = loadJsonFile(filePath);
+            if (!canReuseAdventureStatMemberData(adventureStatMemberSnapshot, data)) data = loadJsonFile(filePath);
             var isChatExperienceQueryOperator = getChatExperienceQueryTarget(msg) !== null && (isAdminIdentity(sender) || isMasterIdentity(sender));
             if (!hasActiveHoiPassAccess(data, sender) && !isPassFreeHomeBadgeCommand(msg) && !(isMasterIdentity(sender) && getAttendanceNoticeCommandPrefix(msg)) && !isChatExperienceQueryOperator) {
                 var privateChatDetectionSent = recordBlockedPrivateChatAttempt(room, sender, msg);
@@ -5235,7 +5237,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
 
         if (isAccountSuspensionBlockedMessage(msg)) {
-            data = loadJsonFile(filePath);
+            if (!canReuseAdventureStatMemberData(adventureStatMemberSnapshot, data)) data = loadJsonFile(filePath);
             if (isAccountSuspended(data, sender)) {
                 replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
                 return;
@@ -7307,7 +7309,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             statMember.adventureStats = statPlan.state;
             if (statRequest.action === "item") removeItem(data, sender, GLOBAL_CONFIG.adventureStats.itemName, statPlan.count);
             else if (statPlan.upgrade !== null) petData[sender].upgrade = statPlan.upgrade;
-            try { publishAdventureMutation(data, petData); }
+            try {
+                var statCurrentPetText = statRequest.action === "invest" && statPlan.upgrade === null ? String(FileStream.read(resolveActiveDataPath(memberPetPath), "utf-8")) : undefined; // 변경 없는 펫은 확정 기록에 중복 보관하지 않음
+                publishAdventureMutation(data, petData, undefined, statCurrentPetText);
+            }
             catch (statSaveError) {
                 try { replier.reply(buildAdventurePublicationFailureMessage(statNick, false)); } catch (statReplyError) {}
                 throw statSaveError;
@@ -40929,6 +40934,15 @@ function getTierExperienceBonus(data, user) {
     return tier && Number(tier.experienceBonus) > 0 ? Number(tier.experienceBonus) : 0;
 }
 
+// 같은 투자 요청·환경·저장 경계에서 검증한 회원 원본을 재사용할 수 있는지 확인하는 함수
+function canReuseAdventureStatMemberData(snapshot, data) {
+    if (!snapshot || snapshot.data !== data) return false;
+    var transaction = getDataSaveTransaction(), path = resolveActiveDataPath(filePath);
+    if (!transaction || snapshot.transaction !== transaction || snapshot.path !== path || transaction.failed || transaction.rollingBack) return false;
+    var entry = transaction.entries[path]; // 회원 파일을 게시한 뒤에는 반드시 다시 읽음
+    return !(entry && entry.saved);
+}
+
 // 회원의 스탯 잔고와 여섯 진행값을 저장 없이 검증·복사하는 함수
 function getAdventureStatState(member) {
     var config = GLOBAL_CONFIG.adventureStats, saved = member && member.adventureStats;
@@ -53392,11 +53406,13 @@ function assertAdventurePublicationReady(path) {
     validateAdventurePublication(journal);
 }
 
-// 집 확장 확정 자료의 검증·복구를 처리하는 함수
-function publishAdventureMutation(data, petData, homeData) {
+// 회원·펫·집 변경을 확정 원문으로 보존한 뒤 기존 복구 경로로 함께 게시하는 함수
+function publishAdventureMutation(data, petData, homeData, currentPetText) {
     var plan = buildMemberSplitSavePlan(data), rows = [];
     if (plan) for (var i = 0; i < plan.writes.length; i++) rows.push({ name: String(new java.io.File(plan.writes[i].path).getName()), text: typeof plan.writes[i].text === "string" ? plan.writes[i].text : JSON.stringify(plan.writes[i].text) });
-    rows.push({ name: "member_pet.json", text: JSON.stringify(petData) });
+    var petText = JSON.stringify(petData);
+    var unchangedPet = typeof currentPetText === "string" && petText === currentPetText && petText.charAt(0) === "{"; // JSON 객체 원본만 생략해 기존 원본 형식 오류 검사를 보존
+    if (!unchangedPet) rows.push({ name: "member_pet.json", text: petText });
     if (homeData !== undefined) rows.push({ name: "petSweetHomeData.json", text: JSON.stringify(homeData) });
     rows.push({ name: "member.json", text: JSON.stringify(plan ? plan.member : data) });
     var journal = { version: 1, pending: rows };
