@@ -1271,19 +1271,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Files
-
-- `main.js`
-
-## Related Helpers
-
-- `formatGachaProbability`
-- `pickByProbability` (명령 내부)
-
-## AI Notes
-
-- 낚시대 파손은 기존 독립 30% 판정을 유지한다. 성공 시 정규화한 `fishTable`에서 생선을 추첨하고, 결과의 `낚시 성공 후 획득 확률`은 정규화된 생선 비율을 소수점 최대 6자리 백분율로 표시한다. 황금잉어 확률을 정수 절삭해 0%로 표시하지 않는다.
-- 패키지 소모, 생선·포인트·칭호 지급과 기존 저장 흐름은 유지한다.
+- 사용자 요청으로 명령어와 낚시 전용 보상·칭호·저장 헬퍼를 제거했다.
+- 상품 사용을 종료하며 통합 `/패키지사용`으로 이전하지 않는다. 기존 가방 아이템은 삭제하지 않는다.
 
 ---
 
@@ -3344,53 +3333,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `main.js`: `/아아`
-- Search in `main.js`: `GLOBAL_CONFIG.coffeePackage`
-
-## Files
-
-- `main.js`
-- `member.json`
-- `member_title.json`
-
-## Related Helpers
-
-- `getCoffeePackageSpecialIndex`
-- `isExclusiveDataMutationCommandMessage`
-- `ensureTitleUserData`
-- `addTitle`
-- `addItemToBag`
-- `checkRank`
-
-## Data Usage
-
-- `GLOBAL_CONFIG.coffeePackage`
-- `data.member[sender].bag`
-- `titleData.member[sender].title.list`
-
-## Save Flow
-
-- `/아아` 또는 `/아아 [숫자]` consumes `아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)`, grants 200 coffee items per use, and separately draws one mutually exclusive special situation from a cumulative 15% table
-- Special situations grant `미니펫뽑기🐹(/미니펫오픈)` and add the matching member title only when it is not already owned
-- The command loads member data in the response flow and member-title data once, then saves `filePath` and saves `memberTitlePath` only when a new title is added
-- `/아아`와 `/아아 [숫자]` are handled as exclusive multi-file mutation commands, including when entered through the DEV command context
-
-## Related Commands
-
-- `/아아`
-- `/아아 [숫자]`
-- `/판매 [아이템번호] [수량]`
-- `/타이틀목록`
-- `/미니펫오픈`
-
-## AI Notes
-
-- Exact/full-pattern guards allow only `/아아` or `/아아 [숫자]`; suffix guide text does not execute
-- `/아아` uses one item, while `/아아 [숫자]` has no hard count cap and is limited only by the user's package inventory
-- Bulk results group identical base/special outcomes, so at most six result-image messages plus one summary are sent
-- Coffee items use the existing general `/판매` value of 100,000 points per item
+- 사용자 요청으로 단일·수량 개봉 명령어, 전용 설정·추첨 헬퍼 및 복합 저장 명령 분류를 제거했다.
+- 상품 사용을 종료하며 통합 `/패키지사용`으로 이전하지 않는다. 기존 커피 아이템 판매와 획득한 칭호는 유지한다.
 
 ---
 
@@ -9077,3 +9021,9 @@ Status: VERIFIED
 - Info의 `/레벨`은 Main `/스탯`과 같은 `buildAdventureStatProgress` 문자열을 사용한다. 이모지·이름·각 스탯 사이에 공백을 넣지 않으며 진행 수치와 보너스 계산은 유지한다.
 - `/자유시장`·검색·내 판매 공통 목록은 상품명 옆 `[개당 💎...]`를 유지하고 두 번째 총액 행의 `(개당 ...)`만 제거한다. 단가의 소수·근삿값 계산과 실제 결제 값은 유지한다.
 - 인수 없는 `/펫스킬정보` 안내에는 일반 유저에게 스킬 효과 조회 방법만 표시한다. Admin/Master에게만 닉네임 조회 안내를 추가한다. 기존 스킬명 우선 조회와 다른 회원 가방 조회 권한은 유지한다.
+
+## 지정 패키지 명령어 사용 종료
+
+- 개봉 9개: `/고생하셨습니다`, `/낚시오픈`, `/아아`, `/홈패키지오픈테스트`, `/황제패키지오픈3`, `/미니오픈테스트`, `/미니펫엘리트오픈`, `/이랏싸이마쎄`, `/해피할로윈오픈시펫외형이바뀝니다안에는어마어마한상품이있습니다`.
+- 묶음 지급 6개: `/슬롯모두,`, `/상중하모두,`, `/초보모두,`, `/벚꽃모두1,`, `/벚꽃모두2,`, `/벚꽃모두3,`.
+- 상품 사용 종료·명령어만 삭제하는 사용자 결정에 따라 보상 이전·보유분 변환·데이터 삭제를 하지 않는다. 통합 패키지와 지정하지 않은 개봉·개별 지급 명령은 유지한다.
