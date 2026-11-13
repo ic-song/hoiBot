@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.845"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.846"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -13357,31 +13357,6 @@ replier.reply(
                         }
                     }
                 }
-                if (msg.trim().startsWith("/미니엘리트,") || msg.trim().match(/^\/미니엘리트\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/미니엘리트(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["미니펫🐹엘리트확정패키지(/미니펫엘리트오픈)"] === undefined) {
-                                    data.member[userId].bag["미니펫🐹엘리트확정패키지(/미니펫엘리트오픈)"] = amount;
-                                } else {
-                                    data.member[userId].bag["미니펫🐹엘리트확정패키지(/미니펫엘리트오픈)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 미니펫🐹엘리트확정패키지(/미니펫엘리트오픈) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
                 if (msg.trim().startsWith("/미니엘리트트,") || msg.trim().match(/^\/미니엘리트트\d*,/)) {
                     if (isMaster(sender)) {
                         var parts = msg.match(/^\/미니엘리트트(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
@@ -13432,7 +13407,7 @@ replier.reply(
                         }
                     }
                 }
-                if (msg.trim().startsWith("/황제제") || msg.trim().match(/^\/황제제\d*,/)) {
+                if (msg === "/황제제" || /^\/황제제\d*,[^\r\n]*$/.test(msg)) {
                     if (isMaster(sender)) {
                         var parts = msg.match(/^\/황제제(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
                         if (parts) {
@@ -13449,31 +13424,6 @@ replier.reply(
                                     data.member[userId].bag["황제패키지👑[2](/황제패키지오픈2)"] += amount;
                                 }
                                 replier.reply(userId + "님에게 황제패키지👑[2](/황제패키지오픈2) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
-                if (msg.trim().startsWith("/황제제제") || msg.trim().match(/^\/황제제제\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/황제제제(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["황제패키지👑[3](/황제패키지오픈3)"] === undefined) {
-                                    data.member[userId].bag["황제패키지👑[3](/황제패키지오픈3)"] = amount;
-                                } else {
-                                    data.member[userId].bag["황제패키지👑[3](/황제패키지오픈3)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 황제패키지👑[3](/황제패키지오픈3) " + amount + "개를 지급했습니다.");
                             } else {
                                 replier.reply("유저 아이디를 확인해 주세요.");
                             }
@@ -13990,31 +13940,6 @@ replier.reply(
                         }
                     }
                 }
-                if (msg.trim().startsWith("/태초,") || msg.trim().match(/^\/태초\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/태초(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["태초야키토리 10세트🥩(/이랏싸이마쎄)"] === undefined) {
-                                    data.member[userId].bag["태초야키토리 10세트🥩(/이랏싸이마쎄)"] = amount;
-                                } else {
-                                    data.member[userId].bag["태초야키토리 10세트🥩(/이랏싸이마쎄)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 태초야키토리 10세트🥩(/이랏싸이마쎄) " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
                 if (msg.trim().startsWith("/창조패키지,") || msg.trim().match(/^\/창조패키지\d*,/)) {
                     if (isMaster(sender)) {
                         var parts = msg.match(/^\/창조패키지(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
@@ -14090,39 +14015,6 @@ replier.reply(
                     msgOut += "🎁 지급: [키보드워리어⚔️] (창조 / 가격: 115만)\n";
                     msgOut += "\n👉 /미니펫가방 으로 확인해주세요.";
                     replier.reply(msgOut);
-                }
-                // /낚시, 또는 /낚시10, 아이디  (마스터 전용 지급)
-                if (msg.trim().startsWith("/낚시,") || msg.trim().match(/^\/낚시\d*,/)) {
-                    if (isMaster(sender)) {
-                        // 숫자(옵션) + 아이디 추출
-                        var parts = msg.match(/^\/낚시(\d*)?,\s*(.+)$/);
-
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 기본 1개
-                            var userId = parts[2].trim();
-
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-
-                            if (data.member[userId] !== undefined) {
-                                var itemKey = "낚시패키지🎣[1](/낚시오픈)";
-
-                                if (data.member[userId].bag[itemKey] === undefined) {
-                                    data.member[userId].bag[itemKey] = amount;
-                                } else {
-                                    data.member[userId].bag[itemKey] += amount;
-                                }
-
-                                replier.reply(userId + "님에게 " + itemKey + " " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /낚시10, 유저아이디");
-                        }
-                    }
                 }
                 if (msg.trim().startsWith("/보물,") || msg.trim().match(/^\/보물\d*,/)) {
                     if (isMaster(sender)) {
