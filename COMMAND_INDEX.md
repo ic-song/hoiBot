@@ -137,8 +137,8 @@ Status: VERIFIED
 - 이 절은 아래 동일 기능의 과거 설명보다 우선한다. 운영 반영 전 소스 개발 기준이며 Notion 상태·운영반영일·운영반영버전은 원격 운영 반영 확인 전 변경하지 않는다.
 - 기간권: `/호패10일오픈`, `/호패20일오픈`, `/호패30일오픈`, `/호패프리미엄10일오픈`, `/호패프리미엄20일오픈`, `/호패프리미엄30일오픈`은 생략 시1개, 안전한 양의 정수 개수만 허용한다. `/호패프리미엄오픈`은 30일권 호환 별칭이다. `GLOBAL_CONFIG.passDuration` → `parsePassDurationRequest` → `applyPassDurationExtension`에서 KST 종료일 포함, 미가입·만료는 당일을 첫날로 계산하고 활성 상태면 기존 종료일에 가산한다. 일반·프리미엄은 별도이며 활성 영구권은 무차감 거절한다. 기존 2자리 날짜 표현 범위(2099년)·비정상 날짜·보유량·접미 문구를 검증한다.
 - 기간권 저장: 활성 연장은 member만, 프리미엄 최초/재활성화는 기존 홈뱃지·잠금 스킬 복원을 포함한다. `beginFreeMarketMutation` → 회원 분리 저장 계획 → `publishOperationalRows`로 차감·종료일·자격을 함께 확정하며 재시작 복구는 같은 원문만 게시한다. 자동탐험권·일일 지급 기록·자동 설정을 중복 초기화하지 않는다. 기존 관리자 부여/삭제·개인채팅 이용 조건은 유지한다.
-- 패키지 연계: 엔트리에서 로드한 카탈로그를 `getPassDurationPackageCatalog`에 전달해 기존 번호/정의를 보존하고 미정의 기간권 패키지 6종(각 정식 이용권1개)과 `GLOBAL_CONFIG.package.legacyPackages`의 고정 보상 19종을 뒤에 제공한다. 기존 패키지의 배열 순서·정의·비활성 값은 보존한다. 판매목록·가격·한도·시세는 자동 설정하지 않는다. 구매→미개봉 패키지, `/패키지사용`→가방 이용권, 기간권 명령→기간 적용 순서다. `normalizePassDurationItemName`은 신규 지급의 구 30일권 이름을 정식 이름으로 통일하며 기존 가방 구·신 수량은 합산 차감한다. 개봉된 6종 이용권은 자유시장 판매 불가, 미개봉 패키지는 기존 거래 규칙을 따른다.
-- 기간권 패키지 검증: `getPassDurationPackageError`는 고정 구성(해당 이용권1개)을 개봉/수정 직전에 검증한다. 카탈로그 전체 조회를 막지 않아 기존 `/패키지수정`으로 잘못 저장된 구성도 복구할 수 있다. `validatePassDurationPackageStock`은 동일 보상·구신 30일권 합계를 차감 전에 검사해 일부 개봉/안전 정수 초과를 거절한다. 정식 6종은 다이아 상품갯수1개만 등록/구매 가능하며 구매 묶음 수·가격·한도는 기존 운영 설정을 따른다.
+- 패키지 연계: 엔트리에서 `packageInfo.json`을 로드하고 `requirePackageInfoData`로 배열 형식만 확인한다. 코드에서 기간권 6종이나 과거 패키지 19종을 자동 추가하지 않는다. 목록·구성·번호·활성 여부는 저장된 카탈로그만 따른다. 구매→미개봉 패키지, `/패키지사용`→가방 이용권, 기간권 명령→기간 적용 순서다. `normalizePassDurationItemName`은 신규 지급의 구 30일권 이름을 정식 이름으로 통일하며 기존 가방 구·신 수량은 합산 차감한다. 개봉된 6종 이용권은 자유시장 판매 불가, 미개봉 패키지는 기존 거래 규칙을 따른다.
+- 기간권 패키지 검증: 보상 구성은 저장된 카탈로그를 따르며 `/패키지수정`에서 해당 이용권 1개로 강제하지 않는다. 공통 보상 타입·수량 검증과 `validatePassDurationPackageStock`의 동일 보상·구신 30일권 합산 검증은 유지한다. 정식 6종은 다이아 상품갯수1개만 등록/구매 가능하며 구매 묶음 수·가격·한도는 기존 운영 설정을 따른다.
 - 탐험 번호: 사용자 번호1~6은 기존 지역 식별자1·2·4·5·8·9에 대응한다. `getExploreRegionKey`/`getExplorePublicNumber`로 입력·자동고정·조회 번호를 해석하고 저장된 지역 식별자와 과거 기록은 유지한다. 기존 참가 회차는 `reworkVersion=1`로 먼저 정산하고 새 기본 참가를 일시 보류한 뒤 `advanceExploreRework`가 신규 회차를2로 전환한다. 삭제 지역3·6·7의 고정/현재 선택은 해제·재선택 안내하며 재전환하지 않는다. 별도 이벤트0·10·11은 유지하고 보조 탐사대원 기능은 신설하지 않는다.
 - 탐험 보상: 신규 기본 탐험 정상 정산 성공/실패에만 `applyExploreCommonReward`로 1억포인트상자1개. 실패 먹이2개는 대체하며 성공 기존 보상·티어/가호EXP·입장권 부족 광산 이동·미궁 자격은 유지한다. 별도 이벤트·입장 불성립·조회에는 추가 지급하지 않는다. 기본 광산의 기존5% 이벤트 던전 진입은 기본 회차로 보아 공통 상자를 지급하고 원래 기본 지역 이모지로 기록한다. 최근5회는 전환 이후 실제 기본 정산부터 기록하며 전적 합계로 과거 순서를 만들지 않는다.
 - 탐험 UI: `/지도`는 전체 닉네임·현재확률·지역/고정·최근5회·6지역 인원을 먼저 표시하고 지정 문구 직후 allsee를 사용한다. 같은 실제 확률 계산을 상세에 사용하고 보유 확률UP만 표시한다. 보고서의 레벨 상승 명단은 접기 전, 상세는 접기 후이며 실제 보상은 유지한다. `/탐험유저확인 번호`도 신규 번호로 조회하되 기존 참가 회차 동안은 이전 번호라고 명시한다.
@@ -3017,6 +3017,7 @@ Status: VERIFIED
 - 1차 지원 보상 타입은 `item`, `point` only
 - Package name is also the bag item name; package data no longer needs a separate `itemName`
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
+- `requirePackageInfoData` validates the loaded array without injecting defaults; list/add/edit/remove/enable/grant/bag/use and shop catalog lookups share the stored catalog. Removed entries stay removed after reload.
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
 - `/패키지실적`은 `/교육실적`과 같은 MASTER·교육방 판정을 사용한다. 기본은 자신의 현재 KST 월이며 공백 포함 담당자와 지난달·전체 조회를 지원한다. 지급 횟수/수량을 별도로 표시하고 횟수 동률은 1등·1등·3등, 동률 내 닉네임 정렬, 상단 최대3명·전체보기 당시 상품명/번호/대상/시각·최신순을 제공한다. 출력 제한 시 표시 건수와 원본 전체 건수를 안내한다.
@@ -9008,8 +9009,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `main.js`: 개별 개봉 19종과 지급 13종의 실행 분기를 제거했다. `GLOBAL_CONFIG.package.legacyPackages` → `getPassDurationPackageCatalog` → 기존 `/패키지리스트`·`/패키지지급`·`/패키지가방`·`/패키지사용`으로 연결한다.
-- 기존 가방 키와 실제 지급 구성·수량·이벤트 제한을 유지한다. 원본 카탈로그·회원 파일을 일괄 변경하지 않고 운영 중인 목록 뒤에 누락된 정의만 제공한다. 두 번 호출하거나 카탈로그에 저장된 뒤 다시 호출해도 추가하지 않는다.
+- `main.js`: 개별 개봉 19종과 지급 13종의 실행 분기는 제거된 상태다. 통합 `/패키지리스트`·`/패키지지급`·`/패키지가방`·`/패키지사용`은 저장된 `packageInfo.json`에 등록된 패키지만 사용한다.
+- 과거 패키지의 고정 보상 정의와 기간권 패키지 자동 추가를 제거했다. 저장되지 않은 패키지를 생성하거나 삭제한 항목을 다시 넣지 않는다. 이미 저장된 항목은 `/패키지제거`·`/패키지리스트제거`로 삭제할 수 있으며 회원 가방 원본은 일괄 변경하지 않는다.
 - 전환 개봉: /주인탓입니다4, /초보오픈1, /초보오픈2, /초보오픈3, /초보오픈4, /초보오픈5, /초보오픈6, /광산오픈4, /광산오픈5, /홈패키지오픈2, /미강오픈, /시련오픈, /펫탐험오픈1, /오픈하면부처가됩니다, /나한테잘하자4, /나한테잘하자3, /도파민오픈1, /도파민오픈2, /오픈하면어린이가됩니다
 - 전환 지급: /초보2,, /초보3,, /초보4,, /초보5,, /초보6,, /미강,, /펫탐,, /도파민,, /도파민민, /가정정정,, /가정정정정,, /어린,, /부처,
 - 기존 미니펫·가구·타이틀·길드창고 직접 변경 및 구성 확인이 필요한 패키지, 혼합 묶음 지급은 기존 실행을 보존한다. 이름이 비슷한 최신 상품과 과거 보상을 합치지 않는다.
