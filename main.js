@@ -2281,28 +2281,7 @@ const GLOBAL_CONFIG = {
         ]
     },
     package: {
-        maxUseOnce: 1000,
-        legacyPackages: [
-            {"id":"legacy_direct_01","name":"기존 형욱이패키지4🍼","itemName":"형욱이패키지4🍼(/주인탓입니다4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"펫먹이🍼","count":3000},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":100},{"type":"item","name":"펫먹이상자📦(/상자오픈)","count":100},{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":700},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":700}]},
-            {"id":"legacy_direct_02","name":"기존 초보자 스타터패키지🌟[1]","itemName":"초보자 스타터패키지🌟[1](/초보오픈1)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"양념치킨🐔","count":100},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":30},{"type":"item","name":"펫먹이🍼","count":700},{"type":"point","count":100000000}]},
-            {"id":"legacy_direct_03","name":"기존 초보자 스타터패키지🌟[2]","itemName":"초보자 스타터패키지🌟[2](/초보오픈2)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"양념치킨🐔","count":100},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":700},{"type":"point","count":100000000}]},
-            {"id":"legacy_direct_04","name":"기존 초보자 스타터패키지🌟[3]","itemName":"초보자 스타터패키지🌟[3](/초보오픈3)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":100},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":700},{"type":"point","count":100000000}]},
-            {"id":"legacy_direct_05","name":"기존 초보자 스타터패키지🌟[4]","itemName":"초보자 스타터패키지🌟[4](/초보오픈4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"point","count":100000000}]},
-            {"id":"legacy_direct_06","name":"기존 초보자 스타터패키지🌟[5]","itemName":"초보자 스타터패키지🌟[5](/초보오픈5)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":1000},{"type":"point","count":100000000}]},
-            {"id":"legacy_direct_07","name":"기존 초보자 스타터패키지🌟[6]","itemName":"초보자 스타터패키지🌟[6](/초보오픈6)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"티어 승급티켓🎟","count":10},{"type":"item","name":"럭키박스🍀(/럭키오픈)","count":30},{"type":"item","name":"펫 강화석⭐","count":200},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"펫먹이특식🥡(/특식오픈)","count":35},{"type":"item","name":"펫먹이🍼","count":1000},{"type":"point","count":100000000}]},
-            {"id":"legacy_direct_08","name":"기존 광산패키지🪨[4]","itemName":"광산패키지🪨[4](/광산오픈4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"돌멩이🪨","count":50000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":500},{"type":"item","name":"경찰과 도둑🚨(/삐뽀삐뽀)","count":50},{"type":"point","count":300000000}]},
-            {"id":"legacy_direct_09","name":"기존 광산패키지🪨[5]","itemName":"광산패키지🪨[5](/광산오픈5)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"돌멩이🪨","count":50000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":500},{"type":"item","name":"경찰과 도둑🚨(/삐뽀삐뽀)","count":50},{"type":"item","name":"땅문서📜","count":5},{"type":"point","count":300000000}]},
-            {"id":"legacy_direct_10","name":"기존 펫스윗홈패키지🏡[2]","itemName":"펫스윗홈패키지🏡[2](/홈패키지오픈2)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":220},{"type":"item","name":"땅문서📜","count":2},{"type":"item","name":"돌멩이🪨","count":2000},{"type":"item","name":"캐슬코인🥇","count":50},{"type":"item","name":"레이드타격대인장👑(+600👾)","count":1},{"type":"point","count":200000000}]},
-            {"id":"legacy_direct_11","name":"기존 미니펫강화석패키지💫","itemName":"미니펫강화석패키지💫(/미강오픈)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"미니펫 강화석💫","count":1000},{"type":"item","name":"미니펫강화확률UP🐷(30%)","count":50}]},
-            {"id":"legacy_direct_12","name":"기존 시련의상자😈","itemName":"시련의상자😈(/시련오픈)","enabled":true,"blockCastle":false,"rewards":[{"type":"item","name":"시탑 공략서📜","count":20},{"type":"item","name":"시탑 부스터🔮","count":15},{"type":"item","name":"주사위🎲(/해피)","count":10},{"type":"item","name":"시련의탑리셋권😈","count":3}]},
-            {"id":"legacy_direct_13","name":"기존 펫탐험패키지⛰️[1]","itemName":"펫탐험패키지⛰️[1](/펫탐험오픈1)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"탐험확률UP🗻(50%)","count":20},{"type":"item","name":"탐험확률UP🗻(40%)","count":35},{"type":"item","name":"탐험확률UP🗻(30%)","count":50},{"type":"item","name":"펫던전 입장권🌋","count":40},{"type":"item","name":"보물지도🗺️","count":50}]},
-            {"id":"legacy_direct_14","name":"기존 부처님오신날🇰🇷","itemName":"부처님오신날🇰🇷(/오픈하면부처가됩니다)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"펫던전 입장권🌋","count":100},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":5000},{"type":"item","name":"탐험확률UP🗻(50%)","count":100},{"type":"item","name":"월간상자🌸(/월간오픈)","count":1},{"type":"item","name":"주간상자🌼","count":1}]},
-            {"id":"legacy_direct_15","name":"기존 파워가정의달패키지🧑‍🧑‍🧒‍🧒[4]","itemName":"파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"땅문서📜","count":5},{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":1000},{"type":"item","name":"주간상자🌼","count":1},{"type":"item","name":"양념치킨🐔","count":500},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":700},{"type":"item","name":"펫먹이🍼","count":500},{"type":"item","name":"펫 강화석⭐","count":300},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":30},{"type":"item","name":"미니펫 강화석💫","count":100},{"type":"item","name":"길드공헌훈장🌟(/길드공헌 숫자)","count":10},{"type":"point","count":1000000000}]},
-            {"id":"legacy_direct_16","name":"기존 파워가정의달패키지🧑‍🧑‍🧒‍🧒[3]","itemName":"파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"땅문서📜","count":5},{"type":"item","name":"돌멩이🪨","count":15000},{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":300},{"type":"item","name":"1달러스토어🤑(/1일1후원)","count":10},{"type":"item","name":"주간상자🌼","count":1},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":500},{"type":"item","name":"확성기📢(/알림 내용 30자)","count":5},{"type":"item","name":"펫먹이🍼","count":500},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":50},{"type":"item","name":"양념치킨🐔","count":200},{"type":"item","name":"미니펫 강화석💫","count":100},{"type":"point","count":1000000000}]},
-            {"id":"legacy_direct_17","name":"기존 도파민패키지🤩[1]","itemName":"도파민패키지🤩[1](/도파민오픈1)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":5000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":10000},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":150}]},
-            {"id":"legacy_direct_18","name":"기존 도파민패키지🤩[2]","itemName":"도파민패키지🤩[2](/도파민오픈2)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"미니펫뽑기🐹(/미니펫오픈)","count":4000},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":7000},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":200}]},
-            {"id":"legacy_direct_19","name":"기존 어린이날패키지🚸","itemName":"어린이날패키지🚸(/오픈하면어린이가됩니다)","enabled":true,"blockCastle":true,"rewards":[{"type":"item","name":"타이틀선물권💝(/타이틀선물 닉네임 내용)","count":2},{"type":"item","name":"탐험확률UP🗻(40%)","count":15},{"type":"item","name":"1달러스토어🤑(/1일1후원)","count":5},{"type":"item","name":"경찰과 도둑🚨(/삐뽀삐뽀)","count":10},{"type":"item","name":"호이베이스볼⚾️(/투수던집니다)","count":20},{"type":"item","name":"펫먹이🍼","count":1000},{"type":"item","name":"보물지도🗺️","count":30},{"type":"item","name":"펫 강화석⭐","count":500},{"type":"item","name":"펫스윗홈인테리어샵🖼️(/샵오픈)","count":3000}]}
-        ]
+        maxUseOnce: 1000
     },
     admin: { // 관리자 보상 설정
         dailyPayoutPoint: 300000000
@@ -6947,7 +6926,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 replyFreeMarketV2(replier, diamondHistoryMessage); return;
             }
             if (/^\/다이아상점추가\s+.+$/.test(msg)) {
-                var diamondCatalogItems = loadJsonFile(itemListPath), diamondCatalogPackages = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)), diamondNewProduct;
+                var diamondCatalogItems = loadJsonFile(itemListPath), diamondCatalogPackages = requirePackageInfoData(loadJsonFile(packageInfoPath)), diamondNewProduct;
                 try { diamondNewProduct = parseDiamondShopProduct(msg, getDiamondShopItemNames(data, diamondCatalogItems, diamondCatalogPackages)); } catch (diamondParseError) { replier.reply("❌ " + diamondParseError.message + "\n/다이아상점추가 상품명 상품갯수 다이아갯수 [하루구매갯수]"); return; }
                 var diamondAdded = addDiamondShopProduct(diamondShopV2, diamondNewProduct, Date.now());
                 matzangField.shop = diamondShopV2.products; saveJsonFile(data, filePath);
@@ -8344,7 +8323,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     var marketV2 = requireFreeMarketSource(loadJsonFile(freeMarketPath));
                     if (marketV2.version !== 2) { replier.reply("🏪 자유시장 전환 점검 중입니다. Master가 /자유시장전환을 확인해주세요."); return; }
-                    var marketItemList = loadJsonFile(itemListPath), marketPackages = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath));
+                    var marketItemList = loadJsonFile(itemListPath), marketPackages = requirePackageInfoData(loadJsonFile(packageInfoPath));
                     if (recallFreeMarketBlockedItems(data, marketV2, marketPackages, marketItemList)) {
                         var marketRecallReplier = replier;
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
@@ -17885,7 +17864,7 @@ replier.reply(
 
                 if (msg === "/패키지리스트") {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 패키지 정보 데이터
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 패키지 정보 데이터
                     replier.reply(buildPackageListMessage(packageInfoData));
                     return;
                 }
@@ -17910,7 +17889,7 @@ replier.reply(
 
                 if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
                     var packageFlowResult = handlePackageAddFlowMessage(sender, msg, packageInfoData);
                     if (packageFlowResult.ok && packageFlowResult.packageInfoData) saveJsonFile(packageFlowResult.packageInfoData, packageInfoPath);
                     replier.reply(packageFlowResult.message);
@@ -17925,7 +17904,7 @@ replier.reply(
 
                 if (/^\/패키지추가\s+.+\|.+\|.+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 빠른 추가용 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 빠른 추가용 패키지 목록
                     var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData);
                     if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
                     replier.reply(packageAddResult.message);
@@ -17934,7 +17913,7 @@ replier.reply(
 
                 if (/^\/패키지수정\s+\d+\s+.+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 수정 대상 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 수정 대상 패키지 목록
                     var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData);
                     if (packageEditResult.ok) saveJsonFile(packageEditResult.packageInfoData, packageInfoPath);
                     replier.reply(packageEditResult.message);
@@ -17949,7 +17928,7 @@ replier.reply(
 
                 if (/^\/(패키지제거|패키지리스트제거)\s+\d+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 제거 대상 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 제거 대상 패키지 목록
                     var packageRemoveResult = removePackageByCommand(sender, msg, packageInfoData);
                     if (packageRemoveResult.ok) saveJsonFile(packageRemoveResult.packageInfoData, packageInfoPath);
                     replier.reply(packageRemoveResult.message);
@@ -17958,7 +17937,7 @@ replier.reply(
 
                 if (/^\/패키지활성\s+\d+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 활성화 대상 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 활성화 대상 패키지 목록
                     var packageEnableResult = setPackageEnabledByCommand(sender, msg, true, packageInfoData);
                     if (packageEnableResult.ok) saveJsonFile(packageEnableResult.packageInfoData, packageInfoPath);
                     replier.reply(packageEnableResult.message);
@@ -17967,7 +17946,7 @@ replier.reply(
 
                 if (isPackageGrantCommand(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 지급 가능한 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 지급 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 지급 로그 데이터
                     var packageStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName);
                     if (!new java.io.File(packageStatsPath).exists() && (new java.io.File(packageStatsPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(packageStatsPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(packageStatsPath)).exists())) throw new Error("패키지 실적 원본 누락: /데이터복구 packageGrantStats 1로 백업을 확인해 주세요.");
@@ -18019,7 +17998,7 @@ replier.reply(
                             return;
                         }
                     }
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 패키지가방 필터링용 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 패키지가방 필터링용 패키지 목록
                     ctx.halloweenScreen = true;
                     replier.reply(buildUserPackageBagMessage(data, petData, petSkillData, guildData, packageBagTarget, packageInfoData));
                     return;
@@ -18027,7 +18006,7 @@ replier.reply(
 
                 if (msg === "/패키지사용" || /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg)) {
                     if (!data.member || !data.member[sender]) return;
-                    var packageInfoData = getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)); // 사용 가능한 패키지 목록
+                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 사용 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 사용 로그 데이터
                     var halloweenPackageUse = parsePackageUseCommand(msg);
                     var halloweenPackageBag = getUserPackageBagList(data, sender, packageInfoData);
@@ -26394,7 +26373,7 @@ replier.reply(
                         replier.reply("❌ 상품 수량, 황금당근 가격, 계정당 구매 한도는 모두 1 이상이어야 합니다.");
                         return;
                     }
-                    var moonShopRewards = createChuseokAdminShopRewards(moonShopProductName, moonShopRewardCount, loadJsonFile(itemListPath), getPassDurationPackageCatalog(loadJsonFile(packageInfoPath)));
+                    var moonShopRewards = createChuseokAdminShopRewards(moonShopProductName, moonShopRewardCount, loadJsonFile(itemListPath), requirePackageInfoData(loadJsonFile(packageInfoPath)));
                     if (!moonShopRewards) {
                         replier.reply("❌ 지급 가능한 기존 상품·아이템·패키지를 찾을 수 없습니다.\n상품명을 정확히 확인해주세요.");
                         return;
@@ -45785,28 +45764,10 @@ function normalizePassDurationItemName(name) {
     return name === GLOBAL_CONFIG.passDuration.legacyPremiumItem ? GLOBAL_CONFIG.passDuration.tickets[5].itemName : name;
 }
 
-// 운영 중인 패키지 번호를 보존하며 기간권과 기존 보유 패키지의 구성을 제공하는 함수
-function getPassDurationPackageCatalog(packages) {
+// 저장된 패키지 목록 형식을 확인하고 등록된 구성만 반환하는 함수
+function requirePackageInfoData(packages) {
     if (!Array.isArray(packages)) throw new Error("패키지 목록 형식 오류");
-    var result = packages.slice(), configs = GLOBAL_CONFIG.passDuration.tickets;
-    for (var i = 0; i < configs.length; i++) {
-        var found = false, config = configs[i];
-        for (var j = 0; j < result.length; j++) {
-            if (getPackageBagItemName(result[j]) !== config.packageName) continue;
-            found = true;
-        }
-        if (!found) result.push({ id: "pass_duration_" + config.key + "_" + config.days, name: config.packageName, enabled: true, rewards: [{ type: "item", name: config.itemName, count: 1 }] });
-    }
-    var legacyPackages = GLOBAL_CONFIG.package.legacyPackages;
-    for (var legacyIndex = 0; legacyIndex < legacyPackages.length; legacyIndex++) {
-        var legacyPackage = legacyPackages[legacyIndex], legacyFound = false;
-        for (var existingIndex = 0; existingIndex < result.length; existingIndex++) {
-            if (getPackageBagItemName(result[existingIndex]) === legacyPackage.itemName) legacyFound = true;
-            else if (result[existingIndex].id === legacyPackage.id) throw new Error("기존 패키지 식별자가 중복되었습니다.");
-        }
-        if (!legacyFound) result.push(JSON.parse(JSON.stringify(legacyPackage)));
-    }
-    return result;
+    return packages;
 }
 
 // 정식 기간권 패키지 이름에 해당하는 설정을 찾는 함수
@@ -45814,15 +45775,6 @@ function getPassDurationPackageConfig(name) {
     var tickets = GLOBAL_CONFIG.passDuration.tickets;
     for (var i = 0; i < tickets.length; i++) if (tickets[i].packageName === name) return tickets[i];
     return null;
-}
-
-// 정식 기간권 패키지의 고정 구성 오류를 변경·개봉 전에 확인하는 함수
-function getPassDurationPackageError(packageInfo) {
-    var config = getPassDurationPackageConfig(getPackageBagItemName(packageInfo));
-    if (!config) return "";
-    var rewards = packageInfo.rewards;
-    if (!Array.isArray(rewards) || rewards.length !== 1 || !rewards[0] || rewards[0].type !== "item" || normalizePassDurationItemName(rewards[0].name) !== config.itemName || rewards[0].count !== 1) return "기간권 패키지는 해당 이용권 1개로 구성해야 합니다: " + config.packageName;
-    return "";
 }
 
 // 기간권 지급 합계를 사전 검증해 개봉 후 수량 손상과 일부 지급을 막는 함수
@@ -48596,8 +48548,6 @@ function editPackageInfoByCommand(sender, msg, packageInfoData) {
     if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
 
     var packageName = packageInfo.name || getPackageBagItemName(packageInfo); // 기존 패키지 표시명
-    var durationPackageError = getPassDurationPackageError({ itemName: getPackageBagItemName(packageInfo), rewards: rewardParseResult.rewards });
-    if (durationPackageError) return { ok: false, message: "❌ " + durationPackageError };
     packageInfo.enabled = packageInfo.enabled === false ? false : true;
     packageInfo.maxUseOnce = GLOBAL_CONFIG.package.maxUseOnce;
     packageInfo.rewards = rewardParseResult.rewards;
@@ -49532,8 +49482,6 @@ function parsePackageUseCommand(msg) {
 function validatePackageUse(packageInfo, useCount, halloween) {
     if (hasHalloweenPackageReward(packageInfo) && (!halloween || !halloween.state.active)) return "할로윈 이벤트 진행 중에만 이 패키지를 사용할 수 있습니다.";
     if (!packageInfo) return "패키지 정보가 없습니다.";
-    var durationPackageError = getPassDurationPackageError(packageInfo);
-    if (durationPackageError) return durationPackageError;
     if (packageInfo.enabled === false) return "비활성화된 패키지는 사용할 수 없습니다.";
     if (packageInfo.blockCastle && castleSiegeFlag) return "이벤트 진행 중에는 해당 패키지를 사용할 수 없습니다.";
     if (useCount < 1) return "사용 수량은 1개 이상이어야 합니다.";
