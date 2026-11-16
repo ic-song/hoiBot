@@ -1,9 +1,10 @@
 # 레이드 중복 요약·봉인금고 희귀 기록 종료 및 긴급 공격권 수정
 
 - 작업 키: member-data-retirement
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 2
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: e7ed9b2e41565fcd6817b417fea8e846bb9a815e
+- 체크포인트 버전: 3
 - 마지막 갱신: 2026-11-16 Asia/Seoul
 - 작업 위치: C:/Users/user/Desktop/hoiBot, 현재 codex/member-data-retirement
 - 기준: origin/feature/prod ce9c2c49 (07 스냅샷), main ver_2.854. 스냅샷이 changelog 2.854 행을 없애 2.853부터 시작하므로 원격 릴리스 기록 2.854를 소스에서 복원한 뒤 2.855 이상 증가 필요.
@@ -28,3 +29,10 @@
 - 크기: 스냅샷 메모리 사본1,489,595→1,313,609byte,175,986byte(약11.8%) 감소. 실제 운영 JSON 실행은 운영자 수행. 원본 스냅샷 미변경.
 - 현재 버전2.856, 문서/개발자노트 갱신. 최종 Node 구문/Rhino 전체 compile/diff·UTF-8·버전 검증 통과. 소스 push/PR/prod 검증 필요. 임시검증 %TEMP%/hoiBot/member-data-retirement 파일 완료 시 삭제.
 - Notion: 확인된 DB에서 기존 레이드83c.../금고3d4...는 LIVE이며 이번 정리 전용 READY/HOTFIX 항목은 없음. 본문·기존 LIVE 상태를 보존하고 신규 페이지 생성하지 않음.
+
+## 완료 근거
+
+- https://github.com/ic-song/hoiBot/pull/298 MERGED, 소스e7ed9b2e·병합23d5cf0d9c2ed1dd73430abcb10a16fcf3285def의 origin/feature/prod 포함·main/changelog ver_2.856·생성/조회 제거 경로 확인.
+- 긴급 PR297 및 데이터 정리 PR298 모두 원격 운영 Git 반영 완료. 길드전쟁 노션 DEV/2026-11-16/ver_2.855 재조회 확인. 기존 LIVE 레이드/금고 본문 보존. 스킬 미변경, PlayMCP 도구 미제공으로 카카오 버전 알림 생략.
+- 임시 검증 파일10개 삭제 완료(빈 작업 폴더만 남음). 원본 member 스냅샷 SHA256 유지, 다른 미추적 체크포인트·기존 원격 bugFix/PR173 보존.
+- 운영자가 새 소스를 적용·컴파일한 뒤 관리자 `/데이터정리`→`확인` 실행 필요. Codex는 실제 운영 단말·JSON 제거 실행을 확인하지 않았으며 직접 접속하지 않음.
