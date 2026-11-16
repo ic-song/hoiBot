@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.853"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.854"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -68391,7 +68391,7 @@ function buildGuildWarMain(data, guildData, gid, now) {
     for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner), status = guild ? getGuildWarAdvance(state, gid, no) : null;
         var icon = status ? status.own ? "🏴" : status.allowed ? "⚔️" : "🔒" : "";
-        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + (guild && status.own ? "우리 길드" : owner ? formatGuildDisplay(owner) : "미점령") + (status && !status.allowed && !status.own ? " · " + status.condition : "") + "\n";
+        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + (guild && status.own ? "우리 길드" : owner ? formatGuildDisplay(owner) : "미점령") + (status && !status.allowed && !status.own && !status.limit ? " · " + status.condition : "") + "\n";
         if (no === getGuildWarKingdomNo(state) && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
         if (no === 3 || no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine) text += "              ⬇️\n";
         if (no === GLOBAL_CONFIG.guildWar.siege.fortress) text += "              ↕️\n";
