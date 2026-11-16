@@ -225,6 +225,7 @@ const GLOBAL_CONFIG = {
 		vaultItemName: "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
 		keyItemName: "해방의 열쇠🗝️(/봉인금고오픈 숫자)"
 	},
+	carrotRetirement: { itemNames: ["황금당근🌕", "황금당근🌕(/황금당근오픈 숫자)", "달토끼의 달빛꾸러미🐰[소]", "달토끼의 보름달꾸러미🐰[중]", "달토끼의 황금달꾸러미🐰[대]", "달토끼의 달궁보물꾸러미🐰[특대]", "🐰달토끼 당근주머니〈소〉", "🐰달토끼 당근바구니〈중〉", "🐰달토끼 당근수레〈대〉", "달토끼의 선물🐰", "달토끼의 프리미엄 선물🐰", "달토끼도파민패키지🐰", "달토끼 당근주머니〈소중대〉(황금당근 1060개)+호월신의 가호 1000개"] },
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
 		carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
@@ -559,14 +560,7 @@ function getInfoHoiPassPremiumHeader(data, user) {
 	return (authorityBadge ? authorityBadge + "\n" : "") + (isInfoSupportPassActive(data, user, "premium") ? "[👑호이패스 프리미엄👑]\n" : "");
 }
 
-// Info 명령에서 추석 이벤트 황금당근 잔액을 반환하는 함수
-function getInfoChuseokCarrotBalance(data, petExploreData, user) {
-	if (!petExploreData || !petExploreData.chuseokEvent || !petExploreData.chuseokEvent.balances) return 0;
-	var eventBalance = Math.max(0, parseInt(petExploreData.chuseokEvent.balances[user], 10) || 0); // 이벤트 전용 파일 잔액
-	var member = data && data.member ? data.member[user] : null;
-	var legacyBalance = member && member.bag ? Math.max(0, parseInt(member.bag["황금당근🌕"], 10) || 0) : 0; // 기존 가방 저장 잔액
-	return eventBalance + legacyBalance;
-}
+
 
 // Info 명령에서 아직 읽지 않은 펫홈 활동 알림 개수를 반환하는 함수
 function getInfoUnreadPetHomeAlertCount(activityData, user) {
@@ -950,8 +944,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				var pointDiamond = data.member[sender].diamond || 0;
 				var pointMessage = getInfoHoiPassPremiumHeader(data, sender) + "[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개";
 				if (ctx.halloweenState && ctx.halloweenState.active) pointMessage += "\n" + getHalloweenCandyLine(ctx, true).trim();
-				var pointExploreData = loadJsonFile(petExplorePath);
-				if (pointExploreData && pointExploreData.chuseokEvent && pointExploreData.chuseokEvent.active === true) pointMessage += "\n🌕: " + numberWithCommas(getInfoChuseokCarrotBalance(data, pointExploreData, sender)) + "개";
 				if (hasInfoPrivateChatPass(data, sender)) {
 					var pointActivityData = loadJsonFile(petHomeActivityFile);
 					var pointUnreadAlertCount = getInfoUnreadPetHomeAlertCount(pointActivityData, sender);
@@ -3910,7 +3902,7 @@ function generateBagOutput(bagItems) {
 		for (var i = 0; i < specialItems.length; i++) {
 			var sItem = specialItems[i];
 			if (sItem === intimacyItemKey) continue;
-            if (sItem !== GLOBAL_CONFIG.items.carrotName && sItem !== GLOBAL_CONFIG.items.carrotThermometerName && bagItems[sItem]) specialItemsSorted.push(sItem);
+            if (!isRetiredCarrotValue(sItem) && bagItems[sItem]) specialItemsSorted.push(sItem);
 			var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
 			if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
 		}
@@ -3920,7 +3912,7 @@ function generateBagOutput(bagItems) {
 		var bagKeys = Object.keys(bagItems);
 		for (var j = 0; j < bagKeys.length; j++) {
 			var key = bagKeys[j];
-			if (key === intimacyItemKey || key === GLOBAL_CONFIG.items.carrotName || key === GLOBAL_CONFIG.items.carrotThermometerName) continue;
+			if (key === intimacyItemKey || isRetiredCarrotValue(key)) continue;
 			if (specialItems.indexOf(key) !== -1 || specialItemsSorted.indexOf(key) !== -1) continue;
 			otherItems.push(key);
 		}
@@ -4975,6 +4967,11 @@ function getPointShopNumberedItems(data) {
     if (!Array.isArray(order) || order.some(function (name, i) { return name !== null && (typeof name !== "string" || order.indexOf(name) !== i); })) throw new Error("폐지 상품 번호 보존 기록 오류");
     order = order.concat(keys.filter(function (name) { return order.indexOf(name) === -1; }));
     var rows = [];
-    for (var i = 0; i < order.length; i++) if (order[i] !== GLOBAL_CONFIG.items.carrotName && Object.prototype.hasOwnProperty.call(data.shop, order[i])) rows.push({ number: i + 1, name: order[i] });
+    for (var i = 0; i < order.length; i++) if (!isRetiredCarrotValue(order[i]) && Object.prototype.hasOwnProperty.call(data.shop, order[i])) rows.push({ number: i + 1, name: order[i] });
     return rows;
+}
+
+// 종료 콘텐츠는 복구된 보유분에서도 화면에 다시 노출하지 않는 함수
+function isRetiredCarrotValue(value) {
+    return typeof value === "string" && (value === GLOBAL_CONFIG.items.carrotName || value === GLOBAL_CONFIG.items.carrotThermometerName || value === "🌡️당근온도기" || GLOBAL_CONFIG.carrotRetirement.itemNames.indexOf(value) !== -1);
 }
