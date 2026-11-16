@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.854"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.855"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -67048,6 +67048,13 @@ function getGuildWarPersonalAvailability(state, guild, entry, gid, user, skills,
     var keys = getGuildWarUserRights(guild, entry, user, skills), usage = getGuildWarPersonalUsage(state, guild, entry, gid);
     var used = getGuildWarPersonalUseCount(entry, usage, user, data); // 역할 변경 전 실제 개인 사용량도 포함
     var unused = keys.filter(function (key) { return !entry.rights[key]; });
+    // 공격 진형 순서를 바꿔도 다른 사람의 옛 자리 사용 표시로 남은 개인권을 막지 않는다.
+    if (keys.some(function (key) { return /^attack[012]$/.test(key); })) {
+        for (var slot = 0; slot < 3; slot++) {
+            var attackKey = "attack" + slot;
+            if (!entry.rights[attackKey] && unused.indexOf(attackKey) === -1) unused.push(attackKey);
+        }
+    }
     return { keys: keys, total: keys.length, used: used, remaining: Math.max(0, Math.min(keys.length - used, unused.length)), unused: unused };
 }
 
