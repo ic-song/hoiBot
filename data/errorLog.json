@@ -1,1 +1,1 @@
-{"system":"main","error":"Error: 오래된 회원 스냅샷으로 분리 파일을 저장할 수 없습니다.","version":"ver_2.841","msg":"/펫무쌍준비","room":"🐰 2030, 여기 좀 귀엽다 너도 올래?🍓","sender":"슬이 여"}
+{"system":"main","error":"JavaException: java.io.FileNotFoundException: /sdcard/호이랜드/guildData_back.json.guildwar-rollback (No such file or directory)","version":"ver_2.851","msg":"애기는 아냐","room":"🚨30대 반말방💊도파민 비상사태💥","sender":"행운 남"}
