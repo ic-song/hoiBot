@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.851"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.853"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1035,7 +1035,7 @@ const GLOBAL_CONFIG = {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
         permissions: {
             adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고기록전체", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
-            master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/황금당근수정","/길드상점추가","/길드상점삭제", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
+            master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/길드상점추가","/길드상점삭제", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
             masterComma: ["/새해","/용돈돈","/용돈돈2","/용돈","/용돈2","/한가위","/한글","/국군","/슬롯초보","/슬롯초보2","/슬롯초보3","/슬롯초보4","/할로윈","/할로윈2","/시즌","/니가","/복","/메리","/과로","/레이드","/계엄령","/유닛뽑기","/크리스마스","/2주년","/광복","/한국"],
             admin: ["/서버이동", "/마스터명단", "/마스터추가", "/마스터제거", "/가입인증"],
             masterIdentity: ["/관리자순위초기화", "/인증초기화", "/길드전쟁공격초기화"],
@@ -1043,7 +1043,7 @@ const GLOBAL_CONFIG = {
             adminMasterIdentity: ["/미정", "/정보", "/인증순위", "/관리자순위", "/기록실", "/기록보관소1", "/기록"],
             operator: ["/글자수통계", "/캐슬스코어", "/캐슬대전횟수리셋", "/캐슬초기화", "/상점삭제", "/외형", "/좋아리셋", "/레벨수정", "/경험치수정", "/레벨초기화", "/r", "/매력", "/펫제거", "/이름", "/미니펫강화속성", "/판매금지아이템", "/판매금지아이템추가", "/판매금지아이템제거", "/미니펫대전횟수", "/펫데이터비교", "/펫데이터동기화", "/펫타이틀동기화", "/시련의탑동기화", "/반지정보", "/시련의탑수정", "/시련의탑시즌초기화", "/시련의탑시즌시작", "/시련의탑시즌종료", "/미니펫추가", "/미니펫삭제", "/미니펫해제", "/탐험알림", "/펫탐험이벤트활성화", "/펫탐험이벤트비활성화", "/레이드이벤트활성화", "/레이드이벤트비활성화"],
             operatorBot: ["/리셋", "/캐슬대전시즌시작", "/캐슬대전시즌종료", "/캐슬대전초기화", "/연금지급", "/티어보상지급", "/보상지급"],
-            operatorAdminMaster: ["/추석이벤트활성화", "/추석이벤트비활성화", "/달토끼상점추가", "/달토끼상점삭제"],
+            operatorAdminMaster: [],
             auctionOperators: ["칠가 남", "감자 여", "벨라 여", "티모 여", "진주 여"]
         }
     },
@@ -1152,13 +1152,13 @@ const GLOBAL_CONFIG = {
     storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, nativeLeafMaxKeys: 32, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     guildWar: {
     "earthName": "지구방위대",
-    "regions": ["동부 금광🪙", "중앙 금광🪙", "서부 금광🪙", "펫스킬 광산📕", "다이아 광산💎", "루미에르 요새🛡️", "호월킹덤🏰"],
-    "regionLabels": ["동부 금광", "중앙 금광", "서부 금광", "펫스킬 광산", "다이아 광산", "루미에르 요새", "호월킹덤"],
+    "regions": ["동부 금광🪙", "중앙 금광🪙", "서부 금광🪙", "펫스킬 광산📕", "다이아 광산💎", "미강석 광산💫", "루미에르 요새🛡️", "호월킹덤🏰"],
+    "regionLabels": ["동부 금광", "중앙 금광", "서부 금광", "펫스킬 광산", "다이아 광산", "미강석 광산", "루미에르 요새", "호월킹덤"],
     "rewardPolicy": 3,
     "dailyTickets": 5,
     "supply": { "points": 200000000, "ricePerSupport": 1, "ricePerTicket": 100 },
-    "campaign": { "version": 1, "kingdom": 7, "skillMine": 4, "diamondMine": 5, "gold": [1, 2, 3], "oldToNew": [0, 6, 1, 2, 3, 4, 5] },
-    "siege": { "version": 1, "legacyKingdom": 6, "fortress": 6, "ambushLimit": 1, "ambushSuccessRate": 0.5, "stageNames": ["금광", "핵심 광산", "요새", "킹덤"] },
+    "campaign": { "version": 1, "kingdom": 8, "skillMine": 4, "diamondMine": 5, "miniPetMine": 6, "gold": [1, 2, 3], "oldToNew": [0, 6, 1, 2, 3, 4, 5] },
+    "siege": { "version": 2, "legacyKingdom": 6, "fortress": 7, "ambushLimit": 1, "ambushSuccessRate": 0.5, "stageNames": ["금광", "핵심 광산", "요새", "킹덤"] },
     "masterSkills": { "commander": "전투형 지휘관", "attack": "기사단 증원", "defense": "징집명령", "attackPercent": 3, "defensePercent": 2 },
     "attackTicketItem": "길드전쟁공격권🎯(/전쟁공격사용 숫자)",
     "kingdomExploreBonus": 5,
@@ -1172,6 +1172,7 @@ const GLOBAL_CONFIG = {
     "bombSuccessRate": 0.5,
     "roundIntervalMs": 15000,
     "mineReward": 1,
+    "miniPetMineReward": 5,
     "defenseBonus": [0.03, 0.10, 0],
     "scoutDefenseBonus": 0.05,
     "legacyPaused": true,
@@ -1203,7 +1204,7 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back2.json"
     ],
     "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 7곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 금광\n              ⬇️\n📕 [4] 펫스킬 / 💎 [5] 다이아 광산\n              ⬇️\n🛡️ [6] 루미에르 요새\n              ↕️\n🏰 [7] 호월킹덤\n\n🪙 금광: 세 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 정상 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 🔒는 진격 조건 또는 단계별 점령 한도에 따른 제한입니다.\n└ ⚔️ 표시와 별개로 개인 권한·공격권을 실행 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회 · KST 자정 갱신\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n└ 킹덤 미점령 시 영주 권한·세금 징수 중단\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드명 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드명\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n기존 전쟁은 끝까지 진행합니다. 승리 시 같은 단계가 이미 차 있으면 점령과 길드 점령 보상 없이 전투 결과·개인 참여 보상만 확정합니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 8곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 금광\n              ⬇️\n📕 [4] 펫스킬 광산 · 💎 [5] 다이아 광산\n💫 [6] 미강석 광산\n              ⬇️\n🛡️ [7] 루미에르 요새\n              ↕️\n🏰 [8] 호월킹덤\n\n🪙 금광: 세 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 정상 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 🔒는 진격 조건 또는 단계별 점령 한도에 따른 제한입니다.\n└ ⚔️ 표시와 별개로 개인 권한·공격권을 실행 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회 · KST 자정 갱신\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n└ 킹덤 미점령 시 영주 권한·세금 징수 중단\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드명 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드명\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n기존 전쟁은 끝까지 진행합니다. 승리 시 같은 단계가 이미 차 있으면 점령과 길드 점령 보상 없이 전투 결과·개인 참여 보상만 확정합니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -1635,8 +1636,8 @@ const GLOBAL_CONFIG = {
             { title: "미니펫", emoji: "🐣", intro: "미니펫의 장착과 성장 방법을 알아봐요!", learn: ["주력·보조 장착과 보유 미니펫을 구분해요.", "강화 전 소모 재화와 안내를 먼저 확인해요."], commands: ["/미니펫정보", "/미니펫가방"], check: "장착 상태와 강화 전 확인 사항을 알고 있나요?", note: "선택 실습: /미니펫장착 가방번호, /미니펫보조장착 가방번호. /미니펫강화 0 횟수는 대표, 00 횟수는 보조, 양수는 가방 번호예요. 강화는 필수가 아니에요." },
             { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
             {"title":"펫홈·가구","emoji":"🏡","intro":"내 펫홈과 가구 효과를 한눈에 확인해요!","learn":["보유 가구와 장착 가구를 구분해요.","집 면적·장착칸·가구 효과를 구분해요.","가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.","펫홈 1평당 캐슬매력 +75,000, 레이드매력 +75,000이 증가해요.","평수 매력 보너스는 /가구정보에서 확인해요.","루미에르 빌리지와 별채의 역할을 알아봐요."],"commands":["/펫홈","/가구정보"],"check":"장착 상태와 가구 효과를 어디서 확인하나요?\n펫홈 1평당 캐슬·레이드 매력이 얼마나 증가하나요?","note":"현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요."},
-            { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 7개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령5억·방어2.5억, 기타 점령3억·방어1억, 공격 실패1억이에요. 특수광산 승리 시 조각1개 또는 길드창고 다이아1개를 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공50%·변경하루2회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
-            { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매상품. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
+            { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 8개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령5억·방어2.5억, 기타 점령3억·방어1억, 공격 실패1억이에요. 특수광산 승리 시 길드창고에 조각1개·다이아1개·미니펫 강화석5개 중 해당 광산 보상을 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공50%·변경하루2회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
+            { title: "거래·이용 수칙", emoji: "🤝", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매상품. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
             { title: "홈뱃지·큐브", emoji: "💟", intro: "홈뱃지 옵션과 큐브 사용 전 확인 사항을 알아봐요!", learn: ["/홈뱃지에서 보유 목록과 장착 상태를, /홈뱃지정보 이름에서 옵션·효과를 확인해요.", "/홈뱃지장착 번호와 /홈뱃지해제 뱃지번호의 안내·확인 절차를 알아봐요.", "/홈뱃지큐브 안내에서 슬롯·옵션 번호·사용 횟수와 보유량·소모량·확률·보호 조건을 확인해요.", "수치와 적용 조건은 교육 시점의 실제 홈뱃지·큐브 안내를 기준으로 설명해요."], commands: ["/홈뱃지", "/홈뱃지정보 이름", "/홈뱃지큐브", "/큐브확률"], check: "내 홈뱃지 옵션과 큐브 대상·소모량·확률을 어디에서 확인하나요?", note: "선택 안내: /홈뱃지큐브 슬롯 옵션 사용횟수. 현재 화면의 슬롯·옵션 번호를 먼저 확인해요. 뱃지·큐브가 없으면 GM 예시로 배우며 실제 큐브 사용은 완료 조건이 아니에요." },
             { title: "패키지 상품 확인", emoji: "📘", intro: "보유 중인 패키지를 확인하는 방법을 알아봐요!", learn: ["/패키지가방에서 보유 중인 패키지 상품을 확인할 수 있어요.", "패키지 상품의 이름과 보유 수량을 확인하는 방법을 알아봐요."], commands: ["/패키지가방"], check: "보유 중인 패키지 상품의 이름과 수량을 어디에서 확인하나요?", note: "후원은 선택 사항이며 실제 후원·결제·후원 이력 없이 설명만으로 교육을 완료할 수 있어요." }
         ]
@@ -2144,7 +2145,7 @@ const GLOBAL_CONFIG = {
         kstOffsetMs: 9 * 60 * 60 * 1000,
         resultLink: "https://ibb.co/jkbgrzHt"
     },
-    carrotRetirement: { removedFields: ["carrotGiven", "thermoPoints", "carrotBuyCount", "topCarrotGive", "topThermo", "carrotFee", "carrotRetirement", "carrotTradePending"] },
+    carrotRetirement: { itemNames: ["황금당근🌕", "황금당근🌕(/황금당근오픈 숫자)", "달토끼의 달빛꾸러미🐰[소]", "달토끼의 보름달꾸러미🐰[중]", "달토끼의 황금달꾸러미🐰[대]", "달토끼의 달궁보물꾸러미🐰[특대]", "🐰달토끼 당근주머니〈소〉", "🐰달토끼 당근바구니〈중〉", "🐰달토끼 당근수레〈대〉", "달토끼의 선물🐰", "달토끼의 프리미엄 선물🐰", "달토끼도파민패키지🐰", "달토끼 당근주머니〈소중대〉(황금당근 1060개)+호월신의 가호 1000개"], removedFields: ["carrotGiven", "thermoPoints", "carrotBuyCount", "topCarrotGive", "topThermo", "carrotFee", "carrotRetirement", "carrotTradePending", "carrotBoard", "carrotTrade", "carrotLog", "thermoLog", "chuseokEvent"] },
     adventureStats: {
         maxStage: 100,
         maxSafe: 9007199254740991,
@@ -3056,29 +3057,6 @@ blockedNicknameTerms: [
             name: "길드레이드던전👾",
             label: "🎉이벤트 던전👾",
             rewardItem: "길드레이드던전박스👾(/레이드박스오픈)"
-        },
-        chuseokEvent: {
-            slot: "11",
-            name: "달토끼 탐색🐰",
-            currencyName: "황금당근🌕",
-            itemName: "황금당근🌕(/황금당근오픈 숫자)",
-            participationFee: 50000000,
-            rewardMin: 1,
-            rewardMax: 3,
-            periodText: "9월 16일 ~ 10월 10일",
-            defaultShop: [
-                { id: 1, name: "달토끼의 첫 선물🐰", price: 5, limit: 1, rewards: [{ name: "펫 강화석⭐", count: 100 }, { name: "미니펫 강화석💫", count: 300 }] },
-                { id: 2, name: "달빛 쑥쑥 성장팩⭐", price: 20, limit: 3, rewards: [{ name: "펫 강화석⭐", count: 500 }, { name: "미니펫 강화석💫", count: 500 }] },
-                { id: 3, name: "달토끼의 뽑기잔치🐹", price: 25, limit: 3, rewards: [{ name: "미니펫뽑기🐹(/미니펫오픈)", count: 1500 }, { name: "펫스윗홈인테리어샵🖼️(/샵오픈)", count: 1500 }] },
-                { id: 4, name: "보름달 포인트 주머니🪙", price: 15, limit: 3, rewards: [{ name: "1억포인트상자🪙(/포인트상자오픈)", count: 10 }] },
-                { id: 5, name: "반짝반짝 다이아 선물💎", price: 50, limit: 3, rewards: [{ name: "다이아상자💎(소)", count: 1 }] },
-                { id: 6, name: "달빛 가득 큐브상자💟", price: 50, limit: 5, rewards: [{ name: "홈뱃지 큐브💟", count: 250 }] },
-                { id: 7, name: "달토끼의 펜던트 공방📿", price: 150, limit: 10, rewards: [{ name: "펜던트뽑기💎(/펜던트오픈)", count: 100 }, { name: "펜던트 강화석📿", count: 10 }] },
-                { id: 8, name: "달토끼의 비밀금고🔒", price: 10, limit: 10, rewards: [{ name: "호이의 봉인금고🔒(/봉인금고오픈 숫자)", count: 3 }, { name: "해방의 열쇠🗝️(/봉인금고오픈 숫자)", count: 3 }] },
-                { id: 9, name: "소원을 담은 만능상자🔐", price: 100, limit: 1, rewards: [{ name: "만능상자🔐(/만능상자오픈 숫자)", count: 1 }] },
-                { id: 10, name: "한가위 도파민 대잔치🤩", price: 300, limit: 10, rewards: [{ name: "도파민패키지🤩[13]", count: 1 }] },
-                { id: 11, name: "달토끼의 전설 보물🌕", price: 50, limit: 2, rewards: [{ name: "전설의 돌맹이🗿", count: 50 }] }
-            ]
         },
         maze: {
             ticketItemName: "미궁 입장권🕋",
@@ -4701,7 +4679,6 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var initialMemberLoadStartMs = Date.now();
         updateResponseQueueStage(request, "회원 자료 로드");
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
-        runCarrotRetirementEntry(data);
         var adventureStatEntryRequest = parseAdventureStatRequest(msg);
         var adventureStatMemberSnapshot = adventureStatEntryRequest && adventureStatEntryRequest.action === "invest" ? { data: data, transaction: getDataSaveTransaction(), path: resolveActiveDataPath(filePath) } : null; // 같은 투자 요청의 잠금 안에서 읽은 검증 원본
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
@@ -9664,13 +9641,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (!isManualPetExploreSettlement && !isPetExploreTickPending(data, petExploreData, request.petExploreTick)) return;
                     if (!isManualPetExploreSettlement) data.previnterval = request.petExploreTick.triggeredAt;
                     beginFreeMarketMutation(request, data, petData, petSkillData, replier, [petExplorePath]);
-                    if (msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
-                        petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동 정산은 새로운 탐험 회차로 실행
-                    }
-                    if (isChuseokExploreEventActive(petExploreData)) petExploreData = autoExploreBetting(data, petExploreData); // 자동탐험권과 11번 고정을 보유한 사용자를 먼저 등록
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
                     var totalCnt = getExploreTotalCount(data, petExploreData, guildData);
-                    var shouldAnnounceExploreStart = shouldAnnouncePetExploreStart(petExploreData, totalCnt); // 달토끼 실제 참여자가 있을 때만 출발 알림·대기 적용
+                    var shouldAnnounceExploreStart = true;
                     if (shouldAnnounceExploreStart) {
                         var message = "⛰️탐험 시작 5초 전⛰️";
                         message += "\n이미지링크:https://ibb.co/d4zDKYsF";
@@ -9682,8 +9655,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         java.lang.Thread.sleep(10000);
                     }
 
-                    // 일반 탐험은 출발 시 카운트하고, 추석 이벤트는 실제 참가비 결제 성공 시 카운트한다.
-                    if (!isChuseokExploreEventActive(petExploreData)) incrementDailyExploreCountForParticipants(data, petExploreData);
+                    // 출발 시 실제 참가자의 일일 탐험 횟수를 반영한다.
+                    incrementDailyExploreCountForParticipants(data, petExploreData);
 
                     //  doPetExploreInterval에 petExploreData 전달
                     var automaticRoundKey = isManualPetExploreSettlement ? null : request.petExploreTick.scheduleId + ":" + request.petExploreTick.sequence;
@@ -25813,137 +25786,6 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/추석이벤트활성화" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    petExploreData.chuseokEvent.active = true;
-                    saveJsonFile(petExploreData, petExplorePath);
-                    replier.reply("✅ 추석 이벤트가 활성화되었습니다.\n\n🌕 기간: " + GLOBAL_CONFIG.petExplore.chuseokEvent.periodText + "\n🏰 참여 대상: 길드 가입 유저\n🐰 이벤트 탐험: /탐 11\n⏰ 탐험 주기: 시작 후 60분 간격\n💰 참가비: 탐험 1회당 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "\n🌕 성공 보상: 황금당근 1~3개\n⛰️ 자동 참여: 자동탐험권 보유 후 /자동탐고정 11\n🛍️ 이벤트 상점: /달토끼상점\n\n※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.");
-                    return;
-                }
-
-                if (msg === "/추석이벤트비활성화" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    petExploreData.chuseokEvent.active = false;
-                    petExploreData.chuseokEvent.balances = {};
-                    petExploreData.chuseokEvent.processedHours = {};
-                    for (var chuseokMemberName in data.member) {
-                        if (!data.member.hasOwnProperty(chuseokMemberName) || !data.member[chuseokMemberName].bag) continue;
-                        delete data.member[chuseokMemberName].bag[GLOBAL_CONFIG.petExplore.chuseokEvent.currencyName];
-                        delete data.member[chuseokMemberName].bag[GLOBAL_CONFIG.petExplore.chuseokEvent.itemName];
-                    }
-                    var movedChuseokCount = moveChuseokBetsToRandomMine(petExploreData);
-                    var resetChuseokAutoFixedCount = clearPetExploreAutoFixedDungeons(petExploreData);
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(petExploreData, petExplorePath);
-                    replier.reply("🌕 추석 이벤트가 종료되었습니다.\n\n🌕 전체 계정의 황금당근 회수 완료\n🐰 달토끼 탐색 참여자 랜덤 이동 완료: " + movedChuseokCount + "명\n⛰️ 자동탐험 고정 초기화 완료: " + resetChuseokAutoFixedCount + "명\n🗺️ 일반 탐험 이용 재개\n🛍️ 달토끼상점 이용 종료");
-                    return;
-                }
-
-                if (msg === "/달토끼상점") {
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    replier.reply(buildChuseokShopMessage(data, petData, guildData, petExploreData, sender));
-                    return;
-                }
-
-                if ((msg === "/황금당근수정" || msg.indexOf("/황금당근수정 ") === 0) && isMaster(sender)) {
-                    var goldenCarrotEditMatch = msg.match(/^\/황금당근수정\s+(.+?)\s+([+-]?\d+)$/);
-                    if (!goldenCarrotEditMatch) {
-                        replier.reply("사용법: /황금당근수정 [아이디] [수량|+수량|-수량]\n예: /황금당근수정 호이 남 10\n※ 부호가 없으면 증가로 처리합니다.");
-                        return;
-                    }
-                    var goldenCarrotEditTarget = goldenCarrotEditMatch[1].trim();
-                    var goldenCarrotEditAmount = Number(goldenCarrotEditMatch[2]);
-                    if (!goldenCarrotEditTarget || !isFinite(goldenCarrotEditAmount) || goldenCarrotEditAmount === 0 || Math.floor(goldenCarrotEditAmount) !== goldenCarrotEditAmount || Math.abs(goldenCarrotEditAmount) > 9007199254740991) {
-                        replier.reply("❌ 변경 수량은 0이 아닌 안전한 정수로 입력해주세요.\n예: /황금당근수정 호이 남 -10");
-                        return;
-                    }
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    var goldenCarrotEditResult = changeChuseokCarrotBalance(data, petExploreData, goldenCarrotEditTarget, goldenCarrotEditAmount);
-                    if (goldenCarrotEditResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(petExploreData, petExplorePath);
-                    }
-                    replier.reply(goldenCarrotEditResult.message);
-                    return;
-                }
-
-                if (/^\/황금당근오픈\s+\d+$/.test(msg)) {
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    var goldenCarrotOpenCount = parseInt(msg.trim().split(/\s+/)[1], 10);
-                    var goldenCarrotOpenResult = openChuseokCarrotItems(data, petExploreData, sender, goldenCarrotOpenCount);
-                    if (goldenCarrotOpenResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(petExploreData, petExplorePath);
-                    }
-                    replier.reply(goldenCarrotOpenResult.message);
-                    return;
-                }
-
-                if (msg === "/황금당근오픈" || msg.indexOf("/황금당근오픈 ") === 0) {
-                    replier.reply("사용법: /황금당근오픈 [숫자]\n예: /황금당근오픈 10");
-                    return;
-                }
-
-                if (/^\/달토끼상점구매\s+\d+\s+\d+$/.test(msg)) {
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    var moonShopBuyParts = msg.trim().split(/\s+/);
-                    var moonShopBuyResult = purchaseChuseokShopItem(data, petExploreData, guildData, sender, moonShopBuyParts[1], moonShopBuyParts[2]);
-                    if (moonShopBuyResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(petExploreData, petExplorePath);
-                    }
-                    replier.reply(moonShopBuyResult.message);
-                    return;
-                }
-
-                if (msg === "/달토끼상점구매" || msg.indexOf("/달토끼상점구매 ") === 0) {
-                    replier.reply("사용법: /달토끼상점구매 [번호] [횟수]\n예: /달토끼상점구매 5 1");
-                    return;
-                }
-
-                if (/^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(msg) && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
-                    var moonShopAddMatch = msg.match(/^\/달토끼상점추가\s+(.+)\s+(\d+)\s+(\d+)\s+(\d+)$/);
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    var moonShopProductName = moonShopAddMatch[1].trim();
-                    var moonShopItemId = petExploreData.chuseokEvent.nextShopId;
-                    var moonShopRewardCount = parseInt(moonShopAddMatch[2], 10);
-                    var moonShopPrice = parseInt(moonShopAddMatch[3], 10);
-                    var moonShopLimit = parseInt(moonShopAddMatch[4], 10);
-                    if (moonShopRewardCount < 1 || moonShopPrice < 1 || moonShopLimit < 1) {
-                        replier.reply("❌ 상품 수량, 황금당근 가격, 계정당 구매 한도는 모두 1 이상이어야 합니다.");
-                        return;
-                    }
-                    var moonShopRewards = createChuseokAdminShopRewards(moonShopProductName, moonShopRewardCount, loadJsonFile(itemListPath), requirePackageInfoData(loadJsonFile(packageInfoPath)));
-                    if (!moonShopRewards) {
-                        replier.reply("❌ 지급 가능한 기존 상품·아이템·패키지를 찾을 수 없습니다.\n상품명을 정확히 확인해주세요.");
-                        return;
-                    }
-                    petExploreData.chuseokEvent.shop.push({ id: moonShopItemId, name: moonShopProductName, price: moonShopPrice, limit: moonShopLimit, rewards: moonShopRewards, active: true });
-                    petExploreData.chuseokEvent.nextShopId = moonShopItemId + 1;
-                    saveJsonFile(petExploreData, petExplorePath);
-                    replier.reply("✅ 달토끼상점 상품 추가 완료\n\n상품 번호: " + moonShopItemId + "번\n상품명: " + moonShopProductName + "\n지급 수량: " + moonShopRewardCount + "세트\n필요한 황금당근: " + moonShopPrice + "개\n계정당 구매 한도: " + moonShopLimit + "회");
-                    return;
-                }
-
-                if (msg === "/달토끼상점추가" || msg.indexOf("/달토끼상점추가 ") === 0) {
-                    if ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender)) replier.reply("사용법: /달토끼상점추가 [상품명] [상품갯수] [황금당근필요갯수] [계정당구매횟수]");
-                    return;
-                }
-
-                if (/^\/달토끼상점삭제\s+\d+$/.test(msg) && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
-                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
-                    var moonShopDeleteId = parseInt(msg.trim().split(/\s+/)[1], 10);
-                    var moonShopDeleteItem = getChuseokShopItem(petExploreData, moonShopDeleteId);
-                    if (!moonShopDeleteItem || moonShopDeleteItem.active === false) {
-                        replier.reply("❌ 판매 중인 상품 번호가 아닙니다.");
-                        return;
-                    }
-                    moonShopDeleteItem.active = false;
-                    saveJsonFile(petExploreData, petExplorePath);
-                    replier.reply("✅ 달토끼상점 상품 삭제 완료\n\n" + moonShopDeleteId + "번. " + moonShopDeleteItem.name);
-                    return;
-                }
-
                 if (msg === "/지도") {
                     var homeData = loadJsonFile(homeDataFile);
                     var out = buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender);
@@ -26058,28 +25900,11 @@ replier.reply(
                     cleanupInvalidPetExploreUsers(petExploreData, data);
                     savePetExploreMigrationIfNeeded(petExploreData);
 
-                    if (petExploreData.reworkVersion === 1 && !isChuseokExploreEventActive(petExploreData)) {
+                    if (petExploreData.reworkVersion === 1) {
                         replier.reply("기존 탐험 회차 정산 후 새 지역으로 참가해주세요. 현재 참가와 보상은 유지됩니다."); return;
                     }
                     var parts = msg.trim().split(/\s+/);
                     var dungeonNo = null;
-
-                    if (isChuseokExploreEventActive(petExploreData)) {
-                        if (parts.length !== 2 || parts[1] !== "11") {
-                            replier.reply("🌕 추석 이벤트 진행 중입니다.\n\n이벤트 기간에는 달토끼 탐색만 이용할 수 있어요.\n🐰 참여방법: /탐 11");
-                            return;
-                        }
-                        if (!isCurrentGuildMemberForChuseok(data, guildData, sender)) {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🏰 길드 가입 유저만 참여할 수 있어요.\n/길드목록 으로 길드가입을 해보세요 :)\n\n길드 가입 후 달토끼 탐색과 이벤트 상품 교환을 이용해 주세요.");
-                            return;
-                        }
-                        var chuseokEntryPoint = Number(data.member[sender].point) || 0;
-                        if (chuseokEntryPoint < GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) {
-                            replier.reply("🐰 달토끼 탐색에 참여할 수 없어요.\n\n필요 포인트: 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "\n보유 포인트: 🅟" + numberWithCommas(chuseokEntryPoint) + "\n포인트가 부족합니다.");
-                            return;
-                        }
-                        dungeonNo = "11";
-                    }
 
                     if (!dungeonNo && parts.length === 1) {
                         dungeonNo = getRandomRegularMineExploreSlot();
@@ -30354,6 +30179,12 @@ replier.reply(
                     var freeMarketCleanupData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
                     var boardCleanupData = loadJsonFile(boardPath);
                     var packageLogCleanupData = loadJsonFile(packageLogPath);
+                    var retiredItemListData = loadJsonFile(itemListPath), retiredPackageInfoData = loadJsonFile(packageInfoPath);
+                    applyCarrotRetirement(data, Date.now());
+                    var retiredCleanupStores = [homeData, placedFurnitureCleanupData, petData, petSkillData, currencyLogData, guildData, memberTitleCleanupData, petTitleCleanupData, miniPetTitleCleanupData, miniPetCollectionCleanupData, trialTowerCleanupData, petHomeCommentsCleanupData, petHomeActivityCleanupData, petExploreCleanupData, attendanceLightCleanupData, punchRankCleanupData, freeMarketCleanupData, boardCleanupData, packageLogCleanupData, retiredItemListData, retiredPackageInfoData];
+                    for (var retiredStoreIndex = 0; retiredStoreIndex < retiredCleanupStores.length; retiredStoreIndex++) scrubCarrotLegacy(retiredCleanupStores[retiredStoreIndex], retiredCleanupStores[retiredStoreIndex] === freeMarketCleanupData);
+                    saveJsonFile(retiredItemListData, itemListPath);
+                    saveJsonFile(retiredPackageInfoData, packageInfoPath);
 
                     var totalDisplayRemoved = 0;
                     var totalNullRemoved = 0;
@@ -30483,6 +30314,7 @@ replier.reply(
                     if (robberyMigrationPending) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), { pending: null });
 
                     var out = "🧹 /데이터정리 완료\n";
+                    out += "종료 콘텐츠의 현재 사용 자료를 정리했습니다. 보관 백업·복구본은 변경하지 않았습니다.\n";
                     out += allsee + "\n";
                     out += "\n[할로윈 가방 사탕 전환]\n";
                     out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
@@ -30716,6 +30548,7 @@ function getDataCleanupStorePaths() {
         { key: "petExploreData", path: petExplorePath }, { key: "attendanceLightData", path: attendanceLightPath },
         { key: "punchRankData", path: punchRankPath }, { key: "freeMarketData", path: freeMarketPath },
         { key: "boardData", path: boardPath },
+        { key: "itemListData", path: itemListPath }, { key: "packageInfoData", path: packageInfoPath },
         { key: "packageLogData", path: packageLogPath }, { key: "dollIndexData", path: DATA_ROOT_PATH + "dollIndex.json", optional: true },
         { key: "educationStore", path: DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.fileName, optional: true }
     ];
@@ -30772,7 +30605,15 @@ function buildDataCleanupPreview(data, guildData, stores) {
     var rewards = cleanupCompletedRewardRecords(data, stores.petData, stores.petSkillData, stores.educationStore, true);
     var prepared = compactAdventureQuestPreparedRecords(data, true);
     var unused = cleanupUnusedMemberFields(data, true);
-    var targets = [["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    var retiredTargets = [];
+    scrubCarrotLegacy(data, false, retiredTargets);
+    scrubCarrotLegacy(guildData, false, retiredTargets);
+    for (var retiredKey in stores) if (Object.prototype.hasOwnProperty.call(stores, retiredKey) && /Data$/.test(retiredKey)) {
+        var storeTargets = [];
+        scrubCarrotLegacy(stores[retiredKey], retiredKey === "freeMarketData", storeTargets);
+        if (storeTargets.length) retiredTargets.push([retiredKey, storeTargets]);
+    }
+    var targets = [["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var candyMigration = stores.halloweenCandyMigration;
     if (!candyMigration) throw new Error("할로윈 가방 사탕 전환 대상을 확인할 수 없습니다.");
     targets.push(["halloweenCandy", candyMigration.targets]);
@@ -30817,6 +30658,8 @@ function buildDataCleanupPreview(data, guildData, stores) {
     var robberyMigration = migrations[GLOBAL_CONFIG.miniPet.robberyHistory.markerKey] !== true || robberyUsers.length > 0;
     targets.push(["migrations", memberMigration, adventureMigration, robberyMigration, robberyUsers.sort()]);
     var text = "🧹 데이터 정리 대상\n아직 정리하지 않았습니다.\n━━━━━━━━━━━━\n" +
+        "• 종료 콘텐츠: 당근·온도기·달토끼·황금당근 보유분·설정·거래/정산 이력 정리\n" +
+        "  현재 사용 중인 자료만 정리하며 보관 백업·복구본은 열거나 변경하지 않습니다.\n" +
         "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
         "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
@@ -31312,10 +31155,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/인형뽑기" || /^\/인형상자오픈\s*(?:일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?:\s+\d+)?$/.test(command) || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
-        /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
-        command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
-        /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
+        command === "/인형뽑기" || /^\/인형상자오픈\s*(?:일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?:\s+\d+)?$/.test(command) || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) ||
         command === "/소식" || command === "/소식등록" || /^\/소식삭제\s+\d+$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
         command === "/별채등록" || /^\/별채등록(?:\s+\d+)+$/.test(command) || command === "등록한다" || command === "등록안한다" ||
@@ -31518,7 +31358,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/홈뱃지큐브수정", "/레벨수정", "/경험치수정", "/레벨초기화", "/호여", "/부스터수정", "/황금당근수정", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/홈뱃지큐브수정", "/레벨수정", "/경험치수정", "/레벨초기화", "/호여", "/부스터수정", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -42167,7 +42007,7 @@ function normalizePendantTransitionBagItem(bag, itemName) {
 
 // 상자 오픈과 관련된 아이템들을 사용자의 가방에 추가하는 함수
 function addItemToBag(bag, item, quantity) {
-    if (item === GLOBAL_CONFIG.spiritRetirement.removedItem || item === GLOBAL_CONFIG.items.carrotName || item === GLOBAL_CONFIG.items.carrotThermometerName) return;
+    if (item === GLOBAL_CONFIG.spiritRetirement.removedItem || isRetiredCarrotValue(item)) return;
     item = normalizePendantTransitionBagItem(bag, item);
     if (bag[item]) {
         bag[item] += quantity;
@@ -44050,15 +43890,12 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, petExploreData,
     var pointHidden = member.hidePremiumBagPoint === true; // 전용 가방에서 포인트 숨김 여부
     var pointDisplay = pointHidden ? "쉿 비밀🤫" : numberWithCommas(member.point || 0); // 잠금 상태를 반영한 포인트 표시값
     var pointLockGuide = pointHidden ? "" : "※ 포인트 안보이게 원하시면 /포인트잠금\n"; // 포인트 공개 상태에서만 표시하는 잠금 안내
-    var chuseokCarrotLine = isChuseokExploreEventActive(petExploreData) ? "🌕 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, user, data)) + "개 / 이벤트종료시 삭제\n" : ""; // 이벤트 전용 잔액 표시
-
     return getHoiPassPremiumHeader(data, user) +
         "[" + checkRank(data, petData, guildData, user) + "]의 호패프 전용가방🧳\n" +
         "━━━━━━━━━━━━\n" +
         getHalloweenCandyLine(getCurrentContext(), false) +
         "🪙: " + pointDisplay + "\n" +
         "💎 다이아: " + numberWithCommas(member.diamond || 0) + "개\n" +
-        chuseokCarrotLine +
         "🔒 호이의 봉인금고: " + numberWithCommas(vaultCount) + "개\n" +
         "🗝️ 해방의 열쇠: " + numberWithCommas(keyCount) + "개\n" +
         "━━━━━━━━━━━━\n" +
@@ -47570,7 +47407,7 @@ function assertPackageLogData(packageLogData) {
 function getPackageByListNumber(packageInfoData, listNumber) {
     var index = parseInt(listNumber, 10) - 1; // 패키지리스트 표시 번호를 배열 인덱스로 변환
     if (isNaN(index) || index < 0 || index >= packageInfoData.length) return null;
-    return packageInfoData[index];
+    return isRetiredCarrotValue(getPackageBagItemName(packageInfoData[index])) ? null : packageInfoData[index];
 }
 
 // 패키지가 bag에 저장될 때 사용하는 이름 반환 함수
@@ -47586,7 +47423,7 @@ function getUserPackageBagList(data, user, packageInfoData) {
     for (var i = 0; i < packageInfoData.length; i++) {
         var packageInfo = packageInfoData[i]; // packageInfo.json 기준 패키지 항목
         var packageBagItemName = getPackageBagItemName(packageInfo); // bag에서 조회할 패키지명
-        if (!packageBagItemName) continue;
+        if (!packageBagItemName || isRetiredCarrotValue(packageBagItemName)) continue;
         var count = parseInt(bag[packageBagItemName], 10) || 0; // 유저가 보유한 패키지 수량
         if (count > 0) {
             list.push({
@@ -47645,6 +47482,7 @@ function buildPackageListMessage(packageInfoData) {
     } else {
         for (var i = 0; i < packageInfoData.length; i++) {
             var packageInfo = packageInfoData[i]; // 리스트에 표시할 패키지 정보
+            if (isRetiredCarrotValue(getPackageBagItemName(packageInfo))) continue;
             var enabledText = packageInfo.enabled === false ? " [비활성]" : "";
             lines.push(i + 1 + ". " + (packageInfo.name || getPackageBagItemName(packageInfo) || "이름없음") + enabledText);
             lines.push("설명: " + (packageInfo.desc || "-"));
@@ -49580,7 +49418,7 @@ function generateBagOutput(bagItems, includeDonationNotice) {
         for (var i = 0; i < specialItems.length; i++) {
             var sItem = specialItems[i];
             if (sItem === intimacyItemKey) continue;
-            if (sItem !== GLOBAL_CONFIG.items.carrotName && sItem !== GLOBAL_CONFIG.items.carrotThermometerName && bagItems[sItem]) specialItemsSorted.push(sItem);
+            if (!isRetiredCarrotValue(sItem) && bagItems[sItem]) specialItemsSorted.push(sItem);
             var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
             if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
         }
@@ -49590,7 +49428,7 @@ function generateBagOutput(bagItems, includeDonationNotice) {
         var bagKeys = Object.keys(bagItems);
         for (var j = 0; j < bagKeys.length; j++) {
             var key = bagKeys[j];
-            if (key === intimacyItemKey || key === GLOBAL_CONFIG.items.carrotName || key === GLOBAL_CONFIG.items.carrotThermometerName) continue;
+            if (key === intimacyItemKey || isRetiredCarrotValue(key)) continue;
             if (specialItems.indexOf(key) !== -1 || specialItemsSorted.indexOf(key) !== -1) continue;
             otherItems.push(key);
         }
@@ -50792,7 +50630,7 @@ function removeAllItem(data, user, itemName) {
 }
 // 해당 사용자의 가방에 아이템 수량을 추가
 function addItem(data, user, itemName, count) {
-    if (itemName === GLOBAL_CONFIG.spiritRetirement.removedItem || itemName === GLOBAL_CONFIG.items.carrotName || itemName === GLOBAL_CONFIG.items.carrotThermometerName) return;
+    if (itemName === GLOBAL_CONFIG.spiritRetirement.removedItem || isRetiredCarrotValue(itemName)) return;
     if (itemName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName) itemName = GLOBAL_CONFIG.petSkill.bookItemName;
     itemName = normalizePassDurationItemName(itemName);
     if (!data.member[user]) return;
@@ -51202,7 +51040,7 @@ function getDiamondShopItemNames(data, items, packages) {
     var aliases = GLOBAL_CONFIG.petHomeActivity.shopAliases;
     names[aliases.gacha1] = true; names[aliases.gacha2] = true; names[aliases.gacha3] = true; names[aliases.cube50] = true;
     names[GLOBAL_CONFIG.peperoTitle.itemName] = true;
-    delete names[GLOBAL_CONFIG.items.carrotName]; delete names[GLOBAL_CONFIG.items.carrotThermometerName]; delete names[GLOBAL_CONFIG.spiritRetirement.removedItem];
+    for (key in names) if (Object.prototype.hasOwnProperty.call(names, key) && isRetiredCarrotValue(key)) delete names[key]; delete names[GLOBAL_CONFIG.spiritRetirement.removedItem];
     return names;
 }
 // 이름 뒤 숫자 두 개 또는 세 개를 정식 이름과 대조해 유일하게 해석하는 함수
@@ -51231,6 +51069,7 @@ function addDiamondShopProduct(shop, item, now) {
 }
 // 계정별 당일 구매 한도·유효량과 다이아·지급 수량을 모두 검증하는 함수
 function planDiamondShopPurchase(member, product, accountId, bundles) {
+    if (isRetiredCarrotValue(product.name)) throw new Error("종료된 상품입니다.");
     if (getPassDurationPackageConfig(product.name) && product.count !== 1) throw new Error("기간권 패키지의 상품갯수는 1개여야 합니다. 운영자가 상품을 다시 등록해야 합니다.");
     if (typeof accountId !== "string" || !accountId) throw new Error("계정 식별자를 확인해주세요.");
     if (!isPointShopSafeCount(bundles) || bundles < 1) throw new Error("구매 갯수는 1 이상의 안전한 정수여야 합니다.");
@@ -51277,6 +51116,7 @@ function buildDiamondShopView(shop, member, manage, log, livePrice) {
     if (!shop.products.length) text += "\n등록된 상품이 없습니다.";
     for (var i = 0; i < shop.products.length; i++) {
         var p = shop.products[i], identity = member.serverRaidAccount && member.serverRaidAccount.id, bought = identity && p.accounts["$" + identity] ? p.accounts["$" + identity].bought : 0;
+        if (isRetiredCarrotValue(p.name)) continue;
         var priceDifference = p.previousDay ? p.price - p.previousDay.price : null; // 전날 가격 기록이 있을 때 실제 가격 차이 계산
         text += "\n" + (i + 1) + ". " + p.name + " ×" + numberWithCommas(p.count) + "\n💎 " + numberWithCommas(p.price) + "개";
         if (p.on) {
@@ -51480,7 +51320,7 @@ function isFreeMarketV2Command(msg) {
 }
 // 종료된 당근 개인 이전·직접 지급 명령을 판별하는 함수
 function isRetiredCarrotCommand(msg) {
-    return /^\/(?:온도|온도순위|당근(?:순위|온도순위|게시판(?:삭제)?|등록|완료|금지아이템(?:추가|제거)?)?|미니펫당근|가구당근|펫스킬당근|펜던트당근(?:거래)?|자유시장전환)(?:\s|$)/.test(msg) || /^\/근당\d*,/.test(msg);
+    return /^\/(?:추석이벤트활성화|추석이벤트비활성화|달토끼상점(?:구매|추가|삭제)?|황금당근(?:수정|오픈)|온도|온도순위|당근(?:순위|온도순위|게시판(?:삭제)?|등록|완료|금지아이템(?:추가|제거)?)?|미니펫당근|가구당근|펫스킬당근|펜던트당근(?:거래)?|자유시장전환)(?:\s|$)/.test(msg) || /^\/근당\d*,/.test(msg);
 }
 // 다이아 또는 다이아상자·폐지 당근의 시장 등록을 차단하는 함수
 function isFreeMarketBlockedCurrency(name) {
@@ -51753,6 +51593,7 @@ function isFreeMarketPointBalance(value) {
 }
 // 미개봉 패키지의 폐지 당근 구성품을 같은 금액의 포인트 보상으로 해석하는 함수
 function normalizeLegacyPackageReward(reward) {
+    if (reward && reward.name !== GLOBAL_CONFIG.items.carrotName && isRetiredCarrotValue(reward.name)) return null;
     if (!reward || reward.type !== "item" || reward.name !== GLOBAL_CONFIG.items.carrotName) return reward;
     var count = Number(reward.count), point = count * GLOBAL_CONFIG.freeMarket.retiredItemPointValue;
     if (!isPointShopSafeCount(count) || count < 1 || !isPointShopSafeCount(point)) throw new Error("패키지 당근 대체 포인트 수량 확인 필요");
@@ -59351,7 +59192,7 @@ function getExplorePublicNumber(key) {
 function getExploreRegionKey(number) {
     if (!/^\d+$/.test(String(number))) return null;
     var value = Number(number);
-    return value >= 1 && value <= GLOBAL_CONFIG.petExplore.rework.regionKeys.length ? GLOBAL_CONFIG.petExplore.rework.regionKeys[value - 1] : value === 0 || value === 10 || value === 11 ? String(value) : null;
+    return value >= 1 && value <= GLOBAL_CONFIG.petExplore.rework.regionKeys.length ? GLOBAL_CONFIG.petExplore.rework.regionKeys[value - 1] : value === 0 || value === 10 ? String(value) : null;
 }
 // 기존 참가 회차의 종료 여부를 확인하고 삭제 지역의 고정 설정만 한 번 해제하는 함수
 function advanceExploreRework(store, completed) {
@@ -59403,9 +59244,6 @@ function initPetExploreData(petExploreData) {
     if (!Array.isArray(petExploreData.bet["10"])) {
         petExploreData.bet["10"] = [];
     }
-    if (!Array.isArray(petExploreData.bet["11"])) {
-        petExploreData.bet["11"] = [];
-    }
 
     // 유저별 현재 배팅 던전
     if (!petExploreData.userBet) {
@@ -59436,9 +59274,6 @@ function initPetExploreData(petExploreData) {
 
     petExploreData = migratePetExploreContentSlots(petExploreData);
 
-    // 기존 탐험 슬롯 마이그레이션 뒤에도 추석 이벤트 전용 슬롯을 보장한다.
-    if (!Array.isArray(petExploreData.bet["11"])) petExploreData.bet["11"] = [];
-
     // 이벤트 광산 상태
     if (!petExploreData.eventMine || typeof petExploreData.eventMine !== "object") {
         petExploreData.eventMine = {};
@@ -59467,17 +59302,6 @@ function initPetExploreData(petExploreData) {
         petExploreData.guildRaidEvent.rewardItem = GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem;
     }
 
-    // 추석 달토끼 이벤트 상태
-    if (!petExploreData.chuseokEvent || typeof petExploreData.chuseokEvent !== "object") petExploreData.chuseokEvent = {};
-    var chuseokEvent = petExploreData.chuseokEvent;
-    if (typeof chuseokEvent.active !== "boolean") chuseokEvent.active = false;
-    if (!chuseokEvent.balances || typeof chuseokEvent.balances !== "object" || chuseokEvent.balances instanceof Array) chuseokEvent.balances = {};
-    if (!chuseokEvent.purchases || typeof chuseokEvent.purchases !== "object" || chuseokEvent.purchases instanceof Array) chuseokEvent.purchases = {};
-    if (!chuseokEvent.processedHours || typeof chuseokEvent.processedHours !== "object" || chuseokEvent.processedHours instanceof Array) chuseokEvent.processedHours = {};
-    if (!(chuseokEvent.shop instanceof Array) || chuseokEvent.shop.length < 1) chuseokEvent.shop = createDefaultChuseokShop();
-    var nextChuseokShopId = parseInt(chuseokEvent.nextShopId, 10);
-    if (isNaN(nextChuseokShopId) || nextChuseokShopId < 1) chuseokEvent.nextShopId = getNextChuseokShopId(chuseokEvent.shop);
-
     return advanceExploreRework(petExploreData, false);
 }
 
@@ -59500,359 +59324,41 @@ function isGuildRaidExploreEventActive(petExploreData) {
     return !!(petExploreData && petExploreData.guildRaidEvent && petExploreData.guildRaidEvent.active);
 }
 
-// 추석 이벤트 기본 상점 구성을 복사하는 함수
-function createDefaultChuseokShop() {
-    var defaults = GLOBAL_CONFIG.petExplore.chuseokEvent.defaultShop;
-    var shop = [];
-    for (var i = 0; i < defaults.length; i++) {
-        var rewards = [];
-        for (var j = 0; j < defaults[i].rewards.length; j++) rewards.push({ name: defaults[i].rewards[j].name, count: defaults[i].rewards[j].count });
-        shop.push({ id: defaults[i].id, name: defaults[i].name, price: defaults[i].price, limit: defaults[i].limit, rewards: rewards, active: true });
-    }
-    return shop;
-}
 
-// 추석 상점에서 다음에 사용할 고유 번호를 반환하는 함수
-function getNextChuseokShopId(shop) {
-    var maxId = 0;
-    for (var i = 0; i < shop.length; i++) {
-        var id = parseInt(shop[i] && shop[i].id, 10) || 0;
-        if (id > maxId) maxId = id;
-    }
-    return maxId + 1;
-}
 
-// 관리자 상품 추가 입력을 실제 지급 가능한 보상 구성으로 변환하는 함수
-function createChuseokAdminShopRewards(productName, setCount, itemListData, packageInfoData) {
-    var normalizedName = String(productName || "").replace(/\s+/g, "");
-    var defaults = GLOBAL_CONFIG.petExplore.chuseokEvent.defaultShop;
-    for (var i = 0; i < defaults.length; i++) {
-        if (String(defaults[i].name).replace(/\s+/g, "") !== normalizedName) continue;
-        var defaultRewards = [];
-        for (var j = 0; j < defaults[i].rewards.length; j++) defaultRewards.push({ name: defaults[i].rewards[j].name, count: defaults[i].rewards[j].count * setCount });
-        return defaultRewards;
-    }
-    var knownItems = [];
-    if (itemListData && itemListData.nonItems instanceof Array) knownItems = knownItems.concat(itemListData.nonItems);
-    if (itemListData && itemListData.untradableList instanceof Array) knownItems = knownItems.concat(itemListData.untradableList);
-    if (knownItems.indexOf(productName) !== -1) return [{ name: productName, count: setCount }];
-    if (packageInfoData instanceof Array) {
-        for (var p = 0; p < packageInfoData.length; p++) {
-            var packageInfo = packageInfoData[p];
-            if (!packageInfo) continue;
-            if (packageInfo.name === productName && packageInfo.enabled !== false) return [{ name: productName, count: setCount }];
-            var rewards = packageInfo.rewards instanceof Array ? packageInfo.rewards : [];
-            for (var r = 0; r < rewards.length; r++) {
-                if (rewards[r] && rewards[r].type === "item" && rewards[r].name === productName) return [{ name: productName, count: setCount }];
-            }
-        }
-    }
-    return null;
-}
 
-// 추석 이벤트 활성 여부를 반환하는 함수
-function isChuseokExploreEventActive(petExploreData) {
-    return !!(petExploreData && petExploreData.chuseokEvent && petExploreData.chuseokEvent.active);
-}
 
-// 최신 회원·길드 데이터를 함께 확인해 현재 길드 가입 여부를 판정하는 함수
-function isCurrentGuildMemberForChuseok(data, guildData, user) {
-    var guildId = getMyGuildId(data, user);
-    if (!guildId || !guildData || !guildData.guilds || !guildData.guilds[guildId]) return false;
-    var guild = guildData.guilds[guildId];
-    return !!(guild.members && guild.members[user]);
-}
 
-// 현재 달토끼 탐색 참가 조건을 충족한 등록 인원을 반환하는 함수
-function getEligibleChuseokExploreCount(data, guildData, petExploreData, excludeProcessedCurrentHour) {
-    if (!data || !data.member || !petExploreData) return 0;
-    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
-    var arr = petExploreData.bet && Array.isArray(petExploreData.bet[config.slot]) ? petExploreData.bet[config.slot] : [];
-    var processedHours = petExploreData.chuseokEvent && petExploreData.chuseokEvent.processedHours ? petExploreData.chuseokEvent.processedHours : {};
-    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 현재 정각 처리 여부 비교 키
-    var candidateUsers = {}; // 수동 등록자와 11번 자동고정 이용자를 합친 참여 후보
-    for (var i = 0; i < arr.length; i++) {
-        var entry = arr[i];
-        if (!entry || !entry.user || !data.member[entry.user]) continue;
-        if (entry.auto) {
-            var entryFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[entry.user] !== undefined ? String(petExploreData.autoFixedDungeon[entry.user]) : null;
-            if (entryFixed !== config.slot || !hasItem(data, entry.user, "자동탐험권🌄", 1)) continue;
-        }
-        candidateUsers[entry.user] = true;
-    }
-    for (var autoUser in data.member) {
-        if (!data.member.hasOwnProperty(autoUser) || !data.member[autoUser]) continue;
-        var autoFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[autoUser] !== undefined ? String(petExploreData.autoFixedDungeon[autoUser]) : null;
-        if (autoFixed === config.slot && hasItem(data, autoUser, "자동탐험권🌄", 1)) candidateUsers[autoUser] = true;
-    }
-    var count = 0;
-    for (var user in candidateUsers) {
-        if (!candidateUsers.hasOwnProperty(user)) continue;
-        if (!isCurrentGuildMemberForChuseok(data, guildData, user)) continue;
-        if ((Number(data.member[user].point) || 0) < config.participationFee) continue;
-        if (excludeProcessedCurrentHour && processedHours[user] === hourKey) continue;
-        count++;
-    }
-    return count;
-}
 
-// 사용자의 황금당근 보유량을 반환하는 함수
-function getChuseokCarrotBalance(petExploreData, user, data) {
-    petExploreData = initPetExploreData(petExploreData);
-    var eventBalance = Math.max(0, parseInt(petExploreData.chuseokEvent.balances[user], 10) || 0); // 이벤트 전용 파일 잔액
-    var member = data && data.member ? data.member[user] : null;
-    var legacyBalance = member && member.bag ? Math.max(0, parseInt(member.bag[GLOBAL_CONFIG.petExplore.chuseokEvent.currencyName], 10) || 0) : 0; // 기존 가방 저장 잔액
-    return eventBalance + legacyBalance;
-}
 
-// 기존 가방 황금당근을 이벤트 전용 잔액으로 옮기는 함수
-function migrateChuseokCarrotBalance(data, petExploreData, user) {
-    var member = data && data.member ? data.member[user] : null;
-    var bag = member && member.bag ? member.bag : null;
-    var currencyName = GLOBAL_CONFIG.petExplore.chuseokEvent.currencyName;
-    var legacyBalance = bag ? Math.max(0, parseInt(bag[currencyName], 10) || 0) : 0;
-    if (legacyBalance <= 0) return false;
-    petExploreData.chuseokEvent.balances[user] = Math.max(0, parseInt(petExploreData.chuseokEvent.balances[user], 10) || 0) + legacyBalance;
-    delete bag[currencyName];
-    return true;
-}
 
-// 운영자가 사용자의 황금당근 잔액을 지정 수량만큼 증감하는 함수
-function changeChuseokCarrotBalance(data, petExploreData, user, amount) {
-    petExploreData = initPetExploreData(petExploreData);
-    if (!data || !data.member || !data.member[user]) return { ok: false, message: "❌ 존재하지 않는 아이디입니다: " + user };
-    var changeAmount = Number(amount);
-    if (!isFinite(changeAmount) || changeAmount === 0 || Math.floor(changeAmount) !== changeAmount || Math.abs(changeAmount) > 9007199254740991) {
-        return { ok: false, message: "❌ 변경 수량은 0이 아닌 안전한 정수여야 합니다." };
-    }
-    var beforeBalance = getChuseokCarrotBalance(petExploreData, user, data); // 기존 파일과 가방을 합친 변경 전 잔액
-    var afterBalance = beforeBalance + changeAmount; // 명령 적용 후 최종 잔액
-    if (afterBalance < 0) return { ok: false, message: "❌ 황금당근이 부족합니다.\n현재 수량: " + numberWithCommas(beforeBalance) + "개" };
-    if (Math.floor(afterBalance) !== afterBalance || Math.abs(afterBalance) > 9007199254740991) return { ok: false, message: "❌ 변경 후 수량이 안전한 정수 범위를 벗어납니다." };
-    migrateChuseokCarrotBalance(data, petExploreData, user);
-    petExploreData.chuseokEvent.balances[user] = afterBalance;
-    return {
-        ok: true,
-        message: "✅ 황금당근 수정 완료\n대상: " + user + "\n변경: " + numberWithCommas(beforeBalance) + " → " + numberWithCommas(afterBalance) + " (" + (changeAmount > 0 ? "+" : "") + numberWithCommas(changeAmount) + ")"
-    };
-}
 
-// 황금당근 아이템을 달토끼상점 전용 잔액으로 전환하는 함수
-function openChuseokCarrotItems(data, petExploreData, user, count) {
-    petExploreData = initPetExploreData(petExploreData);
-    if (!isChuseokExploreEventActive(petExploreData)) return { ok: false, message: "🌕 현재 추석 이벤트가 진행 중이 아닙니다." };
-    count = parseInt(count, 10);
-    if (isNaN(count) || count < 1) return { ok: false, message: "❌ 오픈 수량은 1 이상의 숫자로 입력해주세요." };
-    var itemName = GLOBAL_CONFIG.petExplore.chuseokEvent.itemName;
-    var ownedCount = data && data.member && data.member[user] && data.member[user].bag ? Math.max(0, parseInt(data.member[user].bag[itemName], 10) || 0) : 0;
-    if (ownedCount < count) return { ok: false, message: "🌕 황금당근 아이템이 부족해요.\n\n필요: " + numberWithCommas(count) + "개\n보유: " + numberWithCommas(ownedCount) + "개" };
-    var balanceBeforeOpen = getChuseokCarrotBalance(petExploreData, user, data); // 기존 호환 잔액을 포함한 오픈 전 수량
-    removeItem(data, user, itemName, count);
-    migrateChuseokCarrotBalance(data, petExploreData, user);
-    petExploreData.chuseokEvent.balances[user] = balanceBeforeOpen + count;
-    return { ok: true, message: "🌕 황금당근 오픈 완료!\n\n황금당근 아이템 " + numberWithCommas(count) + "개를 열었습니다.\n🌕 획득: " + numberWithCommas(count) + "개\n🌕 현재 보유: " + numberWithCommas(balanceBeforeOpen + count) + "개\n\n🛍️ 아이템 교환: /달토끼상점" };
-}
 
-// 추석 상점의 판매 상품을 고유 번호로 찾는 함수
-function getChuseokShopItem(petExploreData, itemId) {
-    var shop = petExploreData.chuseokEvent.shop;
-    for (var i = 0; i < shop.length; i++) {
-        if (parseInt(shop[i] && shop[i].id, 10) === parseInt(itemId, 10)) return shop[i];
-    }
-    return null;
-}
 
-// 사용자의 상품별 누적 구매 횟수를 반환하는 함수
-function getChuseokPurchaseCount(petExploreData, user, itemId) {
-    var userPurchases = petExploreData.chuseokEvent.purchases[user] || {};
-    return Math.max(0, parseInt(userPurchases[String(itemId)], 10) || 0);
-}
 
-// 추석 상점 상품의 보상 구성을 화면 문구로 만드는 함수
-function formatChuseokShopRewards(rewards, multiplier) {
-    var lines = [];
-    multiplier = Math.max(1, parseInt(multiplier, 10) || 1);
-    for (var i = 0; i < rewards.length; i++) lines.push(rewards[i].name + " ×" + numberWithCommas(rewards[i].count * multiplier));
-    return lines;
-}
 
-// 달토끼상점 전체보기 메시지를 만드는 함수
-function buildChuseokShopMessage(data, petData, guildData, petExploreData, user) {
-    petExploreData = initPetExploreData(petExploreData);
-    if (!isChuseokExploreEventActive(petExploreData)) return "🌕 현재 추석 이벤트가 진행 중이 아닙니다.";
-    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
-    var lines = ["🐰🌕 호이월드 달토끼상점 🌕🐰", "", "달토끼가 준비한 풍성한 한가위 선물!", "황금당근🌕을 모아 원하는 상품과 교환하세요.", "", "📅 " + config.periodText, "🏰 길드 가입 유저만 참여 가능", "🌕 내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, user, data)) + "개", "", "🛍️ 구매방법", "/달토끼상점구매 [번호] [횟수]", "", "💡 입력 예시", "/달토끼상점구매 5 1", "", "📚 상품 목록은 전체보기로 확인하세요 👇", allsee, "🎁 달토끼상점 상품 목록", "", "※ 아래 구성은 상품 1회 구매 기준입니다.", "※ 상품 구매 시에도 길드 가입 상태여야 합니다.", "※ 구매 한도는 이벤트 전체 기간, 계정당 기준입니다.", "━━━━━━━━━━━━━━━"];
-    var shop = petExploreData.chuseokEvent.shop;
-    for (var i = 0; i < shop.length; i++) {
-        var item = shop[i];
-        if (!item || item.active === false) continue;
-        var bought = getChuseokPurchaseCount(petExploreData, user, item.id);
-        lines.push("");
-        lines.push(item.id + ". " + item.name);
-        var rewardLines = formatChuseokShopRewards(item.rewards, 1);
-        for (var j = 0; j < rewardLines.length; j++) lines.push(rewardLines[j]);
-        lines.push("🌕 " + numberWithCommas(item.price) + "개｜" + (bought >= item.limit ? "✅ 구매 완료 · " : "구매 ") + bought + "/" + item.limit + "회");
-    }
-    lines.push("");
-    lines.push("━━━━━━━━━━━━━━━");
-    lines.push("/탐 11 → 달토끼 탐색🐰");
-    lines.push("성공 시 황금당근 1~3개 획득!");
-    lines.push("💰 참가비: 탐험 1회당 🅟" + numberWithCommas(config.participationFee));
-    lines.push("📢 이벤트 종료 시 남은 황금당근은 모두 회수됩니다.");
-    return lines.join("\n");
-}
 
-// 달토끼상점 구매를 검증하고 한 번에 반영하는 함수
-function purchaseChuseokShopItem(data, petExploreData, guildData, user, itemId, count) {
-    petExploreData = initPetExploreData(petExploreData);
-    if (!isChuseokExploreEventActive(petExploreData)) return { ok: false, message: "🌕 현재 추석 이벤트가 진행 중이 아닙니다." };
-    if (!isCurrentGuildMemberForChuseok(data, guildData, user)) return { ok: false, message: "🏰 길드 가입 유저만 달토끼상점 상품을 구매할 수 있어요.\n/길드목록 으로 길드가입을 해보세요 :)" };
-    count = parseInt(count, 10);
-    if (isNaN(count) || count < 1) return { ok: false, message: "❌ 구매 횟수는 1 이상의 숫자로 입력해주세요." };
-    var item = getChuseokShopItem(petExploreData, itemId);
-    if (!item || item.active === false) return { ok: false, message: "❌ 판매 중인 상품 번호가 아닙니다." };
-    var bought = getChuseokPurchaseCount(petExploreData, user, item.id);
-    var remainingLimit = item.limit - bought;
-    if (count > remainingLimit) return { ok: false, message: "❌ 구매 가능한 횟수를 초과했어요.\n\n이 상품은 앞으로 " + Math.max(0, remainingLimit) + "회만 구매할 수 있어요." };
-    var balance = getChuseokCarrotBalance(petExploreData, user, data);
-    var cost = item.price * count;
-    if (balance < cost) return { ok: false, message: "🌕 황금당근이 부족해요.\n\n필요한 황금당근: " + cost + "개\n보유한 황금당근: " + balance + "개\n부족한 황금당근: " + (cost - balance) + "개" };
-    if (!data.member[user].bag || typeof data.member[user].bag !== "object") data.member[user].bag = {};
-    migrateChuseokCarrotBalance(data, petExploreData, user);
-    petExploreData.chuseokEvent.balances[user] = balance - cost;
-    if (!petExploreData.chuseokEvent.purchases[user]) petExploreData.chuseokEvent.purchases[user] = {};
-    petExploreData.chuseokEvent.purchases[user][String(item.id)] = bought + count;
-    for (var i = 0; i < item.rewards.length; i++) addItem(data, user, item.rewards[i].name, item.rewards[i].count * count);
-    var rewardLines = formatChuseokShopRewards(item.rewards, count);
-    var totalBought = bought + count;
-    var lines = ["🐰 달토끼상점 구매 완료!", "━━━━━━━━━━━━", item.name, "🛍️ 구매: " + count + "회", "", "🎁 받은 아이템"];
-    for (var j = 0; j < rewardLines.length; j++) lines.push(rewardLines[j]);
-    lines.push("━━━━━━━━━━━━");
-    lines.push("🌕 사용한 황금당근: " + cost + "개");
-    lines.push("🌕 남은 황금당근: " + (balance - cost) + "개");
-    lines.push("");
-    lines.push("📦 해당 상품 구매: " + totalBought + "/" + item.limit + "회");
-    if (totalBought >= item.limit) lines.push("✅ 구매 한도를 모두 사용했어요!");
-    return { ok: true, message: lines.join("\n") };
-}
 
-// 달토끼 탐색 참가자를 일반 광산 1~3번으로 랜덤 이동하는 함수
-function moveChuseokBetsToRandomMine(petExploreData) {
-    petExploreData = initPetExploreData(petExploreData);
-    var arr = petExploreData.bet["11"];
-    var moved = 0;
-    for (var i = 0; i < arr.length; i++) {
-        var entry = arr[i];
-        if (!entry || !entry.user) continue;
-        var target = getRandomRegularMineExploreSlot();
-        entry.dungeon = target;
-        petExploreData.bet[target].push(entry);
-        petExploreData.userBet[entry.user] = target;
-        moved++;
-    }
-    petExploreData.bet["11"] = [];
-    return moved;
-}
 
-// 추석 이벤트 종료 시 전체 사용자의 자동탐험 고정 설정을 초기화하는 함수
-function clearPetExploreAutoFixedDungeons(petExploreData) {
-    petExploreData = initPetExploreData(petExploreData);
-    var resetCount = 0;
-    for (var user in petExploreData.autoFixedDungeon) {
-        if (petExploreData.autoFixedDungeon.hasOwnProperty(user)) resetCount++;
-    }
-    petExploreData.autoFixedDungeon = {};
-    return resetCount;
-}
 
-// 추석 이벤트 정각 탐험을 처리하는 함수
-function doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData, automaticRoundKey) {
-    petExploreData = autoExploreBetting(data, petExploreData);
-    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
-    var arr = petExploreData.bet[config.slot] || [];
-    if (!Array.isArray(arr) || arr.length < 1) return null;
-    var hourKey = automaticRoundKey || getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 자동 예약 회차 또는 수동 시간대의 중복 처리 판정 키
-    var successLines = [];
-    var failLines = [];
-    var levelUpMessages = [];
-    var participated = 0;
-    var nonGuildCount = 0;
-    var insufficientPointCount = 0;
-    var nonGuildUsers = [];
-    var insufficientPointUsers = [];
-    var alreadyProcessedCount = 0; // 같은 정각의 자동 중복 호출로 제외된 인원
-    var settledUsers = {}; // 중복 등록 사용자의 이중 차감·집계 방지
-    for (var i = 0; i < arr.length; i++) {
-        var entry = arr[i];
-        if (!entry || !entry.user || !data.member[entry.user]) continue;
-        var user = entry.user;
-        if (settledUsers[user]) continue;
-        settledUsers[user] = true;
-        if (!isCurrentGuildMemberForChuseok(data, guildData, user)) {
-            nonGuildCount++;
-            nonGuildUsers.push(user);
-            continue;
-        }
-        if (petExploreData.chuseokEvent.processedHours[user] === hourKey) {
-            alreadyProcessedCount++;
-            continue;
-        }
-        var point = Number(data.member[user].point) || 0;
-        if (point < config.participationFee) {
-            insufficientPointCount++;
-            insufficientPointUsers.push(user);
-            continue;
-        }
-        petExploreData.chuseokEvent.processedHours[user] = hourKey; // 실제 참여자만 이번 정각 처리 완료로 기록
-        data.member[user].point = point - config.participationFee;
-        if (typeof data.member[user].exploreCnt !== "number") data.member[user].exploreCnt = 0;
-        data.member[user].exploreCnt++;
-        var successPercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, config.slot, guildData);
-        var usedUpItem = pickAndConsumeExploreUpItem(data, user);
-        entry.usedTicket = false;
-        entry.usedTreasure = false;
-        entry.usedUpItem = usedUpItem;
-        var success = Math.random() * 100 < successPercent.totalP;
-        petExploreData = updatePetExploreRecord(petExploreData, user, success);
-        var reward = success ? Math.floor(Math.random() * (config.rewardMax - config.rewardMin + 1)) + config.rewardMin : 0;
-        if (reward > 0) {
-            var carrotBalanceBeforeReward = getChuseokCarrotBalance(petExploreData, user, data); // 기존 가방 잔액까지 포함한 지급 전 수량
-            migrateChuseokCarrotBalance(data, petExploreData, user);
-            petExploreData.chuseokEvent.balances[user] = carrotBalanceBeforeReward + reward;
-        }
-        var resultLine = "[" + checkRank(data, petData, guildData, user) + "] 달토끼 탐색 " + (success ? "성공(✅)" : "실패(❌)");
-        resultLine += success ? "\n🌕 획득 " + reward + "개 · 보유 " + getChuseokCarrotBalance(petExploreData, user, data) + "개" : "\n🌕 획득 0개 · 보유 " + getChuseokCarrotBalance(petExploreData, user, data) + "개";
-        var chuseokExperienceReward = grantPetExploreExperience(data, petData, guildData, user, GLOBAL_CONFIG.petExplore.experienceRewards.event);
-        resultLine += "\n" + chuseokExperienceReward.message;
-        if (chuseokExperienceReward.boosterDepletionMessage) resultLine += "\n\n" + chuseokExperienceReward.boosterDepletionMessage;
-        if (chuseokExperienceReward.levelUpMessage) levelUpMessages.push(chuseokExperienceReward.levelUpMessage);
-        if (usedUpItem) resultLine += "\n확률UP🗻: " + usedUpItem + " 1개 사용";
-        resultLine += "\n💰 참가비 🅟" + numberWithCommas(config.participationFee);
-        if (success) successLines.push(resultLine);
-        else failLines.push(resultLine);
-        recordAdventureQuestExploreResult(data, user, config.slot);
-        participated++;
-    }
-    var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패 결과를 뒤에 표시
-    var nonParticipationCount = nonGuildCount + insufficientPointCount; // 길드·포인트 조건으로 정산하지 못한 인원
-    if (participated < 1 && alreadyProcessedCount > 0 && nonParticipationCount < 1) return null; // 기존 처리자만 남은 자동 회차의 재출력 방지
-    if (lines.length < 1 && nonParticipationCount < 1) return null;
-    petExploreData = resetChuseokExploreRound(petExploreData); // 수동 참여는 이번 회차로 종료
-    petExploreData = autoExploreBetting(data, petExploreData); // 자동탐험권과 11번 고정을 보유한 사용자만 다음 회차에 재등록
-    clearPetExploreTransientSaveFlags(petExploreData);
-    saveJsonFile(data, filePath);
-    saveJsonFile(petExploreData, petExplorePath);
-    var chuseokLevelUpSummary = buildPetExploreLevelUpSummary(levelUpMessages);
-    var nonParticipationSummary = nonParticipationCount > 0 ? "\n미참여 " + nonParticipationCount + "명 · 길드 미가입 " + nonGuildCount + "명 · 포인트 부족 " + insufficientPointCount + "명" : "";
-    var resultHeader = "🐰 달토끼 탐색 결과\n참여 " + participated + "명 · 성공 " + successLines.length + "명 · 실패 " + failLines.length + "명" + nonParticipationSummary;
-    var nonParticipationUsers = "";
-    if (nonGuildCount > 0) nonParticipationUsers += "\n[길드미가입유저: " + nonGuildUsers.join(", ") + "]";
-    if (insufficientPointCount > 0) nonParticipationUsers += "\n[포인트부족유저: " + insufficientPointUsers.join(", ") + "]";
-    if (participated < 1) {
-        return resultHeader + nonParticipationUsers + "\n\n※ 자동탐험권 보유 후 /자동탐고정 11을 설정하면 다음 자동 정산에 등록됩니다.\n※ 수동 참여는 정산 후 초기화됩니다.\n\n🛍️ 아이템 교환: /달토끼상점";
-    }
-    return resultHeader + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + nonParticipationUsers + "\n" + allsee + "\n" + lines.join("\n━━━━━━━━━━━━\n") + "\n\n🛍️ 아이템 교환: /달토끼상점";
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 펫탐험 마이그레이션 결과 저장 필요 여부를 처리하는 함수
 function savePetExploreMigrationIfNeeded(petExploreData) {
@@ -59870,7 +59376,7 @@ function clearPetExploreTransientSaveFlags(petExploreData) {
 
 // 삭제된 계정의 펫탐험 잔여 데이터를 정리하는 함수
 function cleanupInvalidPetExploreUsers(petExploreData, data) {
-    var result = { bet: 0, userBet: 0, autoFixed: 0, record: 0, chuseok: 0, total: 0 };
+    var result = { bet: 0, userBet: 0, autoFixed: 0, record: 0, total: 0 };
     if (!petExploreData || !data || !data.member) return result;
 
     if (petExploreData.bet && typeof petExploreData.bet === "object") {
@@ -59921,21 +59427,7 @@ function cleanupInvalidPetExploreUsers(petExploreData, data) {
         }
     }
 
-    if (petExploreData.chuseokEvent) {
-        var chuseokUserMaps = [petExploreData.chuseokEvent.balances, petExploreData.chuseokEvent.purchases, petExploreData.chuseokEvent.processedHours];
-        for (var chuseokMapIndex = 0; chuseokMapIndex < chuseokUserMaps.length; chuseokMapIndex++) {
-            var chuseokMap = chuseokUserMaps[chuseokMapIndex] || {};
-            for (var chuseokUser in chuseokMap) {
-                if (!chuseokMap.hasOwnProperty(chuseokUser)) continue;
-                if (!data.member[chuseokUser]) {
-                    delete chuseokMap[chuseokUser];
-                    result.chuseok++;
-                }
-            }
-        }
-    }
-
-    result.total = result.bet + result.userBet + result.autoFixed + result.record + result.chuseok;
+    result.total = result.bet + result.userBet + result.autoFixed + result.record;
     if (result.total > 0) petExploreData._cleanupSaveRequired = true;
     return result;
 }
@@ -59943,7 +59435,7 @@ function cleanupInvalidPetExploreUsers(petExploreData, data) {
 // 펫탐험 삭제 계정 정리 결과 문구를 만드는 함수
 function formatPetExploreCleanupSummary(result) {
     if (!result || result.total <= 0) return "";
-    return "🧹 삭제 계정 펫탐험 데이터 정리\n현재참여 " + result.bet + "건 / 현재탐험 " + result.userBet + "건 / 자동탐고정 " + result.autoFixed + "건 / 전적 " + result.record + "건 / 추석이벤트 " + result.chuseok + "건";
+    return "🧹 삭제 계정 펫탐험 데이터 정리\n현재참여 " + result.bet + "건 / 현재탐험 " + result.userBet + "건 / 자동탐고정 " + result.autoFixed + "건 / 전적 " + result.record + "건";
 }
 
 // 현재 지도 배팅 유저를 1~3번 탐험지로 한 번 재배치하는 함수
@@ -60152,18 +59644,7 @@ function resetPetExploreBet(petExploreData) {
     return petExploreData;
 }
 
-// 달토끼 수동 참여를 한 회차 후 초기화하는 함수
-function resetChuseokExploreRound(petExploreData) {
-    if (!petExploreData) return;
-    if (!petExploreData.bet) petExploreData.bet = {};
-    petExploreData.bet[GLOBAL_CONFIG.petExplore.chuseokEvent.slot] = [];
-    if (!petExploreData.userBet) petExploreData.userBet = {};
-    for (var user in petExploreData.userBet) {
-        if (!petExploreData.userBet.hasOwnProperty(user)) continue;
-        if (String(petExploreData.userBet[user]) === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) delete petExploreData.userBet[user];
-    }
-    return petExploreData;
-}
+
 
 /**
  * 특정 유저가 현재 배팅 중인 던전 번호 반환 (없으면 null)
@@ -60173,7 +59654,7 @@ function getUserPetExploreBet(petExploreData, user) {
     if (!petExploreData || !petExploreData.userBet) return null;
 
     var d = petExploreData.userBet[user];
-    return d ? String(d) : null;
+    return d && String(d) !== "11" ? String(d) : null;
 }
 
 /** 확률UP 퍼센트 숫자 파싱 */
@@ -60300,7 +59781,6 @@ function getExploreDungeonName(no, petExploreData) {
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
-        11: GLOBAL_CONFIG.petExplore.chuseokEvent.name,
         E: "이벤트 던전✡️"
     };
     return map[no] || no + "번";
@@ -60413,7 +59893,6 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
     petExploreData = initPetExploreData(petExploreData);
     cleanupInvalidPetExploreUsers(petExploreData, data);
-    if (isChuseokExploreEventActive(petExploreData)) return doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData, automaticRoundKey);
     if (!petExploreData.bet) return null;
 
     var successLines = [];
@@ -60640,10 +60119,6 @@ function getExploreTotalCount(data, petExploreData, guildData) {
     cleanupInvalidPetExploreUsers(petExploreData, data);
     if (!petExploreData || !petExploreData.bet) return 0;
 
-    if (isChuseokExploreEventActive(petExploreData)) {
-        return getEligibleChuseokExploreCount(data, guildData, petExploreData, true);
-    }
-
     var cnt = 0;
 
     var startDungeon = isPetExploreEventMineActive(petExploreData) ? 0 : 1;
@@ -60677,10 +60152,7 @@ function getExploreTotalCount(data, petExploreData, guildData) {
     return cnt;
 }
 
-// 달토끼 탐색의 0명 출발 알림·대기 생략 여부를 반환하는 함수
-function shouldAnnouncePetExploreStart(petExploreData, totalCount) {
-    return !isChuseokExploreEventActive(petExploreData) || totalCount > 0;
-}
+
 
 /** 자동탐험 배팅(정산 후 다음 라운드 세팅) */
 function autoExploreBetting(data, petExploreData) {
@@ -60690,27 +60162,6 @@ function autoExploreBetting(data, petExploreData) {
     cleanupInvalidPetExploreUsers(petExploreData, data);
     if (!petExploreData.autoFixedDungeon) petExploreData.autoFixedDungeon = {};
 
-    if (isChuseokExploreEventActive(petExploreData)) {
-        var chuseokSlot = GLOBAL_CONFIG.petExplore.chuseokEvent.slot;
-        var chuseokBets = petExploreData.bet && Array.isArray(petExploreData.bet[chuseokSlot]) ? petExploreData.bet[chuseokSlot] : [];
-        for (var chuseokIndex = chuseokBets.length - 1; chuseokIndex >= 0; chuseokIndex--) {
-            var chuseokEntry = chuseokBets[chuseokIndex];
-            if (!chuseokEntry || !chuseokEntry.user || !chuseokEntry.auto) continue;
-            var chuseokUser = chuseokEntry.user;
-            var chuseokFixed = petExploreData.autoFixedDungeon[chuseokUser] !== undefined ? String(petExploreData.autoFixedDungeon[chuseokUser]) : null;
-            if (chuseokFixed === chuseokSlot && hasItem(data, chuseokUser, "자동탐험권🌄", 1)) continue;
-            chuseokBets.splice(chuseokIndex, 1);
-            var hasRemainingChuseokBet = false;
-            for (var remainingIndex = 0; remainingIndex < chuseokBets.length; remainingIndex++) {
-                if (chuseokBets[remainingIndex] && chuseokBets[remainingIndex].user === chuseokUser) {
-                    hasRemainingChuseokBet = true;
-                    break;
-                }
-            }
-            if (!hasRemainingChuseokBet && petExploreData.userBet && String(petExploreData.userBet[chuseokUser]) === chuseokSlot) delete petExploreData.userBet[chuseokUser];
-        }
-    }
-
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user)) continue;
         if (!data.member[user]) continue;
@@ -60718,26 +60169,13 @@ function autoExploreBetting(data, petExploreData) {
         // 자동탐험권🌄 없으면 스킵
         if (!hasItem(data, user, "자동탐험권🌄", 1)) continue;
 
-        // 고정 던전 우선 (이벤트 활성 시 0/10/11 포함), 없으면 1~3 랜덤
+        // 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 일반 광산 선택
         var fixed = petExploreData.autoFixedDungeon[user] !== undefined ? String(petExploreData.autoFixedDungeon[user]) : null;
         var currentBet = petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user) ? String(petExploreData.userBet[user]) : null;
         var dungeonNo;
-        if (isChuseokExploreEventActive(petExploreData)) {
-            if (fixed !== GLOBAL_CONFIG.petExplore.chuseokEvent.slot) continue;
-            if (currentBet === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) continue;
-            if (currentBet && petExploreData.bet && Array.isArray(petExploreData.bet[currentBet])) {
-                for (var oldBetIndex = petExploreData.bet[currentBet].length - 1; oldBetIndex >= 0; oldBetIndex--) {
-                    if (petExploreData.bet[currentBet][oldBetIndex] && petExploreData.bet[currentBet][oldBetIndex].user === user) petExploreData.bet[currentBet].splice(oldBetIndex, 1);
-                }
-            }
-            if (currentBet) delete petExploreData.userBet[user];
-            dungeonNo = GLOBAL_CONFIG.petExplore.chuseokEvent.slot;
-        } else {
-            if (currentBet) continue;
-            var fixedNo = parseInt(fixed, 10);
-            var isFixedValid = (GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(fixed)) !== -1) || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
-            dungeonNo = isFixedValid ? String(fixed) : getRandomRegularMineExploreSlot();
-        }
+        if (currentBet) continue;
+        var isFixedValid = (GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(String(fixed)) !== -1) || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
+        dungeonNo = isFixedValid ? String(fixed) : getRandomRegularMineExploreSlot();
 
         // 배열 보장
         if (!petExploreData.bet) {
@@ -63150,7 +62588,6 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
-        11: GLOBAL_CONFIG.petExplore.chuseokEvent.name
     };
     var targetName = dungeonNameMap[dungeonNo] || dungeonNo + "번 던전";
 
@@ -63160,29 +62597,6 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, dungeonNo, guildData);
     } catch (e) {
         p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, pendantP: 0, premiumP: 0, homeBadgeP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
-    }
-
-    if (String(dungeonNo) === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) {
-        var eventConfig = GLOBAL_CONFIG.petExplore.chuseokEvent;
-        var eventNextUpItem = null;
-        for (var eventUpIndex = 0; eventUpIndex < GLOBAL_CONFIG.petExplore.boostItemNames.length; eventUpIndex++) {
-            if (hasItem(data, sender, GLOBAL_CONFIG.petExplore.boostItemNames[eventUpIndex], 1)) {
-                eventNextUpItem = GLOBAL_CONFIG.petExplore.boostItemNames[eventUpIndex];
-                break;
-            }
-        }
-        var eventOut = "🐰 [" + nickName + "] 님이\n" + targetName + " 준비를 마쳤어요.\n";
-        if (prevDungeon && String(prevDungeon) !== String(dungeonNo)) eventOut += "\n(탐험 변경: " + (dungeonNameMap[prevDungeon] || prevDungeon + "번") + " → " + targetName + ")\n";
-        eventOut += "\n⛰️ 탐험 성공확률: " + formatPercent1(p.totalP) + "%\n";
-        eventOut += "💰 회차 참가비: 🅟" + numberWithCommas(eventConfig.participationFee) + "\n";
-        eventOut += "🌕 성공 보상: 황금당근 " + eventConfig.rewardMin + "~" + eventConfig.rewardMax + "개\n";
-        eventOut += "⏰ 시작 후 60분 간격 자동 탐색\n";
-        eventOut += eventNextUpItem ? "확률UP🗻: 1개 사용 예정(" + eventNextUpItem + ")\n" : "확률UP🗻 이(가) 없습니다.\n";
-        eventOut += "🛍️ 보유 당근·상품 확인: /달토끼상점\n\n";
-        eventOut += "(상세 성공확률 보기..👈)\n" + allsee + "\n\n";
-        eventOut += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + " + (p.kingdomP ? "🏰 호월킹덤 길드 버프" : "영주") + (p.lordP + (p.kingdomP || 0)) + "% + 펫스킬" + p.traitP + "% + 펜던트" + formatPendantPercent(p.pendantP) + "% + 호프" + p.premiumP + "% + 홈뱃지" + p.homeBadgeP + "% + 확률UP" + p.itemP + "% - 디버프" + p.penaltyP + "% = " + formatPercent1(p.totalP) + "%\n\n";
-        eventOut += "※ 정산 시 길드 가입과 참가비 보유 여부를 다시 확인합니다.";
-        return eventOut;
     }
 
     var upP = typeof p.itemP === "number" ? p.itemP : 0;
@@ -63246,7 +62660,7 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
     var parts = String(msg || "").trim().split(/\s+/);
     var legacy = petExploreData && petExploreData.reworkVersion === 1;
     var targetDungeon = parts.length >= 2 ? (legacy ? String(parts[1]) : getExploreRegionKey(parts[1])) : null;
-    if (parts.length >= 2 && targetDungeon === null) return "사용법: /탐험유저확인 1~6 (별도 이벤트: 0·10·11)";
+    if (parts.length >= 2 && targetDungeon === null) return "사용법: /탐험유저확인 1~6 (별도 이벤트: 0·10)";
     var dungeonKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"];
     if (!legacy) dungeonKeys = ["0"].concat(GLOBAL_CONFIG.petExplore.rework.regionKeys, ["10", "11"]);
     var dungeonNameMap = {
@@ -63261,7 +62675,6 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
-        11: GLOBAL_CONFIG.petExplore.chuseokEvent.name
     };
     if (!petExploreData || typeof petExploreData !== "object") {
         return "❌ 펫탐험 데이터를 불러올 수 없습니다.";
@@ -63329,7 +62742,6 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
 function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender) {
     var store = initPetExploreData(loadJsonFile(petExplorePath));
     cleanupInvalidPetExploreUsers(store, data); savePetExploreMigrationIfNeeded(store);
-    if (isChuseokExploreEventActive(store)) return buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, store, sender);
     var key = store.userBet[sender] ? String(store.userBet[sender]) : null;
     var p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, key, guildData);
     var fixed = store.autoFixedDungeon[sender], recent = store.recentResults[sender] || [], bag = data.member[sender].bag || {};
@@ -63365,30 +62777,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     return lines.join("\n");
 }
 
-// 추석 이벤트 전용 탐험 지도를 만드는 함수
-function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender) {
-    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
-    var autoFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[sender] !== undefined ? String(petExploreData.autoFixedDungeon[sender]) : null;
-    var isAutoExploreTarget = !!(data.member && data.member[sender] && autoFixed === config.slot && hasItem(data, sender, "자동탐험권🌄", 1)); // 저장 전 자동 참여 예정 포함
-    var hasActiveChuseokBet = false; // 현재 유효한 수동 참여 또는 자동 참여 등록 여부
-    var myChuseokBets = petExploreData.bet && Array.isArray(petExploreData.bet[config.slot]) ? petExploreData.bet[config.slot] : [];
-    for (var myBetIndex = 0; myBetIndex < myChuseokBets.length; myBetIndex++) {
-        var myBetEntry = myChuseokBets[myBetIndex];
-        if (myBetEntry && myBetEntry.user === sender && (!myBetEntry.auto || isAutoExploreTarget)) {
-            hasActiveChuseokBet = true;
-            break;
-        }
-    }
-    var eligibleCount = getEligibleChuseokExploreCount(data, guildData, petExploreData, false); // 다음 정각 참가 조건을 충족한 인원
-    var p;
-    try {
-        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, config.slot, guildData);
-    } catch (e) {
-        p = { totalP: 5 };
-    }
-    var lines = ["🌕 추석 이벤트 탐험 지도 🌕", "📅 " + config.periodText, getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "🐰 【11】 " + config.name + "【/탐 11】", "현재 참여: " + eligibleCount + "명", "🏰 길드 가입 유저 전용", "💰 매시간 참가비: 🅟" + numberWithCommas(config.participationFee), "🌕 성공 보상: 황금당근 " + config.rewardMin + "~" + config.rewardMax + "개", "━━━━━━━━━━━━", "[자동탐험권 고정⛰️: " + (autoFixed === config.slot ? config.name : "없음") + "]", "[/자동탐고정 11 입력 시 자동 참여]", "[/자동탐고정해제 입력 시 해제]", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "현재 내 탐험지: " + (hasActiveChuseokBet || isAutoExploreTarget ? config.name : "없음"), "현재 성공확률: " + formatPercent1(p.totalP) + "%", "내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, sender, data)) + "개", "━━━━━━━━━━━━", "🛍️ 이벤트 상품 확인: /달토끼상점", "※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.", "", allsee, "📋 성공확률 상세", "기본" + (p.baseP || 0) + "% + 티어" + (p.tierP || 0) + "% + 매력" + (p.expP || 0) + "% + " + (p.kingdomP ? "🏰 호월킹덤 길드 버프" : "영주") + ((p.lordP || 0) + (p.kingdomP || 0)) + "% + 펫스킬" + (p.traitP || 0) + "% + 펜던트" + formatPendantPercent(p.pendantP || 0) + "% + 호프" + (p.premiumP || 0) + "% + 홈뱃지" + (p.homeBadgeP || 0) + "% + 확률UP" + (p.itemP || 0) + "% - 디버프" + (p.penaltyP || 0) + "% = " + formatPercent1(p.totalP) + "%"];
-    return lines.join("\n");
-}
+
 
 function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
     if (!dungeonKey) return 0;
@@ -63402,11 +62791,6 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
     // 던전(4~7, 10): 전도르/양계장/땅문서/샵오픈/길드레이드
     if (isRegularDungeonExploreSlot(dungeonKey) || dungeonKey === "10") {
         return hasPetSkill(petSkillData, user, "던전탐험가") ? 5 : 0;
-    }
-
-    // 달토끼 탐색: 보유 중인 기존 탐험가 스킬 하나를 적용
-    if (dungeonKey === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) {
-        return hasPetSkill(petSkillData, user, "광산탐험가") || hasPetSkill(petSkillData, user, "던전탐험가") ? 5 : 0;
     }
 
     return 0;
@@ -63492,22 +62876,22 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
     var parts = msg.trim().split(/\s+/);
     if (parts.length < 2) {
-        var usageRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0, 1~6" : "1~6");
-        if (!isChuseokExploreEventActive(petExploreData) && isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
-        var usageExample = isChuseokExploreEventActive(petExploreData) ? "11" : (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4"));
+        var usageRange = (isPetExploreEventMineActive(petExploreData) ? "0, 1~6" : "1~6");
+        if (isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
+        var usageExample = (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4"));
         var usageText = "사용법: /자동탐고정 " + usageRange + "\n(예: /자동탐고정 " + usageExample + ")";
         return { text: usageText, petExploreData: petExploreData, data: data };
     }
 
     if (parts.length !== 2 || !/^\d+$/.test(parts[1])) return { text: "사용법: /자동탐고정 1~6", petExploreData: petExploreData, data: data };
-    if (petExploreData.reworkVersion === 1 && !isChuseokExploreEventActive(petExploreData)) return { text: "기존 탐험 회차 정산 후 새 지역으로 고정해주세요.", petExploreData: petExploreData, data: data };
+    if (petExploreData.reworkVersion === 1) return { text: "기존 탐험 회차 정산 후 새 지역으로 고정해주세요.", petExploreData: petExploreData, data: data };
     var n = getExploreRegionKey(parts[1]);
     var fixedNo = parseInt(n, 10);
-    var isValid = isChuseokExploreEventActive(petExploreData) ? n === GLOBAL_CONFIG.petExplore.chuseokEvent.slot : (GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(n) !== -1) || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
+    var isValid = (GLOBAL_CONFIG.petExplore.rework.regionKeys.indexOf(n) !== -1) || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
     if (!isValid) {
-        var validRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0, 1~6" : "1~6");
-        if (!isChuseokExploreEventActive(petExploreData) && isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
-        var validExample = isChuseokExploreEventActive(petExploreData) ? "11" : (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2"));
+        var validRange = (isPetExploreEventMineActive(petExploreData) ? "0, 1~6" : "1~6");
+        if (isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
+        var validExample = (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2"));
         var validText = validRange + " 중 하나만 입력해줘!\n예) /자동탐고정 " + validExample;
         return { text: validText, petExploreData: petExploreData, data: data };
     }
@@ -63524,7 +62908,6 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
         10: "길드레이드던전👾",
-        11: "달토끼 탐색🐰"
     };
 
     // 동일 고정 재입력은 그냥 안내만(소모 없음)
@@ -63542,11 +62925,9 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
     if (petExploreData.reworkResetUsers) delete petExploreData.reworkResetUsers[sender];
 
     // (선택) 안내 문구: 던전/미궁은 입장권 필요하다는 정보를 제공(소모X)
-    if (isRegularDungeonExploreSlot(n) || isMazeExploreSlot(n) || n === "10" || n === "11") {
+    if (isRegularDungeonExploreSlot(n) || isMazeExploreSlot(n) || n === "10") {
         var ticketGuide = "";
-        if (n === "11") {
-            ticketGuide = "※ 탐11 자동탐험은 길드 가입과 매시간 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "가 필요합니다.\n포인트가 부족하면 참가비와 보상 없이 미참여 처리됩니다.";
-        } else if (n === "10") {
+        if (n === "10") {
             ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
         } else if (isMazeExploreSlot(n)) {
             ticketGuide = "※ 탐" + n + " 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
@@ -63586,25 +62967,8 @@ function handleAutoExploreUnfixCommand(petExploreData, sender) {
         };
     }
     delete petExploreData.autoFixedDungeon[sender];
-    if (isChuseokExploreEventActive(petExploreData) && petExploreData.bet && Array.isArray(petExploreData.bet[GLOBAL_CONFIG.petExplore.chuseokEvent.slot])) {
-        var chuseokBets = petExploreData.bet[GLOBAL_CONFIG.petExplore.chuseokEvent.slot];
-        for (var i = chuseokBets.length - 1; i >= 0; i--) {
-            if (chuseokBets[i] && chuseokBets[i].user === sender && chuseokBets[i].auto) chuseokBets.splice(i, 1);
-        }
-        var hasManualChuseokBet = false;
-        for (var betIndex = 0; betIndex < chuseokBets.length; betIndex++) {
-            if (chuseokBets[betIndex] && chuseokBets[betIndex].user === sender) {
-                hasManualChuseokBet = true;
-                break;
-            }
-        }
-        if (!hasManualChuseokBet && petExploreData.userBet && String(petExploreData.userBet[sender]) === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) delete petExploreData.userBet[sender];
-    }
-    var guide = isChuseokExploreEventActive(petExploreData)
-        ? "다음 달토끼 탐색 자동 참여부터 제외됩니다. 수동 /탐 11 참여는 가능합니다."
-        : "다음 자동탐험부터 기본 탐험지 중 하나가 무작위로 선택됩니다.";
     return {
-        text: "✅ 자동탐험 고정을 해제했습니다.\n" + guide,
+        text: "✅ 자동탐험 고정을 해제했습니다.\n다음 자동탐험부터 기본 탐험지 중 하나가 무작위로 선택됩니다.",
         petExploreData: petExploreData
     };
 }
@@ -67618,7 +66982,7 @@ function initializeGuildWarExpansion(data, guildData, now) {
 }
 // 지역번호 전환 전후 모두 실제 호월킹덤 번호를 찾는 함수
 function getGuildWarKingdomNo(state) {
-    return state && state.siegeVersion === GLOBAL_CONFIG.guildWar.siege.version ? GLOBAL_CONFIG.guildWar.campaign.kingdom : state && state.campaignVersion === GLOBAL_CONFIG.guildWar.campaign.version ? GLOBAL_CONFIG.guildWar.siege.legacyKingdom : 1;
+    return state && state.siegeVersion === 2 ? GLOBAL_CONFIG.guildWar.campaign.kingdom : state && state.siegeVersion === 1 ? 7 : state && state.campaignVersion === GLOBAL_CONFIG.guildWar.campaign.version ? GLOBAL_CONFIG.guildWar.siege.legacyKingdom : 1;
 }
 
 // 현재 길드마스터가 장착한 전쟁 전용 스킬 효과를 반환하는 함수
@@ -67924,7 +67288,7 @@ function buildGuildWarRecords(state, guildData, gid, recordId) {
 }
 
 function guildWarRegion(no) {
-    return (no === GLOBAL_CONFIG.guildWar.campaign.kingdom ? "🏰" : no === GLOBAL_CONFIG.guildWar.campaign.skillMine ? "📕" : no === GLOBAL_CONFIG.guildWar.campaign.diamondMine ? "💎" : no === GLOBAL_CONFIG.guildWar.siege.fortress ? "🛡️" : "🪙") + " [" + no + "] " + GLOBAL_CONFIG.guildWar.regionLabels[no - 1];
+    return (no === GLOBAL_CONFIG.guildWar.campaign.kingdom ? "🏰" : no === GLOBAL_CONFIG.guildWar.campaign.skillMine ? "📕" : no === GLOBAL_CONFIG.guildWar.campaign.diamondMine ? "💎" : no === GLOBAL_CONFIG.guildWar.siege.fortress ? "🛡️" : no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine ? "💫" : "🪙") + " [" + no + "] " + GLOBAL_CONFIG.guildWar.regionLabels[no - 1];
 }
 
 // 하루 다섯 역할권의 미사용 상태를 생성하는 함수
@@ -68171,7 +67535,7 @@ function restoreGuildWarBattleItems(data, war, guildData) {
 // 정상 점령의 영주·세금·전체알림을 기존 흐름과 함께 확정하는 함수
 function occupyGuildWarTerritory(data, guildData, war, now) {
     var state = guildData.war24;
-    if (state.siegeVersion === 1 && getGuildWarOwned(state, war.attackId).stages[getGuildWarStage(war.no)].length && state.territories[String(war.no)].owner !== war.attackId) throw new Error("길드전쟁 단계별 점령 한도 재검사 실패");
+    if (state.siegeVersion !== undefined && getGuildWarOwned(state, war.attackId).stages[getGuildWarStage(war.no)].length && state.territories[String(war.no)].owner !== war.attackId) throw new Error("길드전쟁 단계별 점령 한도 재검사 실패");
     transferGuildWarTerritory(state, war.no, war.attackId, now);
     if (war.no !== getGuildWarKingdomNo(state)) return;
     if (!data.HoiCastle) throw new Error("호월킹덤 영주 원본 확인 필요");
@@ -68343,7 +67707,7 @@ function applyGuildWarBomb(data, petData, guildData, gid, sender, no, now, rando
     var state = guildData.war24, entry = getGuildWarEntry(state, gid), territory = state.territories[String(no)];
     if (entry.bomber !== sender) throw guildWarInputError("자폭은 편성된 자폭병만 가능합니다.\n현재 자폭병: [" + (entry.bomber ? checkRank(data, petData, guildData, entry.bomber) : "미편성") + "]\n👉 /전쟁편성");
     if (entry.bombUsed >= GLOBAL_CONFIG.guildWar.bombLimit) throw guildWarInputError("💣 남은 자폭 0/2회 · 편성 변경으로 복구 불가");
-    if (!territory) throw guildWarInputError("/자폭 지역번호 · 지역은 1~7");
+    if (!territory) throw guildWarInputError("/자폭 지역번호 · 지역은 1~8");
     if (!territory.owner || territory.owner === gid) throw guildWarInputError("미점령·자기 점령 지역은 자폭할 수 없습니다.");
     if (state.active.some(function (war) { return war.no === no; })) throw guildWarInputError("해당 지역은 전쟁 중이라 자폭할 수 없습니다.");
     var target = territory.owner, attackName = formatGuildDisplay(guildData.guilds[gid]), defenseName = formatGuildDisplay(getGuildByIdSafe(guildData, target));
@@ -68478,17 +67842,17 @@ function requireGuildWarState(state) {
     if (state.expansionVersion !== undefined && (state.expansionVersion !== 1 || !isPointShopSafeCount(state.expandedAt))) throw new Error("길드전쟁 확장 정책 기록 오류");
     if (!isPointShopSafeCount(state.nextId) || state.nextId < 1 || !isPointShopSafeCount(state.day)) throw new Error("길드전쟁 회차 오류");
     if (state.version === 2 && (state.rewardPolicy !== GLOBAL_CONFIG.guildWar.rewardPolicy || !isPointShopSafeCount(state.rewardChangedAt))) throw new Error("길드전쟁 정책 기록 누락");
-    for (var no = 1; no <= (state.siegeVersion === 1 ? 7 : state.version === 2 ? state.expansionVersion === 1 ? 6 : 5 : 4); no++) {
+    for (var no = 1; no <= (state.siegeVersion === 2 ? 8 : state.siegeVersion === 1 ? 7 : state.version === 2 ? state.expansionVersion === 1 ? 6 : 5 : 4); no++) {
         var territory = state.territories[String(no)];
         if (!territory || (territory.owner !== null && typeof territory.owner !== "string") || !isPointShopSafeCount(territory.since) || !isPointShopSafeCount(territory.incomeAt) || !isPointShopSafeCount(territory.income) || territory.incomeAt < territory.since) throw new Error("길드전쟁 점령 기록 오류");
     }
     if (state.rewardPolicy !== undefined && ((state.version === 2 ? state.rewardPolicy !== GLOBAL_CONFIG.guildWar.rewardPolicy : state.rewardPolicy !== 2) || !isPointShopSafeCount(state.rewardChangedAt))) throw new Error("길드전쟁 보상 전환 기록 오류");
     if (state.campaignVersion !== undefined && (state.campaignVersion !== GLOBAL_CONFIG.guildWar.campaign.version || state.version !== 2 || state.expansionVersion !== 1 || !isPointShopSafeCount(state.campaignChangedAt))) throw new Error("길드전쟁 진격 정책 기록 오류");
-    if (state.siegeVersion !== undefined && (state.siegeVersion !== GLOBAL_CONFIG.guildWar.siege.version || !isPointShopSafeCount(state.siegeChangedAt))) throw new Error("길드전쟁 요새 전환 기록 오류");
+    if (state.siegeVersion !== undefined && ([1, GLOBAL_CONFIG.guildWar.siege.version].indexOf(state.siegeVersion) < 0 || !isPointShopSafeCount(state.siegeChangedAt))) throw new Error("길드전쟁 요새 전환 기록 오류");
     var targets = {}, attackers = {}, previousId = 0;
     for (var i = 0; i < state.active.length; i++) {
         var war = state.active[i];
-        if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.siegeVersion === 1 ? 7 : state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
+        if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.siegeVersion === 2 ? 8 : state.siegeVersion === 1 ? 7 : state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
         if (war.reward !== undefined || war.rewardPolicy !== undefined) throw new Error("이미 정산된 전쟁이 진행 목록에 남아 있습니다.");
         if (war.ticketSource !== undefined && war.ticketSource !== "base" && war.ticketSource !== "extra" && war.ticketSource !== "commander") throw new Error("길드전쟁 소모 공격권 종류 오류");
         if (war.skillSnapshot !== undefined && (!war.skillSnapshot || [0, GLOBAL_CONFIG.guildWar.masterSkills.attackPercent].indexOf(war.skillSnapshot.attack) < 0 || [0, GLOBAL_CONFIG.guildWar.masterSkills.defensePercent].indexOf(war.skillSnapshot.defense) < 0)) throw new Error("길드전쟁 스킬 스냅샷 오류");
@@ -68769,6 +68133,7 @@ function buildGuildWarResult(war, recipientId) {
     if (war.occupied && war.no === GLOBAL_CONFIG.guildWar.campaign.kingdom) text += "👑 신임 영주: [" + war.attack[2].display + "]\n";
     if (war.reward && war.reward.guildId === recipientId) text += "🎁 길드자금 +🅟" + numberWithCommas(war.reward.amount) + " (큐브3 +" + (war.reward.cubePercent || 0) + "%)\n" + (war.reward.boxes ? "💎 다이아상자💎(/다이아상자오픈) +1개 (길드창고)\n" : "") + (war.reward.pieces ? "📙 펫스킬조각 +1개 (길드창고)\n" : "");
     if (war.reward && war.reward.guildId === recipientId && war.reward.diamonds) text += "💎 길드창고 다이아 +" + war.reward.diamonds + "\n";
+    if (war.reward && war.reward.guildId === recipientId && war.reward.miniPetStones) text += "💫 미니펫 강화석💫 +" + war.reward.miniPetStones + "개 (길드창고)\n";
     if (war.lossReward && war.lossReward.guildId === recipientId) text += "🎁 길드자금 +🅟" + numberWithCommas(war.lossReward.amount) + "\n";
     if (war.personalRewards && war.personalRewards.users.length) text += "⚔️🛡️공격/방어 " + war.personalRewards.users.length + "명: 🅟" + formatGuildTerritoryRewardAmount(war.personalRewards.amount) + " 보상\n";
     if (war.bloodless) return text;
@@ -68937,6 +68302,7 @@ function creditGuildWarVictory(guildData, war) {
     var gid = !war.cancelled ? war.occupied ? war.attackId : war.wins < 2 ? war.defenseId : null : null;
     var amount = war.occupied ? GLOBAL_CONFIG.guildWar.captureReward : GLOBAL_CONFIG.guildWar.defenseReward;
     var guild = gid && getGuildByIdSafe(guildData, gid), pieces = gid && war.no === GLOBAL_CONFIG.guildWar.campaign.skillMine ? GLOBAL_CONFIG.guildWar.mineReward : 0;
+    var stones = gid && war.no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine ? GLOBAL_CONFIG.guildWar.miniPetMineReward : 0;
     var cube = guild ? getGuildContributionCubeData(guild, false).options.territoryPoint / 10 : 0;
     if (modern) amount = war.occupied ? (GLOBAL_CONFIG.guildWar.campaign.gold.indexOf(war.no) >= 0 ? rates.goldCapture : rates.capture) : (GLOBAL_CONFIG.guildWar.campaign.gold.indexOf(war.no) >= 0 ? rates.goldDefense : rates.defense);
     amount = Math.floor(amount * (1 + cube / 100));
@@ -68954,6 +68320,11 @@ function creditGuildWarVictory(guildData, war) {
             guild.warehouse.diamond = diamonds + GLOBAL_CONFIG.guildWar.mineReward;
         }
         if (pieces) guild.warehouse.petSkillBook = held + pieces;
+        if (stones) {
+            var stoneHeld = guild.warehouse.miniPet === undefined ? 0 : guild.warehouse.miniPet;
+            if (!isPointShopSafeCount(stoneHeld) || !isPointShopSafeCount(stoneHeld + stones)) throw new Error("길드창고 미니펫 강화석 보상 범위 오류");
+            guild.warehouse.miniPet = stoneHeld + stones;
+        }
     }
     if (modern && !war.cancelled && !war.occupied && war.wins < 2) {
         var loser = getGuildByIdSafe(guildData, war.attackId);
@@ -68965,7 +68336,7 @@ function creditGuildWarVictory(guildData, war) {
         war.lossReward = { guildId: war.attackId, amount: rates.loss };
     }
     war.rewardPolicy = GLOBAL_CONFIG.guildWar.rewardPolicy;
-    war.reward = guild ? { guildId: gid, amount: amount, pieces: pieces, boxes: 0, diamonds: war.no === GLOBAL_CONFIG.guildWar.campaign.diamondMine ? GLOBAL_CONFIG.guildWar.mineReward : 0, cubePercent: cube, kind: war.occupied ? "capture" : "defense" } : null;
+    war.reward = guild ? { guildId: gid, amount: amount, pieces: pieces, miniPetStones: stones, boxes: 0, diamonds: war.no === GLOBAL_CONFIG.guildWar.campaign.diamondMine ? GLOBAL_CONFIG.guildWar.mineReward : 0, cubePercent: cube, kind: war.occupied ? "capture" : "defense" } : null;
 }
 
 // 길드원이 탈퇴하면 진행 중 전쟁에서는 재가입하더라도 0매력으로 유지하는 함수
@@ -69022,8 +68393,8 @@ function buildGuildWarMain(data, guildData, gid, now) {
         var icon = status ? status.own ? "🏴" : status.allowed ? "⚔️" : "🔒" : "";
         text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + (guild && status.own ? "우리 길드" : owner ? formatGuildDisplay(owner) : "미점령") + (status && !status.allowed && !status.own ? " · " + status.condition : "") + "\n";
         if (no === getGuildWarKingdomNo(state) && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
-        if (no === 3 || no === 5) text += "              ⬇️\n";
-        if (no === 6) text += "              ↕️\n";
+        if (no === 3 || no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine) text += "              ⬇️\n";
+        if (no === GLOBAL_CONFIG.guildWar.siege.fortress) text += "              ↕️\n";
     }
     text += "━━━━━━━━━━━━\n";
     if (!guild) return text + "ℹ️ 길드 가입 후 전쟁에 참여할 수 있습니다.\n👥 /길드목록에서 가입할 길드를 찾아보세요.\n📖 /길드전쟁가이드";
@@ -69298,7 +68669,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     if (request.kind === "attackFormationInvalid") { replier.reply("❌ 공격 편성은 길드원 번호 3개만 입력해주세요.\n/전쟁공격편성 번호 번호 번호"); return true; }
     if (request.kind === "supplyInvalid") { replier.reply("❌ 보급 지원은 수량 없이 /길드보급으로 입력해주세요."); return true; }
     if (request.kind === "chargeMissing" || request.kind === "chargeInvalid") { replier.reply("❌ " + (request.kind === "chargeMissing" ? "사용할 수량을 입력해주세요." : "사용 수량은 1 이상의 숫자로 입력해주세요.") + "\n사용: /전쟁공격사용 숫자"); return true; }
-    if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~7예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/기습공격 금광번호 · /전쟁기록 기록번호\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
+    if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~8예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/기습공격 금광번호 · /전쟁기록 기록번호\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
     if (request.kind === "guide") { replier.reply(GLOBAL_CONFIG.guildWar.guide); return true; }
     var initialized = initializeGuildWar(data, guildData, now);
     if (resetGuildWarDay(guildData, now)) initialized = true;
@@ -69479,7 +68850,6 @@ function initializeGuildWarStartup() {
     try {
         recoverGuildWarPublication();
         var data = loadJsonFile(filePath, "bootstrap"), guildData = loadJsonFile(guildPath);
-        runCarrotRetirementEntry(data);
         var mysteryChanged = advanceHowolMysteryDay(data, Date.now(), false);
         var guildChanged = initializeGuildWar(data, guildData, Date.now());
         if (initializeGuildWarTicketAccounts(data, guildData)) guildChanged = true;
@@ -69603,7 +68973,7 @@ function getPointShopNumberedItems(data) {
     if (!Array.isArray(order) || order.some(function (name, i) { return name !== null && (typeof name !== "string" || order.indexOf(name) !== i); })) throw new Error("폐지 상품 번호 보존 기록 오류");
     order = order.concat(keys.filter(function (name) { return order.indexOf(name) === -1; }));
     var rows = [];
-    for (var i = 0; i < order.length; i++) if (order[i] !== GLOBAL_CONFIG.items.carrotName && Object.prototype.hasOwnProperty.call(data.shop, order[i])) rows.push({ number: i + 1, name: order[i] });
+    for (var i = 0; i < order.length; i++) if (!isRetiredCarrotValue(order[i]) && Object.prototype.hasOwnProperty.call(data.shop, order[i])) rows.push({ number: i + 1, name: order[i] });
     return rows;
 }
 
@@ -69615,25 +68985,33 @@ function initializeGuildWar(data, guildData, now) {
     return changed;
 }
 
-// 기존 소유권·진행 전쟁·기록·알림을 보존하면서 새 요새만 미점령으로 만드는 함수
+// 기존 6·7개 지역의 소유권·전쟁·기록을 보존하고 새 광산만 미점령으로 추가하는 함수
 function initializeGuildWarSiege(guildData, now) {
-    var original = requireGuildWarState(guildData.war24);
-    if (original.siegeVersion === GLOBAL_CONFIG.guildWar.siege.version) return false;
+    var original = requireGuildWarState(guildData.war24), config = GLOBAL_CONFIG.guildWar.siege;
+    if (original.siegeVersion === config.version) return false;
     if (original.campaignVersion !== GLOBAL_CONFIG.guildWar.campaign.version) throw new Error("길드전쟁 이전 진격 정책 확인 필요");
-    var state = cloneFreeMarketObject(original), config = GLOBAL_CONFIG.guildWar.siege;
-    state.territories[String(GLOBAL_CONFIG.guildWar.campaign.kingdom)] = state.territories[String(config.legacyKingdom)];
-    state.territories[String(config.fortress)] = { owner: null, since: now, incomeAt: now, income: 0 };
+    var state = cloneFreeMarketObject(original), oldKingdom = original.siegeVersion === 1 ? 7 : config.legacyKingdom;
+    var territories = {}; // 옛 6·7번을 덮어쓰기 전에 번호별 원본을 따로 보관
+    for (var no = 1; no <= 5; no++) territories[String(no)] = state.territories[String(no)];
+    territories["6"] = { owner: null, since: now, incomeAt: now, income: 0 };
+    territories["7"] = original.siegeVersion === 1 ? state.territories["6"] : { owner: null, since: now, incomeAt: now, income: 0 };
+    territories["8"] = state.territories[String(oldKingdom)];
+    state.territories = territories;
+    // 옛 전투·확정 보상은 지역만 이전하며 보상을 새로 실행하지 않는다.
+    function moveRecord(row) {
+        if (row.no === oldKingdom) row.no = 8;
+        else if (original.siegeVersion === 1 && row.no === 6) row.no = 7;
+        var history = row.matchupHistory || [];
+        for (var h = 0; h < history.length; h++) moveRecord(history[h]);
+    }
     var rows = state.active.slice(0);
     for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) rows = rows.concat(state.records[gid]);
-    for (var i = 0; i < rows.length; i++) {
-        if (rows[i].no === config.legacyKingdom) rows[i].no = GLOBAL_CONFIG.guildWar.campaign.kingdom;
-        var history = rows[i].matchupHistory || [];
-        for (var h = 0; h < history.length; h++) if (history[h].no === config.legacyKingdom) history[h].no = GLOBAL_CONFIG.guildWar.campaign.kingdom;
-    }
+    for (var i = 0; i < rows.length; i++) moveRecord(rows[i]);
     for (var n = 0; n < state.notices.length; n++) {
-        state.notices[n].text = state.notices[n].text.split("🏰 [6] 호월킹덤").join(guildWarRegion(7)).split("[6] 호월킹덤").join("[7] 호월킹덤");
+        state.notices[n].text = state.notices[n].text.split("[" + oldKingdom + "] 호월킹덤").join("[8] 호월킹덤");
+        if (original.siegeVersion === 1) state.notices[n].text = state.notices[n].text.split("[6] 루미에르 요새").join("[7] 루미에르 요새");
     }
-    for (var id in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, id)) state.guilds[id].ambushUsed = 0;
+    if (original.siegeVersion === undefined) for (var id in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, id)) state.guilds[id].ambushUsed = 0;
     state.siegeVersion = config.version; state.siegeChangedAt = now;
     requireGuildWarState(state);
     guildData.war24 = state;
@@ -69642,7 +69020,7 @@ function initializeGuildWarSiege(guildData, now) {
 
 // 지역 번호에서 같은 점령 한도를 공유하는 단계를 반환하는 함수
 function getGuildWarStage(no) {
-    return no <= 3 ? 0 : no <= 5 ? 1 : no === GLOBAL_CONFIG.guildWar.siege.fortress ? 2 : 3;
+    return no <= 3 ? 0 : no <= GLOBAL_CONFIG.guildWar.campaign.miniPetMine ? 1 : no === GLOBAL_CONFIG.guildWar.siege.fortress ? 2 : 3;
 }
 
 // 한 번 읽은 점령 상태에서 전체·단계별 실제 소유 지역을 계산하는 함수
@@ -69732,41 +69110,67 @@ function applyGuildWarAmbush(data, petData, guildData, skills, gid, user, no, no
 
 // 종료된 일반 당근·온도기·개인거래 기록만 식별하는 함수
 function isRetiredCarrotValue(value) {
-    return typeof value === "string" && (value === GLOBAL_CONFIG.items.carrotName || value === GLOBAL_CONFIG.items.carrotThermometerName || value === "🌡️당근온도기");
+    return typeof value === "string" && (value === GLOBAL_CONFIG.items.carrotName || value === GLOBAL_CONFIG.items.carrotThermometerName || value === "🌡️당근온도기" || GLOBAL_CONFIG.carrotRetirement.itemNames.indexOf(value) !== -1);
 }
 
 // 공용 JSON에서 종료 필드·보유분·옛 통화 거래만 제거하고 다른 콘텐츠는 보존하는 함수
-function scrubCarrotLegacy(value, marketStore) {
+function scrubCarrotLegacy(value, marketStore, previewTargets) {
     var changed = false, fields = GLOBAL_CONFIG.carrotRetirement.removedFields;
-    function visit(node, parentKey) {
-        if (!node || typeof node !== "object") return false;
+    // 미리보기는 삭제 대상만 수집하고 실제 원본을 변경하지 않는다.
+    function remove(node, key, path) {
+        changed = true;
+        if (previewTargets) previewTargets.push([path, key, node[key]]);
+        else if (Array.isArray(node)) node.splice(key, 1);
+        else delete node[key];
+    }
+    // 이미 읽은 공용 자료에서 종료 콘텐츠의 이름·명령·통화 기록만 찾는다.
+    function retiredRow(row, parentKey) {
+        if (isRetiredCarrotValue(row)) return true;
+        if (!row || typeof row !== "object") return false;
+        if (row.currency === "CARROT" || row.currency === "carrot" || row.currency === "🥕" || marketStore && (parentKey === "listings" || parentKey === "completedLogs") && row.currency !== "DIAMOND") return true;
+        if ([row.command, row.msg, row.message].some(function (text) { return typeof text === "string" && (isRetiredCarrotCommand(text) || /황금당근|달토끼 탐색|달토끼상점|🥕당근이세요|당근온도기/.test(text)); })) return true;
+        // 일반 당근이 포함된 미개봉 패키지 구성은 기존 포인트 대체 정책을 유지한다.
+        return (isRetiredCarrotValue(row.itemName) || isRetiredCarrotValue(row.name) || isRetiredCarrotValue(row.packageName)) && !(row.type === "item" && row.name === GLOBAL_CONFIG.items.carrotName);
+    }
+    // 종료 탐험의 숫자 11은 실제 탐험 자료의 해당 경로에서만 제거한다.
+    function visit(node, parentKey, path) {
+        if (!node || typeof node !== "object") return;
         if (Array.isArray(node)) {
             for (var i = node.length - 1; i >= 0; i--) {
-                var row = node[i];
-                var oldTrade = row && typeof row === "object" && (row.currency === "CARROT" || row.currency === "carrot" || row.currency === "🥕" || marketStore && (parentKey === "listings" || parentKey === "completedLogs") && row.currency !== "DIAMOND");
-                if (isRetiredCarrotValue(row) || row && row.type === "item" && row.name === GLOBAL_CONFIG.items.carrotThermometerName || oldTrade || row && typeof row === "object" && [row.command, row.msg, row.message].some(function (text) { return typeof text === "string" && isRetiredCarrotCommand(text); }) || row && typeof row === "object" && (isRetiredCarrotValue(row.itemName) || isRetiredCarrotValue(row.name)) && row.type !== "item") { node.splice(i, 1); changed = true; }
-                else visit(row, parentKey);
+                if (retiredRow(node[i], parentKey)) remove(node, i, path);
+                else visit(node[i], parentKey, path + "/" + i);
             }
             return;
         }
-        // 패키지 구성의 기존 포인트 대체 효과는 지급을 재실행하지 않고 정의만 보존한다.
-        if (node.type === "item" && isRetiredCarrotValue(node.name)) {
-            if (node.name === GLOBAL_CONFIG.items.carrotName) {
-                var amount = Number(node.count) * GLOBAL_CONFIG.freeMarket.retiredItemPointValue;
-                if (!isPointShopSafeCount(amount)) throw new Error("구형 패키지 보상 수량 확인 필요");
-                node.type = "point"; node.count = amount; delete node.name; changed = true;
-            }
+        if (node.bet && node.userBet && node.autoFixedDungeon) {
+            if (Object.prototype.hasOwnProperty.call(node.bet, "11")) remove(node.bet, "11", path + "/bet");
+            var maps = ["userBet", "autoFixedDungeon"];
+            for (var m = 0; m < maps.length; m++) for (var user in node[maps[m]]) if (Object.prototype.hasOwnProperty.call(node[maps[m]], user) && String(node[maps[m]][user]) === "11") remove(node[maps[m]], user, path + "/" + maps[m]);
+        }
+        if (node.type === "item" && node.name === GLOBAL_CONFIG.items.carrotName) {
+            var amount = Number(node.count) * GLOBAL_CONFIG.freeMarket.retiredItemPointValue;
+            if (!isPointShopSafeCount(amount)) throw new Error("구형 패키지 보상 수량 확인 필요");
+            changed = true;
+            if (previewTargets) previewTargets.push([path, "reward", node.name, node.count]);
+            else { node.type = "point"; node.count = amount; delete node.name; }
         }
         var keys = Object.keys(node);
         for (var k = 0; k < keys.length; k++) {
-            var key = keys[k];
-            if (fields.indexOf(key) !== -1 || isRetiredCarrotValue(key) || marketStore && parentKey === "" && key === "migration") { delete node[key]; changed = true; continue; }
-            var item = node[key];
-            if (isRetiredCarrotValue(item)) { delete node[key]; changed = true; continue; }
-            visit(item, key);
+            var key = keys[k], item = node[key];
+            if (previewTargets && node.type === "item" && node.name === GLOBAL_CONFIG.items.carrotName && key === "name") continue;
+            if (fields.indexOf(key) !== -1 || (parentKey === "bag" || parentKey === "shop") && isRetiredCarrotValue(key) || marketStore && parentKey === "" && key === "migration" || isRetiredCarrotValue(item)) { remove(node, key, path); continue; }
+            if (key === "shopNumbers" && Array.isArray(item)) {
+                for (var slot = 0; slot < item.length; slot++) if (isRetiredCarrotValue(item[slot])) {
+                    changed = true;
+                    if (previewTargets) previewTargets.push([path + "/shopNumbers", slot, item[slot]]);
+                    else item[slot] = null;
+                }
+                continue;
+            }
+            visit(item, key, path + "/" + key);
         }
     }
-    visit(value, "");
+    visit(value, "", "");
     return changed;
 }
 
@@ -69777,55 +69181,7 @@ function applyCarrotRetirement(data, now) {
     var order = data.catalogPolicy ? data.catalogPolicy.shopNumbers : Object.keys(data.shop);
     order = order.map(function (name) { return isRetiredCarrotValue(name) ? null : name; });
     var changed = scrubCarrotLegacy(data, false);
+    if (data.catalogPolicy) data.catalogPolicy.shopNumbers = order;
     if (!data.catalogPolicy) { data.catalogPolicy = { version: 1, at: now, shopNumbers: order, cleaned: false }; changed = true; }
     return changed;
-}
-
-// 활성 저장소 아래 JSON·공용 백업과 당근 전용 파일의 정리 계획을 만드는 함수
-function planCarrotLegacyFiles(root) {
-    var directory = new java.io.File(root), canonicalRoot = String(directory.getCanonicalPath()) + java.io.File.separator;
-    var transaction = getDataSaveTransaction(), activeSnapshots = transaction ? transaction.temporaryFiles : [];
-    var files = [], pending = [directory];
-    while (pending.length) {
-        var current = pending.pop(), entries = current.listFiles();
-        if (entries === null) throw new Error("종료 데이터 폴더를 읽을 수 없습니다: " + current.getPath());
-        for (var i = 0; i < entries.length; i++) {
-            var file = entries[i], canonical = String(file.getCanonicalPath());
-            if (canonical.indexOf(canonicalRoot) !== 0) throw new Error("종료 데이터 정리 경로 이탈");
-            if (file.isDirectory()) { pending.push(file); continue; }
-            var name = String(file.getName());
-            if (activeSnapshots.indexOf(String(file.getPath())) !== -1) continue;
-            if (/^(?:carrotBoard|carrotTrade|carrotLog|thermoLog)(?:[_.-]|$)/i.test(name) || /\.carrot-retirement-\d+\.json$/.test(name)) files.push({ path: String(file.getPath()), remove: true });
-            else if ((/\.json(?:$|[._-])/.test(name) || /^\.hoi-memory-[0-9a-f-]{36}$/.test(name)) && !/\.tmp$/.test(name)) files.push({ path: String(file.getPath()), market: /^freeMarket(?:[_.-]|$)/.test(name) });
-        }
-    }
-    return files;
-}
-
-// 종료 이력 삭제를 재시작 가능한 일회 정리로 실행하고 복구본도 같은 기준으로 비우는 진입점
-function runCarrotRetirementEntry(data) {
-    if (data.catalogPolicy && (data.catalogPolicy.version !== 1 || !Array.isArray(data.catalogPolicy.shopNumbers) || typeof data.catalogPolicy.cleaned !== "boolean")) throw new Error("상점 정리 상태 오류");
-    if (data.catalogPolicy && data.catalogPolicy.cleaned === true) return;
-    var market = requireFreeMarketSource(loadJsonFile(freeMarketPath));
-    if (market.version !== 2) throw new Error("현재 자유시장의 다이아 전환 상태를 먼저 확인해 주세요.");
-    var plan = planCarrotLegacyFiles(getCurrentContext().rootPath);
-    // 먼저 활성 회원을 확정하고 기존 세대·전환 백업까지 정리한다. 실패하면 다음 진입에서 이어간다.
-    applyCarrotRetirement(data, Date.now());
-    saveJsonFile(data, filePath, true);
-    endDataSaveTransaction(); beginDataSaveTransaction();
-    for (var i = 0; i < plan.length; i++) {
-        var row = plan[i], file = new java.io.File(row.path);
-        if (!file.exists()) continue;
-        if (row.remove) { if (!file.delete()) throw new Error("종료 전용 파일 삭제 실패: " + row.path); continue; }
-        var value = parseManagedJsonContent(FileStream.read(row.path, "utf-8"), row.path);
-        var marketStore = row.market || value && Array.isArray(value.listings) && Array.isArray(value.completedLogs) && typeof value.nextId === "number";
-        if (marketStore && value.version !== 2) { if (!file.delete()) throw new Error("옛 통화 거래 백업 삭제 실패: " + row.path); continue; }
-        if (scrubCarrotLegacy(value, marketStore)) {
-            writeVerifiedJsonFile(row.path, value, true);
-            endDataSaveTransaction(); beginDataSaveTransaction();
-        }
-    }
-    data.catalogPolicy.cleaned = true;
-    saveJsonFile(data, filePath, true);
-    endDataSaveTransaction(); beginDataSaveTransaction();
 }
