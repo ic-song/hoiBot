@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.855"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.856"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1034,7 +1034,7 @@ const GLOBAL_CONFIG = {
     commandQueue: {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
         permissions: {
-            adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고기록전체", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
+            adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
             master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/길드상점추가","/길드상점삭제", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
             masterComma: ["/새해","/용돈돈","/용돈돈2","/용돈","/용돈2","/한가위","/한글","/국군","/슬롯초보","/슬롯초보2","/슬롯초보3","/슬롯초보4","/할로윈","/할로윈2","/시즌","/니가","/복","/메리","/과로","/레이드","/계엄령","/유닛뽑기","/크리스마스","/2주년","/광복","/한국"],
             admin: ["/서버이동", "/마스터명단", "/마스터추가", "/마스터제거", "/가입인증"],
@@ -2438,8 +2438,6 @@ const GLOBAL_CONFIG = {
         boosterCycle: 23,
         platinumPityCount: 149,
         maxAdminItemCount: 1000000000,
-        userRareLogMax: 50,
-        globalRareLogMax: 100,
         adminLogMax: 100,
         generalRewards: [
             { weight: 250, rateText: "25%", type: "item", itemName: "미니펫뽑기🐹(/미니펫오픈)", count: 300 },
@@ -5275,7 +5273,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             for (var gmIdIndex = 0; gmIdIndex < gmIdentityUsers.length; gmIdIndex++) {
                 var gmIdentityMember = data.member[gmIdentityUsers[gmIdIndex]];
                 if (!gmIdentityMember.serverRaidAccount) {
-                    gmIdentityMember.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(gmIdentityMember.server), latest: null, total: null };
+                    gmIdentityMember.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(gmIdentityMember.server), total: null };
                     gmIdsChanged = true;
                 }
             }
@@ -6883,7 +6881,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 try { diamondPurchasePlan = planDiamondShopPurchase(diamondBuyer, diamondProduct, diamondIdentity, diamondBundles); } catch (diamondPurchaseError) { replier.reply("❌ " + diamondPurchaseError.message); return; }
                 var diamondPurchaseLog = currencyLogData || ensureCurrencyLogData(loadJsonFile(currencyLogPath));
                 replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier, [currencyLogPath]);
-                if (!diamondBuyer.serverRaidAccount) diamondBuyer.serverRaidAccount = { id: diamondIdentity, period: 0, server: normalizeHoiServerLabel(diamondBuyer.server), latest: null, total: null };
+                if (!diamondBuyer.serverRaidAccount) diamondBuyer.serverRaidAccount = { id: diamondIdentity, period: 0, server: normalizeHoiServerLabel(diamondBuyer.server), total: null };
                 else if (!diamondBuyer.serverRaidAccount.id) diamondBuyer.serverRaidAccount.id = diamondIdentity;
                 applyDiamondShopPurchase(data, diamondPurchaseLog, sender, diamondIdentity, diamondProduct, diamondBundles, diamondPurchasePlan, Date.now());
                 var diamondQuest = getAdventureQuestState(data, sender, false);
@@ -8699,7 +8697,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         }
                     }
                     if (!isFreeMarketConfirmed) {
-                        if (!data.member[sender].serverRaidAccount) { data.member[sender].serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(data.member[sender].server), latest: null, total: null }; saveJsonFile(data, filePath); }
+                        if (!data.member[sender].serverRaidAccount) { data.member[sender].serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(data.member[sender].server), total: null }; saveJsonFile(data, filePath); }
                         if (typeof data.member[sender].serverRaidAccount.id !== "string" || !data.member[sender].serverRaidAccount.id) throw new Error("구매 확인 계정 ID 오류");
                         setFreeMarketConfirmState(sender, "buy", msg, buyListing.id, getFreeMarketListingFingerprint(buyListing), data.member[sender].serverRaidAccount.id);
                         replier.reply(buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, buyListing));
@@ -30140,6 +30138,7 @@ replier.reply(
                     var rewardCleanup = cleanupCompletedRewardRecords(data, petData, petSkillData, cleanupEducationStore);
                     var preparedCleanup = compactAdventureQuestPreparedRecords(data, false);
                     var unusedMemberCleanup = cleanupUnusedMemberFields(data, false);
+                    var memberRecordCleanup = cleanupMemberRecordRedundancy(data, false);
                     var robberyCleanupConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
                     var robberyCleanupPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.fileName);
                     var robberyAlreadySeparated = data.migrations && data.migrations[robberyCleanupConfig.markerKey] === true;
@@ -30318,6 +30317,7 @@ replier.reply(
                     out += allsee + "\n";
                     out += "\n[할로윈 가방 사탕 전환]\n";
                     out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
+                    out += "\n[레이드·봉인금고 기록 정리]\n레이드 중복 요약 " + memberRecordCleanup.raidUsers + "명 / 금고 개인 희귀 기록 " + memberRecordCleanup.personalRareRecords + "건 / 전체 희귀 기록 " + memberRecordCleanup.globalRareRecords + "건 제거\n";
                     out += "\n[보상·교육 기록 정리]\n";
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
@@ -30554,6 +30554,36 @@ function getDataCleanupStorePaths() {
     ];
 }
 
+// 레이드 중복 요약·봉인금고 희귀 기록만 미리 보거나 명시적 정리 때 제거하는 함수
+function cleanupMemberRecordRedundancy(data, previewOnly) {
+    if (!data || !data.member || typeof data.member !== "object" || Array.isArray(data.member)) throw new Error("회원 기록 정리 원본 확인 필요");
+    var plans = [], result = { raidUsers: 0, vaultUsers: 0, personalRareRecords: 0, globalRareRecords: 0, removedChars: 0, targets: [] };
+    // 삭제할 필드와 원문만 계획해 미리보기 지문과 실제 제거 범위를 일치시키는 함수
+    function plan(owner, key, path) {
+        if (!owner || !Object.prototype.hasOwnProperty.call(owner, key)) return false;
+        var value = owner[key];
+        plans.push({ owner: owner, key: key });
+        result.targets.push([path, key, value]);
+        result.removedChars += JSON.stringify(key).length + JSON.stringify(value).length + 2;
+        return true;
+    }
+    for (var user in data.member) if (Object.prototype.hasOwnProperty.call(data.member, user)) {
+        var member = data.member[user];
+        if (plan(member.serverRaidAccount, "latest", ["member", user, "serverRaidAccount"])) result.raidUsers++;
+        var vault = member.sealedVault;
+        if (vault && Object.prototype.hasOwnProperty.call(vault, "rareRecords")) {
+            if (Array.isArray(vault.rareRecords)) result.personalRareRecords += vault.rareRecords.length;
+            plan(vault, "rareRecords", ["member", user, "sealedVault"]); result.vaultUsers++;
+        }
+    }
+    if (data.sealedVault && Object.prototype.hasOwnProperty.call(data.sealedVault, "rareRecords")) {
+        if (Array.isArray(data.sealedVault.rareRecords)) result.globalRareRecords = data.sealedVault.rareRecords.length;
+        plan(data.sealedVault, "rareRecords", ["sealedVault"]);
+    }
+    if (!previewOnly) for (var i = 0; i < plans.length; i++) delete plans[i].owner[plans[i].key];
+    return result;
+}
+
 // 숫자 0인 허용 횟수와 가입 완료 계정의 보조 필드만 계획하거나 제거하는 함수
 function cleanupUnusedMemberFields(data, previewOnly) {
     if (!data || !data.member || typeof data.member !== "object" || Array.isArray(data.member)) throw new Error("회원 보조 정보 정리 원본 오류");
@@ -30605,6 +30635,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
     var rewards = cleanupCompletedRewardRecords(data, stores.petData, stores.petSkillData, stores.educationStore, true);
     var prepared = compactAdventureQuestPreparedRecords(data, true);
     var unused = cleanupUnusedMemberFields(data, true);
+    var recordCleanup = cleanupMemberRecordRedundancy(data, true);
     var retiredTargets = [];
     scrubCarrotLegacy(data, false, retiredTargets);
     scrubCarrotLegacy(guildData, false, retiredTargets);
@@ -30613,7 +30644,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         scrubCarrotLegacy(stores[retiredKey], retiredKey === "freeMarketData", storeTargets);
         if (storeTargets.length) retiredTargets.push([retiredKey, storeTargets]);
     }
-    var targets = [["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    var targets = [["memberRecordCleanup", recordCleanup.targets], ["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var candyMigration = stores.halloweenCandyMigration;
     if (!candyMigration) throw new Error("할로윈 가방 사탕 전환 대상을 확인할 수 없습니다.");
     targets.push(["halloweenCandy", candyMigration.targets]);
@@ -30662,6 +30693,9 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "  현재 사용 중인 자료만 정리하며 보관 백업·복구본은 열거나 변경하지 않습니다.\n" +
         "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
         "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
+        "• 레이드 중복 요약: " + recordCleanup.raidUsers + "명 제거\n" +
+        "• 봉인금고 희귀 기록: 개인 " + recordCleanup.personalRareRecords + "건 / 전체 " + recordCleanup.globalRareRecords + "건 제거\n" +
+        "  계정·누적 전적·금고 개봉/부스터/확정 진행도는 유지합니다.\n" +
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
         "  보상·교육 기록 약 " + numberWithCommas(rewards.removedChars) + "자 감소\n" +
         "• 퀘스트 준비 기록: " + prepared.users + "명 압축 / 약 " + numberWithCommas(prepared.removedChars) + "자 감소\n" +
@@ -33511,7 +33545,7 @@ function resetServerRaid(data, generation) {
     var names = Object.keys(data.member);
     for (var i = 0; i < names.length; i++) {
         var account = data.member[names[i]].serverRaidAccount;
-        if (account) { account.latest = null; account.total = null; }
+        if (account) account.total = null;
     }
 }
 
@@ -33727,7 +33761,7 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     var nextPoint = requireServerRaidSafeInteger(member.point, "보유 포인트") + reward;
     requireServerRaidSafeInteger(nextPoint, "공격 보상 지급 후 포인트");
     var account = member.serverRaidAccount;
-    if (!account) account = { id: newAccountId, period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+    if (!account) account = { id: newAccountId, period: 0, server: normalizeHoiServerLabel(member.server), total: null };
     var participant = round.accounts[account.id];
     if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], excessAttempts: 0, excessEvents: {}, paid: false };
     var nextAttackReward = requireServerRaidSafeInteger(participant.attackReward + reward, "실지급 공격 보상 합계");
@@ -33911,7 +33945,6 @@ function settleServerRaidParticipant(data, accountIndex, participantId) {
             total.participations++;
             total.attackCount += participant.attacks.length;
             account.total = total;
-            account.latest = { roundId: round.id, startedAt: round.startedAt, server: participant.server, period: participant.period, damage: participant.damage, percent: participant.percent, rank: participant.rank, participants: participant.participants, attackReward: participant.attackReward, serverRank: participant.serverRank, rankReward: participant.rankReward, paid: true };
         }
         return true;
     }
@@ -33945,7 +33978,6 @@ function applyServerRaidMembershipChange(member, destination) {
         requireServerRaidSafeInteger(account.period + 1, "소속 기간");
         account.period++;
         account.server = next;
-        account.latest = null;
         account.total = null;
     }
     member.server = next;
@@ -34096,15 +34128,15 @@ function getServerRaidLatestRecord(data, user) {
         var displayState = isServerRaidAutoEndDue(round, Date.now()) ? "SETTLING" : round.state; // 타이머가 늦어져도 마감 후 진행 중으로 안내하지 않음
         return { state: displayState, attacks: participant.attacks, record: { startedAt: round.startedAt, server: participant.server, serverRank: participant.serverRank, attackReward: participant.attackReward, rankReward: participant.rankReward, paid: participant.paid } };
     }
-    var latest = account.latest;
-    if (!latest || latest.server !== normalizeHoiServerLabel(member.server) || latest.period !== account.period) return null;
-    var history = data.serverRaid && data.serverRaid.history, attacks = null;
-    if (history) for (var i = history.length - 1; i >= 0; i--) if (history[i].id === latest.roundId) {
-        var saved = history[i].accounts[account.id];
-        attacks = saved && saved.attacks;
-        break;
+    var history = data.serverRaid && data.serverRaid.history;
+    if (!Array.isArray(history)) throw new Error("최근 레이드 기록 원본 확인 필요");
+    for (var i = history.length - 1; i >= 0; i--) {
+        var savedRound = history[i], saved = savedRound.accounts[account.id];
+        if (!saved || saved.paid !== true || saved.server !== normalizeHoiServerLabel(member.server) || saved.period !== account.period) continue;
+        var record = { roundId: savedRound.id, startedAt: savedRound.startedAt, server: saved.server, period: saved.period, damage: saved.damage, percent: saved.percent, rank: saved.rank, participants: saved.participants, attackReward: saved.attackReward, serverRank: saved.serverRank, rankReward: saved.rankReward, paid: saved.paid };
+        return { state: saved.paid ? "DONE" : "SETTLING", attacks: saved.attacks, record: record };
     }
-    return { state: latest.paid ? "DONE" : "SETTLING", attacks: attacks, record: latest };
+    return null;
 }
 
 // 최근 회차의 실제 공격 지급 기준을 재계산 없이 안내하는 함수
@@ -35018,7 +35050,7 @@ function runMiniGameEntry(mode, args) {
     if (!stateExists) {
         // 기존 공통 계정 ID만 한 번 보충한다. 이후 조회·투표·굴림에서는 회원 저장을 하지 않는다.
         for (var userName in data.member) if (Object.prototype.hasOwnProperty.call(data.member, userName) && !data.member[userName].serverRaidAccount) {
-            data.member[userName].serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(data.member[userName].server), latest: null, total: null };
+            data.member[userName].serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(data.member[userName].server), total: null };
             memberChanged = true;
         }
         buildServerRaidAccountIndex(data);
@@ -36423,7 +36455,7 @@ function executeGuildMarbleRequest(store, context, request, newId) {
         var pointError = getGuildMarblePointError(context.data.member[context.sender], row.feeUnits * config.limits.pointUnit);
         if (pointError) { result.text = pointError; return result; }
         if (!context.accountId) {
-            var account = { id: newId, period: 0, server: normalizeHoiServerLabel(context.data.member[context.sender].server), latest: null, total: null };
+            var account = { id: newId, period: 0, server: normalizeHoiServerLabel(context.data.member[context.sender].server), total: null };
             context.data.member[context.sender].serverRaidAccount = account;
             context.accountId = account.id; context.accounts[account.id] = { user: context.sender, member: context.data.member[context.sender], account: account };
             result.memberChanged = true;
@@ -39758,7 +39790,7 @@ function initializeMember(sender, data, petData) {
         petraid: 0
     };
     data.member[sender] = {
-        serverRaidAccount: { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(null), latest: null, total: null },
+        serverRaidAccount: { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(null), total: null },
         join: currentDate,
         lv: 1,
         lv0: 0,
@@ -48652,7 +48684,7 @@ function recordPackageGrant(store, data, sender, parsed, packageInfo, id, comman
     var names = [sender, parsed.target];
     for (var n = 0; n < names.length; n++) {
         var member = data.member[names[n]];
-        if (member && !member.serverRaidAccount) member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+        if (member && !member.serverRaidAccount) member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), total: null };
         if (member && (!member.serverRaidAccount || typeof member.serverRaidAccount.id !== "string" || !member.serverRaidAccount.id)) throw new Error("패키지 담당자·대상 계정 ID 오류");
     }
     var operatorId = getPackageGrantIdentity(data, sender), at = new Date(now).toISOString();
@@ -52738,7 +52770,7 @@ function createFlowerCompensation(data, skillData, now, createId) {
         if (!held.equipped && !held.bagCount) continue;
         var member = data.member[user], account = member.serverRaidAccount;
         if (account === undefined) {
-            account = { id: createId(), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+            account = { id: createId(), period: 0, server: normalizeHoiServerLabel(member.server), total: null };
             identities.push({ member: member, account: account });
             if (Object.prototype.hasOwnProperty.call(accounts, account.id)) throw new Error("꽃집 보상 신규 계정 ID 중복");
             accounts[account.id] = { user: user, member: member, account: account };
@@ -58006,7 +58038,7 @@ function initializeDiamondLiveState(data, market, states, root, now, newId, acto
     if (data.migrations !== undefined && (!data.migrations || typeof data.migrations !== "object" || Array.isArray(data.migrations))) throw new Error("회원 이전 표시 오류");
     for (var name in identities) if (Object.prototype.hasOwnProperty.call(identities, name)) {
         var row = data.member[name];
-        if (!row.serverRaidAccount) row.serverRaidAccount = { id: identities[name], period: 0, server: normalizeHoiServerLabel(row.server), latest: null, total: null };
+        if (!row.serverRaidAccount) row.serverRaidAccount = { id: identities[name], period: 0, server: normalizeHoiServerLabel(row.server), total: null };
         else if (!row.serverRaidAccount.id) row.serverRaidAccount.id = identities[name];
     }
     if (!data.migrations) data.migrations = {};
@@ -61566,7 +61598,7 @@ function applyRewardGainItems(data, user, gainItems) {
 function isSealedVaultCommandMessage(msg) {
     var command = String(msg || "");
     if (command === "해방열쇠조합" || command === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(command)) return true;
-    return command === "/봉인금고" || command === "/봉인금고확률" || command === "/봉인금고기록" || command === "/봉인금고기록전체" ||
+    return command === "/봉인금고" || command === "/봉인금고확률" ||
         /^\/봉인금고오픈(?:\s+.*)?$/.test(command) || /^\/해방열쇠지급(?:\s+.*)?$/.test(command) ||
         /^\/해방열쇠회수(?:\s+.*)?$/.test(command) || /^\/봉인금고상태(?:\s+.*)?$/.test(command) ||
         /^\/봉인금고부스터설정(?:\s+.*)?$/.test(command) || /^\/봉인금고천장설정(?:\s+.*)?$/.test(command) ||
@@ -61609,8 +61641,6 @@ function ensureSealedVaultUserState(data, user) {
     state.totalOpenCount = normalizeSealedVaultCount(state.totalOpenCount);
     state.boosterCount = normalizeSealedVaultCount(state.boosterCount, GLOBAL_CONFIG.sealedVault.boosterCycle - 1);
     state.platinumMissCount = normalizeSealedVaultCount(state.platinumMissCount, GLOBAL_CONFIG.sealedVault.platinumPityCount - 1);
-    if (!(state.rareRecords instanceof Array)) state.rareRecords = [];
-    if (state.rareRecords.length > GLOBAL_CONFIG.sealedVault.userRareLogMax) state.rareRecords = state.rareRecords.slice(0, GLOBAL_CONFIG.sealedVault.userRareLogMax);
     return state;
 }
 
@@ -61618,7 +61648,6 @@ function ensureSealedVaultUserState(data, user) {
 function ensureSealedVaultRootData(data) {
     if (!data.sealedVault || typeof data.sealedVault !== "object" || data.sealedVault instanceof Array) data.sealedVault = {};
     if (!data.sealedVault.monthlyRewards || typeof data.sealedVault.monthlyRewards !== "object" || data.sealedVault.monthlyRewards instanceof Array) data.sealedVault.monthlyRewards = {};
-    if (!(data.sealedVault.rareRecords instanceof Array)) data.sealedVault.rareRecords = [];
     if (!(data.sealedVault.adminLogs instanceof Array)) data.sealedVault.adminLogs = [];
     return data.sealedVault;
 }
@@ -61703,23 +61732,7 @@ function addSealedVaultGain(gainMap, gainOrder, itemName, count, doubled, reward
     else gainMap[itemName].normal += count;
 }
 
-// 봉인금고 희귀 보상 기록을 회원과 전체 기록에 함께 남기는 함수
-function appendSealedVaultRareRecord(data, user, rareEvent) {
-    var state = ensureSealedVaultUserState(data, user);
-    var root = ensureSealedVaultRootData(data);
-    var record = {
-        at: formatDateTime(new Date()),
-        user: user,
-        type: rareEvent.type,
-        doubled: rareEvent.doubled === true,
-        guaranteed: rareEvent.guaranteed === true,
-        rewardText: formatSealedVaultRewardLines(rareEvent.rewards).replace(/\n/g, " / ")
-    };
-    state.rareRecords.unshift(record);
-    root.rareRecords.unshift(record);
-    if (state.rareRecords.length > GLOBAL_CONFIG.sealedVault.userRareLogMax) state.rareRecords.length = GLOBAL_CONFIG.sealedVault.userRareLogMax;
-    if (root.rareRecords.length > GLOBAL_CONFIG.sealedVault.globalRareLogMax) root.rareRecords.length = GLOBAL_CONFIG.sealedVault.globalRareLogMax;
-}
+
 
 // 봉인금고 관리자 변경 이력을 남기는 함수
 function appendSealedVaultAdminLog(data, operator, action, target, beforeValue, afterValue) {
@@ -61769,7 +61782,6 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     lines.push("확인: /봉인금고");
     lines.push("개봉: /봉인금고오픈 [숫자]");
     lines.push("확률: /봉인금고확률");
-    lines.push("기록: /봉인금고기록");
     lines.push("");
     lines.push("※ 1회당 해방의 열쇠🗝️ 1개가 소모됩니다.");
     return lines.join("\n");
@@ -61813,46 +61825,11 @@ function buildSealedVaultProbabilityMessage() {
     return lines.join("\n");
 }
 
-// 봉인금고 희귀 기록 한 줄을 생성하는 함수
-function formatSealedVaultRareRecord(record, includeUser) {
-    var typeText = record.type === "jackpot" ? "👑 초대형" : "💎 플래티넘";
-    var prefix = includeUser ? "[" + record.user + "] " : "";
-    var detail = record.guaranteed ? " [확정]" : "";
-    if (record.doubled) detail += " [2배]";
-    return record.at + "\n" + prefix + typeText + detail + "\n└ " + record.rewardText;
-}
 
-// 개인 봉인금고 희귀 보상 기록 UI를 생성하는 함수
-function buildSealedVaultUserRecordMessage(data, petData, guildData, user) {
-    var state = ensureSealedVaultUserState(data, user);
-    var lines = ["🔒 [" + checkRank(data, petData, guildData, user) + "] 님의 봉인금고 희귀 기록", "━━━━━━━━━━━━━━━"];
-    if (state.rareRecords.length === 0) {
-        lines.push("아직 플래티넘 이상의 보상 기록이 없습니다.");
-        return lines.join("\n");
-    }
-    lines.push("최근 " + state.rareRecords.length + "건" + allsee);
-    for (var i = 0; i < state.rareRecords.length; i++) {
-        if (i > 0) lines.push("");
-        lines.push(formatSealedVaultRareRecord(state.rareRecords[i], false));
-    }
-    return lines.join("\n");
-}
 
-// 전체 봉인금고 희귀 보상 기록 UI를 생성하는 함수
-function buildSealedVaultAllRecordMessage(data) {
-    var root = ensureSealedVaultRootData(data);
-    var lines = ["🔒 봉인금고 전체 희귀 기록", "━━━━━━━━━━━━━━━"];
-    if (root.rareRecords.length === 0) {
-        lines.push("아직 플래티넘 이상의 보상 기록이 없습니다.");
-        return lines.join("\n");
-    }
-    lines.push("최근 " + root.rareRecords.length + "건" + allsee);
-    for (var i = 0; i < root.rareRecords.length; i++) {
-        if (i > 0) lines.push("");
-        lines.push(formatSealedVaultRareRecord(root.rareRecords[i], true));
-    }
-    return lines.join("\n");
-}
+
+
+
 
 // 봉인금고 희귀 보상 전체 공지 문구를 생성하는 함수
 function buildSealedVaultNoticeMessage(data, petData, guildData, user, rareEvent) {
@@ -61957,7 +61934,6 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
         var gainTotal = gainMap[gainItemName].normal + gainMap[gainItemName].doubled + gainMap[gainItemName].platinum + gainMap[gainItemName].platinumDoubled; // 출처별 최종 지급량 합계
         addItem(data, sender, gainItemName, gainTotal);
     }
-    for (var rareIndex = 0; rareIndex < rareEvents.length; rareIndex++) appendSealedVaultRareRecord(data, sender, rareEvents[rareIndex]);
     var boosterRemaining = config.boosterCycle - state.boosterCount; // 다음 2배 부스터까지 남은 개봉 수
     var platinumRemaining = config.platinumPityCount - state.platinumMissCount; // 플래티넘 확정까지 최대 남은 개봉 수
 
@@ -61965,7 +61941,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     lines.push("🔒 [" + checkRank(data, petData, guildData, sender) + "] 님의");
     lines.push("봉인금고🔒 " + openCount + "회 개봉 결과");
     lines.push("확인: /봉인금고");
-    lines.push("※ 부스터 진행도·플래티넘 보상 기록 확인 가능");
+    lines.push("※ 부스터 진행도·플래티넘 확정 진행도 확인 가능");
     lines.push("━━━━━━━━━━━━━━━");
     for (var outputIndex = 0; outputIndex < gainOrder.length; outputIndex++) {
         var outputItemName = gainOrder[outputIndex];
@@ -62078,11 +62054,9 @@ function runSealedVaultCommand(sender, data, petData, guildData, msg) {
     var config = GLOBAL_CONFIG.sealedVault;
     if (msg === "/봉인금고") return createSealedVaultCommandResult(buildSealedVaultStatusMessage(data, petData, guildData, sender), false);
     if (msg === "/봉인금고확률") return createSealedVaultCommandResult(buildSealedVaultProbabilityMessage(), false);
-    if (msg === "/봉인금고기록") return createSealedVaultCommandResult(buildSealedVaultUserRecordMessage(data, petData, guildData, sender), false);
     if (/^\/봉인금고오픈(?:\s+.*)?$/.test(msg)) return runSealedVaultOpen(sender, data, petData, guildData, msg);
 
     if (!isSealedVaultAdmin(sender)) return createSealedVaultCommandResult("❌ 해당 명령어를 사용할 권한이 없습니다.", false);
-    if (msg === "/봉인금고기록전체") return createSealedVaultCommandResult(buildSealedVaultAllRecordMessage(data), false);
     if (msg === "/봉인금고보상설정") return createSealedVaultCommandResult(buildSealedVaultRewardSettingMessage(data), false);
 
     var grant = parseSealedVaultTargetNumberCommand(msg, "/해방열쇠지급");
@@ -66403,7 +66377,7 @@ function runHalloweenEntry(mode, args) {
     if (needsAccount && data.member && Object.prototype.hasOwnProperty.call(data.member, target)) {
         var member = data.member[target];
         if (!member.serverRaidAccount && mode !== "view" && (state.active || mode === "packageGrant")) {
-            member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+            member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), total: null };
             accountMemberChanged = true;
         }
         var id = member.serverRaidAccount && member.serverRaidAccount.id;
@@ -66448,7 +66422,7 @@ function runHalloweenEntry(mode, args) {
                 cleanupRow.id = String(java.util.UUID.randomUUID());
                 cleanupRow.name = getHalloweenAccountName(cleanupRow.id);
                 if (new java.io.File(root + cleanupRow.name).exists()) throw new Error("할로윈 신규 계정 파일이 이미 있습니다.");
-                cleanupTarget.serverRaidAccount = { id: cleanupRow.id, period: 0, server: normalizeHoiServerLabel(cleanupTarget.server), latest: null, total: null };
+                cleanupTarget.serverRaidAccount = { id: cleanupRow.id, period: 0, server: normalizeHoiServerLabel(cleanupTarget.server), total: null };
                 cleanupRow.account = createHalloweenAccount(cleanupRow.id, state.epoch);
             }
             refreshHalloweenAccount(state, cleanupRow.account, now);
@@ -66791,7 +66765,7 @@ function runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, reques
     if (numeric && session.stage === "intro") {
         if (!uid) {
             uid = String(java.util.UUID.randomUUID());
-            member.serverRaidAccount = { id: uid, period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+            member.serverRaidAccount = { id: uid, period: 0, server: normalizeHoiServerLabel(member.server), total: null };
             memberChanged = true; // 기존 공통 계정 ID만 보완하며 드라마 필드를 회원에 만들지 않음
         }
         if (!store.users[uid]) store.users[uid] = { works: {} };
@@ -67340,7 +67314,7 @@ function ensureGuildWarAccountId(data, user) {
     var id = getGuildWarAccountId(data, user), changed = false, member = data.member[user];
     if (!id) {
         id = String(java.util.UUID.randomUUID());
-        if (!member.serverRaidAccount) member.serverRaidAccount = { id: id, period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+        if (!member.serverRaidAccount) member.serverRaidAccount = { id: id, period: 0, server: normalizeHoiServerLabel(member.server), total: null };
         else member.serverRaidAccount.id = id;
         changed = true;
     }
