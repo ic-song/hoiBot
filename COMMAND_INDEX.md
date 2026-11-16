@@ -4915,7 +4915,7 @@ Status: PARTIAL
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
 - 공통 누적 조회: `getServerRaidCurrentParticipant`, `buildServerRaidCumulativeRecord`, `appendServerRaidOwnRecord`. 같은 현재 소속·기간·계정 집합에서 정산 누적과 미지급 진행 회차를 한 번만 합산한다. 개인·서버의 데미지·기여도·순위가 같은 기준이다.
-- 최근 참가 조회: `getServerRaidLatestRecord`, `getServerRaidAttackRewardGuide`. 진행·정산 회차에 참여했으면 해당 회차를 우선하며, 과거 공격은 당시 실제 지급 기준을 안내한다. 조회 헬퍼는 파일 IO·지급·저장을 하지 않는다.
+- 최근 참가 조회: `getServerRaidLatestRecord`, `getServerRaidAttackRewardGuide`. 진행·정산 회차를 우선하고 완료 기록은 기존 레이드 원본 history에서 같은 계정·서버·소속 기간의 마지막 지급 완료 참가자를 읽는다. `serverRaidAccount.latest` 중복 요약을 생성/참조하지 않는다. 조회 헬퍼는 파일 IO·지급·저장을 하지 않는다.
 - 출력: `formatServerRaidServer` / `formatInfoServerRaidServer`, `isServerRaidLocked` / `isInfoServerRaidLocked`.
 - 상금 출력: `formatServerRaidPrize`, `getServerRaidResultPrize`, `buildServerRaidResultNotice`. 종료 시 확정된 참가자 1인당 지급액을 사용하고, 이전 저장 형식은 참가자의 확정 금액을 읽는다. 출력 헬퍼는 지급하거나 저장하지 않는다.
 
@@ -6866,7 +6866,6 @@ Status: VERIFIED
 - `drawSealedVaultWeightedReward`
 - `ensureSealedVaultUserState`
 - `ensureSealedVaultRootData`
-- `appendSealedVaultRareRecord`
 - `appendSealedVaultAdminLog`
 - `addItem`
 - `removeItem`
@@ -6877,31 +6876,29 @@ Status: VERIFIED
 - `member.json -> member[user].bag["해방의 열쇠🗝️(/봉인금고오픈 숫자)"]`
 - `member.json -> member[user].sealedVault`
 - `member.json -> sealedVault.monthlyRewards`
-- `member.json -> sealedVault.rareRecords`
 - `member.json -> sealedVault.adminLogs`
 
 ## Save Flow
 - `/봉인금고오픈 [숫자]`는 요청 횟수만큼 `호이의 봉인금고🔒(/봉인금고오픈 숫자)`와 `해방의 열쇠🗝️(/봉인금고오픈 숫자)`를 모두 보유한 회원만 실행할 수 있다.
-- `/봉인금고오픈 [숫자]`는 1~100개의 봉인금고와 열쇠를 한 번에 사용하며, 각 회차를 순서대로 추첨한 뒤 두 아이템 차감·보상·누적 상태·희귀 기록을 `member.json`에 한 번 저장한다.
+- `/봉인금고오픈 [숫자]`는 1~100개의 봉인금고와 열쇠를 한 번에 사용하며, 각 회차를 순서대로 추첨한 뒤 두 아이템 차감·보상·누적 상태를 `member.json`에 한 번 저장한다.
 - 30번째 개봉마다 해당 회차의 일반·플래티넘·초대형 최종 보상을 2배 지급하고 부스터 누적을 초기화한다.
 - 플래티넘이 199회 연속 나오지 않으면 200번째 개봉에서 플래티넘을 확정한다. 초대형 보상은 플래티넘 미등장 누적을 초기화하지 않는다.
-- 플래티넘과 초대형 보상은 개인·전체 희귀 기록에 남기고, 저장 완료 후 전체 알림을 시도한다.
+- 플래티넘과 초대형 보상은 정상 지급하고 저장 완료 후 전체 알림을 시도한다. 개인·전체 희귀 기록은 생성하지 않는다.
 - `/해방열쇠조합 [숫자]`는 열쇠 1개당 봉인금고 100개를 소모한다. 성공 결과에 사용자 체크랭크, 소모·획득 수량, 남은 호봉과 현재 열쇠 수량을 표시한다. `runSealedVaultKeyCombine`은 메모리만 변경하고 기존 명령 진입부에서 `member.json`에 한 번 저장한다. 재료 부족·0·계산 범위 초과는 차감하지 않고 후행 안내문이 붙은 입력은 실행하지 않는다.
 - `해방열쇠조합` 또는 `/해방열쇠조합`은 사용법만 안내한다. 열쇠 부족 안내에 조합 안내를 추가하고 봉인금고 부족 안내는 일일퀘스트 획득 경로를 표시한다.
 - 일일퀘스트 보상은 `claimQuestReward`의 기존 중복 수령 방지와 저장 경로를 재사용하며 main·Info 퀘스트 창과 지급 결과에 봉인금고 1개를 표시한다.
-- `/봉인금고`, `/봉인금고확률`, `/봉인금고기록`은 조회 전용이다.
+- `/봉인금고`, `/봉인금고확률`은 조회 전용이다.
 - `/봉인금고`는 보유 호봉금고와 해방의 열쇠 수량, 부스터·플래티넘 확정까지의 남은 횟수와 진행 게이지를 함께 표시하고, 하단 명령어 목록에 `확인: /봉인금고`를 안내한다.
-- `/봉인금고오픈 [숫자]` 결과 제목 아래에는 `/봉인금고` 확인 명령어와 현재 부스터·플래티넘 보상 기록 확인 안내를 표시하며, 플래티넘·초대형 보상 당첨 여부, 남은 열쇠·호봉금고 수량, 부스터·플래티넘 확정까지의 남은 횟수와 진행 게이지를 안내한다.
+- `/봉인금고오픈 [숫자]` 결과 제목 아래에는 `/봉인금고` 확인 명령어와 현재 부스터·플래티넘 확정 진행도 안내를 표시하며, 플래티넘·초대형 보상 당첨 여부, 남은 열쇠·호봉금고 수량, 부스터·플래티넘 확정까지의 남은 횟수와 진행 게이지를 안내한다.
 - 같은 아이템도 일반 획득분과 2배 부스터 적용분을 별도 합산해 일반 줄 다음에 `🔥2배` 줄을 표시한다. 플래티넘·초대형 전체 알림도 실제 최종 지급량과 부스터 적용 여부를 같은 기준으로 표시하며, 당첨 요약은 횟수를 함께 안내한다.
 - 플래티넘 금고에서 획득한 보상은 일반 보상과 별도로 합산하고 해당 보상 줄 바로 아래에 `└ 플래티넘 금고💎 당첨`을 표시한다. 2배 부스터가 함께 적용되면 최종 지급 수량 뒤의 `🔥2배` 표시도 유지한다.
-- 관리자 명령은 열쇠 지급·회수, 계정 상태 조회, 부스터·천장 누적 조정, 월별 초대형 보상 설정, 전체 희귀 기록 조회를 지원한다.
+- 관리자 명령은 열쇠 지급·회수, 계정 상태 조회, 부스터·천장 누적 조정, 월별 초대형 보상 설정을 지원한다.
 - `해방의 열쇠🗝️`는 가방 특수 아이템에 표시하며 판매·당근 거래를 막는다.
 - 데이터 변경 명령은 기존 회원 데이터 명령 단위 잠금과 저장 실패 롤백 흐름을 재사용한다.
+- 희귀 기록 조회 두 명령은 종료했다. 기존 개인/전체 `rareRecords`와 레이드 `serverRaidAccount.latest`는 `/데이터정리` 미리보기→확인 때만 `cleanupMemberRecordRedundancy`로 제거한다. 기존 백업/복구본은 별도로 열거나 정리하지 않으며 초기화·일반 명령·정산은 이 필드를 다시 만들지 않는다. 개봉·부스터·플래티넘 확정 진행도·월별 보상·관리자 이력·계정 ID·레이드 누적 전적·길드기부 영수증은 보존한다.
 
 ## Related Commands
 - `/봉인금고확률`
-- `/봉인금고기록`
-- `/봉인금고기록전체`
 - `/해방열쇠지급 [아이디] [숫자]`
 - `/해방열쇠회수 [아이디] [숫자]`
 - `/봉인금고상태 [아이디]`

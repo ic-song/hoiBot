@@ -1,11 +1,11 @@
 # 레이드 중복 요약·봉인금고 희귀 기록 종료 및 긴급 공격권 수정
 
 - 작업 키: member-data-retirement
-- 작업 상태: 진행 중
+- 작업 상태: 검증 완료
 - 정리 후보: 아니요
-- 체크포인트 버전: 1
+- 체크포인트 버전: 2
 - 마지막 갱신: 2026-11-16 Asia/Seoul
-- 작업 위치: C:/Users/user/Desktop/hoiBot, 현재 codex/guild-war-ticket-order
+- 작업 위치: C:/Users/user/Desktop/hoiBot, 현재 codex/member-data-retirement
 - 기준: origin/feature/prod ce9c2c49 (07 스냅샷), main ver_2.854. 스냅샷이 changelog 2.854 행을 없애 2.853부터 시작하므로 원격 릴리스 기록 2.854를 소스에서 복원한 뒤 2.855 이상 증가 필요.
 - 사용자 승인: 레이드 중복 요약(serverRaidAccount.latest) 및 봉인금고 개인/전체 희귀 기록만 종료. 필수 ID/누적 전적/재화/금고 개봉·부스터·천장/월별 보상/관리자 기록 보존. 실제 JSON 제거는 /데이터정리 미리보기→확인만, 백업/복구본 실제 정리 금지. 검증 후 운영 Git 반영.
 - 긴급 추가: 공용 기본권1 남고 추가권0인데 편성의 모든 개인권0인 제보를 먼저 수정·운영반영 후 위 작업 재개. 운영 단말 접근 금지.
@@ -16,3 +16,15 @@
 - 변경 범위: main.js, 필요 시 Info.js, COMMAND_INDEX.md, COMMAND_REGISTRY.md, ERROR_FIX_LOG.md, data/hoiBotChangeLog.json, 본 체크포인트. 기존 미추적 다른 체크포인트 보존.
 
 - 브랜치 예외: origin/feature/bugFix는 미반영 b45affeb 및 열린 PR173의 다른 작업이 있어 보존. 최신 prod에서 만든 로컬 bugFix를 codex/guild-war-ticket-order로 이름 변경하여 분리. 원격 기존 브랜치 삭제/덮어쓰기 금지.
+
+
+## 긴급 공격권 완료 및 기록 종료 진행
+
+- 긴급 수정: 소스3ef382e0 / PR297 병합d5382b2d 원격 prod ver_2.855 확인. Node/Rhino116검사·전체 Rhino compile 통과, 임시3파일 삭제. 길드전쟁418... 항목 DEV/2026-11-16/ver_2.855 갱신, 본문 보존. 별도 기존 bugFix/PR173는 유지.
+- 기록 종료: 레이드 개인 latest 생성/정산/이동/초기화 참조 제거. 최근 조회는 기존 레이드 history를 같은 계정·서버·period로 읽으며 진행 회차 우선. 조회 결과195명 모두 기존과 일치.
+- 금고: 개인/전체 희귀 기록 생성·초기화·조회명령2종·도움말 제거. 개봉/부스터/천장·희귀 보상·당첨 알림·월별 설정·관리자 이력 유지. 일반 행동은 기존 폐지 필드를 삭제하지 않고 /데이터정리 확인에서만 삭제.
+- 정리: cleanupMemberRecordRedundancy 순수 계획/적용. 미리보기 지문에 대상 값 포함. 현재 회원 JSON만 기존 저장 트랜잭션으로 확정. 시작/일반 메시지/백업 순회 없음.
+- 검증: Node/Rhino1229개 검사. 75개 개봉 비교+강제 희귀/2배, 실제 회원363 필수 항목/가방/포인트/누적/기부영수증 보존, 레이드195 조회 일치, 실제 희귀593/100 제거, 취소/만료/대상변경 재확인·반복 정리, 레이드 정산/중복 지급/서버 변경 보존.
+- 크기: 스냅샷 메모리 사본1,489,595→1,313,609byte,175,986byte(약11.8%) 감소. 실제 운영 JSON 실행은 운영자 수행. 원본 스냅샷 미변경.
+- 현재 버전2.856, 문서/개발자노트 갱신. 최종 Node 구문/Rhino 전체 compile/diff·UTF-8·버전 검증 통과. 소스 push/PR/prod 검증 필요. 임시검증 %TEMP%/hoiBot/member-data-retirement 파일 완료 시 삭제.
+- Notion: 확인된 DB에서 기존 레이드83c.../금고3d4...는 LIVE이며 이번 정리 전용 READY/HOTFIX 항목은 없음. 본문·기존 LIVE 상태를 보존하고 신규 페이지 생성하지 않음.
