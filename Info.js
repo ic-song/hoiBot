@@ -1115,16 +1115,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				" (누적 : " +
 				totallike +
 				")" +
-				"\n• 🥕 x " +
-				(memberInfo.carrotGiven || 0) +
-				" (순위 : " +
-				getCarrotRank(sender, data) +
-				")" +
-				"\n• 🌡️ x " +
-				(memberInfo.thermoPoints || 0) +
-				" (순위 : " +
-				getThermoRank(sender, data) +
-				")" +
 				"\n• 펫: " +
 				getPetInfoText(userPet);
 
@@ -1283,7 +1273,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply("출석한 유저 목록:\n" + userListText1 + allsee + "\n" + userListText2);
 		}
 		if (msg === "/상점") {
-			let itemList = Object.keys(data.shop).map(function (itemName, index) {
+			let itemList = getPointShopNumberedItems(data).map(function (row) {
+                var itemName = row.name;
 				let itemDetails = data.shop[itemName];
 				let itemPrice = numberWithCommas(itemDetails);
 				let itemTax = ""; //  세금
@@ -1294,7 +1285,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					itemTax = "\n(세금: 🅟" + numberWithCommas(taxAmount.toFixed(0)) + ")"; // 소수점 이하 버림
 				}
 				var itemDescription = itemName === GLOBAL_CONFIG.serverTransfer.itemName ? "\n└ " + GLOBAL_CONFIG.serverTransfer.description : "";
-				return index + 1 + ". " + itemName + " : 🅟" + numberWithCommas(itemPrice) + itemTax + itemDescription;
+				return row.number + ". " + itemName + " : 🅟" + numberWithCommas(itemPrice) + itemTax + itemDescription;
 			});
 			if (itemList.length > 0) {
 				var lordGuildText = "";
@@ -3620,12 +3611,6 @@ function checkRank(data, petData, guildData, user) {
 		} else if (user == data.star) {
 			//좋아요
 			rankPrefix = "💞";
-		} else if (user == data.topCarrotGive) {
-			//당근
-			rankPrefix = "🥕";
-		} else if (user == data.topThermo) {
-			//온도
-			rankPrefix = "🌡";
 		} else if (user == data.miniPetTop) {
 			//미니펫
 			rankPrefix = "✨";
@@ -3925,7 +3910,7 @@ function generateBagOutput(bagItems) {
 		for (var i = 0; i < specialItems.length; i++) {
 			var sItem = specialItems[i];
 			if (sItem === intimacyItemKey) continue;
-			if (bagItems[sItem]) specialItemsSorted.push(sItem);
+            if (sItem !== GLOBAL_CONFIG.items.carrotName && sItem !== GLOBAL_CONFIG.items.carrotThermometerName && bagItems[sItem]) specialItemsSorted.push(sItem);
 			var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
 			if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
 		}
@@ -3935,7 +3920,7 @@ function generateBagOutput(bagItems) {
 		var bagKeys = Object.keys(bagItems);
 		for (var j = 0; j < bagKeys.length; j++) {
 			var key = bagKeys[j];
-			if (key === intimacyItemKey) continue;
+			if (key === intimacyItemKey || key === GLOBAL_CONFIG.items.carrotName || key === GLOBAL_CONFIG.items.carrotThermometerName) continue;
 			if (specialItems.indexOf(key) !== -1 || specialItemsSorted.indexOf(key) !== -1) continue;
 			otherItems.push(key);
 		}
@@ -4251,15 +4236,9 @@ function calculateItemInfoAll(memberName, data, petData) {
 	returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + pendantInfo.castleExp + bagInfo.castleExp;
 	return returnObj;
 }
-// 당근순위 랭킹을 가져오는 함수
-function getCarrotRank(username, data) {
-	return getPositiveMemberMetricRank(username, data, "carrotGiven");
-}
 
-// 온도순위 랭킹을 가져오는 함수
-function getThermoRank(username, data) {
-	return getPositiveMemberMetricRank(username, data, "thermoPoints");
-}
+
+
 
 // 개인 순위는 앞선 회원 수로 계산하고 비정상 값·동등 닉네임은 기존 정렬로 판정하는 함수
 function getPositiveMemberMetricRank(username, data, metricKey) {
@@ -4987,4 +4966,15 @@ function getGuildMasterRankEmoji(rank) {
 	if (rank === 19) return "◇";
 	if (rank === 20) return "◻︎";
 	return "";
+}
+
+// 폐지 상품의 옛 번호를 재사용하지 않고 현행 상점 원본과 번호를 연결하는 함수
+function getPointShopNumberedItems(data) {
+    var keys = Object.keys(data.shop), marker = data.catalogPolicy;
+    var order = marker ? marker.shopNumbers : keys;
+    if (!Array.isArray(order) || order.some(function (name, i) { return name !== null && (typeof name !== "string" || order.indexOf(name) !== i); })) throw new Error("폐지 상품 번호 보존 기록 오류");
+    order = order.concat(keys.filter(function (name) { return order.indexOf(name) === -1; }));
+    var rows = [];
+    for (var i = 0; i < order.length; i++) if (order[i] !== GLOBAL_CONFIG.items.carrotName && Object.prototype.hasOwnProperty.call(data.shop, order[i])) rows.push({ number: i + 1, name: order[i] });
+    return rows;
 }

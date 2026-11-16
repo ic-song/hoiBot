@@ -13,7 +13,7 @@ Status: VERIFIED
 - GLOBAL_CONFIG.guildWar.supply는 개인 포인트 200,000,000·군량미1·전환단위100을 정의한다. 회원의 guildSupplyDay를 getVaultRobberyDay 기준으로 확인하므로 회원 데이터 이관·길드 이동·편성 변경·재시작·동일 주기 초기화로 재지원할 수 없다. helpers에서 신규 IO를 하지 않는다.
 - getGuildWarSupplyRice는 war24.guilds[gid].supplyRice 부재만0으로 읽고 손상은 오류로 전파한다. 합산값의 몫은 calculateGuildWarExtraTickets로 기존 정규화된 큰 정수 문자열 extraTickets에 더하고 나머지는 보존한다. 기존 적립량은 축소하지 않으며 실물 아이템·개인 선포권·기본권·지휘관권을 지급/차감/복구하지 않는다. 기존 일일/관리자 초기화는 군량미와 추가권을 유지한다.
 - 회원 지원 기록·개인 포인트·길드 군량미·추가권은 publishGuildWar(data, guildData, true)로 기존 회원/길드 게시·복구 범위에 함께 저장한 뒤 응답한다. 저장 전 오류는 성공 응답 없이 중단하고 기존 롤백/재시작 복구를 따르며, 성공 응답 실패 후 재입력도 회원 기록으로 중복 차단한다.
-- getGuildWarSupplyMembers는 정찰·자폭·공격3·방어3 중 아무 역할도 없는 고유 현재 길드원을 계산한다. 일반 직책은 보존한다. /길드전쟁은 점령 아래 인원·진행률과 하단 지원 명령을 표시한다. /전쟁편성은 기존 번호·능력치·8칸·allsee를 유지하고 미편성 명단을 오늘 지원 완료/가능 보급대 명단으로 바꾼다. /전쟁지도는 변경하지 않는다. /길드전쟁가이드와 별칭 /전쟁가이드는 같은 본문을 출력한다.
+- getGuildWarSupplyMembers는 정찰·자폭·공격3·방어3 중 아무 역할도 없는 고유 현재 길드원을 계산한다. 일반 직책은 보존한다. /길드전쟁의 보급 인원·군량미 표시는 2026-11-16 통합 지도에서 제외했다. 보급 기능·전쟁편성 명단은 유지한다. /전쟁편성은 기존 번호·능력치·8칸·allsee를 유지하고 미편성 명단을 오늘 지원 완료/가능 보급대 명단으로 바꾼다. /전쟁지도는 2026-11-16부터 /길드전쟁과 같은 지도를 출력한다. /길드전쟁가이드와 별칭 /전쟁가이드는 같은 본문을 출력한다.
 
 ## 길드 전투 아이템 기부·사용처 (2026-11-12, ver_2.832)
 
@@ -2402,40 +2402,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `main.js`: `/당근게시판`
-
-## Files
-
-- `main.js`
-
-## Related Helpers
-
-- `checkRank`
-
-## Data Usage
-
-- `carrotBoardPath`
-- `carrotBoard.memo`
-
-## Save Flow
-
-- View branch is read-only
-- Nearby board creation and cleanup branches save to `carrotBoardPath`
-
-## Related Commands
-
-- `/당근`
-- `/당근완료`
-- `/당근게시판삭제`
-
-## AI Notes
-
-- Canonical public market board display
-- Good anchor for carrot-board schema and output order
-
----
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /가구정보 [닉네임]
 
@@ -4230,90 +4197,22 @@ Status: VERIFIED
 ---
 
 # /당근 [받을유저닉] [가방번호] [수량]
+
 Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/당근`
-## Files
-- `main.js`
-## Related Helpers
-- `generateBagOutput`
-- `isTradableItem`
-- `isMemberTierKing`
-- `getCarrotTradeRequest`, `getCarrotTradeRows`, `validateCarrotTrade`, `findCarrotTradeConfirmedRow`
-- `applyConfirmedCarrotTrade`, `buildCarrotTradeMessage`, `buildCarrotTradeNotice`, `startCarrotTradeExpiry`
-## Data Usage
-- `data.member[sender].bag`
-- `data.member[receiver].bag`
-## Save Flow
-- 최초 요청은 검증과 확인창만 출력하며 거래 파일을 저장하지 않는다. 같은 계정·단체방 여부·방의 정확한 확인 응답만 처리한다.
-- `거래한다`는 원래 명령으로 출석·계정정지·대전·장소 공통 검사를 거친 뒤 최신 대상으로 재검증한다. 기존 약관 범위와 펜던트의 부수 보상 차이도 유지한다.
-- `carrotTradePending`은 DEV/PROD 계정별 1건이며 60초 자동 만료한다. `안한다`·만료·재검증/저장 실패는 대기를 끝내고 전송하지 않는다. 새 요청은 기존 대상·시간을 덮어쓰지 않는다.
-- 실제 아이템 내용과 ID(있는 경우), 최초 순서/번호를 보존한다. 번호가 바뀌어도 대상을 식별하면 진행하며 식별 불가 시 취소한다.
-- 확정 시 회원 저장 후 해당 pet/skill/home 파일을 기존 명령 트랜잭션으로 저장한다. 가구 원문은 변경 전 진입부에서 읽어 롤백 인수로 전달한다.
-- 완료 응답은 모든 저장 뒤 전송하며 응답 실패가 완료된 이전을 되돌리지 않는다. 메모리 대기는 재컴파일 후 재실행되지 않으며, 새 영속 저널은 추가하지 않는다.
-- 일반 아이템·미니펫·펫스킬·가구 거래 완료 안내는 관련 파일 저장이 모두 성공한 뒤 출력한다.
-- 가구 거래는 진입부에서 읽은 원문 스냅샷을 사용하고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
-## Related Commands
-- `/당근게시판`
-- `/당근완료`
-- `/미니펫당근`
-- `/가구당근`
-- `/펫스킬당근`
-- `/펜던트당근`
 
-## AI Notes
-- Direct carrot trades require both sender and receiver to be currently tier `킹` or higher before inventory mutation.
-- `/당근`, `/미니펫당근`, `/가구당근`, `/펫스킬당근`은 `isCarrotTradeCommand` 공통 판정과 `isCarrotTradeRoomAllowed` 실제 단체방 검사로 커뮤니티에서만 허용한다.
-- `GLOBAL_CONFIG.carrotTrade.communityRoom`은 기존 `room5`의 `호이월드 커뮤니티[티어 킹 이상 입장가능]`이다. 회원의 소속 서버와 DEV 여부는 거래 장소 예외가 아니다.
-- response의 패스·출석 검사 및 게임 데이터 변경 전에 차단한다. 패스 미보유 일대일톡에도 `buildCarrotTradeBlockedMessage`의 체크랭크·입장 링크·미소모 안내를 한 번 출력하고 종료한다.
-- 차단 시 `member.json`, `member_pet.json`, 가구·펫스킬 데이터, 당근온도기 및 거래 횟수는 변경·저장하지 않는다. 안내용 member·pet·guild 로드는 command entry에서 수행한다.
-- 개당 당근 기준은 일반 1개, 미니펫·가구 100개, 펫스킬·펜던트 300개이다. 일반/스킬은 기존 수량을 곱하고 미니펫·가구·펜던트는 기존 단건 전송이다.
-- 실행 분기는 닉네임과 마지막 정수 인수를 전체 패턴으로 확인한다. 접미 안내 문구·음수·소수는 거래를 실행하지 않는다. 가구 번호 상한을 검사한다.
-- `/당근게시판`, `/당근등록`, `/당근완료`, `/당근게시판삭제`, `/펜던트당근`, 자유시장은 이번 커뮤니티 전용 제한 대상이 아니다.
-
----
-
-
-## Confirmation UI and Validation
-- `buildCarrotTradeMessage`는 자유시장 miniPet/furniture 상세·펜던트 형식을 재사용하며 체크랭크 닉네임, 쉼표, 총 당근·잔여량을 표시한다.
-- `haveCarrotTradeNumbersChanged`는 확인 이후·전송 이후 번호 변경이 실제로 확인된 경우에만 다음 가방 확인 안내를 추가한다.
-- 만료 콜백은 응답과 같은 잠금 순서를 사용하고 거래 고유 ID가 일치하는 대기만 취소한다. 이전 거래 타이머는 새 거래/완료 거래를 건드리지 않는다.
-- tools/test_carrot_confirmation.js: 실제 진입·검증·이전·저장·타이머·UI 16그룹. tools/test_carrot_confirmation_rhino.js: 전체 컴파일·실제 명령과 Java 잠금 20쌍(합성 파일 저장).
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /당근완료
-Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/당근완료`
-## Files
-- `main.js`
-## Related Helpers
-- carrot-board user filter in branch
-## Data Usage
-- `carrotBoard.memo`
-## Save Flow
-- Removes sender post and saves `carrotBoardPath`
-## Related Commands
-- `/당근게시판`
-- `/당근`
 
----
+Status: VERIFIED
+
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /당근게시판삭제
-Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/당근게시판삭제`
-## Files
-- `main.js`
-## Related Helpers
-- admin-only board reset
-## Data Usage
-- `carrotBoard.memo`
-## Save Flow
-- Resets board and saves `carrotBoardPath`
-## Related Commands
-- `/당근게시판`
 
----
+Status: VERIFIED
+
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /편지 [내용]
 Status: VERIFIED
@@ -4804,30 +4703,10 @@ Status: VERIFIED
 ---
 
 # /펫스킬당근 [닉] [번호] [개수]
+
 Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/펫스킬당근`
-## Files
-- `main.js`
-## Related Helpers
-- `getPetSkillBagList`
-- `initPetSkillUser`
-- `getPetSkillBagRemainCount`
-- `addPetSkillToBag`
-- `removePetSkillFromBag`
-- `isMemberTierKing`
-## Data Usage
-- sender/receiver `petSkillData[*].bag`
-## Save Flow
-- Moves skills between users and saves `petSkillData`
-## Related Commands
-- `/펫스킬가방`
-- `/당근`
 
-## AI Notes
-- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 300개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
-
----
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /미니펫장착 [번호]
 Status: VERIFIED
@@ -8910,43 +8789,16 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `commitGuildWarRoster`는 과거 길마 선포자 미확인을 이유로 공격편성을 차단하지 않는다. 공격 대상은 같은 길드 전체 길드원이며 직책을 변경하지 않는다. 중복·겸직 제한과 공용 공격권/개인 사용 이력은 유지한다. 기존 정찰 전환 보호는 유지한다.
-- `claimGuildWarDailyReward`는 회원 객체의 `guildWarRewards.scout/bomb`에 실제 KST 일자를 기록한다. 단독 정찰만 성공 1억/실패 5,000만P, 자폭은 성공 3억/실패 5,000만P이며 종류별 계정당 하루 한 번이다. 선포·방어·재정찰에는 정찰 보상을 지급하지 않는다. 사용자가 확정한 현행 자폭 30%·길드당 하루 2회를 유지한다.
-- `resolveGuildWarMatch`의 실제 참가자 표식과 `awardGuildWarFighters`는 최종 정상 종료 시 실제 참가자에게 각 1억P를 지급하고 `war.personalRewards`를 보존한다. 라운드/알림 재전송은 재지급하지 않으며 무혈입성·취소·미참여는 제외한다. `snapshotGuildWarSettlement`/`restoreGuildWarSettlement`는 개인 포인트도 복원한다. 기존 길드자금 보상은 별도로 유지한다. `getGuildWarMatchParticipant`는 구기록의 실제 매력·아이템 판정·크리티컬·방어 참가 확인으로 참가 여부를 구분하며, 참가/불참이 구분되지 않는 계정은 `personalRewards.pendingUsers`에 보류한다. `requireGuildWarFighterRewardReceipt`로 지급·보류 중복을 거절하고, `recordGuildWar`는 최근 30건 밖으로 밀려난 보류 전쟁도 원본 경기와 함께 보존한다. 화면은 기존 최근 30건과 실제 지급 인원만 표시한다.
-- `/전쟁정찰`과 정찰병 편성 결과의 선포권 숫자는 `getGuildWarScoutRightCount`로 실제 정찰병의 개인 잔여 한도·미확인 사용분 예약·역할권·공용 공격권을 함께 반영한다. 조회는 원장을 변경하지 않는다.
-- 정찰/자폭 개인 보상과 전투원 보상은 기존 `publishGuildWar`의 회원 변경 게시에 포함한다. 정찰/자폭은 기존 결과 안의 기획 보상 줄, 전투원은 최종 결과의 인원수별 한 줄만 표시한다.
-
-## Commands and permissions
-- main.js: getGuildWarRequest → runGuildWarEntry. 실행 명령은 전체 문법 일치, 안내문·추가 인수는 미실행. 공개 조회는 /길드전쟁·/길드전쟁가이드, 나머지는 자기 등록 길드톡의 소속 길드원만 사용한다.
-- /전쟁선포 지역번호(1~5)는 길마 기본권1 + 정찰병 역할권1 + 공격 선봉/중견/대장 각1, 하루 총5회. 부길마 직책만으로 선포 불가, 길마 겸직은 기본권부터 소모한다. 역할칸의 소모 이력과 전체 예산을 보존해 편성 교체로 복구되지 않는다.
-- 공격 선봉·중견·대장은 일반 길드원·길마·부길마·소드마스터 모두 가능하다. `commitGuildWarRoster`가 같은 길드 소속·중복·겸직·변경 횟수를 저장 전에 검사하며 `/일괄전쟁편성`도 같은 검증을 사용한다. `reconcileGuildWarRoster`는 소드마스터가 아니라는 이유로 공격 역할을 지우지 않고 탈퇴자만 해제한다. 선포 직전에도 같은 길드의 유효한 공격3명만 요구하며, 실행 권한·등록방·전쟁 중 순서변경·기존 사용량은 유지한다.
-- /전쟁공격편성 번호3개, /전쟁방어편성 번호3개(동시 방어전은 영지번호 추가), /전쟁정찰편성 번호, /전쟁자폭편성 번호는 길마·부길마. 최대 2개 역할 겸직 · 공격/방어 중복 불가. 기본 진형은 전쟁 중 변경 불가, 정찰 승리 측만 2분 준비 중 해당 전쟁의 기존3명 순서 변경 가능.
-- /전쟁편성초기화는 8칸을 해제하고 정찰·자폭 변경 횟수를 사용하며 선포 사용량은 유지. /정찰 길드명은 등록 정찰병만 하루2회, 정찰병 변경은 하루2회(최초무료). /자폭 지역번호는 등록 자폭병만 하루2회·성공30%, 자폭병 변경 하루1회(최초무료).
-- /전쟁기록은 길드별 최근30건의 공격/방어 길드·승리 길드만 표시한다. 취소에는 승자 없음. /전쟁기록 번호는 실행하지 않는다. 내부 상세와 최종 결과 allsee는 유지한다.
-- /전쟁톡등록은 길마·부길마·MASTER. /전쟁톡확인 길드명과 /전쟁톡해제 길드명은 MASTER 원격 기능. 전쟁 중 등록 교체·해제는 MASTER도 불가. room은 마크 제외 정확한 길드명이다.
-- /길드전쟁공격초기화는 MASTER가 현재 등록 길드톡의 해당 길드만 초기화한다. 진행 전쟁·기록·점령·보상을 재처리하지 않으며 공개 가이드에 노출하지 않는다. 초기화 회차가 다른 이전 전쟁의 환급으로 권한을 중복 복구하지 않는다.
-
-## Data and battle flow
-- 원본 guildData.json/war24의 version2·rewardPolicy3. 지역1 호월킹덤, 2~4 금광, 5 펫스킬 광산. 기존 시간제 영지전의 번호·보상과 별개다. 신규 광산은 지구방위대에 최초1회 배정하며 배정 보상 없음.
-- initializeGuildWar는 구 version1 진행 전쟁을 일반 마감보다 먼저 양측 무효 취소·환급하고 기존 당일 순사용량을 새5회에서 차감한다. 전날 선포 취소는 당일 추가권을 만들지 않는다. 사용량 불일치·누락 원본은 오류를 유지한다. 정상 완료 전쟁·잔액·기존 점령·영주를 보존하고 전환 반복으로 환급/배정을 반복하지 않는다.
-- snapshotGuildWarFighter/Scout는 선포 당시 캐슬/종합매력·닉네임·아이템 자격을 고정한다. 침공 감지는 정찰 성패와 무관하게 방어톡으로 예약한다. 0:0·방어 정찰병 미편성에는 변경권/정찰버프가 없다.
-- processGuildWars/getGuildWarNextDue는 3:00·3:15·3:30의 경기별 matches/wins를 저장한다. 2승을 먼저 해도 3경기 진행, 재시작 시 이미 확정된 경기·아이템을 재판정하지 않는다. 최종 경기에서만 점령·보상을 확정한다.
-- resolveGuildWarMatch는 최종 방어 자리 선봉+3%/중견+10%, 정찰 방어 승리 선봉+5%를 합산(선봉합계8%). 방어권+큐브 합산 → 기습권 → 크리티컬 → 캐슬 비교, 동률 방어 승리. 대장전은 두 특수 아이템만 제외하고 큐브 패시브는 유지한다. 각 경기에서 실제 남은 아이템을 재확인한다.
-- creditGuildWarVictory: 공격 점령3억·방어1억을 기존 길드자금에 지급, 지역5 공격 점령은 warehouse.petSkillBook +1. 실제 미점령에만 3경기 없는 즉시 무혈입성, 공격권1회·동일 점령 보상. 공격대장 탈퇴 호월킹덤 점령 예외 유지.
-- applyGuildWarBomb는 성공/실패 모두 하루1회 소모·양쪽 등록방 통보. 전쟁 중 지역·미점령·자기 소유는 미차감 거부. 성공은 소유권null, 일반 전투 보상 없음. 호월킹덤이면 lord 공백·taxRate0 및 기존 영지 참조를 함께 갱신해 영주권한과 사용자 세금 부과 모두 중단한다.
-- occupyGuildWarTerritory는 호월킹덤의 공격 대장 새 영주·기본세율 초기화·전체알림을 기존 방식으로 처리한다. 이미 적립된 세금 누계를 다시 지급하지 않는다.
-- snapshotGuildWarSettlement/restoreGuildWarSettlement는 전쟁의 아이템·창고·점령·영주·역할권·기록·알림을 복원한다. 오류 취소는 해당 전쟁 권한만 환급하고 이전 단계 소모 아이템도 복구한다. 정상 패배·알림 전송 실패는 재판정/환급하지 않는다.
-- resetGuildWarDay는 기존 /리셋의 새 KST 날짜에서만 역할권5·단독정찰2·정찰변경2·자폭1·자폭변경1을 복구하며 진행 전쟁·선포일은 보존한다. detachGuildWarMember/reconcileGuildWarRoster는 탈퇴에 따른 기본 역할을 해제하며 전쟁 참가자 탈퇴 표식은 유지한다.
-
-## Save and recovery
-- prepareGuildWarPublication → publishGuildWar → cleanupGuildWarPublication의 기존 저널·고정 사본을 재사용한다. 길드만 변경하면 원본/백업3개, 회원 변경은 회원/길드/레이드/로그14개 사본을 보존한다. helper 내부 load/save는 새로 추가하지 않는다.
-- prepareGuildWarPublication과 recoverGuildWarPublication은 getGuildWarRecoveryReference → validateGuildWarRecoveryReferences로 현재 회원 및 두 세대 백업의 레이드·로그 식별자/버전을 확인한다. 준비 단계는 readGuildWarRecoveryReference의 작은 분리 헤더(비표준 형식은 전체 파싱)로 사본 생성 전에 검사하고, 재생 단계는 전체 해시/JSON 검증 후 첫 원본 교체 전에 불완전한 참조를 차단한다. 현재 슬롯이 존재하는 경우에만 일반 로더와 같은 정확한 버전의 백업 대체를 허용한다. 손상·누락·다른 콘텐츠 게시 충돌을 숨기지 않으며 DEV/PROD 경로는 유지한다.
-- rollbackDataSaveTransaction은 회원 원문을 먼저 복원하고 실패하면 나머지 롤백을 중단한다. 기존 파일 복원이 모두 성공한 뒤에만 신규 파일을 삭제하므로, 회원 복구 실패 시 현재 참조 중인 신규/덮어쓴 분리 슬롯을 보존한다.
-- flushGuildWarNotices는 확정 후 전송하고 첫 실패는 다음 예약에서1회만 추가 시도한다. 전송 재시도는 게임 정산을 재실행하지 않는다. scheduleGuildWarWork는 다음 단계 시각과 복구/미전송 알림만 예약한다.
-
-## Linked UI and legacy pause
-- buildGuildWarFormation/Main/MemberRole/Result/RoundResult: 8역할칸·상단 공용공격권·정찰/자폭 잔여량·방어 헤더 버프·겸직 역할 한 줄·수신자 우선 대진·빈 줄·최종 allsee 상세를 표시한다. /스케줄 및 /교육9(12회차와 보상 유지)에 연결한다.
-- GLOBAL_CONFIG.guildWar.legacyPaused는 기존 시간제 영지전 준비·시작·공격·예약을 휴식 처리하고, runDailyRankingPayoutEntry의 territory만 자동/개별/통합 모두 미지급한다. 다른4종 순위보상과 기존 포인트·기록·이미 지급한 보상은 보존한다.
+- `main.js`: `getGuildWarRequest` → `runGuildWarEntry`. `/길드전쟁`·`/전쟁지도`는 같은 `buildGuildWarMain` 통합 지도를 출력한다. 1~3 금광, 4 펫스킬 광산, 5 다이아 광산, 6 요새, 7 킹덤. 공개 지도에는 개인 수치를 넣지 않는다.
+- `initializeGuildWarLegacy`는 과거 전환만 맡고 `initializeGuildWarSiege`가 현행 6번 킹덤을 7번으로 한 번 이전하며 6번 요새만 미점령으로 만든다. 소유자·시각·영주·세율·수익·진행 전쟁·기록·알림은 보존한다. 옛 복구 사본도 단계별 원래 번호로 검증한다.
+- `getGuildWarOwned`와 `getGuildWarAdvance`가 실제 소유권·진격·단계별 한도·같은 단계 진행 전쟁을 구분한다. 금광·광산·요새·킹덤은 각각1곳, 총4곳이다. 미점령은 선행 거점 예외만 적용하고 한도는 지킨다. 자폭은 점령 한도·예약으로 제한하지 않는다.
+- 같은 길드의 신규 동일 단계 선포는 준비 중 포함 한 건만 접수한다. 기존 초과 점령과 진행 전쟁은 임의 회수·취소하지 않는다. 마지막 경기 승리 시 이미 같은 단계가 차 있으면 `captureBlocked`로 점령만 차단하며 길드 점령/실패 보상 없이 기존 개인 참가 보상을 확정한다.
+- `/기습공격`은 무변경 조회, `/기습공격 숫자`만 실행한다. 현재 공격 대장·등록 자기 길드톡·점령0곳·상대 금광1~3·진행전쟁 없음·길드 KST 하루1회와 선포권을 검사한 뒤 50%를 한 번 판정한다. 공통 MQ·데이터 잠금·출석·정지 조건을 유지한다.
+- `applyGuildWarAmbush`는 기존 `applyGuildWarDeclarationTicket`을 사용한다. 성공·실패 모두 실제 선택한 권리와 기습1회를 소모한다. 지휘관 공용권 미소모·개인권 소진 후 충전권 경로·계정별 사용 이력은 유지한다. 기습 성공만 금광5억+큐브, 실패 길드보상/방어보상/3대3보상 없음. 시도자 첫 기습 개인1억은 회원 `guildWarRewards.ambush`의 KST 일자로 중복 차단한다.
+- 정찰·자폭 개인 보상은 각각 성공·실패1억/계정/일, 자폭50%·길드 하루2회이다. 기본 공격권5·정찰/자폭/진형 교체2회·군량미·추가권·방어 참여·아이템 발동/전투원 보상은 기존 흐름을 유지한다. `resetGuildWarDay`는 기습도 새 KST 주기에만 복구한다.
+- `buildGuildWarFormation` 제목에 실제 편성수/8칸, 기습 잔여·조건을 표시한다. 지도는 같은 상태로 상단 개수/번호와 하단 단계별 실제 개수를 산출한다. 초과 점령을 1/1로 숨기지 않는다. 요새는 전용 버프·아이템·시간 생산이 없다.
+- `buildGuildWarRecords`는 최신5건 요약과 allsee 아래 나머지 요약만 표시한다. `/전쟁기록 고유번호`는 자기 등록 길드톡의 현재 길드 최근30건에서 한 건만 찾는다. 목록·상세·오류는 한 메시지, 자동 분할/페이지 명령 없음. 기록은 기존30건+미정산 개인보상 추가 보존, 현재 능력치로 과거를 재구성하지 않는다.
+- 회원·길드·보상·기록·알림을 기존 `publishGuildWar` 저널로 함께 확정하고 `flushGuildWarNotices`가 양쪽 결과를 발송한다. 저장 중단은 기존 전체 이전 상태 복구, 알림 재전송은 재추첨·재지급하지 않는다. DEV/PROD와 7인자 callback은 유지한다.
 
 # 호월 추리소설
 
@@ -9042,3 +8894,14 @@ Status: VERIFIED
 
 - `runGuildWarEntry`의 보급 미출석 분기는 닉네임·프리미엄/직책 안내가 포함된 기존 `buildAttendanceRequiredMessage`를 원래 컨텍스트 응답기로 직접 전달한다. 길드전쟁용 헤더를 추가하지 않아 전체 닉네임은 한 번만 표시하며 DEV 헤더·이벤트 닉네임 처리는 유지한다.
 - 출석 검사 위치·길드톡/소속/정지 조건·보급 지급과 저장 경로는 변경하지 않는다. 출석한 회원의 성공·실패 응답은 기존 전쟁 헤더를 유지한다.
+
+## 일반 당근·온도기 전체 종료 (2026-11-16)
+
+Status: VERIFIED
+
+- 사용자 후속 확정으로 일반 당근·온도기 보유분, 순위/누적/구매 필드, 1위 칭호, 게시판, 개인거래, 과거 당근 거래·전환 정산 이력과 복구 백업까지 정리한다. 황금당근·달토끼와 별도 이름의 패키지·가구는 문자열 일괄 삭제 대상이 아니다.
+- `isRetiredCarrotCommand`는 옛 순위/온도/게시판/개인거래/지급/금지목록/전환 입력을 MQ 전 무응답으로 차단한다. 실행 helper·게시판 초기화/계정정리 참조·신규 당근 수수료 필드 생성을 제거했다.
+- `runCarrotRetirementEntry`는 기존 응답/초기화 진입점에서 일회 정리를 실행한다. `applyCarrotRetirement`·`scrubCarrotLegacy`는 로드된 객체만 변경한다. `planCarrotLegacyFiles`는 활성 환경 canonical root 안의 JSON·공용 백업을 열거하고 전용 파일/옛 통화 시장 백업은 삭제한다. 공용 회원·분리 로그·시장 백업은 종료 필드/보유분/이력만 정리한다. 읽기/파싱/쓰기/삭제 실패를 숨기지 않고 다음 진입에서 재개한다.
+- 기존 포인트·다이아 지급을 재정산하지 않는다. 현행 다이아 거래 이력·거래번호는 보존한다. 미개봉 패키지의 기존 대체 포인트 효과는 유지하되 옛 당근 상품 정의는 정리한다.
+- `catalogPolicy.shopNumbers`는 폐지 상품 자리만 null로 남긴다. Main 구매/상점삭제와 Info 상점 조회가 `getPointShopNumberedItems`의 같은 번호→원본을 사용하므로 옛 당근 번호가 다른 상품으로 연결되지 않는다.
+- 실제 운영 파일 정리는 운영자가 새 소스를 업로드·컴파일한 뒤 실행된다. 개발 PC에서 운영 단말에 접속하거나 파일을 삭제하지 않는다.
