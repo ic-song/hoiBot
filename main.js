@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.859"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.866"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -102,15 +102,9 @@ const PET_SKILL_COMPAT_GROUPS = [
     ["쇼핑광", "VIP블랙카드"],
     ["기도", "신성한 기도", "호월신의 총애"]
 ];
-const PET_SKILL_FIXED_ACTUAL_RATES = {
-    SSS: 0.15,
-    SS: 0.1,
-    S: 0.3,
-    A: 0.4,
-    B: 0.6,
-    C: 1.5
-};
 const PET_SKILL_LIST = [
+    { name: "반짝반짝", grade: "SSS", rate: 0.15, effect: "장착 시 /다이아조합에서 현재 다이아 시세보다 5% 할인된 가격으로 변환할 수 있습니다.\n※ 할인 후 개당 가격이 3억 5천만 포인트 미만이면 3억 5천만 포인트로 적용됩니다.\n※ /다이아조합에만 적용됩니다." },
+    { name: "수수료 시져시져", grade: "SSS", rate: 0.15, effect: "장착 시 자유시장 다이아 판매 수수료가 50% 감소합니다.\n회원권 미보유: 20% → 10%\n회원권 보유: 10% → 5%\n※ 자유시장회원권 보유 여부에 따라 자동 적용됩니다." },
     { name: "삼성전자", grade: "SSS", rate: 0.15, raidExp: 3000000, castleExp: 3000000, effect: "호이의 바램입니다. 매력만큼 상승하길 기원하는 마음이 깃들어 있습니다. 육백만전자 가즈아!\n장착 시 레이드매력 300만과 캐슬매력 300만, 총 종합매력 600만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "경제사범", grade: "한정판", limitedEdition: true, openable: false, effect: "누군가는 말합니다.\n“적당한 사기는 사기꾼이라 부르지만,\n그 규모가 조 단위가 되면 경제사범이라 부릅니다.”\n\n🔐 장착 시 금고 도전 횟수 +4회\n※ 금고털이범과 효과 중복 불가" },
     { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 경제사범과 효과 중복 불가" },
@@ -1009,7 +1003,7 @@ var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 �
 const GLOBAL_CONFIG = {
     auction: { bidFee: 700000 },
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
-    diamondLive: { pointWeight: 150000000, diamondWeight: 200000000, roundingUnit: 1000000, confirmationMs: 60000, correctionPercent: 50, operatorName: "호이 남", baselineFile: "diamondLiveBaseline.json", pointBaseline: "15000000000000", minimumPrice: "350000000", pointBoxName: "1억포인트상자🪙(/포인트상자오픈)", pointBoxValue: "100000000" },
+    diamondLive: { pointWeight: 150000000, skillPricePercent: 95, diamondWeight: 200000000, roundingUnit: 1000000, confirmationMs: 60000, correctionPercent: 50, operatorName: "호이 남", baselineFile: "diamondLiveBaseline.json", pointBaseline: "15000000000000", minimumPrice: "350000000", pointBoxName: "1억포인트상자🪙(/포인트상자오픈)", pointBoxValue: "100000000" },
     passDuration: { // 기존 두 패스의 기간권·미개봉 패키지 정의
         legacyPremiumItem: "호이패스 프리미엄 30일👑(/호패프리미엄오픈)",
         legacyPremiumCommand: "/호패프리미엄오픈",
@@ -1152,7 +1146,7 @@ const GLOBAL_CONFIG = {
     ] },
     storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, nativeLeafMaxKeys: 32, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     diceTournament: {
-        id: "2026-11-22", publicRoom: room8, eventLabel: "2026년 11월 22일(일) 저녁 9시 · 한국시간",
+        id: "2026-11-22", publicRoom: "호월고객센터 (게임질문 및 오류신고)", eventLabel: "2026년 11월 22일(일) 저녁 9시 · 한국시간",
         minPlayers: 8, rollDelayMs: 3000, readyTimeoutMs: 120000, retryMs: 5000, noticeDelayMs: 250, chunkChars: 3500,
         rewards: { attendance: 10000000000, quarter: 10000000000, semi: 20000000000, final: 30000000000, champion: 100000000000 }
     },
@@ -2078,20 +2072,22 @@ const GLOBAL_CONFIG = {
         boxes: {
             maxOpenCount: 100, messageMaxLength: 3500,
             grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조", "엘리트"],
-            emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑", "💠"],
-            itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"]
+            emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑", "✡️"],
+            legacyEliteItemName: "엘리트인형상자💠(/인형상자오픈엘리트 숫자)",
+            itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자✡️(/인형상자오픈엘리트 숫자)"]
         },
         ticketName: "인형뽑기이용권🧸(/인형뽑기)", shardCount: 16,
         dailyPassTickets: 3, broadcastMinGrade: 6,
         probabilityUp: { itemPrefix: "인형뽑기확률UP🧸", percents: [50,40,30,20,10], maxSuccessPercent: 100, dailyPassPercent: 20, dailyPassCount: 3 },
         rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
-        limits: { catalogSize: 1000, publicRanks: 10, personalRanks: 100 },
-        grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조"],
-        emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑"],
-        counts: [300,220,170,120,80,50,30,20,10], weights: [400,250,150,100,50,25,15,7,3],
-        experience: [8,15,23,77,231,385,770,1540,3850],
-        charm: [2500,5000,15000,30000,125000,250000,650000,1250000,2500000],
-        sale: [1000000,2000000,5000000,10000000,30000000,100000000,300000000,1000000000,3000000000]
+        limits: { catalogSize: 1344, publicRanks: 10, personalRanks: 100 },
+        pageSizes: [150,110,85], specialMultiplier: 2,
+        grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조", "엘리트"],
+        emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑", "✡️"],
+        counts: [361,261,201,161,121,91,71,41,31,5], weights: [4000,2500,1500,1000,500,250,150,70,29,1],
+        experience: [8,15,23,77,231,385,770,1540,3850,11550],
+        charm: [2500,5000,15000,30000,125000,250000,650000,1250000,2500000,10000000],
+        sale: [1000000,2000000,5000000,10000000,30000000,100000000,300000000,1000000000,3000000000,10000000000]
     },
     peperoTitle: { // 빼빼로데이 타이틀 상자의 개봉·보상 규칙
         itemName: "빼빼로타이틀상자🍫(/빼빼로타이틀오픈)",
@@ -3115,6 +3111,7 @@ blockedNicknameTerms: [
         merchantSkillName: "타고난 장사꾼",
         tradeFeeRate: 0.2, // 자유시장 기본 거래 수수료율
         memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
+        skillFeeMultiplier: 0.5, // 수수료 시져시져 장착 시 판매 수수료 배율
         memberFeeTag: "자회원🏪(수수료 10%)",
         minPrice: 50, // 신규 등록·가격수정의 묶음 전체 최소 가격
         legacyMinPrice: 10, // 기존에 등록된 매물의 조회·구매 허용 최소 가격
@@ -3133,6 +3130,7 @@ blockedNicknameTerms: [
         maxLength: 30 // 타이틀 선물 내용 최대 길이
     },
     petSkill: { // 펫스킬 시스템 설정
+        gradeTotalRates: { SSS: 0.15, SS: 0.6, S: 6.3, A: 10.4, B: 12, C: 30 }, // D는 100%에서 나머지 등급의 총확률을 뺀 잔여분
         slots: { maxCount: 100, introBonus: 3, intimacyLevelsPerSlot: 100, expansionItemName: "펫스킬 슬롯 확장권📜(/펫스킬슬롯오픈 숫자)", legacyExpansionItemName: "펫스킬 슬롯 확장권📜" },
         miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
@@ -6219,7 +6217,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 return;
             }
             if (dollRequest.kind === "invalid") {
-                replier.reply(dollTitle(data, petData, guildData, sender, "인형도감") + "\n🔎 조회할 인형 도감을 입력해 주세요.\n👉 예시: /인형도감 고급1\n📖 조회 목록·명령어" + allsee + "\n일반1 · 일반2\n고급1 · 고급2\n희귀1 · 희귀2\n영웅 · 전설 · 신화 · 초월 · 창세 · 창조\n👉 등급 선택: /인형도감 고급\n━━━━━━━━━━━━\n" + dollCommandFooter());
+                replier.reply(dollTitle(data, petData, guildData, sender, "인형도감") + "\n🔎 조회할 인형 도감을 입력해 주세요.\n👉 예시: /인형도감 고급1\n📖 조회 목록·명령어" + allsee + "\n일반1 · 일반2 · 일반3\n고급1 · 고급2 · 고급3\n희귀1 · 희귀2 · 희귀3\n영웅 · 전설 · 신화 · 초월 · 창세 · 창조 · 엘리트\n스페셜\n👉 등급 선택: /인형도감 고급\n━━━━━━━━━━━━\n" + dollCommandFooter());
                 return;
             }
             if (dollRequest.kind === "guide") {
@@ -6253,9 +6251,17 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             var dollIndexBefore = JSON.stringify(dollIndex.users[sender]); // 대표 인형이 그대로면 순위 파일 저장을 생략
             var dollDateKey = getAttendanceKstDateKey();
             var dollDateText = dollDateKey.substring(0, 4) + "." + dollDateKey.substring(4, 6) + "." + dollDateKey.substring(6, 8);
+            var dollEventId = request.dollEventId;
+            if (!dollEventId) {
+                var dollPriorEvent = dollStore.users[sender] && dollStore.users[sender].lastAcquisitionId;
+                var dollNextSequence = getDollAcquisitionSequence(dollPriorEvent) + 1;
+                if (!isSearchAuthenticationCount(dollNextSequence)) throw new Error("인형 계정 기록 오류");
+                dollEventId = request.dollEventId = dollNextSequence + ":" + String(java.util.UUID.randomUUID());
+            }
             var dollResult = dollRequest.kind === "box" ?
-                applyDollBoxOpen(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText, dollRequest) :
-                applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText);
+                applyDollBoxOpen(data, petData, dollCatalogCache, dollStore, dollIndex, sender, dollEventId, dollDateText, dollRequest) :
+                applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, dollEventId, dollDateText);
+            if (dollResult.duplicate) return;
             dollStepStartedAt = recordDollTiming(dollTimingRows, "추첨·보상 계산", dollStepStartedAt);
             if (!dollResult.ok) {
                 if (isDebuggerFlag && dollRequest.kind !== "box") { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} }
@@ -6277,7 +6283,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 원문 검증·펫 비교", dollStepStartedAt);
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 기록 저장", dollStepStartedAt);
-            if (dollRequest.kind === "box" || dollResult.success) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
+            if (dollRequest.kind === "box" || dollResult.eventRecorded) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "개인 인형 기록 저장", dollStepStartedAt);
             if (JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "대표 순위 저장", dollStepStartedAt);
@@ -6299,15 +6305,15 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 }
                 if (dollResult.success && dollResult.experience.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, dollResult.experience.levelUps));
-                var dollNoticeRows = dollRequest.kind === "box" ? dollResult.results : [dollResult];
-                for (var dollNoticeIndex = 0; dollNoticeIndex < dollNoticeRows.length; dollNoticeIndex++) {
-                    var dollNoticeResult = dollNoticeRows[dollNoticeIndex];
-                    if (dollNoticeResult.success && dollNoticeResult.doll.grade >= GLOBAL_CONFIG.doll.broadcastMinGrade) {
-                        var dollNotice = "[🧸 전체알림]\n" + GLOBAL_CONFIG.doll.emojis[dollNoticeResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollNoticeResult.doll.grade] + " 등급 인형 등장!\n━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이 " + GLOBAL_CONFIG.doll.grades[dollNoticeResult.doll.grade] + " 등급 인형을 뽑았어요!\n\n" + GLOBAL_CONFIG.doll.emojis[dollNoticeResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollNoticeResult.doll.grade] + "｜" + dollNoticeResult.doll.name + "\n📏 " + (dollNoticeResult.length / 10).toFixed(1) + "cm · " + dollNoticeResult.size.label + "\n━━━━━━━━━━━━";
-                        if (ctx.isDev) replier.reply(dollNotice); else noticeMsg(dollNotice);
-                    }
-                }
             } catch (dollReplyError) { debuggerLog("[인형 전송 오류] " + dollReplyError); }
+            var dollNoticeRows = dollRequest.kind === "box" ? dollResult.results : [dollResult];
+            for (var dollNoticeIndex = 0; dollNoticeIndex < dollNoticeRows.length; dollNoticeIndex++) {
+                try {
+                    var dollNoticeResult = dollNoticeRows[dollNoticeIndex];
+                    var dollNotice = claimDollBroadcastMessage(data, petData, guildData, dollCatalogCache, sender, dollNoticeResult);
+                    if (dollNotice !== null) { if (ctx.isDev) replier.reply(dollNotice); else noticeMsg(dollNotice); }
+                } catch (dollNoticeError) { debuggerLog("[인형 전송 오류] " + dollNoticeError); }
+            }
             recordDollTiming(dollTimingRows, "결과·기존 디버그 전송", dollReplyStartedAt);
             if (isDebuggerFlag) { try { debuggerLog(buildDollTimingMessage(dollTimingRows, Date.now() - miniGameRequestAt, responseTimingRows)); } catch (dollTimingLogError) {} }
             return;
@@ -6765,7 +6771,16 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (liveReceipt === null && new java.io.File(resolveActiveDataPath(liveBaselinePath) + ".rollback").exists()) throw new Error("시세 기준 기록 복구가 필요합니다.");
                 verifyDiamondLiveReceipt(data, liveReceipt);
                 if (liveChoice) {
-                    var liveResult = applyDiamondLiveChoice(data, sender, Number(liveChoice[1]), liveNow, request && request.receivedAt || liveNow);
+                    var liveChoicePricing = null;
+                    var liveChoiceMember = data.member[sender], liveChoiceState = data.diamondLiveMarket;
+                    var liveChoicePending = liveChoiceState && liveChoiceState.pending["$" + (liveChoiceMember.serverRaidAccount && liveChoiceMember.serverRaidAccount.id)];
+                    if (Number(liveChoice[1]) === 1 && liveChoicePending && liveNow < liveChoicePending.expiresAt) {
+                        var liveChoiceMarket = requireFreeMarketSource(loadJsonFile(freeMarketPath));
+                        var liveChoiceSnapshot = getDiamondLiveSnapshot(data, liveChoiceMarket, userState, ctx.rootPath, liveNow, ctx.diamondLiveMemberText);
+                        liveChoicePricing = getDiamondLiveConversionPrice(calculateDiamondLivePrice(requireDiamondLiveState(data).baseline, liveChoiceSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent), petSkillData, sender);
+                    }
+                    var liveResult = applyDiamondLiveChoice(data, sender, Number(liveChoice[1]), liveNow, request && request.receivedAt || liveNow, liveChoicePricing);
+                    if (liveResult.kind === "confirm") diamondLiveCancelAliasScopes[JSON.stringify([ctx.rootPath, sender, room, isGroupChat])] = liveResult.quote.expiresAt;
                     var liveReply = replier;
                     if (liveResult.changed) { livePersisting = true; liveReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier); saveJsonFile(data, filePath); }
                     liveReply.reply(buildDiamondLiveMessage(liveResult.kind, liveNick, liveResult.quote)); return;
@@ -6791,7 +6806,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 var liveCalculation = liveStatistics ? calculateDiamondLivePriceDetails(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent) : null;
                 var livePrice = liveCalculation ? liveCalculation.price : calculateDiamondLivePrice(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent);
                 if (liveStatistics) { replier.reply(buildDiamondLiveStatistics(liveNick, liveState.baseline, liveSnapshot, livePrice, liveCalculation)); return; }
-                var liveMaterials = getDiamondLiveMaterials(data.member[sender], liveCount, livePrice);
+                var livePricing = getDiamondLiveConversionPrice(livePrice, petSkillData, sender);
+                var liveMaterials = getDiamondLiveMaterials(data.member[sender], liveCount, livePricing.price);
+                liveMaterials.pricing = livePricing;
                 if (!liveQuantity || liveQuantity[1] === undefined) { replier.reply(buildDiamondLiveMessage("view", liveNick, liveMaterials)); return; }
                 if (liveMaterials.missingStone > 0 || liveMaterials.missingPoint !== "0") {
                     var liveRejectedMember = data.member[sender], liveRejectedKey = "$" + (liveRejectedMember.serverRaidAccount && liveRejectedMember.serverRaidAccount.id); // 거절된 새 신청이 대체할 기존 대기 키
@@ -6803,7 +6820,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     liveRejectedReply.reply(buildDiamondLiveMessage("shortage", liveNick, liveMaterials)); return;
                 }
-                var liveQuote = prepareDiamondLiveQuote(data, sender, liveCount, livePrice, liveNow, String(java.util.UUID.randomUUID()), room, isGroupChat);
+                var liveQuote = prepareDiamondLiveQuote(data, sender, liveCount, livePricing.price, liveNow, String(java.util.UUID.randomUUID()), room, isGroupChat, livePricing);
                 diamondLiveCancelAliasScopes[JSON.stringify([liveRoot, sender, room, isGroupChat])] = liveQuote.expiresAt;
                 livePersisting = true;
                 var liveQuoteReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
@@ -8156,7 +8173,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
 
                 if (msg === "/자유시장판매가이드" || msg === "자유시장 판매가이드") {
-                    replier.reply(buildFreeMarketV2Guide());
+                    replier.reply(buildFreeMarketV2Guide(data, sender, petSkillData));
                     return;
                 }
                 if (isFreeMarketV2Command(msg)) {
@@ -8180,14 +8197,14 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
                         var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "", msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품");
                         if (msg === "/내판매상품") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
-                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매상품" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined)); return;
+                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매상품" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined, petSkillData)); return;
                     }
-                    if (msg === "/내판매기록") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, sender)); return; }
-                    if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2)); return; }
+                    if (msg === "/내판매기록") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, sender, petSkillData, sender)); return; }
+                    if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, undefined, petSkillData, sender)); return; }
                     if (msg === "/자유시장정보" || /^\/자유시장정보\s+\d+$/.test(msg)) {
                         var marketInfo = getFreeMarketListingById(marketV2, Number(msg.split(/\s+/)[1]));
                         if (!marketInfo) { replier.reply("❌ 거래번호를 확인해주세요. /자유시장정보 번호"); return; }
-                        replier.reply(buildFreeMarketV2List(data, petData, guildData, marketV2, sender, [marketInfo], "판매 상세") + (marketInfo.type === "pendant" ? "\n" + buildPendantTradeInfoMessage(marketV2, marketInfo.id) : "")); return;
+                        replier.reply(buildFreeMarketV2List(data, petData, guildData, marketV2, sender, [marketInfo], "판매 상세", undefined, petSkillData) + (marketInfo.type === "pendant" ? "\n" + buildPendantTradeInfoMessage(marketV2, marketInfo.id) : "")); return;
                     }
                     if (msg === "/자유시장가격수정" || /^\/자유시장가격수정\s+\d+\s+\d+$/.test(msg)) {
                         var marketEditParts = msg.split(/\s+/), marketEdit = getFreeMarketListingById(marketV2, Number(marketEditParts[1])), marketNewPrice = Number(marketEditParts[2]);
@@ -8195,7 +8212,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         if (marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(true)); return; }
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
                         marketEdit.price = marketNewPrice; saveJsonFile(marketV2, freeMarketPath);
-                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice)); return;
+                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice, petSkillData)); return;
                     }
                     if (msg === "/거래확인 1" || msg === "/거래확인 2") {
                         var marketPending = getFreeMarketConfirmState(sender);
@@ -8253,13 +8270,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
                 if (msg === "/자유시장" || msg === "ㅈㅈ") {
                     var freeMarketView = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView));
+                    replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView, petSkillData, sender));
                     return;
                 }
 
                 if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") {
                     var freeMarketHistory = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory));
+                    replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory, undefined, petSkillData, sender));
                     return;
                 }
 
@@ -8323,7 +8340,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, bagMarketItemName, bagMarketCount, bagMarketPrice, 0, ""));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, bagMarketItemName, bagMarketCount, bagMarketPrice, 0, "", petSkillData));
                         return;
                     }
                     removeItem(data, sender, bagMarketItemName, bagMarketCount);
@@ -8338,7 +8355,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + bagMarketItemName + "] " + numberWithCommas(bagMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(bagMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8398,7 +8415,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketMiniPetDetail(miniMarketTarget), miniMarketCount, miniMarketPrice, 0, "※ 강화/매력 수치가 같은 미니펫만 함께 등록됩니다."));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketMiniPetDetail(miniMarketTarget), miniMarketCount, miniMarketPrice, 0, "※ 강화/매력 수치가 같은 미니펫만 함께 등록됩니다.", petSkillData));
                         return;
                     }
                     miniMarketPickedIndexes.sort(function (a, b) {
@@ -8420,7 +8437,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + formatFreeMarketMiniPetDetail(miniMarketTarget) + "] " + numberWithCommas(miniMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(miniMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8469,7 +8486,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, 0, ""));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, 0, "", petSkillData));
                         return;
                     }
                     furnitureMarketPickedIndexes.sort(function (a, b) {
@@ -8491,7 +8508,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + getFreeMarketFurnitureDisplayName(furnitureMarketTarget) + "] " + numberWithCommas(furnitureMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(furnitureMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8530,7 +8547,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, 0, ""));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, 0, "", petSkillData));
                         return;
                     }
                     removePetSkillFromBag(petSkillData, sender, skillMarketName, skillMarketCount);
@@ -8546,7 +8563,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + formatPetSkillName(skillMarketName) + "] " + numberWithCommas(skillMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(skillMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8718,14 +8735,14 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply(buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, buyListing));
                         return;
                     }
-                    var freeMarketTradeFeeRate = getFreeMarketTradeFeeRate(data, buyListing.seller);
+                    var freeMarketTradeFeeRate = getFreeMarketTradeFeeRate(data, buyListing.seller, petSkillData);
                     var marketFee = calculateFreeMarketTradeFee(buyPrice, freeMarketTradeFeeRate);
                     var sellerReceive = buyPrice - marketFee;
                     if (!isPointShopSafeCount((data.member[buyListing.seller].diamond || 0) + sellerReceive)) { replier.reply("❌ 판매자 다이아 보유량을 확인해주세요."); return; }
                     data.member[sender].diamond = (data.member[sender].diamond || 0) - buyPrice;
                     data.member[buyListing.seller].diamond = (data.member[buyListing.seller].diamond || 0) + sellerReceive;
                     returnFreeMarketItemToOwner(data, petData, petSkillData, buyHomeData, buyListing, sender);
-                    addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee, freeMarketTradeFeeRate);
+                    addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee, freeMarketTradeFeeRate, hasFreeMarketMemberTicket(data, buyListing.seller));
                     removeFreeMarketListing(freeMarketBuyData, buyListing.id);
                     saveJsonFile(data, filePath);
                     if (buyListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
@@ -8740,7 +8757,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "━━━━━━━━━━━━\n" +
                         "[" + getFreeMarketItemText(buyListing) + "]을\n" +
                         "💎" + numberWithCommas(buyPrice) + "에 구매했습니다.\n\n" +
-                        buildFreeMarketTradeFeeNotice(data, buyListing.seller)
+                        buildFreeMarketTradeFeeNotice(data, buyListing.seller, petSkillData)
                     );
                     return;
                 }
@@ -30334,7 +30351,7 @@ replier.reply(
                     out += "\n[할로윈 가방 사탕 전환]\n";
                     out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
                     out += "\n[레이드·봉인금고 기록 정리]\n레이드 중복 요약 " + memberRecordCleanup.raidUsers + "명 / 금고 개인 희귀 기록 " + memberRecordCleanup.personalRareRecords + "건 / 전체 희귀 기록 " + memberRecordCleanup.globalRareRecords + "건 제거\n";
-                    out += "\n[길드 전쟁 기록 정리]\n중복 원본 " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n최근 30건·상세·공격권·보상 기록은 유지했습니다.\n";
+                    out += "\n[길드 전쟁 기록 정리]\n중복 원본 " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n";
                     out += "\n[보상·교육 기록 정리]\n";
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
@@ -30713,7 +30730,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
         "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
         "• 레이드 중복 요약: " + recordCleanup.raidUsers + "명 제거\n" +
-        "• 길드 전쟁 중복 원본: " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n  길드별 최근 30건·상세·공격권·보상 기록은 유지합니다.\n" +
+        "• 길드 전쟁 중복 원본: " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n" +
         "• 봉인금고 희귀 기록: 개인 " + recordCleanup.personalRareRecords + "건 / 전체 " + recordCleanup.globalRareRecords + "건 제거\n" +
         "  계정·누적 전적·금고 개봉/부스터/확정 진행도는 유지합니다.\n" +
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
@@ -49475,6 +49492,11 @@ function generateBagOutput(bagItems, includeDonationNotice) {
             if (!isRetiredCarrotValue(sItem) && bagItems[sItem]) specialItemsSorted.push(sItem);
             var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
             if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
+            if (sItem.indexOf("엘리트인형상자✡️") === 0) {
+                var oldEliteBox = sItem.replace("✡️", "💠"), oldEliteSpacedBox = oldEliteBox.replace("/인형상자오픈", "/인형상자오픈 ");
+                if (bagItems[oldEliteBox]) specialItemsSorted.push(oldEliteBox);
+                if (oldEliteSpacedBox !== oldEliteBox && bagItems[oldEliteSpacedBox]) specialItemsSorted.push(oldEliteSpacedBox);
+            }
         }
 
         //  2) 나머지 아이템(특수 제외 + 친밀도 제외)
@@ -49521,7 +49543,7 @@ function generateBagOutput(bagItems, includeDonationNotice) {
         }
 
         // 기존 상자 재고의 저장 키와 가방 번호는 보존하고 사용법 표기만 붙여서 출력한다.
-        bagOutput = bagOutput.trim().replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2");
+        bagOutput = bagOutput.trim().replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2").replace(/엘리트인형상자💠/g, "엘리트인형상자✡️");
     }
 
     return {
@@ -50998,9 +51020,9 @@ function buildFreeMarketMinPriceMessage(editing) {
     return (editing ? "❌ 가격수정 실패" : "❌ 자유시장 등록 실패") + "\n\n💎 최소 등록가는 " + minimum + "다이아입니다.\n📦 묶음 전체 가격을 " + minimum + "다이아 이상으로 입력해주세요.";
 }
 // 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
-function buildFreeMarketExpectedSettlement(data, seller, price) {
-    var rate = getFreeMarketTradeFeeRate(data, seller), fee = calculateFreeMarketTradeFee(price, rate);
-    return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개\n※ 실제 정산은 판매 완료 시 회원권 상태를 적용해요.";
+function buildFreeMarketExpectedSettlement(data, seller, price, petSkillData) {
+    var rate = getFreeMarketTradeFeeRate(data, seller, petSkillData), fee = calculateFreeMarketTradeFee(price, rate);
+    return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개";
 }
 
 // 한국 시각 00:01을 경계로 다이아상점 운영일 번호를 계산하는 함수
@@ -51563,8 +51585,8 @@ function replyFreeMarketV2(replier, message) {
     if (chunk) replier.reply(chunk);
 }
 // 검색 결과·내 판매·전체 매물을 같은 실제 거래번호와 가격으로 표시하는 함수
-function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery) {
-    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n💰 수수료: 일반 " + (GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "% / 회원권 " + (GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
+function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery, petSkillData) {
+    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, user, petSkillData, false, true) + "━━━━━━━━━━━━\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
     out = "[" + checkRank(data, petData, guildData, user) + "] 님\n\n" + out;
     if (!rows.length) out += searchQuery !== undefined ? "검색 결과가 없습니다.\n" + searchQuery : "📭 판매 중인 물품이 없습니다.";
     var previousCategory = null;
@@ -51578,7 +51600,7 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
     return out;
 }
 // 판매 등록·관리 명령과 거래 조건을 노션의 전체보기 순서로 안내하는 함수
-function buildFreeMarketV2Guide() {
+function buildFreeMarketV2Guide(data, user, petSkillData) {
     return [
         "📦 자유시장 판매가이드",
         "- 판매 등록 방법 상세 확인",
@@ -51625,9 +51647,7 @@ function buildFreeMarketV2Guide() {
         "📌 판매 전 확인해주세요",
         "",
         "💎 킹 이상 · 다이아 전용 · 등록비 무료",
-        "💰 판매 수수료",
-        "├ 일반 판매자: " + (GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%",
-        "└ 자유시장회원권🏪: " + (GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%",
+        buildFreeMarketFeeStatus(data, user, petSkillData, false, false).trim(),
         "",
         "💎 판매금액은 등록 수량 전체의 다이아 금액입니다.",
         "💎 최소 등록가",
@@ -51803,13 +51823,26 @@ function getFreeMarketRegisterLimit(data, petSkillData, user) {
 }
 
 // 자유시장 거래 수수료율을 판매자의 회원권 보유 여부에 따라 반환하는 함수
-function getFreeMarketTradeFeeRate(data, seller) {
-    return hasFreeMarketMemberTicket(data, seller) ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+function getFreeMarketTradeFeeRate(data, seller, petSkillData) {
+    var rate = hasFreeMarketMemberTicket(data, seller) ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+    return hasPetSkill(petSkillData, seller, "수수료 시져시져") ? rate * GLOBAL_CONFIG.freeMarket.skillFeeMultiplier : rate;
+}
+
+// 조회자의 회원 구분과 현재 판매 수수료를 기획서 형식으로 표시하는 함수
+function buildFreeMarketFeeStatus(data, user, petSkillData, history, balance) {
+    var member = hasFreeMarketMemberTicket(data, user);
+    var baseRate = member ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+    var rate = getFreeMarketTradeFeeRate(data, user, petSkillData);
+    var text = "🏷️ 회원 구분: " + (member ? "자유시장 회원" : "일반 회원") + "\n";
+    if (balance) text += "💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n";
+    text += "💰 " + (history ? "현재 내" : "내") + " 판매 수수료: " + Number(formatTransferFeeRate(rate * 100)) + "%\n";
+    if (hasPetSkill(petSkillData, user, "수수료 시져시져")) text += "📙 수수료 시져시져 적용 · " + Number(formatTransferFeeRate(baseRate * 100)) + "% → " + Number(formatTransferFeeRate(rate * 100)) + "%\n";
+    return text;
 }
 
 // 자유시장 거래 수수료 안내 문구를 판매자의 회원권 보유 여부에 맞춰 반환하는 함수
-function buildFreeMarketTradeFeeNotice(data, seller) {
-    return "※ 거래수수료는 판매자에게 " + formatTransferFeeRate(getFreeMarketTradeFeeRate(data, seller) * 100) + "% 부담됩니다.";
+function buildFreeMarketTradeFeeNotice(data, seller, petSkillData) {
+    return "※ 거래수수료는 판매자에게 " + formatTransferFeeRate(getFreeMarketTradeFeeRate(data, seller, petSkillData) * 100) + "% 부담됩니다.";
 }
 
 
@@ -51913,12 +51946,11 @@ function getFreeMarketItemText(listing) {
     return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개" + formatFreeMarketUnitPriceText(listing);
 }
 
-function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
+function buildFreeMarketListMessage(data, petData, guildData, freeMarketData, petSkillData, user) {
     var listings = getFreeMarketActiveListings(freeMarketData);
     var out = "🏪 호이월드 자유시장 🏪\n";
     out += "━━━━━━━━━━━━\n";
-    out += "💰수수료: 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
-    out += "🏪 자유시장회원권: 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n";
+    out += buildFreeMarketFeeStatus(data, user, petSkillData, false, false);
     out += "🛒구매: /자유시장구매 [번호]\n";
     out += "❌취소: /자유시장취소 [번호]\n";
     out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -51941,7 +51973,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 }
 
 // 전체 거래현황 또는 본인의 최근 판매 완료 기록을 표시하는 함수
-function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData, seller) {
+function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData, seller, petSkillData, viewer) {
     freeMarketData = ensureFreeMarketData(freeMarketData);
     var logs = freeMarketData.completedLogs.filter(function (log) { return seller === undefined || log.seller === seller; });
     logs.sort(function (a, b) {
@@ -51951,12 +51983,11 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
         return (b.id || 0) - (a.id || 0);
     });
     if (seller !== undefined) logs = logs.slice(0, GLOBAL_CONFIG.freeMarket.mySalesHistoryLimit);
-    var out = seller === undefined ? "🤝 호월 자유시장 거래현황 🤝\n" : "[" + checkRank(data, petData, guildData, seller) + "] 님\n📜 내 판매기록\n";
-    out += "━━━━━━━━━━━━\n";
+    var out = "[" + checkRank(data, petData, guildData, viewer) + "] 님\n\n" + (seller === undefined ? "🤝 호월 자유시장 거래현황 🤝\n" : "📜 내 판매기록\n");
+    out += "━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, viewer, petSkillData, true, false) + "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
-    out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-    out += "💰수수료는 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
-    out += "🏪자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
+    out += "📋 [아이템×갯수] [금액] [판매] 🤝 [구매]\n";
+    out += "※ 완료된 거래에는 거래 당시 수수료가 적용됩니다.\n";
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -51989,10 +52020,9 @@ function isFreeMarketMemberFeeLog(log) {
     return !!(log && log.memberFeeApplied === true);
 }
 
-function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount, feeRate) {
+function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount, feeRate, memberFeeApplied) {
     freeMarketData = ensureFreeMarketData(freeMarketData);
     var appliedFeeRate = Number(feeRate);
-    var memberFeeApplied = appliedFeeRate === GLOBAL_CONFIG.freeMarket.memberTradeFeeRate;
     var completedItemName = listing.itemName;
     if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
         completedItemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
@@ -52224,14 +52254,14 @@ function clearFreeMarketConfirmState(sender) {
     if (userState[sender] && userState[sender].freeMarket) delete userState[sender].freeMarket;
 }
 
-function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, unusedRegistrationFee, extraLine) {
+function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, unusedRegistrationFee, extraLine, petSkillData) {
     var msg = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
     msg += "🏪 자유시장 등록 확인서\n";
     msg += "━━━━━━━━━━━━\n";
     msg += "물품: [" + itemName + "] x" + numberWithCommas(quantity) + "개\n";
     msg += "묶음 판매금액: 💎" + numberWithCommas(price) + "\n";
     msg += "등록비: 무료\n";
-    msg += buildFreeMarketExpectedSettlement(data, sender, price) + "\n";
+    msg += buildFreeMarketExpectedSettlement(data, sender, price, petSkillData) + "\n";
     if (extraLine) msg += extraLine + "\n";
     msg += "\등록✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
     msg += "━━━━━━━━━━━━\n";
@@ -53342,10 +53372,12 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
     return { ok: true, reason: "" };
 }
 
-function getPetSkillTotalRate() {
+// 같은 등급별 배분표로 전체 추첨 확률 합계를 계산하는 함수
+function getPetSkillTotalRate(gradeWeights) {
+    gradeWeights = gradeWeights || getPetSkillGradeRandomWeights();
     var totalRate = 0;
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-        totalRate += getPetSkillRandomWeight(PET_SKILL_LIST[i]);
+        totalRate += getPetSkillRandomWeight(PET_SKILL_LIST[i], gradeWeights);
     }
     return totalRate;
 }
@@ -53360,33 +53392,33 @@ function getOpenablePetSkillCountByGrade(grade) {
     return count;
 }
 
-// SSS~C 등급의 스킬별 고정 확률 합계를 반환
-function getPetSkillFixedActualRateTotal() {
-    var totalRate = 0;
-    for (var grade in PET_SKILL_FIXED_ACTUAL_RATES) {
-        if (!PET_SKILL_FIXED_ACTUAL_RATES.hasOwnProperty(grade)) continue;
-        totalRate += getOpenablePetSkillCountByGrade(grade) * PET_SKILL_FIXED_ACTUAL_RATES[grade];
+// 등급별 총확률과 D의 잔여 확률을 오픈 가능한 같은 등급 스킬끼리 균등 배분하는 함수
+function getPetSkillGradeRandomWeights() {
+    var totals = GLOBAL_CONFIG.petSkill.gradeTotalRates, weights = {}, assigned = 0;
+    for (var grade in totals) {
+        if (!Object.prototype.hasOwnProperty.call(totals, grade)) continue;
+        var rate = totals[grade], count = getOpenablePetSkillCountByGrade(grade);
+        if (grade === "D" || typeof rate !== "number" || !isFinite(rate) || rate < 0 || rate > 0 && count === 0) throw new Error("Invalid pet skill grade rate total");
+        assigned += rate; // D를 제외한 등급 전체의 배정 확률
+        weights[grade] = count > 0 ? rate / count : 0;
     }
-    return totalRate;
+    var remaining = 100 - assigned, dCount = getOpenablePetSkillCountByGrade("D"); // 최하 등급이 가져갈 잔여 확률과 분배 대상 수
+    if (remaining < 0 || remaining > 0 && dCount === 0) throw new Error("Invalid pet skill grade rate total");
+    weights.D = dCount > 0 ? remaining / dCount : 0;
+    return weights;
 }
 
-// 등급별 고정 확률과 D등급 잔여 균등 배분을 반영한 추첨 가중치를 반환
-function getPetSkillRandomWeight(skillData) {
+// 같은 등급의 균등 배분표에서 해당 스킬의 추첨 가중치를 반환하는 함수
+function getPetSkillRandomWeight(skillData, gradeWeights) {
     if (!skillData || skillData.openable === false) return 0;
-    var fixedActualRate = PET_SKILL_FIXED_ACTUAL_RATES[skillData.grade];
-    if (typeof fixedActualRate === "number") return fixedActualRate;
-    if (skillData.grade !== "D") return 0;
-    var dGradeCount = getOpenablePetSkillCountByGrade("D");
-    var fixedActualRateTotal = getPetSkillFixedActualRateTotal(); // SSS~C에 배정된 전체 확률
-    if (fixedActualRateTotal > 100) throw new Error("Invalid pet skill fixed actual rate total");
-    var dGradeRemainRate = 100 - fixedActualRateTotal; // SSS~C 배정 후 D등급에 남는 전체 확률
-    return dGradeCount > 0 ? dGradeRemainRate / dGradeCount : 0;
+    gradeWeights = gradeWeights || getPetSkillGradeRandomWeights();
+    return Object.prototype.hasOwnProperty.call(gradeWeights, skillData.grade) ? gradeWeights[skillData.grade] : 0;
 }
 
 function getPetSkillActualRate(skillData) {
-    var totalRate = getPetSkillTotalRate();
+    var gradeWeights = getPetSkillGradeRandomWeights(), totalRate = getPetSkillTotalRate(gradeWeights);
     if (!skillData || totalRate <= 0) return 0;
-    return (getPetSkillRandomWeight(skillData) / totalRate) * 100;
+    return (getPetSkillRandomWeight(skillData, gradeWeights) / totalRate) * 100;
 }
 
 // 불필요한 0을 제거해 실제 펫스킬 확률을 최대 소수 둘째 자리까지 표시
@@ -53397,13 +53429,15 @@ function formatPetSkillRate(rate) {
 
 // 무작위 펫 스킬을 선택하는 함수
 function pickRandomPetSkill() {
-    var totalRate = getPetSkillTotalRate();
+    var gradeWeights = getPetSkillGradeRandomWeights(), totalRate = getPetSkillTotalRate(gradeWeights);
     var roll = Math.random() * totalRate;
     var acc = 0;
     var lastRandomSkill = null;
     for (var j = 0; j < PET_SKILL_LIST.length; j++) {
+        var weight = getPetSkillRandomWeight(PET_SKILL_LIST[j], gradeWeights);
+        if (weight <= 0) continue;
         lastRandomSkill = PET_SKILL_LIST[j];
-        acc += getPetSkillRandomWeight(PET_SKILL_LIST[j]);
+        acc += weight;
         if (roll < acc) return PET_SKILL_LIST[j];
     }
     return lastRandomSkill;
@@ -58104,6 +58138,17 @@ function getDiamondLiveMaterials(member, count, price) {
         missingPoint: String(total.subtract(points).max(new java.math.BigInteger("0")).toString()), maxCount: Number(String(maxCount.toString())) };
 }
 
+// 장착 스킬의 할인율과 최저 가격을 적용한 개당 변환 가격을 계산하는 함수
+function getDiamondLiveConversionPrice(marketPrice, petSkillData, user) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return getDiamondLiveConversionPrice(marketPrice, petSkillData, user); });
+    var applied = hasPetSkill(petSkillData, user, "반짝반짝");
+    var market = requireDiamondLiveInteger(marketPrice, true);
+    var discount = applied ? market.multiply(new java.math.BigInteger(String(GLOBAL_CONFIG.diamondLive.skillPricePercent))).divide(new java.math.BigInteger("100")) : market;
+    var minimum = new java.math.BigInteger(GLOBAL_CONFIG.diamondLive.minimumPrice);
+    var floor = discount.compareTo(minimum) < 0;
+    return { marketPrice: marketPrice, discountPrice: String(discount.toString()), price: String((floor ? minimum : discount).toString()), skillApplied: applied, floorApplied: floor };
+}
+
 // 변환 조회·확인·성공·실패·취소 메시지를 구성하는 함수
 function buildDiamondLiveMessage(kind, nick, quote) {
     var header = "[" + nick + "] 님\n", line = "━━━━━━ ✦ ━━━━━━";
@@ -58117,11 +58162,18 @@ function buildDiamondLiveMessage(kind, nick, quote) {
     }
     var simple = { policy: "⚠️ 다이아 변환 기준이 변경되었습니다.\n기존 신청은 취소되었으며 재료는 차감되지 않았습니다.\n/다이아조합 [숫자]로 다시 신청해주세요.", cancel: "❌ 다이아 변환 취소\n" + line + "\n변환 신청이 취소되었습니다.\n재료는 차감되지 않았습니다.", expired: "⏳ 다이아 변환 시간 만료\n" + line + "\n선택 유효시간 60초가 지났습니다.\n/다이아조합 [숫자]로 다시 신청해주세요.", missing: "⚠️ 확인할 다이아 변환 신청이 없습니다.\n/다이아조합 [숫자]로 다시 신청해주세요." };
     if (simple[kind]) return header + simple[kind];
-    var count = quote.count, total = numberWithCommas(quote.total), price = numberWithCommas(quote.price);
-    if (kind === "success") return header + "💎 다이아 변환 성공! 🎉\n" + line + "\n🎯 변환 완료: " + count + "개\n\n📦 사용한 재료\n├ 🗿 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득한 아이템\n└ 다이아상자💎 ×" + count + "\n" + line + "\n✨ 다이아 변환을 완료했습니다!";
+    var count = quote.count, total = numberWithCommas(quote.total), pricing = quote.pricing;
+    var floor = pricing && pricing.floorApplied ? "\n※ 최저 가격 3억 5천만 적용" : "";
+    line = "━━━━━━━━━━━━";
+    if (kind === "success") {
+        var skillSuccess = pricing && pricing.skillApplied ? "📙 반짝반짝 적용\n└ 개당 적용 가격: 🅟" + numberWithCommas(quote.price) + floor + "\n\n" : "";
+        return header + "💎 다이아 변환 성공! 🎉\n" + line + "\n🎯 변환 완료: " + count + "개\n\n" + skillSuccess + "📦 사용한 재료\n├ 🪨 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득한 아이템\n└ 다이아상자💎 ×" + count + "\n" + line + "\n✨ 다이아 변환을 완료했습니다.";
+    }
+    var marketPrice = pricing ? pricing.marketPrice : quote.price;
+    var skillText = pricing && pricing.skillApplied ? "\n📙 반짝반짝 적용 중\n├ 5% 할인 가격: 🅟" + numberWithCommas(pricing.discountPrice) + "\n└ 최종 개당 가격: 🅟" + numberWithCommas(quote.price) + floor + "\n" : "";
     var title = kind === "view" ? "💎 호이월드 다이아 변환" : "💎 다이아 변환 | 확인";
-    var text = header + title + "\n" + line + (kind === "view" ? "" : "\n🎯 변환 신청: " + count + "개\n") + "\n📊 실시간 다이아 시세\n💰 1개당 🅟" + price + "\n" + buildDiamondLiveChange(quote.price, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n━━━━━━━━━━━━\n📦 " + (kind === "view" ? "변환 재료 (1개 기준)" : "소모 재료") + "\n├ 🗿 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득 아이템\n└ 다이아상자💎 ×" + count + "\n" + line;
-    return text + (kind === "view" ? "\n🎯 변환: /다이아조합 [숫자]\n🧮 현재 변환 가능: 최대 " + numberWithCommas(quote.maxCount) + "개" : "\n💬 " + count + "개를 변환하시겠습니까?\n\n1. ✅ 변환하기\n2. ❌ 안하기\n입력: 변환하기 / 안하기\n⏳ 선택 유효시간: 60초");
+    var text = header + title + "\n" + line + (kind === "view" ? "" : "\n🎯 변환 신청: " + count + "개\n") + "\n📊 실시간 다이아 시세\n💰 1개당 🅟" + numberWithCommas(marketPrice) + "\n" + buildDiamondLiveChange(marketPrice, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n" + skillText + line + "\n📦 " + (kind === "view" ? "변환 재료 (1개 기준)" : "소모 재료") + "\n├ 🪨 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득 아이템\n└ 다이아상자💎 ×" + count + "\n" + line;
+    return text + (kind === "view" ? "\n🎯 변환: /다이아조합 [숫자]\n🗓️ 현재 변환 가능: 최대 " + numberWithCommas(quote.maxCount) + "개" : "\n💬 " + count + "개를 변환하시겠습니까?\n\n1. ✅ 변환하기\n2. ❌ 안하기\n입력: 변환하기 / 안하기\n⏳ 선택 유효시간: 60초");
 }
 
 // 통계의 비교 대상을 구분하고 미세한 증감을 정확한 0%와 구별하는 함수
@@ -58176,8 +58228,8 @@ function buildDiamondLiveStatistics(nick, baseline, current, price, calculation)
     return text + "\n\n📊 실시간 다이아 변환 시세\n━━━━━━━━━━━━\n├ 기준 가격: 🅟" + numberWithCommas(basePrice) + "\n├ 현재 가격: 🅟" + numberWithCommas(price) + "\n├ " + (difference.signum() < 0 ? "하락" : difference.signum() === 0 ? "변동" : "상승") + ": 🅟" + numberWithCommas(String(difference.abs().toString())) + "\n├ 최저 가격: 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.minimumPrice) + "\n└ " + buildDiamondLiveStatisticsChange(price, basePrice, "가격 등락률") + "\n\n⚙️ 기준값 변경\n━━━━━━━━━━━━\n🅟 /포인트기준설정 금액\n💎 /다이아기준설정 개수\n※ 숫자는 쉼표 없이 입력\n\n━━━━━━ ✦ ━━━━━━\n🔄 실시간 시세 적용 중\n※ 기준값은 자동 변경되지 않습니다.\n※ 기준값 변경은 MASTER 명령으로만 가능합니다.\n※ 개인 보유 재화만 집계합니다.\n※ 미개봉 포인트상자: 개당 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.pointBoxValue) + " 합산\n※ 재화 총량 증감률과 변환 가격 등락률은 다릅니다.\n\n📚 변환 시세 계산 상세 · 전체보기" + allsee + "\n" + buildDiamondLiveStatisticsDetail(baseline, current, calculation);
 }
 // 60초 변환 신청을 계정별 한 건으로 저장하고 표시 금액을 정확히 고정하는 함수
-function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat) {
-    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat); });
+function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat, pricing) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat, pricing); });
     if (!isPointShopSafeCount(count) || count < 1) throw new Error("사용법: /다이아조합 [숫자]");
     var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
     if (typeof accountId !== "string" || !accountId) throw new Error("변환 계정 ID를 확인해주세요.");
@@ -58187,13 +58239,14 @@ function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGrou
     if (unitPrice.compareTo(new java.math.BigInteger(GLOBAL_CONFIG.diamondLive.minimumPrice)) < 0) throw new Error("변환 가격이 최저 기준보다 낮습니다. 다시 조회해주세요.");
     var total = unitPrice.multiply(new java.math.BigInteger(String(count)));
     var quote = { id: id, accountId: accountId, count: count, price: price, total: String(total.toString()), createdAt: now, expiresAt: now + GLOBAL_CONFIG.diamondLive.confirmationMs, room: room, isGroupChat: isGroupChat };
+    if (pricing) quote.pricing = pricing;
     state.pending["$" + accountId] = quote;
     return quote;
 }
 
 // 변환 확인의 기한·계정·재료를 재검사하고 확정된 한 요청만 차감·지급하는 함수
-function applyDiamondLiveChoice(data, user, choice, now, receivedAt) {
-    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return applyDiamondLiveChoice(data, user, choice, now, receivedAt); });
+function applyDiamondLiveChoice(data, user, choice, now, receivedAt, pricing) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return applyDiamondLiveChoice(data, user, choice, now, receivedAt, pricing); });
     if (data.diamondLiveMarket === undefined && (!data.migrations || data.migrations.diamondLiveInitialized === undefined)) return { kind: "missing", changed: false };
     var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var key = "$" + accountId, quote = state.pending[key];
@@ -58202,6 +58255,13 @@ function applyDiamondLiveChoice(data, user, choice, now, receivedAt) {
     if (requireDiamondLiveInteger(quote.price, true).compareTo(new java.math.BigInteger(GLOBAL_CONFIG.diamondLive.minimumPrice)) < 0) { delete state.pending[key]; return { kind: "policy", changed: true }; }
     if (now >= quote.expiresAt) { delete state.pending[key]; return { kind: "expired", changed: true }; }
     if (choice === 2) { delete state.pending[key]; return { kind: "cancel", changed: true }; }
+    if (pricing && pricing.price !== quote.price) {
+        var revisedMaterials = getDiamondLiveMaterials(member, quote.count, pricing.price);
+        if (revisedMaterials.missingStone > 0 || revisedMaterials.missingPoint !== "0") { delete state.pending[key]; return { kind: "shortage", changed: true, quote: revisedMaterials }; }
+        var revised = prepareDiamondLiveQuote(data, user, quote.count, pricing.price, now, quote.id, quote.room, quote.isGroupChat, pricing);
+        return { kind: "confirm", changed: true, quote: revised };
+    }
+    if (pricing) quote.pricing = pricing;
     var materials = getDiamondLiveMaterials(member, quote.count, quote.price);
     var boxes = member.bag[GLOBAL_CONFIG.items.diamondBoxName] === undefined ? 0 : member.bag[GLOBAL_CONFIG.items.diamondBoxName];
     if (!isPointShopSafeCount(boxes) || !isPointShopSafeCount(boxes + quote.count)) throw new Error("변환 아이템 보유 수량 오류");
@@ -61503,12 +61563,12 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
         return {
             ok: true,
             pending: true,
-            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 0, "")
+            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 0, "", petSkillData)
         };
     }
     var pendant = bag.splice(index - 1, 1)[0];
     addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, 0);
-    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n💎" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender) };
+    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n💎" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender, petSkillData) };
 }
 
 // 관리자 펜던트 지급 처리
@@ -64640,19 +64700,31 @@ function getDollBoxRequest(msg) {
     return { kind: "box", grade: grade, count: count };
 }
 
+// 같은 등급 상자의 정식 키와 기존 이모지·명령 공백 키를 중복 없이 반환하는 함수
+function getDollBoxItemNames(grade) {
+    var cfg = GLOBAL_CONFIG.doll.boxes, names = [cfg.itemNames[grade]], result = [];
+    if (grade === cfg.grades.indexOf("엘리트")) names.push(cfg.legacyEliteItemName);
+    for (var i = 0; i < names.length; i++) {
+        var variants = [names[i], names[i].replace("/인형상자오픈", "/인형상자오픈 ")];
+        for (var j = 0; j < variants.length; j++) if (result.indexOf(variants[j]) === -1) result.push(variants[j]);
+    }
+    return result;
+}
 // 인형상자 재고와 실제 등급 목록을 검증한 뒤 개별 획득을 순서대로 반영하는 함수
 function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today, request, randomValue) {
     var config = GLOBAL_CONFIG.doll.boxes, member = data.member[user], pet = petData[user];
+    if (isDollAcquisitionReplay(store.users[user], id)) return { ok: false, duplicate: true };
     if (!request || request.error || !isSearchAuthenticationCount(request.grade) || request.grade >= config.grades.length || !isSearchAuthenticationCount(request.count) || request.count < 1 || request.count > config.maxOpenCount) return { ok: false, reason: "quantity" };
     var dolls = getDollGradeRows(catalog, request.grade);
     if (dolls.length === 0) return { ok: false, reason: "unavailable", grade: request.grade };
     if (!member || !pet) throw new Error("인형상자 회원·펫 데이터 없음");
-    var itemName = config.itemNames[request.grade], bag = member.bag || {};
-    var legacyItemName = itemName.replace("/인형상자오픈", "/인형상자오픈 "); // 공백이 있던 기존 지급 상자의 저장 키
-    var currentCount = bag[itemName] === undefined ? 0 : bag[itemName];
-    var legacyCount = bag[legacyItemName] === undefined ? 0 : bag[legacyItemName];
-    var available = currentCount + legacyCount; // 새 이름과 기존 이름으로 보유한 상자를 합산
-    if (!isSearchAuthenticationCount(currentCount) || !isSearchAuthenticationCount(legacyCount) || !isSearchAuthenticationCount(available) || !isSearchAuthenticationCount(member.point)) throw new Error("인형상자 재화 값 오류");
+    var itemName = config.itemNames[request.grade], bag = member.bag || {}, itemNames = getDollBoxItemNames(request.grade), available = 0;
+    for (var k = 0; k < itemNames.length; k++) {
+        var stock = bag[itemNames[k]] === undefined ? 0 : bag[itemNames[k]];
+        if (!isSearchAuthenticationCount(stock)) throw new Error("인형상자 재화 값 오류");
+        available += stock;
+    }
+    if (!isSearchAuthenticationCount(available) || !isSearchAuthenticationCount(member.point)) throw new Error("인형상자 재화 값 오류");
     if (available < request.count) return { ok: false, reason: "lack", grade: request.grade, count: request.count, available: available };
     var previous = Object.prototype.hasOwnProperty.call(store.users, user) ? store.users[user] : null;
     var record = previous ? JSON.parse(JSON.stringify(previous)) : { id: id, catches: {} };
@@ -64663,6 +64735,7 @@ function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today,
     for (var i = 0; i < request.count; i++) {
         var doll = dolls[Math.floor(random() * dolls.length)];
         var acquired = applyDollAcquisition(data, petData, catalog, store, index, user, record, doll, today, random);
+        acquired.eventId = id + ":" + i;
         result.results.push(acquired);
         if (acquired.fresh) result.freshCount++; else result.duplicateCount++;
         result.charm += acquired.charm;
@@ -64674,9 +64747,13 @@ function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today,
         result.experience.boosterResult.usedBooster += acquired.experience.boosterResult.usedBooster;
         result.experience.levelUps = result.experience.levelUps.concat(acquired.experience.levelUps);
     }
-    var legacyUsed = Math.min(legacyCount, request.count); // 기존 이름의 상자부터 사용하고 부족한 수량만 새 이름에서 차감
-    if (legacyUsed > 0) removeItem(data, user, legacyItemName, legacyUsed);
-    if (request.count > legacyUsed) removeItem(data, user, itemName, request.count - legacyUsed);
+    var remaining = request.count;
+    for (var n = itemNames.length - 1; n >= 0 && remaining > 0; n--) {
+        var used = Math.min(bag[itemNames[n]] || 0, remaining);
+        if (used > 0) removeItem(data, user, itemNames[n], used);
+        remaining -= used;
+    }
+    record.lastAcquisitionId = id;
     result.remainingBox = available - request.count;
     return result;
 }
@@ -64761,7 +64838,7 @@ function applyDollManualAddition(petData, catalog, store, index, input, operator
     if (!record.id || !record.catches || typeof record.catches !== "object" || Array.isArray(record.catches)) throw new Error("인형 계정 기록 오류");
     var old = record.catches[input.doll.id], before = old ? old.count : 0, after = before + input.count;
     if (old) getDollRecordCharm(input.doll, old);
-    var base = GLOBAL_CONFIG.doll.charm[input.doll.grade], increase = before ? base / 100 * input.count : base + base / 100 * (input.count - 1); // 최초 1회와 중복 횟수의 정수 매력 합산
+    var base = getDollBaseCharm(input.doll), increase = before ? base / 100 * input.count : base + base / 100 * (input.count - 1); // 최초 1회와 중복 횟수의 정수 매력 합산
     var previousCharm = petData[input.target].dollCharm === undefined ? 0 : petData[input.target].dollCharm;
     if (!isSearchAuthenticationCount(after) || !isSearchAuthenticationCount(increase) || !isSearchAuthenticationCount(previousCharm) || !isSearchAuthenticationCount(previousCharm + increase)) throw new Error("인형 횟수·매력 계산 범위를 초과했습니다.");
     record.catches[input.doll.id] = { count: after, max: old ? Math.max(old.max, input.tenths) : input.tenths, first: old ? old.first : today };
@@ -64787,7 +64864,8 @@ function getDollRequest(msg) {
     if (msg === "/인형순위") return { kind: "rank" };
     if (msg === "/인형가이드") return { kind: "guide" };
     if (msg === "/인형도감") return { kind: "collection", grade: -1, page: 0 };
-    var m = String(msg).match(/^\/인형도감\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조)([12])?$/);
+    if (msg === "/인형도감 스페셜") return { kind: "collection", special: true, grade: -1, page: 0 };
+    var m = String(msg).match(/^\/인형도감\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)([123])?$/);
     if (m) {
         var g = GLOBAL_CONFIG.doll.grades.indexOf(m[1]);
         if (m[2] && g > 2) return { kind: "invalid" };
@@ -64834,18 +64912,26 @@ function getDollShard(user) {
 // 인형 고정 목록의 ID·등급·0.1cm 경계를 검사하는 함수
 function validateDollCatalog(catalog) {
     if (catalog === null || typeof catalog === "undefined") throw new Error("인형 고정 목록 파일 누락: dollCatalog.json. 인형 최초 설치 파일 19개를 /sdcard/호이랜드/에 배치해 주세요.");
-    if (!catalog || catalog.schemaVersion !== 1 || !(catalog.dolls instanceof Array) || catalog.dolls.length !== GLOBAL_CONFIG.doll.limits.catalogSize) throw new Error("인형 고정 목록 형식 오류");
-    var counts = [0,0,0,0,0,0,0,0,0];
+    var cfg = GLOBAL_CONFIG.doll;
+    if (!catalog || catalog.schemaVersion !== 1 || !(catalog.dolls instanceof Array) || catalog.dolls.length !== cfg.limits.catalogSize) throw new Error("인형 고정 목록 형식 오류");
+    var counts = [], specials = [], names = {}, weightTotal = 0;
+    if (cfg.grades.length !== 10) throw new Error("인형 등급 종수 오류");
+    var arrays = [cfg.emojis, cfg.counts, cfg.weights, cfg.experience, cfg.charm, cfg.sale];
+    for (var a = 0; a < arrays.length; a++) if (arrays[a].length !== cfg.grades.length) throw new Error("인형 등급 종수 오류");
+    for (var g = 0; g < cfg.grades.length; g++) { counts[g] = 0; specials[g] = 0; if (!isSearchAuthenticationCount(cfg.weights[g])) throw new Error("인형 등급 종수 오류"); weightTotal += cfg.weights[g]; }
+    if (weightTotal !== 10000) throw new Error("인형 등급 종수 오류");
     for (var i = 0; i < catalog.dolls.length; i++) {
         var d = catalog.dolls[i], expected = "D" + ("0000" + (i + 1)).slice(-4);
-        if (d.id !== expected || !d.name || !isSearchAuthenticationCount(d.grade) || d.grade > 8 ||
-            !isSearchAuthenticationCount(d.minTenths) || !isSearchAuthenticationCount(d.maxTenths) ||
+        if (!d || d.id !== expected || typeof d.name !== "string" || !d.name || Object.prototype.hasOwnProperty.call(names, "$" + d.name) || !isSearchAuthenticationCount(d.grade) || d.grade >= cfg.grades.length ||
+            !isSearchAuthenticationCount(d.minTenths) || !isSearchAuthenticationCount(d.maxTenths) || !isSearchAuthenticationCount(d.largeTenths) || !isSearchAuthenticationCount(d.giantTenths) ||
             d.minTenths >= d.largeTenths || d.largeTenths >= d.giantTenths || d.giantTenths > d.maxTenths ||
-            d.largeTenths !== Math.ceil((20*d.minTenths+80*d.maxTenths)/100) ||
-            d.giantTenths !== Math.ceil((5*d.minTenths+95*d.maxTenths)/100)) throw new Error("인형 고정 목록 값 오류: " + expected);
-        counts[d.grade]++;
+            d.largeTenths !== d.minTenths + Math.ceil((d.maxTenths-d.minTenths)*80/100) ||
+            d.giantTenths !== d.minTenths + Math.ceil((d.maxTenths-d.minTenths)*95/100) ||
+            d.special !== undefined && typeof d.special !== "boolean" || (d.name.indexOf("스페셜 ") === 0) !== (d.special === true)) throw new Error("인형 고정 목록 값 오류: " + expected);
+        names["$" + d.name] = true; counts[d.grade]++;
+        if (d.special === true) specials[d.grade]++;
     }
-    for (var g = 0; g < counts.length; g++) if (counts[g] !== GLOBAL_CONFIG.doll.counts[g]) throw new Error("인형 등급 종수 오류");
+    for (var c = 0; c < counts.length; c++) if (counts[c] !== cfg.counts[c] || specials[c] !== 1) throw new Error("인형 등급 종수 오류");
     return catalog;
 }
 // 인형 계정별 저장소의 형식을 검사하는 함수
@@ -64863,11 +64949,39 @@ function getDollSize(doll, tenths) {
     if (tenths >= doll.largeTenths) return { label: "대형", multiplier: 1.5 };
     return { label: "보통", multiplier: 1 };
 }
+// 획득 식별자에서 누적 이력 없이 비교할 수 있는 요청 순서를 읽는 함수
+function getDollAcquisitionSequence(id) {
+    var match = typeof id === "string" ? /^(\d+):/.exec(id) : null;
+    if (!match) return 0;
+    var sequence = Number(match[1]);
+    if (!isSearchAuthenticationCount(sequence) || sequence < 1) throw new Error("인형 계정 기록 오류");
+    return sequence;
+}
+// 이미 확정한 요청과 그보다 오래된 획득 요청의 재실행을 막는 함수
+function isDollAcquisitionReplay(record, id) {
+    if (!record || !record.lastAcquisitionId) return false;
+    if (record.lastAcquisitionId === id) return true;
+    var sequence = getDollAcquisitionSequence(id);
+    return sequence > 0 && sequence <= getDollAcquisitionSequence(record.lastAcquisitionId);
+}
+// 인형 한 종의 스페셜 여부를 반영한 최초 수집 매력을 반환하는 함수
+function getDollBaseCharm(doll) {
+    return GLOBAL_CONFIG.doll.charm[doll.grade] * (doll.special === true ? GLOBAL_CONFIG.doll.specialMultiplier : 1);
+}
+// 실제 수집 ID에 포함된 스페셜 종수를 계산하는 함수
+function getDollSpecialCount(catalog, record) {
+    var count = 0, catches = record && record.catches ? record.catches : {};
+    for (var id in catches) if (Object.prototype.hasOwnProperty.call(catches, id)) {
+        var doll = catalog.dolls[Number(id.substring(1))-1];
+        if (doll && doll.id === id && doll.special === true) count++;
+    }
+    return count;
+}
 // 인형별 수집 횟수에서 고정 누적 종합매력을 계산하는 함수
 function getDollRecordCharm(doll, record) {
     if (!record) return 0;
     if (!isSearchAuthenticationCount(record.count) || record.count < 1) throw new Error("인형 획득 횟수 오류");
-    var base = GLOBAL_CONFIG.doll.charm[doll.grade];
+    var base = getDollBaseCharm(doll);
     var total = base + (record.count - 1) * (base / 100);
     if (!isSearchAuthenticationCount(total)) throw new Error("인형 누적 매력 범위 초과");
     return total;
@@ -64901,7 +65015,7 @@ function applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,
     var length=low+Math.floor(random()*(high-low+1)), old=record.catches[doll.id];
     var count=old ? old.count : 0;
     if(old) getDollRecordCharm(doll,old);
-    var charm=count>0 ? config.charm[grade]/100 : config.charm[grade];
+    var baseCharm=getDollBaseCharm(doll), charm=count>0 ? baseCharm/100 : baseCharm;
     var previousCharm=pet.dollCharm===undefined ? 0 : pet.dollCharm;
     if(!isSearchAuthenticationCount(previousCharm)) throw new Error("인형 기존 매력 값 오류");
     var accumulated=previousCharm+charm; // 캐슬·레이드에 나누기 전 정수 종합매력 누적
@@ -64916,7 +65030,23 @@ function applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,
     pet.dollCharm=accumulated;
     Object.defineProperty(store.users,user,{value:record,writable:true,enumerable:true,configurable:true});
     Object.defineProperty(index.users,user,{value:buildDollRepresentative(catalog,record,user),writable:true,enumerable:true,configurable:true});
-    return { success:true, doll:doll, length:length, size:size, fresh:count===0, charm:charm, sale:sale, experience:experience, oldMax:old ? old.max : null, record:record };
+    return { success:true, doll:doll, length:length, size:size, fresh:count===0, charm:charm, sale:sale, experience:experience, oldMax:old ? old.max : null, record:record, specialCollected:getDollSpecialCount(catalog,record) };
+}
+// 저장이 완료된 한 획득 결과의 전체알림을 한 번만 구성하는 함수
+function claimDollBroadcastMessage(data, petData, guildData, catalog, user, result) {
+    if (!result.success || result.noticeClaimed || !result.eventId) return null;
+    var doll = result.doll, cfg = GLOBAL_CONFIG.doll;
+    if (doll.special !== true && doll.grade < cfg.broadcastMinGrade) return null;
+    result.noticeClaimed = true;
+    var nick = checkRank(data, petData, guildData, user);
+    if (doll.special === true) {
+        if (result.fresh) {
+            var emoji = getDollEmoji(doll.name), name = doll.name.substring(0, doll.name.length-emoji.length).trim();
+            return "📢 🌟 스페셜 인형 발견!\n━━━━━━━━━━━━\n["+nick+"] 님이\n"+cfg.emojis[doll.grade]+" "+cfg.grades[doll.grade]+" 스페셜을 획득했습니다!\n\n"+emoji+" "+name+"\n✨ 최초 수집 · 도감 등록 완료\n💞 수집 매력 +"+numberWithCommas(result.charm)+"\n🌟 스페셜 수집 "+result.specialCollected+"/"+cfg.grades.length+"종\n━━━━━━━━━━━━";
+        }
+        return "📢 🌟 스페셜 인형 획득!\n━━━━━━━━━━━━\n["+nick+"] 님\n"+cfg.emojis[doll.grade]+" "+cfg.grades[doll.grade]+" · "+doll.name+"\n🔁 중복 획득 · 자동 판매\n💞 중복 매력 +"+numberWithCommas(result.charm)+"\n🪙 판매 포인트 +"+numberWithCommas(result.sale)+"\n━━━━━━━━━━━━";
+    }
+    return "[🧸 전체알림]\n"+cfg.emojis[doll.grade]+" "+cfg.grades[doll.grade]+" 등급 인형 등장!\n━━━━━━━━━━━━\n["+nick+"] 님이 "+cfg.grades[doll.grade]+" 등급 인형을 뽑았어요!\n\n"+cfg.emojis[doll.grade]+" "+cfg.grades[doll.grade]+"｜"+doll.name+"\n📏 "+(result.length/10).toFixed(1)+"cm · "+result.size.label+"\n━━━━━━━━━━━━";
 }
 // 인형 처리 한 단계의 소요 시간을 메모리에 기록하고 다음 기준 시각을 반환하는 함수
 function recordDollTiming(rows, label, startedAt) {
@@ -64964,6 +65094,7 @@ function getDollDrawTicketCount(data, petData, user) {
 // 인형 뽑기 1회의 소모·보상·기록 변경을 계산하는 함수
 function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValue) {
     var config=GLOBAL_CONFIG.doll, member=data.member[user], pet=petData[user];
+    if (isDollAcquisitionReplay(store.users[user], id)) return { ok:false, duplicate:true };
     var tickets=getDollDrawTicketCount(data,petData,user), bag=member.bag;
     if (tickets < 1) return { ok:false, lack:true };
     var random=randomValue || Math.random;
@@ -64984,13 +65115,16 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
     var result={ok:true,success:success,ticket:tickets>0,probability:probability};
     if(upName){result.probabilityUpName=upName;result.probabilityUpPercent=upPercent;result.baseProbability=baseProbability;}
     if (success) {
-        var roll=Math.floor(random()*1000), grade=0; // 성공 후 등급 확률을 1000 단위로 추첨
-        while (grade<8 && roll>=config.weights[grade]) {roll-=config.weights[grade];grade++;}
+        var weightTotal=0; for (var w=0;w<config.weights.length;w++) weightTotal+=config.weights[w];
+        var roll=Math.floor(random()*weightTotal), grade=0; // 성공 후 등급별 총가중치로 추첨
+        while (grade<config.weights.length-1 && roll>=config.weights[grade]) {roll-=config.weights[grade];grade++;}
         var dolls=getDollGradeRows(catalog,grade);
         var doll=dolls[Math.floor(random()*dolls.length)];
         var acquired=applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,today,random);
         for (var key in acquired) if (Object.prototype.hasOwnProperty.call(acquired,key)) result[key]=acquired[key];
     }
+    record.lastAcquisitionId = id; result.eventId = id; result.eventRecorded = true;
+    Object.defineProperty(store.users,user,{value:record,writable:true,enumerable:true,configurable:true});
     removeItem(data,user,config.ticketName,1);
     if(upName){removeItem(data,user,upName,1);result.remainingProbabilityUp=member.bag[upName] || 0;}
     member.passDollDrawCnt = GLOBAL_CONFIG.daily.passDollDrawMax; // 정상 실패를 포함한 실제 이용권 사용만 인정
@@ -65028,7 +65162,7 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     var d=result.doll;
     if(result.success) {
         lines.push("✅ "+cfg.emojis[d.grade]+" "+cfg.grades[d.grade]+"｜"+d.name,"📏 "+(result.length/10).toFixed(1)+"cm · "+result.size.label,"");
-        lines.push(result.fresh ? "✨ 신규 등록 ["+numberWithCommas(Object.keys(result.record.catches).length)+"/1,000종]" : "🔁 중복 획득","└ 💪 "+(result.fresh?"수집":"중복")+" 종합매력 +"+numberWithCommas(result.charm)+"💞");
+        lines.push(result.fresh ? "✨ 신규 등록 ["+numberWithCommas(Object.keys(result.record.catches).length)+"/"+numberWithCommas(catalog.dolls.length)+"종]" : "🔁 중복 획득","└ 💪 "+(result.fresh?"수집":"중복")+" 종합매력 +"+numberWithCommas(result.charm)+"💞");
         if(result.sale>0) lines.push("💰 자동 판매 🅟"+formatDollAmount(result.sale));
         lines.push("📊 총 획득 경험치: +"+formatAdventureExperience(result.experience.total)+"exp");
     } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
@@ -65056,8 +65190,8 @@ function formatDollAmount(amount) {
     return numberWithCommas(amount);
 }
 // 인형 공통 명령어 안내를 반환하는 함수
-function dollCommandFooter() {
-    return "🧸 /인형뽑기\n📖 /인형도감\n🏆 /인형순위\n📘 /인형가이드\n└ 크기·확률·수집효과 안내";
+function dollCommandFooter(includeSpecial) {
+    return "🧸 /인형뽑기\n📖 /인형도감\n" + (includeSpecial === false ? "" : "🌟 /인형도감 스페셜\n") + "🏆 /인형순위\n📘 /인형가이드\n└ 크기·확률·수집효과 안내";
 }
 // 검증한 고정 목록만 등급별로 재사용하고 정렬 가능한 새 배열을 반환하는 함수
 function getDollGradeRows(catalog, grade) {
@@ -65090,36 +65224,57 @@ function getDollCollectionRows(catalog,record,grade) {
 function getDollCollectionCommand(catalog,record,id) {
     var doll=catalog.dolls[Number(id.substring(1))-1], grade=doll.grade;
     var suffix=GLOBAL_CONFIG.doll.grades[grade];
-    if(grade<3){var rows=getDollCollectionRows(catalog,record,grade),pos=0;while(rows[pos].id!==id)pos++;suffix+=pos<rows.length/2 ? "1" : "2";}
+    if(grade<3){var rows=getDollCollectionRows(catalog,record,grade),pos=0;while(rows[pos].id!==id)pos++;suffix+=String(Math.floor(pos/GLOBAL_CONFIG.doll.pageSizes[grade])+1);}
     return "/인형도감 "+suffix;
 }
 // 전체·등급별 도감 요약 및 상세 목록을 출력하는 함수
 function buildDollCollectionMessage(data,petData,guildData,catalog,record,user,request) {
-    var cfg=GLOBAL_CONFIG.doll,catches=record ? record.catches : {},counts=[0,0,0,0,0,0,0,0,0],totals=[0,0,0,0,0,0,0,0,0],charms=[0,0,0,0,0,0,0,0,0];
-    for(var id in catches){if(!Object.prototype.hasOwnProperty.call(catches,id))continue;var d=catalog.dolls[Number(id.substring(1))-1];if(!d||d.id!==id)throw new Error("인형 도감 ID 오류");counts[d.grade]++;totals[d.grade]+=catches[id].count;charms[d.grade]+=getDollRecordCharm(d,catches[id]);}
-    var g=request.grade, lines=[];
+    var cfg=GLOBAL_CONFIG.doll,catches=record ? record.catches : {},counts=[],totals=[],charms=[],specials=[];
+    for(var a=0;a<cfg.grades.length;a++){counts[a]=0;totals[a]=0;charms[a]=0;specials[a]=0;}
+    for(var id in catches){if(!Object.prototype.hasOwnProperty.call(catches,id))continue;var d=catalog.dolls[Number(id.substring(1))-1];if(!d||d.id!==id)throw new Error("인형 도감 ID 오류");counts[d.grade]++;totals[d.grade]+=catches[id].count;charms[d.grade]+=getDollRecordCharm(d,catches[id]);if(d.special===true)specials[d.grade]++;}
+    var g=request.grade,lines=[],specialCount=getDollSpecialCount(catalog,record);
+    if(request.special){
+        lines.push(dollTitle(data,petData,guildData,user,"인형도감 스페셜"),"🌟 스페셜 수집 "+specialCount+"/"+cfg.grades.length+"종","━━━━━━━━━━━━");
+        for(var sg=0;sg<cfg.grades.length;sg++){
+            var group=getDollGradeRows(catalog,sg);
+            for(var si=0;si<group.length;si++)if(group[si].special===true){var item=group[si],r=catches[item.id];lines.push((r?"🌟 ":"☆ ")+cfg.emojis[sg]+" "+cfg.grades[sg]+" · "+item.name);if(r)lines.push("📏 최고 "+(r.max/10).toFixed(1)+"cm · 🧸 획득 "+numberWithCommas(r.count)+"회");}
+        }
+        lines.push("━━━━━━━━━━━━",dollCommandFooter());return lines.join("\n");
+    }
     if(g<0){
         var discovered=Object.keys(catches).length,sum=0;
-        lines.push(dollTitle(data,petData,guildData,user,"인형도감"),"📚 수집 "+numberWithCommas(discovered)+"/1,000종 · "+(discovered/10).toFixed(1)+"%","");
-        for(var a=0;a<9;a++){lines.push(cfg.emojis[a]+" "+cfg.grades[a]+"｜"+counts[a]+"/"+cfg.counts[a]+"종");sum+=charms[a];}
-        lines.push("━━━━━━━━━━━━","💞 종매 +"+numberWithCommas(sum),"├ ⚔️ 캐슬 +"+numberWithCommas(sum/2),"└ 👾 레이드 +"+numberWithCommas(sum/2),"━━━━━━━━━━━━","📖 등급별 목록·명령어"+allsee);
-        for(var b=0;b<9;b++){if(b<3)lines.push(cfg.emojis[b]+" "+cfg.grades[b]+" · 각 "+cfg.counts[b]/2+"종","/인형도감 "+cfg.grades[b]+"1","/인형도감 "+cfg.grades[b]+"2","");else lines.push(cfg.emojis[b]+" /인형도감 "+cfg.grades[b]);}
+        lines.push(dollTitle(data,petData,guildData,user,"인형도감"),"📚 수집 "+numberWithCommas(discovered)+"/"+numberWithCommas(catalog.dolls.length)+"종 · "+(discovered/catalog.dolls.length*100).toFixed(1)+"%","🌟 스페셜 수집 "+specialCount+"/"+cfg.grades.length+"종","");
+        for(var b=0;b<cfg.grades.length;b++){lines.push(cfg.emojis[b]+" "+cfg.grades[b]+"｜"+counts[b]+"/"+cfg.counts[b]+"종 · "+(specials[b]?"🌟 1/1":"☆ 0/1"));sum+=charms[b];}
+        lines.push("","☆ 스페셜 미수집 · 🌟 스페셜 수집 완료","━━━━━━━━━━━━","💞 종매 +"+numberWithCommas(sum),"├ ⚔️ 캐슬 +"+numberWithCommas(sum/2),"└ 👾 레이드 +"+numberWithCommas(sum/2),"━━━━━━━━━━━━","📖 등급별 목록·명령어\n"+allsee,"","🌟 /인형도감 스페셜","└ 등급별 스페셜 10종 수집 현황","");
+        for(var c=0;c<cfg.grades.length;c++){
+            if(c<cfg.pageSizes.length){
+                var pages=Math.ceil(cfg.counts[c]/cfg.pageSizes[c]),labels=[];
+                for(var page=1;page<=pages;page++)labels.push(page+"페이지 "+Math.min(cfg.pageSizes[c],cfg.counts[c]-(page-1)*cfg.pageSizes[c])+"종");
+                lines.push(cfg.emojis[c]+" "+cfg.grades[c]+" · "+labels.join(" / "));
+                for(var pn=1;pn<=pages;pn++)lines.push("/인형도감 "+cfg.grades[c]+pn);
+                lines.push("");
+            }else lines.push(cfg.emojis[c]+" /인형도감 "+cfg.grades[c]);
+        }
+        lines.push("━━━━━━━━━━━━",dollCommandFooter(false));
     }else{
         var label=cfg.grades[g]+(request.page||"");
         lines.push(dollTitle(data,petData,guildData,user,label+" 인형도감"),"📚 "+cfg.grades[g]+" 전체 수집 "+counts[g]+"/"+cfg.counts[g]+"종","🧸 "+cfg.grades[g]+" 총 획득 "+numberWithCommas(totals[g])+"회");
         if(g>2||request.page)lines.push("↕️ 수집 우선 · 최고 크기순");
         lines.push("━━━━━━━━━━━━","💞 "+cfg.grades[g]+" 종매 +"+numberWithCommas(charms[g]),"├ ⚔️ 캐슬 +"+numberWithCommas(charms[g]/2),"└ 👾 레이드 +"+numberWithCommas(charms[g]/2),"━━━━━━━━━━━━");
-        if(g<3&&!request.page)lines.push("📖 목록 선택·명령어"+allsee,"📖 앞 "+cfg.counts[g]/2+"종: /인형도감 "+label+"1","📖 뒤 "+cfg.counts[g]/2+"종: /인형도감 "+label+"2");
-        else{
-            var rows=getDollCollectionRows(catalog,record,g),opposite=g<3 ? "/인형도감 "+cfg.grades[g]+(request.page===1?2:1) : null;
-            if(g<3)rows=rows.slice((request.page-1)*rows.length/2,request.page*rows.length/2);
-            lines.push("📖 인형 목록·명령어"+allsee);if(opposite)lines.push("👉 "+opposite+" 보기");
+        if(g<cfg.pageSizes.length&&!request.page){
+            lines.push("📖 목록 선택·명령어"+allsee);
+            for(var p=1;p<=Math.ceil(cfg.counts[g]/cfg.pageSizes[g]);p++)lines.push("/인형도감 "+cfg.grades[g]+p);
+        }else{
+            var rows=getDollCollectionRows(catalog,record,g);
+            if(g<cfg.pageSizes.length)rows=rows.slice((request.page-1)*cfg.pageSizes[g],request.page*cfg.pageSizes[g]);
+            lines.push("📖 인형 목록·명령어"+allsee);
+            if(g<cfg.pageSizes.length)for(var op=1;op<=Math.ceil(cfg.counts[g]/cfg.pageSizes[g]);op++)if(op!==request.page)lines.push("👉 /인형도감 "+cfg.grades[g]+op+" 보기");
             lines.push("📋 "+label+" · "+rows.length+"종","└ No.는 등수가 아닌 고정 도감 번호예요.","");
-            for(var k=0;k<rows.length;k++){var item=rows[k],r=catches[item.id],num=Number(item.id.substring(1));if(!r)lines.push("🔒 No."+num+" "+item.name+" · 미발견","");else lines.push("✅ No."+num+" "+item.name,"📏 최고 "+(r.max/10).toFixed(1)+"cm · "+getDollSize(item,r.max).label,"💞 누적 +"+numberWithCommas(getDollRecordCharm(item,r))+" · 획득 "+numberWithCommas(r.count)+"회","📅 첫 수집 "+r.first,"");}
-            lines.push("━━━━━━━━━━━━");if(opposite)lines.push("👉 "+opposite+" 보기");lines.push("📖 전체 도감: /인형도감","🔎 다른 등급: /인형도감 [등급]");
+            for(var k=0;k<rows.length;k++){var item=rows[k],r=catches[item.id],num=Number(item.id.substring(1));if(!r)lines.push((item.special===true?"☆":"🔒")+" No."+num+" "+item.name+" · 미발견","");else lines.push((item.special===true?"🌟":"✅")+" No."+num+" "+item.name,"📏 최고 "+(r.max/10).toFixed(1)+"cm · 🧸 획득 "+numberWithCommas(r.count)+"회","");}
         }
+        lines.push("━━━━━━━━━━━━",dollCommandFooter());
     }
-    lines.push("━━━━━━━━━━━━",dollCommandFooter());return lines.join("\n");
+    return lines.join("\n");
 }
 // 전체 인형 순위와 본인의 100등 이내 기록을 출력하는 함수
 function buildDollRankingMessage(data,petData,guildData,catalog,index,user) {
@@ -65140,13 +65295,7 @@ function buildDollRankingMessage(data,petData,guildData,catalog,index,user) {
 }
 // 인형 이용 방법·확률·판매·수집효과를 안내하는 함수
 function buildDollGuideMessage() {
-    var cfg=GLOBAL_CONFIG.doll,up=cfg.probabilityUp,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 1개 사용","• 이용권이 없으면 뽑기를 진행할 수 없어요.","• 성공·실패 모두 이용권 1개 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","• 일일퀘스트 완료: 이용권 1개 지급","• 인형뽑기패스: 매일 아래 아이템 지급","  ├ 인형뽑기이용권🧸 "+cfg.dailyPassTickets+"개","  └ "+up.itemPrefix+"("+up.dailyPassPercent+"%) "+up.dailyPassCount+"개","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","• 확률UP 적용 후 최종 성공률은 최대 "+up.maxSuccessPercent+"%예요.","━━━━━━━━━━━━","📈 "+up.itemPrefix+" 안내","• /가방에 보유하면 인형뽑기 시 자동 사용해요.","• 기존 성공률에 아이템의 확률을 더해요.","  예) 기존 20% + 확률UP(50%) = 70%","• 높은 확률의 아이템부터 한 번에 1개 사용해요.","  순서: "+up.percents.join("% → ")+"%","• 여러 확률UP 아이템을 동시에 사용하지 않아요.","• 성공·실패 모두 적용된 아이템 1개가 소모돼요.","• 이용권은 확률UP 아이템과 별도로 1개 사용해요.","• 뽑기가 실행되지 않으면 아이템도 소모되지 않아요.","• 확률UP 아이템이 없으면 기존 성공률로 진행해요.","• 뽑기 성공 여부에만 적용되며, 등급·크기 추첨과 보상은 기존 규칙을 따라요.","━━━━━━━━━━━━","🎲 뽑기 성공 후 등급 확률"];
-    for(var g=0;g<9;g++)lines.push(cfg.emojis[g]+" "+cfg.grades[g]+" "+cfg.weights[g]/10+"%");
-    lines.push("━━━━━━━━━━━━","📊 경험치","• 인형 기본 경험치 + 현재 티어 보너스","• 가호가 충분하면 합계에 3배 적용","• 가호는 추가된 경험치만큼 사용해요.","• 부족하면 기존 규칙대로 보유 수량만 적용해요.","• 신규·중복 모두 경험치를 받아요.","• 실패 시 경험치 지급·가호 사용은 없어요.","━━━━━━━━━━━━","💰 중복 자동 판매","• 신규 인형은 도감 등록, 중복 인형은 자동 판매","• 이번에 뽑은 크기 구분으로 판매가를 계산해요.","");
-    for(var s=0;s<9;s++)lines.push(cfg.emojis[s]+" "+cfg.grades[s]+" "+formatDollAmount(cfg.sale[s]));
-    lines.push("━━━━━━━━━━━━","📖 도감","• 수집한 인형 먼저 → 최고 크기순 → 도감 번호순","• 미발견 인형은 뒤에 도감 번호순으로 표시","• 일반 150종씩 · 고급 110종씩 · 희귀 85종씩","• 영웅~창조는 등급명만 입력해요.","• No.는 등수가 아닌 고정 도감 번호예요.","━━━━━━━━━━━━","🏆 순위","• 대표 인형의 등급 → 최고 크기 → 획득 횟수순","• 공개 명단은 10등, 내 순위는 100등까지 표시","• 공동 등수와 순위 보상은 없어요.","━━━━━━━━━━━━","📏 보통·대형·초대형","• 크기 확률: 보통 85% · 대형 14% · 초대형 1%","• 중복 판매가: 보통 ×1 · 대형 ×1.5 · 초대형 ×2","• 인형별 기준 cm 이상이면 해당 배율을 적용해요.","━━━━━━━━━━━━","💪 수집효과","• 최초 획득: 해당 등급 기본 종합매력 100%","• 중복 획득: 해당 등급 기본 종합매력의 1%","• 별도 장착 없이 캐슬·레이드에 절반씩 누적","• 기존 기본 매력에 합산 후 퍼센트 보너스를 적용해요.","");
-    for(var c=0;c<9;c++)lines.push(cfg.emojis[c]+" "+cfg.grades[c]+": +"+numberWithCommas(cfg.charm[c])+" / +"+numberWithCommas(cfg.charm[c]/100)+"💞");
-    lines.push("","📚 1,000종 최초 수집 매력 합계","💞 종매 +100,000,000","├ ⚔️ 캐슬 +50,000,000","└ 👾 레이드 +50,000,000","└ 중복 매력은 별도로 계속 더해져요.","━━━━━━━━━━━━",dollCommandFooter());return lines.join("\n");
+    return "📘 인형가이드 및 확률 안내\n━━━━━━━━━━━━\n이용 방법부터 크기·수집효과까지\n전체보기에서 확인하세요." + "\n" + allsee + "\n" + "🧸 이용 방법\n• /인형뽑기 입력 시 이용권 1개 사용\n• 이용권이 없으면 뽑기를 진행할 수 없어요.\n• 성공·실패 모두 이용권 1개 차감\n• 호이패스 프리미엄: 매일 이용권 1개 지급\n• 일일퀘스트 완료: 이용권 1개 지급\n• 인형뽑기패스: 매일 아래 아이템 지급\n  ├ 인형뽑기이용권🧸 3개\n  └ 인형뽑기확률UP🧸(20%) 3개\n━━━━━━━━━━━━\n🎯 성공률\n• 새싹 5%부터 티어 한 단계마다 +1%p\n• 킹 15% · 호월신 55%\n• 확률UP 적용 후 최종 성공률은 최대 100%예요.\n━━━━━━━━━━━━\n📈 인형뽑기확률UP🧸 안내\n• /가방에 보유하면 인형뽑기 시 자동 사용해요.\n• 기존 성공률에 아이템의 확률을 더해요.\n  예) 기존 20% + 확률UP(50%) = 70%\n• 높은 확률의 아이템부터 한 번에 1개 사용해요.\n  순서: 50% → 40% → 30% → 20% → 10%\n• 여러 확률UP 아이템을 동시에 사용하지 않아요.\n• 성공·실패 모두 적용된 아이템 1개가 소모돼요.\n• 이용권은 확률UP 아이템과 별도로 1개 사용해요.\n• 뽑기가 실행되지 않으면 아이템도 소모되지 않아요.\n• 확률UP 아이템이 없으면 기존 성공률로 진행해요.\n• 뽑기 성공 여부에만 적용되며, 등급·크기 추첨과 보상은 기존 규칙을 따라요.\n━━━━━━━━━━━━\n🎲 뽑기 성공 후 등급 확률\n⚪ 일반 40%\n🟢 고급 25%\n🔵 희귀 15%\n🟣 영웅 10%\n🟡 전설 5%\n🔴 신화 2.5%\n🌌 초월 1.5%\n🌠 창세 0.7%\n👑 창조 0.29%\n✡️ 엘리트 0.01%\n\n• 뽑기에 성공한 뒤 적용되는 확률이에요.\n• 등급이 정해지면 스페셜을 포함한 해당 등급 전체에서 같은 확률로 1종을 뽑아요.\n━━━━━━━━━━━━\n📊 경험치\n• 인형 기본 경험치 + 현재 티어 보너스\n• 가호가 충분하면 합계에 3배 적용\n• 가호는 추가된 경험치만큼 사용해요.\n• 부족하면 기존 규칙대로 보유 수량만 적용해요.\n• 신규·중복 모두 경험치를 받아요.\n• 실패 시 경험치 지급·가호 사용은 없어요.\n• 엘리트의 기본 경험치는 11,550이에요.\n• 스페셜의 기본 경험치는 같은 등급 인형과 같아요.\n━━━━━━━━━━━━\n💰 중복 자동 판매\n• 신규 인형은 도감 등록, 중복 인형은 자동 판매\n• 이번에 뽑은 크기 구분으로 판매가를 계산해요.\n• 아래는 보통 크기 기준 판매 포인트예요.\n• 스페셜도 같은 등급의 판매가를 적용해요.\n\n⚪ 일반 100만\n🟢 고급 200만\n🔵 희귀 500만\n🟣 영웅 1,000만\n🟡 전설 3,000만\n🔴 신화 1억\n🌌 초월 3억\n🌠 창세 10억\n👑 창조 30억\n✡️ 엘리트 100억\n━━━━━━━━━━━━\n📖 도감\n• 총 1,344종이며, 각 등급의 스페셜 10종이 포함돼요.\n• 수집한 인형 먼저 → 최고 크기순 → 도감 번호순\n• 미발견 인형은 뒤에 도감 번호순으로 표시\n• 일반 150종씩 · 고급 110종씩 · 희귀 85종씩\n• 일반·고급·희귀는 1~3페이지로 나뉘어요.\n  예) /인형도감 일반3\n• 영웅~엘리트는 등급명만 입력해요.\n• No.는 등수가 아닌 고정 도감 번호예요.\n• /인형도감 스페셜에서 스페셜 10종을 모아 볼 수 있어요.\n━━━━━━━━━━━━\n🏆 순위\n• 대표 인형의 등급 → 최고 크기 → 획득 횟수순\n• 공개 명단은 10등, 내 순위는 100등까지 표시\n• 공동 등수와 순위 보상은 없어요.\n• ✡️ 엘리트는 창조보다 높은 최상위 등급이에요.\n• 스페셜은 소속 등급으로 비교하며, 별도 순위 가산은 없어요.\n━━━━━━━━━━━━\n📏 보통·대형·초대형\n• 크기 확률: 보통 85% · 대형 14% · 초대형 1%\n• 중복 판매가: 보통 ×1 · 대형 ×1.5 · 초대형 ×2\n• 인형별 기준 cm 이상이면 해당 배율을 적용해요.\n━━━━━━━━━━━━\n💪 수집효과\n• 최초 획득: 해당 등급 기본 종합매력 100%\n• 중복 획득: 해당 등급 기본 종합매력의 1%\n• 별도 장착 없이 캐슬·레이드에 절반씩 누적\n• 기존 기본 매력에 합산 후 퍼센트 보너스를 적용해요.\n\n⚪ 일반: +2,500 / +25💞\n🟢 고급: +5,000 / +50💞\n🔵 희귀: +15,000 / +150💞\n🟣 영웅: +30,000 / +300💞\n🟡 전설: +125,000 / +1,250💞\n🔴 신화: +250,000 / +2,500💞\n🌌 초월: +650,000 / +6,500💞\n🌠 창세: +1,250,000 / +12,500💞\n👑 창조: +2,500,000 / +25,000💞\n✡️ 엘리트: +10,000,000 / +100,000💞\n\n└ 왼쪽은 최초 수집, 오른쪽은 중복 획득 매력이에요.\n└ 스페셜은 위 매력의 2배를 적용해요.\n━━━━━━━━━━━━\n🌟 스페셜 인형\n• 일반~엘리트까지 각 등급에 1종씩, 총 10종이에요.\n• 별도 등급이 아니며, 이름 앞에 ‘스페셜’이 붙어요.\n• 최초·중복 수집 매력이 같은 등급 인형의 2배예요.\n• 경험치와 판매가는 같은 등급 기준을 따라요.\n• 최초·중복 획득 모두 전체알림이 떠요.\n• 도감의 ☆ 0/1이 🌟 1/1로 채워져요.\n• 중복 획득 시 수집 종수는 늘어나지 않아요.\n\n스페셜 최초 / 중복 수집 매력\n⚪ 일반: +5,000 / +50💞\n🟢 고급: +10,000 / +100💞\n🔵 희귀: +30,000 / +300💞\n🟣 영웅: +60,000 / +600💞\n🟡 전설: +250,000 / +2,500💞\n🔴 신화: +500,000 / +5,000💞\n🌌 초월: +1,300,000 / +13,000💞\n🌠 창세: +2,500,000 / +25,000💞\n👑 창조: +5,000,000 / +50,000💞\n✡️ 엘리트: +20,000,000 / +200,000💞\n━━━━━━━━━━━━\n📚 1,344종 최초 수집 매력 합계\n💞 종매 +287,655,000\n├ ⚔️ 캐슬 +143,827,500\n└ 👾 레이드 +143,827,500\n└ 스페셜 10종의 2배 매력이 포함된 합계예요.\n└ 중복 매력은 별도로 계속 더해져요.\n━━━━━━━━━━━━\n🧸 /인형뽑기\n📖 /인형도감\n🌟 /인형도감 스페셜\n🏆 /인형순위\n📘 /인형가이드\n└ 크기·확률·수집효과 안내";
 }
 
 //인증순위
@@ -66531,7 +66680,7 @@ try {
     if (recoverGuildWarPublication()) initData = loadJsonFile(filePath, "bootstrap");
     startupWork = initializeLegacyStartup(initData);
     initializeGuildWarStartup();
-    if (initData.diceTournament) scheduleDiceTournamentWork(createCommandContext(false, room8), requireDiceTournament(initData.diceTournament), Date.now());
+    if (initData.diceTournament) scheduleDiceTournamentWork(createCommandContext(false, GLOBAL_CONFIG.diceTournament.publicRoom), requireDiceTournament(initData.diceTournament), Date.now());
 }
 finally { initData = null; }
 for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
@@ -68154,11 +68303,11 @@ function buildGuildWarResult(war, recipientId) {
 
 // 인수가 없는 대회 명령과 공백을 포함하는 등록 닉네임을 정확히 구분하는 함수
 function getDiceTournamentRequest(msg) {
-    var commands = { "/주사위참가": "join", "/주사위참가명단": "roster", "/주사위대진표": "bracket", "/ㄹㄷ": "ready", "/주사위시작": "start", "/주사위중단": "pause", "/주사위재개": "resume", "/주사위명령어": "help" };
+    var commands = { "/주사위": "roll", "/주사위종료": "stop", "/주사위참가": "join", "/주사위참가명단": "roster", "/주사위대진표": "bracket", "/ㄹㄷ": "ready", "/주사위시작": "start", "/주사위중단": "pause", "/주사위재개": "resume", "/주사위명령어": "help" };
     if (Object.prototype.hasOwnProperty.call(commands, msg)) return { kind: commands[msg] };
     var match = /^\/주사위탈락[ \t]+([^\r\n]+)$/.exec(msg);
     if (match) return { kind: "eliminate", nick: match[1] };
-    if (/^\/(?:주사위(?:참가명단|참가|대진표|시작|탈락|중단|재개|명령어)|ㄹㄷ)(?:\s|$)/.test(msg)) return { kind: "invalid" };
+    if (/^\/(?:주사위(?:참가명단|참가|대진표|시작|탈락|중단|재개|명령어|종료)?|ㄹㄷ)(?:\s|$)/.test(msg)) return { kind: "invalid" };
     return null;
 }
 
@@ -68195,7 +68344,7 @@ function requireDiceTournament(state) {
     for (var m = 0; m < state.matches.length; m++) {
         var row = state.matches[m];
         if (!row || row.id !== m + 1 || !isPointShopSafeCount(row.stage) || row.stage < 2 || Math.pow(2, Math.round(Math.log(row.stage) / Math.LN2)) !== row.stage ||
-            ["READY", "ROLL", "DONE"].indexOf(row.phase) < 0 || !Array.isArray(row.slots) || row.slots.length !== 2 || !Array.isArray(row.from) || row.from.length !== 2 ||
+            ["READY", "INPUT", "ROLL", "DONE"].indexOf(row.phase) < 0 || !Array.isArray(row.slots) || row.slots.length !== 2 || !Array.isArray(row.from) || row.from.length !== 2 ||
             !Array.isArray(row.ready) || row.ready.length !== 2 || !Array.isArray(row.rolls) || row.rolls.length !== 4 || !isPointShopSafeCount(row.turn) || row.turn > 4 ||
             !isPointShopSafeCount(row.dueAt) || !isPointShopSafeCount(row.readyAt) || !isPointShopSafeCount(row.cycle) || typeof row.warned !== "boolean" || typeof row.announced !== "boolean" || typeof row.bye !== "boolean") throw new Error("주사위 대회 경기 상태 오류");
         for (var side = 0; side < 2; side++) {
@@ -68241,9 +68390,9 @@ function queueDiceTournamentNotice(state, text, control, anchor) {
 }
 
 // 참가·경기 공개 조회에서 고정 번호와 참가자별 준비 상태를 출력하는 함수
-function buildDiceTournamentBracket(env, state) {
-    if (!state.matches.length) return "🏆 주사위 대회 전체 대진표\n참가 접수 중입니다. /주사위참가";
-    var text = "🏆 주사위 대회 전체 대진표\n" + (state.status === "PAUSED" ? "⏸️ 일시 중단\n" : ""), previousStage = 0;
+function buildDiceTournamentBracket(env, state, alreadyFolded) {
+    if (!state.matches.length) return "🎲 현재 진행 중인 주사위 대회가 없습니다.";
+    var text = "🏆 주사위 대회 전체 대진표" + (alreadyFolded ? "" : allsee) + "\n" + (state.status === "PAUSED" ? "⏸️ 일시 중단\n" : ""), previousStage = 0;
     for (var i = 0; i < state.matches.length; i++) {
         var match = state.matches[i];
         if (match.stage !== previousStage) { text += "\n━━ 🎲 " + diceTournamentStageLabel(match.stage) + " ━━\n"; previousStage = match.stage; }
@@ -68253,7 +68402,7 @@ function buildDiceTournamentBracket(env, state) {
             text += id ? diceTournamentName(env, state, id) : source && source.phase !== "DONE" ? diceTournamentNumber(source.id) + "경기 승자 미정" : "부전승 자리";
             text += side === 0 ? "\n         🆚\n" : "\n";
         }
-        text += match.phase === "DONE" ? (match.bye ? "🏆 부전승" : "✅ 종료") + (match.winner ? " · " + diceTournamentName(env, state, match.winner) : " · 진출자 없음") : match.phase === "ROLL" ? "🎲 진행 중" : "⏳ 준비 대기";
+        text += match.phase === "DONE" ? (match.bye ? "🏆 부전승" : "✅ 종료") + (match.winner ? " · " + diceTournamentName(env, state, match.winner) : " · 진출자 없음") : (match.phase === "ROLL" || match.phase === "INPUT") ? "🎲 진행 중" : "⏳ 준비 대기";
         text += "\n";
     }
     return text;
@@ -68261,12 +68410,12 @@ function buildDiceTournamentBracket(env, state) {
 
 // 첫 준비 보상과 자동 경기·중단 원칙을 실제 전체보기 안에 안내하는 함수
 function buildDiceTournamentRules() {
-    return "🎲 각자 6️⃣면 주사위를 2️⃣번씩 굴립니다.\n🔄 서로 번갈아 던지며 합계가 높은 사람이 승리합니다.\n⏳ 매번 주사위가 굴러간 뒤 3️⃣초 후 결과를 공개합니다.\n🤝 최종 합계가 같으면 재경기합니다.\n✅ 자기 경기 안내가 나오면 /ㄹㄷ를 입력해 주세요.\n🔥 두 참가자가 모두 준비되면 자동으로 진행됩니다.\n🏆 승자는 다음 라운드로 자동 진출합니다.\n💰 참가 보상 1️⃣0️⃣0️⃣억은 첫 경기에서 /ㄹㄷ로 참석 확인 시 지급됩니다.\n🚫 첫 경기 미참석자는 참가 보상을 받을 수 없습니다.\n💰 참가·진출·우승 보상은 누적 지급됩니다.\n👑 3️⃣·4️⃣위전은 없습니다.\n\n참가: 추가 1️⃣0️⃣0️⃣억 / 누적 1️⃣0️⃣0️⃣억\n\n8️⃣강 진출: 추가 1️⃣0️⃣0️⃣억 / 누적 2️⃣0️⃣0️⃣억\n\n4️⃣강 진출: 추가 2️⃣0️⃣0️⃣억 / 누적 4️⃣0️⃣0️⃣억\n\n결승 진출: 추가 3️⃣0️⃣0️⃣억 / 누적 7️⃣0️⃣0️⃣억\n\n우승: 추가 1️⃣0️⃣0️⃣0️⃣억 / 누적 1️⃣7️⃣0️⃣0️⃣억";
+    return "🎲 자기 차례에 /주사위를 입력하며, 각자 2️⃣번씩 번갈아 굴립니다.\n🔄 서로 번갈아 던지며 합계가 높은 사람이 승리합니다.\n⏳ 매번 주사위가 굴러간 뒤 3️⃣초 후 결과를 공개합니다.\n🤝 최종 합계가 같으면 /주사위를 입력해 재경기합니다.\n✅ 자기 경기 안내가 나오면 /ㄹㄷ를 입력해 주세요.\n🔥 두 참가자가 모두 준비되면 자기 차례에 /주사위를 입력합니다.\n🏆 승자는 다음 라운드로 자동 진출합니다.\n💰 참가 보상 1️⃣0️⃣0️⃣억은 첫 경기에서 /ㄹㄷ로 참석 확인 시 지급됩니다.\n🚫 첫 경기 미참석자는 참가 보상을 받을 수 없습니다.\n💰 참가·진출·우승 보상은 누적 지급됩니다.\n👑 3️⃣·4️⃣위전은 없습니다.\n\n참가: 추가 1️⃣0️⃣0️⃣억 / 누적 1️⃣0️⃣0️⃣억\n\n8️⃣강 진출: 추가 1️⃣0️⃣0️⃣억 / 누적 2️⃣0️⃣0️⃣억\n\n4️⃣강 진출: 추가 2️⃣0️⃣0️⃣억 / 누적 4️⃣0️⃣0️⃣억\n\n결승 진출: 추가 3️⃣0️⃣0️⃣억 / 누적 7️⃣0️⃣0️⃣억\n\n우승: 추가 1️⃣0️⃣0️⃣0️⃣억 / 누적 1️⃣7️⃣0️⃣0️⃣억";
 }
 
 // MASTER에게 아홉 명령의 권한·시점·예시를 언제나 조회로 안내하는 함수
 function buildDiceTournamentHelp() {
-    return "🎲 주사위 대회 명령어 안내 [MASTER]" + allsee + "\n\n👥 참가자·공개 조회 명령어\n\n1️⃣ /주사위참가\n권한: 길드 가입 유저\n기능: 대회 시작 전에 참가 신청\n예시: /주사위참가\n※ 중복 신청·시작 후 추가 참가는 불가합니다. 신청만으로 보상이 지급되지는 않습니다.\n\n2️⃣ /주사위참가명단\n권한: 누구나\n기능: 현재 참가 인원과 참가명단 확인\n예시: /주사위참가명단\n\n3️⃣ /주사위대진표\n권한: 누구나\n기능: 전체 대진표와 경기 진행 상황 확인\n예시: /주사위대진표\n\n4️⃣ /ㄹㄷ\n권한: 현재 안내된 경기의 참가자\n기능: 자기 경기 준비 완료 및 참석 확인\n예시: /ㄹㄷ\n※ 두 선수 모두 준비하면 자동 진행됩니다. 다음 경기에서도 다시 준비해 주세요.\n※ 첫 경기의 유효한 참석 확인 시 참가 보상 1️⃣0️⃣0️⃣억을 한 번 지급합니다. 첫 경기 미참석자는 지급 대상이 아닙니다.\n\n🔐 MASTER 운영 명령어\n\n5️⃣ /주사위시작\n권한: MASTER\n기능: 참가자 확정·무작위 대진표 생성·규칙 안내·대회 시작\n예시: /주사위시작\n※ 길드 가입 조건을 충족하는 참가자가 최소 8️⃣명이어야 합니다. 시작 시 보상을 일괄 지급하지 않습니다.\n\n6️⃣ /주사위탈락 아이디\n권한: MASTER\n기능: 불참자 등 지정 참가자를 탈락 처리\n예시: /주사위탈락 찰리 남\n※ 아이디에는 채크랭크 장식을 제외한 등록 닉네임 전체를 입력합니다. 공백도 포함해 정확히 일치해야 합니다.\n※ 상대가 준비 완료이면 부전승으로 진출하며, 상대도 미준비이면 /ㄹㄷ 참석 확인 후 진출합니다.\n\n7️⃣ /주사위중단\n권한: MASTER\n기능: 준비 대기시간과 경기 진행을 일시 정지\n예시: /주사위중단\n※ 중단 중에는 조회와 재개만 가능합니다.\n\n8️⃣ /주사위재개\n권한: MASTER\n기능: 중단된 지점부터 대회 이어서 진행\n예시: /주사위재개\n※ 대진·주사위 결과·지급 내역을 유지하며 보상을 중복 지급하지 않습니다.\n\n9️⃣ /주사위명령어\n권한: MASTER\n기능: 이 전체 명령어 도움말 확인\n예시: /주사위명령어\n\n🏰 길드 미가입자 안내에 사용하는 명령어\n/길드상점 — 길드가입권 판매 목록 확인\n/길드상점구매 1 1 — 길드가입권 1개 구매\n/길드목록 — 가입할 길드 번호 확인\n/길드가입 번호 — 선택한 길드에 가입\n※ 길드 가입 후 /주사위참가를 입력하도록 안내합니다.";
+    return "🎲 주사위 대회 명령어 안내 [MASTER]" + allsee + "\n\n/주사위\n권한: 현재 차례인 참가자\n기능: 주사위 1개를 한 번 굴림\n사용 시점: 두 참가자 준비 후 자기 차례\n예시: /주사위\n\n/주사위종료\n권한: MASTER\n기능: 현재 대회 강제 종료 및 대회 기록 초기화\n사용 시점: 참가 모집·진행·중단 중\n예시: /주사위종료\n" + "\n\n👥 참가자·공개 조회 명령어\n\n1️⃣ /주사위참가\n권한: 길드 가입 유저\n기능: 대회 시작 전에 참가 신청\n예시: /주사위참가\n※ 중복 신청·시작 후 추가 참가는 불가합니다. 신청만으로 보상이 지급되지는 않습니다.\n\n2️⃣ /주사위참가명단\n권한: 누구나\n기능: 현재 참가 인원과 참가명단 확인\n예시: /주사위참가명단\n\n3️⃣ /주사위대진표\n권한: 누구나\n기능: 전체 대진표와 경기 진행 상황 확인\n예시: /주사위대진표\n\n4️⃣ /ㄹㄷ\n권한: 현재 안내된 경기의 참가자\n기능: 자기 경기 준비 완료 및 참석 확인\n예시: /ㄹㄷ\n※ 두 선수 모두 준비하면 자기 차례에 /주사위를 입력합니다. 다음 경기에서도 다시 준비해 주세요.\n※ 첫 경기의 유효한 참석 확인 시 참가 보상 1️⃣0️⃣0️⃣억을 한 번 지급합니다. 첫 경기 미참석자는 지급 대상이 아닙니다.\n\n🔐 MASTER 운영 명령어\n\n5️⃣ /주사위시작\n권한: MASTER\n기능: 참가자 확정·무작위 대진표 생성·규칙 안내·대회 시작\n예시: /주사위시작\n※ 길드 가입 조건을 충족하는 참가자가 최소 8️⃣명이어야 합니다. 시작 시 보상을 일괄 지급하지 않습니다.\n\n6️⃣ /주사위탈락 아이디\n권한: MASTER\n기능: 불참자 등 지정 참가자를 탈락 처리\n예시: /주사위탈락 찰리 남\n※ 아이디에는 채크랭크 장식을 제외한 등록 닉네임 전체를 입력합니다. 공백도 포함해 정확히 일치해야 합니다.\n※ 상대가 준비 완료이면 부전승으로 진출하며, 상대도 미준비이면 /ㄹㄷ 참석 확인 후 진출합니다.\n\n7️⃣ /주사위중단\n권한: MASTER\n기능: 준비 대기시간과 경기 진행을 일시 정지\n예시: /주사위중단\n※ 중단 중에는 조회·재개·MASTER 강제 종료가 가능합니다.\n\n8️⃣ /주사위재개\n권한: MASTER\n기능: 중단된 지점부터 대회 이어서 진행\n예시: /주사위재개\n※ 대진·주사위 결과·지급 내역을 유지하며 보상을 중복 지급하지 않습니다.\n\n9️⃣ /주사위명령어\n권한: MASTER\n기능: 이 전체 명령어 도움말 확인\n예시: /주사위명령어\n\n🏰 길드 미가입자 안내에 사용하는 명령어\n/길드상점 — 길드가입권 판매 목록 확인\n/길드상점구매 1 1 — 길드가입권 1개 구매\n/길드목록 — 가입할 길드 번호 확인\n/길드가입 번호 — 선택한 길드에 가입\n※ 길드 가입 후 /주사위참가를 입력하도록 안내합니다.";
 }
 
 // 최초 한 번의 무작위 배치로 빈 경기 없이 부전승과 고정 연결을 생성하는 함수
@@ -68339,7 +68488,7 @@ function advanceDiceTournament(env, state) {
         return;
     }
     state.status = "FINISHED"; state.winner = state.matches[state.matches.length - 1].winner;
-    queueDiceTournamentNotice(state, state.winner ? "🎉 주사위 대회가 종료되었습니다!\n👑 우승: " + diceTournamentName(env, state, state.winner) : "🎲 남은 참가자가 없어 우승자 없이 대회를 종료합니다.", false);
+    if (!state.winner) queueDiceTournamentNotice(state, "🎲 우승자 없이 종료합니다.", false);
 }
 
 // 마지막 굴림에서 실제로 가능한 승리 숫자와 동점 조건만 안내하는 함수
@@ -68353,11 +68502,18 @@ function buildDiceTournamentLastChance(env, state, match) {
     return text + (tie >= 1 && tie <= 6 ? ", " + diceTournamentNumber(tie) + "이면 동점입니다!" : "!");
 }
 
+// 다음 참가자의 입력을 기다리고 입력 없이 주사위를 추첨하지 않는 함수
+function waitDiceTournamentRoll(env, state, match) {
+    match.phase = "INPUT"; match.dueAt = 0;
+    var text = match.turn === 3 ? buildDiceTournamentLastChance(env, state, match) + "\n\n" : "";
+    text += "🎲 " + diceTournamentName(env, state, match.slots[match.turn % 2]) + "님의 " + (match.turn < 2 ? "첫 번째" : "두 번째") + " 차례입니다.\n👉 /주사위 를 입력해 주세요!";
+    queueDiceTournamentNotice(state, text, false, { kind: "input", match: match.id, cycle: match.cycle });
+}
+
 // 숫자를 먼저 확정하고 실제 굴림 공지 전송 뒤 공개 시간을 예약하는 함수
 function beginDiceTournamentRoll(env, state, match, random) {
     match.phase = "ROLL"; match.dueAt = 0;
     if (!match.rolls[match.turn]) match.rolls[match.turn] = Math.floor(random() * 6) + 1;
-    if (match.turn === 3) queueDiceTournamentNotice(state, buildDiceTournamentLastChance(env, state, match), false, { kind: "hint", match: match.id, cycle: match.cycle });
     queueDiceTournamentNotice(state, "🎲 " + diceTournamentName(env, state, match.slots[match.turn % 2]) + "님의 주사위가 굴러갑니다!\n\n데구르르르르.. 🎲", false,
         { kind: "roll", match: match.id, cycle: match.cycle, turn: match.turn });
 }
@@ -68368,12 +68524,12 @@ function revealDiceTournamentRoll(env, state, match, random) {
     var text = "🎲 결과는… 【" + diceTournamentNumber(match.rolls[turn]) + "】!\n\n" + diceTournamentName(env, state, match.slots[side]) + "\n" + diceTournamentNumber(first) + (turn >= 2 ? " + " + diceTournamentNumber(second) : "") + " = 누적 【" + diceTournamentNumber(first + second) + "】";
     if (turn === 1) text += match.rolls[0] === match.rolls[1] ? "\n🤝 첫 굴림은 동점입니다!" : "\n🔥 현재 우세: " + diceTournamentName(env, state, match.slots[match.rolls[0] > match.rolls[1] ? 0 : 1]);
     queueDiceTournamentNotice(state, text, false); match.turn++;
-    if (match.turn < 4) { beginDiceTournamentRoll(env, state, match, random); return; }
+    if (match.turn < 4) { waitDiceTournamentRoll(env, state, match); return; }
     var a = match.rolls[0] + match.rolls[2], b = match.rolls[1] + match.rolls[3]; // 두 선수의 최종 합계
     var summary = "🎲 최종 누적 주사위\n\n" + diceTournamentName(env, state, match.slots[0]) + "\n" + diceTournamentNumber(match.rolls[0]) + " + " + diceTournamentNumber(match.rolls[2]) + " = 【" + diceTournamentNumber(a) + "】\n\n" + diceTournamentName(env, state, match.slots[1]) + "\n" + diceTournamentNumber(match.rolls[1]) + " + " + diceTournamentNumber(match.rolls[3]) + " = 【" + diceTournamentNumber(b) + "】\n\n";
     if (a === b) {
         queueDiceTournamentNotice(state, summary + "🤯 합계까지 같습니다! 재경기로 이어집니다!", false);
-        match.rolls = [0, 0, 0, 0]; match.turn = 0; match.cycle++; beginDiceTournamentRoll(env, state, match, random); return;
+        match.rolls = [0, 0, 0, 0]; match.turn = 0; match.cycle++; waitDiceTournamentRoll(env, state, match); return;
     }
     var winnerSide = a > b ? 0 : 1, reversed = winnerSide === 0 ? match.rolls[0] < match.rolls[1] : match.rolls[1] < match.rolls[0];
     summary += reversed ? "🔥 역전승입니다아아아아!\n" + diceTournamentName(env, state, match.slots[winnerSide]) + "님이 승부를 뒤집었습니다!" : match.rolls[0] === match.rolls[1] ? "🏆 " + diceTournamentName(env, state, match.slots[winnerSide]) + "님 승리!" : "🛡️ 끝까지 리드를 지켜냈습니다!";
@@ -68386,7 +68542,7 @@ function revealDiceTournamentRoll(env, state, match, random) {
 function readyDiceTournament(env, state, id, random) {
     var match = state.matches[state.cursor], side = match ? match.slots.indexOf(id) : -1;
     if (!id || !state.users["$" + id] || side < 0 || state.users["$" + id].eliminated) return { changed: false, text: "현재 경기 참가자만 /ㄹㄷ를 사용할 수 있습니다." };
-    if (match.ready[side]) return { changed: false, text: "✅ 이미 준비 완료했습니다. 경기 진행을 기다려 주세요." };
+    if (match.ready[side]) return { changed: false, text: "✅ 준비 완료" };
     if (match.phase !== "READY") return { changed: false, text: "🎲 현재 경기가 진행 중입니다." };
     var attendance = grantDiceTournamentReward(env, state, id, "attendance");
     var quarter = match.stage === 8 ? grantDiceTournamentReward(env, state, id, "quarter") : 0;
@@ -68398,7 +68554,7 @@ function readyDiceTournament(env, state, id, random) {
     if (!match.slots[1 - side]) { finishDiceTournamentMatch(env, state, match, id, true); advanceDiceTournament(env, state); }
     else if (match.ready[0] && match.ready[1]) {
         text = readyText.join("\n") + "\n\n🔥 두 선수 모두 준비됐습니다!\n" + diceTournamentStageLabel(match.stage) + " 【" + diceTournamentNumber(match.id) + "경기】 시작합니다아아아아!";
-        beginDiceTournamentRoll(env, state, match, random);
+        waitDiceTournamentRoll(env, state, match);
     } else text += "\n\n📢 " + diceTournamentName(env, state, match.slots[1 - side]) + "님!\n준비되셨다면 /ㄹㄷ를 입력해 주세요!";
     if (attendance) text += "\n\n💰 참가 보상 " + diceTournamentNumber(attendance / 100000000) + "억 포인트 지급!";
     if (quarter) text += "\n💰 8️⃣강 보상 " + diceTournamentNumber(quarter / 100000000) + "억 포인트 지급!";
@@ -68424,27 +68580,39 @@ function eliminateDiceTournament(env, state, nick) {
         }
     }
     if (!completed) queueDiceTournamentNotice(state, noticeText, false);
-    return { changed: true, text: "✅ [" + nick + "]님이 탈락 처리되었습니다." };
+    return { changed: true, text: "🚫 " + diceTournamentName(env, state, id) + "님이 탈락 처리되었습니다." };
 }
 
 // 대회 명령의 권한·진행방·저장을 진입부에서 처리하고 조회는 저장하지 않는 함수
 function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat, msg, replier, now) {
     var request = getDiceTournamentRequest(msg), kind = request.kind, config = GLOBAL_CONFIG.diceTournament;
-    var operator = ["start", "pause", "resume", "eliminate", "help"].indexOf(kind) >= 0;
-    if (operator && !isMaster(sender)) { replier.reply("🚫 MASTER 권한만 사용할 수 있는 명령어입니다."); return; }
+    var operator = ["start", "pause", "resume", "eliminate", "help", "stop"].indexOf(kind) >= 0;
+    if (operator && !isMasterIdentity(sender)) { replier.reply("🚫 MASTER 권한만 사용할 수 있는 명령어입니다."); return; }
+    if (kind === "start" && (!isGroupChat || room !== (ctx.isDev ? testRoom : config.publicRoom))) return;
     if (kind === "invalid") { replier.reply("명령어를 정확히 입력해 주세요.\n/주사위참가 · /주사위참가명단 · /주사위대진표 · /ㄹㄷ\n/주사위탈락 등록닉네임"); return; }
     if (kind === "help") { replier.reply(buildDiceTournamentHelp()); return; }
     var state = data.diceTournament ? requireDiceTournament(data.diceTournament) : createDiceTournament();
     var env = { data: data, guildData: guildData, index: buildServerRaidAccountIndex(data) }, text = "", changed = false;
+    if (kind === "stop") {
+        if (!state.roster.length && !state.matches.length) { replier.reply("🎲 종료할 주사위 대회가 없습니다."); return; }
+        data.diceTournament = createDiceTournament();
+        saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+        scheduleDiceTournamentWork(ctx, data.diceTournament, now);
+        replier.reply("🛑 MASTER가 주사위 대회를 강제 종료했습니다.\n\n참가명단과 대진표 등 대회 기록이 초기화되었습니다.\n\n지급된 포인트는 유지됩니다.\n\n새 대회 참가 신청은 /주사위참가 를 입력해 주세요."); return;
+    }
     if (kind === "roster") {
-        text = "🎲 주사위 대회 참가명단[" + diceTournamentNumber(state.roster.length) + "명]" + allsee;
-        for (var p = 0; p < state.roster.length; p++) { var participantId = state.roster[p]; text += "\n" + diceTournamentNumber(p + 1) + ". " + diceTournamentName(env, state, participantId) + (state.users["$" + participantId].eliminated ? " · 탈락" : ""); }
+        text = state.roster.length ? "🎲 주사위 대회 참가명단[" + diceTournamentNumber(state.roster.length) + "명]" : "🎲 현재 신청된 주사위 대회 참가자가 없습니다.";
+        for (var p = 0; p < state.roster.length; p++) { var participantId = state.roster[p]; text += "\n" + diceTournamentNumber(p + 1) + ". " + diceTournamentName(env, state, participantId); }
     } else if (kind === "bracket") text = buildDiceTournamentBracket(env, state);
-    else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다. 조회와 /주사위재개만 가능합니다.";
+    else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다.";
     else if (state.status === "FINISHED") text = "🏁 주사위 대회가 종료되었습니다.";
+    else if (kind === "roll") {
+        var current = state.matches[state.cursor], rollId = getGuildWarAccountId(data, sender);
+        if (!current || current.phase !== "INPUT" || current.slots[current.turn % 2] !== rollId || state.users["$" + rollId].eliminated) return;
+        beginDiceTournamentRoll(env, state, current, Math.random); changed = true;
+    }
     else if (kind === "join" || kind === "ready") {
-        if (!isGroupChat || room !== (ctx.isDev ? testRoom : state.room)) text = "🎲 참가 신청과 /ㄹㄷ는 대회 진행 공개방에서 입력해 주세요.";
-        else if (!data.member[sender]) text = "등록된 계정이 필요합니다. 먼저 게임 가입을 완료해 주세요.";
+        if (!data.member[sender]) text = "등록된 계정이 필요합니다.";
         else if (isAccountSuspended(data, sender)) text = "계정정지 상태입니다 호월고객센터로 문의해주세요";
         else if (kind === "join") {
             var gid = getMyGuildId(data, sender), guild = gid && guildData.guilds[gid];
@@ -68458,7 +68626,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
                     text = "✅ [" + checkRank(data, null, guildData, sender) + "]님, 참가 신청 완료!\n📅 " + diceTournamentNumber(config.eventLabel);
                 }
             }
-        } else if (state.status !== "ACTIVE") text = "참가 접수 중입니다. MASTER가 대회를 시작하면 자기 경기에서 /ㄹㄷ를 입력해 주세요.";
+        } else if (state.status !== "ACTIVE") text = "참가 접수 중입니다.";
         else {
             var readyId = getGuildWarAccountId(data, sender), decision = readyDiceTournament(env, state, readyId, Math.random);
             changed = decision.changed; text = decision.text;
@@ -68467,10 +68635,10 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
         if (state.status !== "REGISTERING") text = "이미 시작된 대회입니다.";
         else {
             var eligible = state.roster.filter(function (id) { var account = env.index[id], gid = account && getMyGuildId(data, account.user), guild = gid && guildData.guilds[gid]; return !state.users["$" + id].eliminated && account && !isAccountSuspended(data, account.user) && guild && guild.members[account.user]; });
-            if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명 · 보상은 지급하지 않았습니다.";
+            if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명";
             else {
                 startDiceTournament(state, eligible, Math.random); changed = true;
-                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n\n🎁 첫 경기에서 /ㄹㄷ로 참석을 확인하면\n참가 보상 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 보상 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 신청만 하고 첫 경기에 미참석하면 보상은 지급되지 않습니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state), false);
+                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n\n🎁 첫 경기에서 /ㄹㄷ로 참석을 확인하면\n참가 보상 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 보상 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 신청만 하고 첫 경기에 미참석하면 보상은 지급되지 않습니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state, true), false);
                 advanceDiceTournament(env, state); text = "✅ 주사위 대회를 시작했습니다.";
             }
         }
@@ -68495,6 +68663,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
         endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 실패로 확정된 대진·보상을 되돌리지 않는다.
     }
     scheduleDiceTournamentWork(ctx, state, now);
+    if (room === (ctx.isDev ? testRoom : config.publicRoom) && state.notices.some(function (notice) { return notice.text === text; })) return; // 같은 방의 중단·재개 안내 중복 방지
     var output = createDiceTournament(); queueDiceTournamentNotice(output, text, false);
     for (var part = 0; part < output.notices.length; part++) replier.reply(output.notices[part].text);
 }
@@ -68503,6 +68672,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
 function getDiceTournamentWorkDelay(state, now) {
     if (!state) return null;
     if (state.notices.some(function (notice) { return notice.attempts < 2 && (state.status !== "PAUSED" || notice.control); })) return GLOBAL_CONFIG.diceTournament.noticeDelayMs;
+    if (state.status === "FINISHED" && !state.notices.length) return 1;
     if (state.status !== "ACTIVE") return null;
     var match = state.matches[state.cursor];
     if (!match) return null;
@@ -68540,7 +68710,7 @@ function runDiceTournamentWork(ctx) {
             var notice = state.notices[noticeIndex]; notice.attempts++; notice.inFlight = true;
             saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
             var sent = false;
-            try { sent = Api.replyRoom(ctx.isDev ? testRoom : state.room, ctx.header(notice.text)) !== false; }
+            try { sent = Api.replyRoom(ctx.isDev ? testRoom : GLOBAL_CONFIG.diceTournament.publicRoom, ctx.header(notice.text)) !== false; }
             catch (sendError) { debuggerLog("[주사위 대회 공지 전송 실패] " + sendError); }
             notice.inFlight = false;
             if (sent) {
@@ -68550,9 +68720,13 @@ function runDiceTournamentWork(ctx) {
                     if (anchor.kind === "roll" && match.phase === "ROLL" && match.turn === anchor.turn && !match.dueAt) match.dueAt = Date.now() + GLOBAL_CONFIG.diceTournament.rollDelayMs;
                 }
                 state.notices.splice(noticeIndex, 1);
+                if (state.status === "FINISHED" && !state.notices.length) data.diceTournament = createDiceTournament();
             } else if (notice.attempts >= 2 && state.status === "ACTIVE") {
                 state.status = "PAUSED"; state.pausedAt = Date.now(); debuggerLog("[주사위 대회 전송 보류] MASTER /주사위재개 필요");
             }
+            saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+        } else if (state.status === "FINISHED" && !state.notices.length) {
+            data.diceTournament = createDiceTournament();
             saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
         } else if (state.status === "ACTIVE") {
             var current = state.matches[state.cursor], guildData = loadJsonFile(guildPath);

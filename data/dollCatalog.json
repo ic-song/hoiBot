@@ -9000,6 +9000,3446 @@
       "maxTenths": 5200,
       "largeTenths": 4300,
       "giantTenths": 4975
+    },
+    {
+      "id": "D1001",
+      "name": "새벽 성기사 곰🧸",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1560,
+      "largeTenths": 1298,
+      "giantTenths": 1495,
+      "special": false
+    },
+    {
+      "id": "D1002",
+      "name": "새벽 성기사 토끼🐰",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1200,
+      "largeTenths": 1000,
+      "giantTenths": 1150,
+      "special": false
+    },
+    {
+      "id": "D1003",
+      "name": "새벽 성기사 고양이🐱",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1320,
+      "largeTenths": 1100,
+      "giantTenths": 1265,
+      "special": false
+    },
+    {
+      "id": "D1004",
+      "name": "새벽 성기사 강아지🐶",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1440,
+      "largeTenths": 1202,
+      "giantTenths": 1381,
+      "special": false
+    },
+    {
+      "id": "D1005",
+      "name": "새벽 성기사 햄스터🐹",
+      "grade": 3,
+      "minTenths": 180,
+      "maxTenths": 1020,
+      "largeTenths": 852,
+      "giantTenths": 978,
+      "special": false
+    },
+    {
+      "id": "D1006",
+      "name": "새벽 성기사 오리🐤",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1140,
+      "largeTenths": 952,
+      "giantTenths": 1093,
+      "special": false
+    },
+    {
+      "id": "D1007",
+      "name": "새벽 성기사 펭귄🐧",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1008",
+      "name": "새벽 성기사 판다🐼",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1680,
+      "largeTenths": 1394,
+      "giantTenths": 1609,
+      "special": false
+    },
+    {
+      "id": "D1009",
+      "name": "새벽 성기사 여우🦊",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1380,
+      "largeTenths": 1148,
+      "giantTenths": 1322,
+      "special": false
+    },
+    {
+      "id": "D1010",
+      "name": "새벽 성기사 수달🦦",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1011",
+      "name": "홍련의 용🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1012",
+      "name": "홍련의 불사조🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1013",
+      "name": "홍련의 구미호🟡",
+      "grade": 4,
+      "minTenths": 300,
+      "maxTenths": 1800,
+      "largeTenths": 1500,
+      "giantTenths": 1725,
+      "special": false
+    },
+    {
+      "id": "D1014",
+      "name": "홍련의 유니콘🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1015",
+      "name": "홍련의 기린🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1016",
+      "name": "홍련의 백호🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1017",
+      "name": "홍련의 크라켄🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1018",
+      "name": "홍련의 페가수스🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2150,
+      "largeTenths": 1790,
+      "giantTenths": 2060,
+      "special": false
+    },
+    {
+      "id": "D1019",
+      "name": "홍련의 바실리스크🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1020",
+      "name": "홍련의 그리핀🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1021",
+      "name": "서리 왕관의 용🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1022",
+      "name": "서리 왕관의 불사조🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1023",
+      "name": "서리 왕관의 구미호🟡",
+      "grade": 4,
+      "minTenths": 300,
+      "maxTenths": 1800,
+      "largeTenths": 1500,
+      "giantTenths": 1725,
+      "special": false
+    },
+    {
+      "id": "D1024",
+      "name": "서리 왕관의 유니콘🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1025",
+      "name": "서리 왕관의 기린🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1026",
+      "name": "서리 왕관의 백호🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1027",
+      "name": "서리 왕관의 크라켄🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1028",
+      "name": "서리 왕관의 페가수스🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2150,
+      "largeTenths": 1790,
+      "giantTenths": 2060,
+      "special": false
+    },
+    {
+      "id": "D1029",
+      "name": "서리 왕관의 바실리스크🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1030",
+      "name": "서리 왕관의 그리핀🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1031",
+      "name": "별빛 성소의 수호신 호월이🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2760,
+      "largeTenths": 2288,
+      "giantTenths": 2642,
+      "special": false
+    },
+    {
+      "id": "D1032",
+      "name": "별빛 성소의 여신 토끼🐰",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2530,
+      "largeTenths": 2094,
+      "giantTenths": 2421,
+      "special": false
+    },
+    {
+      "id": "D1033",
+      "name": "별빛 성소의 정령 여우🦊",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2588,
+      "largeTenths": 2141,
+      "giantTenths": 2477,
+      "special": false
+    },
+    {
+      "id": "D1034",
+      "name": "별빛 성소의 봉황🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1035",
+      "name": "별빛 성소의 신룡🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3220,
+      "largeTenths": 2666,
+      "giantTenths": 3082,
+      "special": false
+    },
+    {
+      "id": "D1036",
+      "name": "별빛 성소의 고래 신🔴",
+      "grade": 5,
+      "minTenths": 500,
+      "maxTenths": 3450,
+      "largeTenths": 2860,
+      "giantTenths": 3303,
+      "special": false
+    },
+    {
+      "id": "D1037",
+      "name": "별빛 성소의 성스러운 사슴🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1038",
+      "name": "별빛 성소의 백호 신🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2932,
+      "largeTenths": 2426,
+      "giantTenths": 2806,
+      "special": false
+    },
+    {
+      "id": "D1039",
+      "name": "별빛 성소의 예언자 부엉이🔴",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2645,
+      "largeTenths": 2186,
+      "giantTenths": 2531,
+      "special": false
+    },
+    {
+      "id": "D1040",
+      "name": "별빛 성소의 세계수 정령🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3335,
+      "largeTenths": 2758,
+      "giantTenths": 3191,
+      "special": false
+    },
+    {
+      "id": "D1041",
+      "name": "새벽 궁전의 수호신 호월이🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2760,
+      "largeTenths": 2288,
+      "giantTenths": 2642,
+      "special": false
+    },
+    {
+      "id": "D1042",
+      "name": "새벽 궁전의 여신 토끼🐰",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2530,
+      "largeTenths": 2094,
+      "giantTenths": 2421,
+      "special": false
+    },
+    {
+      "id": "D1043",
+      "name": "새벽 궁전의 정령 여우🦊",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2588,
+      "largeTenths": 2141,
+      "giantTenths": 2477,
+      "special": false
+    },
+    {
+      "id": "D1044",
+      "name": "새벽 궁전의 봉황🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1045",
+      "name": "새벽 궁전의 신룡🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3220,
+      "largeTenths": 2666,
+      "giantTenths": 3082,
+      "special": false
+    },
+    {
+      "id": "D1046",
+      "name": "새벽 궁전의 고래 신🔴",
+      "grade": 5,
+      "minTenths": 500,
+      "maxTenths": 3450,
+      "largeTenths": 2860,
+      "giantTenths": 3303,
+      "special": false
+    },
+    {
+      "id": "D1047",
+      "name": "새벽 궁전의 성스러운 사슴🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1048",
+      "name": "새벽 궁전의 백호 신🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2932,
+      "largeTenths": 2426,
+      "giantTenths": 2806,
+      "special": false
+    },
+    {
+      "id": "D1049",
+      "name": "새벽 궁전의 예언자 부엉이🔴",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2645,
+      "largeTenths": 2186,
+      "giantTenths": 2531,
+      "special": false
+    },
+    {
+      "id": "D1050",
+      "name": "새벽 궁전의 세계수 정령🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3335,
+      "largeTenths": 2758,
+      "giantTenths": 3191,
+      "special": false
+    },
+    {
+      "id": "D1051",
+      "name": "차원 경계의 항성 용🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1052",
+      "name": "차원 경계의 성운 봉황🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1053",
+      "name": "차원 경계의 은하 구미호🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3255,
+      "largeTenths": 2694,
+      "giantTenths": 3115,
+      "special": false
+    },
+    {
+      "id": "D1054",
+      "name": "차원 경계의 시간 부엉이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1055",
+      "name": "차원 경계의 공허 고래🌌",
+      "grade": 6,
+      "minTenths": 600,
+      "maxTenths": 3885,
+      "largeTenths": 3228,
+      "giantTenths": 3721,
+      "special": false
+    },
+    {
+      "id": "D1056",
+      "name": "차원 경계의 차원 사슴🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1057",
+      "name": "차원 경계의 혜성 백호🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1058",
+      "name": "차원 경계의 별빛 페가수스🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1059",
+      "name": "차원 경계의 광자 정령🌌",
+      "grade": 6,
+      "minTenths": 400,
+      "maxTenths": 2835,
+      "largeTenths": 2348,
+      "giantTenths": 2714,
+      "special": false
+    },
+    {
+      "id": "D1060",
+      "name": "차원 경계의 별볼 호월이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1061",
+      "name": "시간 균열의 항성 용🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1062",
+      "name": "시간 균열의 성운 봉황🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1063",
+      "name": "시간 균열의 은하 구미호🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3255,
+      "largeTenths": 2694,
+      "giantTenths": 3115,
+      "special": false
+    },
+    {
+      "id": "D1064",
+      "name": "시간 균열의 시간 부엉이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1065",
+      "name": "시간 균열의 공허 고래🌌",
+      "grade": 6,
+      "minTenths": 600,
+      "maxTenths": 3885,
+      "largeTenths": 3228,
+      "giantTenths": 3721,
+      "special": false
+    },
+    {
+      "id": "D1066",
+      "name": "시간 균열의 차원 사슴🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1067",
+      "name": "시간 균열의 혜성 백호🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1068",
+      "name": "시간 균열의 별빛 페가수스🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1069",
+      "name": "시간 균열의 광자 정령🌌",
+      "grade": 6,
+      "minTenths": 400,
+      "maxTenths": 2835,
+      "largeTenths": 2348,
+      "giantTenths": 2714,
+      "special": false
+    },
+    {
+      "id": "D1070",
+      "name": "시간 균열의 별볼 호월이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1071",
+      "name": "첫 노을을 물들인 호월이🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3800,
+      "largeTenths": 3140,
+      "giantTenths": 3635,
+      "special": false
+    },
+    {
+      "id": "D1072",
+      "name": "첫 비를 부른 푸른 용🌠",
+      "grade": 7,
+      "minTenths": 550,
+      "maxTenths": 4300,
+      "largeTenths": 3550,
+      "giantTenths": 4113,
+      "special": false
+    },
+    {
+      "id": "D1073",
+      "name": "첫 노래를 깨운 봉황🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3800,
+      "largeTenths": 3140,
+      "giantTenths": 3635,
+      "special": false
+    },
+    {
+      "id": "D1074",
+      "name": "첫 눈을 내린 하얀 여우🦊",
+      "grade": 7,
+      "minTenths": 450,
+      "maxTenths": 3700,
+      "largeTenths": 3050,
+      "giantTenths": 3538,
+      "special": false
+    },
+    {
+      "id": "D1075",
+      "name": "계절을 돌린 황금 사슴🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 4000,
+      "largeTenths": 3300,
+      "giantTenths": 3825,
+      "special": false
+    },
+    {
+      "id": "D1076",
+      "name": "대지의 숨을 깨운 곰🧸",
+      "grade": 7,
+      "minTenths": 550,
+      "maxTenths": 4200,
+      "largeTenths": 3470,
+      "giantTenths": 4018,
+      "special": false
+    },
+    {
+      "id": "D1077",
+      "name": "파도를 일으킨 푸른 고래🌠",
+      "grade": 7,
+      "minTenths": 600,
+      "maxTenths": 4600,
+      "largeTenths": 3800,
+      "giantTenths": 4400,
+      "special": false
+    },
+    {
+      "id": "D1078",
+      "name": "새벽 이슬을 빚은 토끼🐰",
+      "grade": 7,
+      "minTenths": 450,
+      "maxTenths": 3500,
+      "largeTenths": 2890,
+      "giantTenths": 3348,
+      "special": false
+    },
+    {
+      "id": "D1079",
+      "name": "별의 길을 연 부엉이🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3900,
+      "largeTenths": 3220,
+      "giantTenths": 3730,
+      "special": false
+    },
+    {
+      "id": "D1080",
+      "name": "첫 무지개를 펼친 호월이🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3600,
+      "largeTenths": 2980,
+      "giantTenths": 3445,
+      "special": false
+    },
+    {
+      "id": "D1081",
+      "name": "별자리를 엮는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4500,
+      "largeTenths": 3720,
+      "giantTenths": 4305,
+      "special": false
+    },
+    {
+      "id": "D1082",
+      "name": "계절을 빚는 호월이👑",
+      "grade": 8,
+      "minTenths": 650,
+      "maxTenths": 5000,
+      "largeTenths": 4130,
+      "giantTenths": 4783,
+      "special": false
+    },
+    {
+      "id": "D1083",
+      "name": "빛을 펼치는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4600,
+      "largeTenths": 3800,
+      "giantTenths": 4400,
+      "special": false
+    },
+    {
+      "id": "D1084",
+      "name": "어둠을 품는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4700,
+      "largeTenths": 3880,
+      "giantTenths": 4495,
+      "special": false
+    },
+    {
+      "id": "D1085",
+      "name": "바다를 깨우는 호월이👑",
+      "grade": 8,
+      "minTenths": 650,
+      "maxTenths": 4900,
+      "largeTenths": 4050,
+      "giantTenths": 4688,
+      "special": false
+    },
+    {
+      "id": "D1086",
+      "name": "하늘을 수놓는 호월이👑",
+      "grade": 8,
+      "minTenths": 550,
+      "maxTenths": 4300,
+      "largeTenths": 3550,
+      "giantTenths": 4113,
+      "special": false
+    },
+    {
+      "id": "D1087",
+      "name": "영원을 새기는 호월이👑",
+      "grade": 8,
+      "minTenths": 550,
+      "maxTenths": 4400,
+      "largeTenths": 3630,
+      "giantTenths": 4208,
+      "special": false
+    },
+    {
+      "id": "D1088",
+      "name": "인연을 잇는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4600,
+      "largeTenths": 3800,
+      "giantTenths": 4400,
+      "special": false
+    },
+    {
+      "id": "D1089",
+      "name": "기적을 피우는 호월이👑",
+      "grade": 8,
+      "minTenths": 650,
+      "maxTenths": 4800,
+      "largeTenths": 3970,
+      "giantTenths": 4593,
+      "special": false
+    },
+    {
+      "id": "D1090",
+      "name": "새로운 세계를 여는 호월이👑",
+      "grade": 8,
+      "minTenths": 700,
+      "maxTenths": 5200,
+      "largeTenths": 4300,
+      "giantTenths": 4975,
+      "special": false
+    },
+    {
+      "id": "D1091",
+      "name": "만물의 근원 호월이✡️",
+      "grade": 9,
+      "minTenths": 800,
+      "maxTenths": 6000,
+      "largeTenths": 4960,
+      "giantTenths": 5740,
+      "special": false
+    },
+    {
+      "id": "D1092",
+      "name": "시작과 끝의 호월이✡️",
+      "grade": 9,
+      "minTenths": 1000,
+      "maxTenths": 7000,
+      "largeTenths": 5800,
+      "giantTenths": 6700,
+      "special": false
+    },
+    {
+      "id": "D1093",
+      "name": "소풍 도시락 곰🧸",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": false
+    },
+    {
+      "id": "D1094",
+      "name": "소풍 도시락 토끼🐰",
+      "grade": 0,
+      "minTenths": 100,
+      "maxTenths": 700,
+      "largeTenths": 580,
+      "giantTenths": 670,
+      "special": false
+    },
+    {
+      "id": "D1095",
+      "name": "소풍 도시락 고양이🐱",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1096",
+      "name": "소풍 도시락 강아지🐶",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1097",
+      "name": "소풍 도시락 햄스터🐹",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 600,
+      "largeTenths": 496,
+      "giantTenths": 574,
+      "special": false
+    },
+    {
+      "id": "D1098",
+      "name": "소풍 도시락 오리🐤",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 650,
+      "largeTenths": 536,
+      "giantTenths": 622,
+      "special": false
+    },
+    {
+      "id": "D1099",
+      "name": "소풍 도시락 펭귄🐧",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1100",
+      "name": "소풍 도시락 판다🐼",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1100,
+      "largeTenths": 910,
+      "giantTenths": 1053,
+      "special": false
+    },
+    {
+      "id": "D1101",
+      "name": "소풍 도시락 여우🦊",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1102",
+      "name": "소풍 도시락 수달🦦",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1103",
+      "name": "딸기 잠옷 곰🧸",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": false
+    },
+    {
+      "id": "D1104",
+      "name": "딸기 잠옷 토끼🐰",
+      "grade": 0,
+      "minTenths": 100,
+      "maxTenths": 700,
+      "largeTenths": 580,
+      "giantTenths": 670,
+      "special": false
+    },
+    {
+      "id": "D1105",
+      "name": "딸기 잠옷 고양이🐱",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1106",
+      "name": "딸기 잠옷 강아지🐶",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1107",
+      "name": "딸기 잠옷 햄스터🐹",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 600,
+      "largeTenths": 496,
+      "giantTenths": 574,
+      "special": false
+    },
+    {
+      "id": "D1108",
+      "name": "딸기 잠옷 오리🐤",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 650,
+      "largeTenths": 536,
+      "giantTenths": 622,
+      "special": false
+    },
+    {
+      "id": "D1109",
+      "name": "딸기 잠옷 펭귄🐧",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1110",
+      "name": "딸기 잠옷 판다🐼",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1100,
+      "largeTenths": 910,
+      "giantTenths": 1053,
+      "special": false
+    },
+    {
+      "id": "D1111",
+      "name": "딸기 잠옷 여우🦊",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1112",
+      "name": "딸기 잠옷 수달🦦",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1113",
+      "name": "솜사탕 리본 곰🧸",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": false
+    },
+    {
+      "id": "D1114",
+      "name": "솜사탕 리본 토끼🐰",
+      "grade": 0,
+      "minTenths": 100,
+      "maxTenths": 700,
+      "largeTenths": 580,
+      "giantTenths": 670,
+      "special": false
+    },
+    {
+      "id": "D1115",
+      "name": "솜사탕 리본 고양이🐱",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1116",
+      "name": "솜사탕 리본 강아지🐶",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1117",
+      "name": "솜사탕 리본 햄스터🐹",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 600,
+      "largeTenths": 496,
+      "giantTenths": 574,
+      "special": false
+    },
+    {
+      "id": "D1118",
+      "name": "솜사탕 리본 오리🐤",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 650,
+      "largeTenths": 536,
+      "giantTenths": 622,
+      "special": false
+    },
+    {
+      "id": "D1119",
+      "name": "솜사탕 리본 펭귄🐧",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1120",
+      "name": "솜사탕 리본 판다🐼",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1100,
+      "largeTenths": 910,
+      "giantTenths": 1053,
+      "special": false
+    },
+    {
+      "id": "D1121",
+      "name": "솜사탕 리본 여우🦊",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1122",
+      "name": "솜사탕 리본 수달🦦",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1123",
+      "name": "비눗방울 놀이 곰🧸",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": false
+    },
+    {
+      "id": "D1124",
+      "name": "비눗방울 놀이 토끼🐰",
+      "grade": 0,
+      "minTenths": 100,
+      "maxTenths": 700,
+      "largeTenths": 580,
+      "giantTenths": 670,
+      "special": false
+    },
+    {
+      "id": "D1125",
+      "name": "비눗방울 놀이 고양이🐱",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1126",
+      "name": "비눗방울 놀이 강아지🐶",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1127",
+      "name": "비눗방울 놀이 햄스터🐹",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 600,
+      "largeTenths": 496,
+      "giantTenths": 574,
+      "special": false
+    },
+    {
+      "id": "D1128",
+      "name": "비눗방울 놀이 오리🐤",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 650,
+      "largeTenths": 536,
+      "giantTenths": 622,
+      "special": false
+    },
+    {
+      "id": "D1129",
+      "name": "비눗방울 놀이 펭귄🐧",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1130",
+      "name": "비눗방울 놀이 판다🐼",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1100,
+      "largeTenths": 910,
+      "giantTenths": 1053,
+      "special": false
+    },
+    {
+      "id": "D1131",
+      "name": "비눗방울 놀이 여우🦊",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1132",
+      "name": "비눗방울 놀이 수달🦦",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1133",
+      "name": "우유 쿠키 곰🧸",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": false
+    },
+    {
+      "id": "D1134",
+      "name": "우유 쿠키 토끼🐰",
+      "grade": 0,
+      "minTenths": 100,
+      "maxTenths": 700,
+      "largeTenths": 580,
+      "giantTenths": 670,
+      "special": false
+    },
+    {
+      "id": "D1135",
+      "name": "우유 쿠키 고양이🐱",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1136",
+      "name": "우유 쿠키 강아지🐶",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1137",
+      "name": "우유 쿠키 햄스터🐹",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 600,
+      "largeTenths": 496,
+      "giantTenths": 574,
+      "special": false
+    },
+    {
+      "id": "D1138",
+      "name": "우유 쿠키 오리🐤",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 650,
+      "largeTenths": 536,
+      "giantTenths": 622,
+      "special": false
+    },
+    {
+      "id": "D1139",
+      "name": "우유 쿠키 펭귄🐧",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1140",
+      "name": "우유 쿠키 판다🐼",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1100,
+      "largeTenths": 910,
+      "giantTenths": 1053,
+      "special": false
+    },
+    {
+      "id": "D1141",
+      "name": "우유 쿠키 여우🦊",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1142",
+      "name": "우유 쿠키 수달🦦",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1143",
+      "name": "도토리 산책 곰🧸",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": false
+    },
+    {
+      "id": "D1144",
+      "name": "도토리 산책 토끼🐰",
+      "grade": 0,
+      "minTenths": 100,
+      "maxTenths": 700,
+      "largeTenths": 580,
+      "giantTenths": 670,
+      "special": false
+    },
+    {
+      "id": "D1145",
+      "name": "도토리 산책 고양이🐱",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1146",
+      "name": "도토리 산책 강아지🐶",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1147",
+      "name": "도토리 산책 햄스터🐹",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 600,
+      "largeTenths": 496,
+      "giantTenths": 574,
+      "special": false
+    },
+    {
+      "id": "D1148",
+      "name": "도토리 산책 오리🐤",
+      "grade": 0,
+      "minTenths": 80,
+      "maxTenths": 650,
+      "largeTenths": 536,
+      "giantTenths": 622,
+      "special": false
+    },
+    {
+      "id": "D1149",
+      "name": "도토리 산책 펭귄🐧",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1150",
+      "name": "도토리 산책 판다🐼",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1100,
+      "largeTenths": 910,
+      "giantTenths": 1053,
+      "special": false
+    },
+    {
+      "id": "D1151",
+      "name": "도토리 산책 여우🦊",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 900,
+      "largeTenths": 744,
+      "giantTenths": 861,
+      "special": false
+    },
+    {
+      "id": "D1152",
+      "name": "도토리 산책 수달🦦",
+      "grade": 0,
+      "minTenths": 120,
+      "maxTenths": 850,
+      "largeTenths": 704,
+      "giantTenths": 814,
+      "special": false
+    },
+    {
+      "id": "D1153",
+      "name": "달빛 우체부 곰🧸",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1200,
+      "largeTenths": 996,
+      "giantTenths": 1149,
+      "special": false
+    },
+    {
+      "id": "D1154",
+      "name": "달빛 우체부 토끼🐰",
+      "grade": 1,
+      "minTenths": 130,
+      "maxTenths": 840,
+      "largeTenths": 698,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1155",
+      "name": "달빛 우체부 고양이🐱",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1156",
+      "name": "달빛 우체부 강아지🐶",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1157",
+      "name": "달빛 우체부 햄스터🐹",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 720,
+      "largeTenths": 598,
+      "giantTenths": 690,
+      "special": false
+    },
+    {
+      "id": "D1158",
+      "name": "달빛 우체부 오리🐤",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 780,
+      "largeTenths": 646,
+      "giantTenths": 747,
+      "special": false
+    },
+    {
+      "id": "D1159",
+      "name": "달빛 우체부 펭귄🐧",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1160",
+      "name": "달빛 우체부 판다🐼",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1320,
+      "largeTenths": 1092,
+      "giantTenths": 1263,
+      "special": false
+    },
+    {
+      "id": "D1161",
+      "name": "달빛 우체부 여우🦊",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1162",
+      "name": "달빛 우체부 수달🦦",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1163",
+      "name": "별사탕 제빵사 곰🧸",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1200,
+      "largeTenths": 996,
+      "giantTenths": 1149,
+      "special": false
+    },
+    {
+      "id": "D1164",
+      "name": "별사탕 제빵사 토끼🐰",
+      "grade": 1,
+      "minTenths": 130,
+      "maxTenths": 840,
+      "largeTenths": 698,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1165",
+      "name": "별사탕 제빵사 고양이🐱",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1166",
+      "name": "별사탕 제빵사 강아지🐶",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1167",
+      "name": "별사탕 제빵사 햄스터🐹",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 720,
+      "largeTenths": 598,
+      "giantTenths": 690,
+      "special": false
+    },
+    {
+      "id": "D1168",
+      "name": "별사탕 제빵사 오리🐤",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 780,
+      "largeTenths": 646,
+      "giantTenths": 747,
+      "special": false
+    },
+    {
+      "id": "D1169",
+      "name": "별사탕 제빵사 펭귄🐧",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1170",
+      "name": "별사탕 제빵사 판다🐼",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1320,
+      "largeTenths": 1092,
+      "giantTenths": 1263,
+      "special": false
+    },
+    {
+      "id": "D1171",
+      "name": "별사탕 제빵사 여우🦊",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1172",
+      "name": "별사탕 제빵사 수달🦦",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1173",
+      "name": "숲속 음악가 곰🧸",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1200,
+      "largeTenths": 996,
+      "giantTenths": 1149,
+      "special": false
+    },
+    {
+      "id": "D1174",
+      "name": "숲속 음악가 토끼🐰",
+      "grade": 1,
+      "minTenths": 130,
+      "maxTenths": 840,
+      "largeTenths": 698,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1175",
+      "name": "숲속 음악가 고양이🐱",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1176",
+      "name": "숲속 음악가 강아지🐶",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1177",
+      "name": "숲속 음악가 햄스터🐹",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 720,
+      "largeTenths": 598,
+      "giantTenths": 690,
+      "special": false
+    },
+    {
+      "id": "D1178",
+      "name": "숲속 음악가 오리🐤",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 780,
+      "largeTenths": 646,
+      "giantTenths": 747,
+      "special": false
+    },
+    {
+      "id": "D1179",
+      "name": "숲속 음악가 펭귄🐧",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1180",
+      "name": "숲속 음악가 판다🐼",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1320,
+      "largeTenths": 1092,
+      "giantTenths": 1263,
+      "special": false
+    },
+    {
+      "id": "D1181",
+      "name": "숲속 음악가 여우🦊",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1182",
+      "name": "숲속 음악가 수달🦦",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1183",
+      "name": "구름 정원사 곰🧸",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1200,
+      "largeTenths": 996,
+      "giantTenths": 1149,
+      "special": false
+    },
+    {
+      "id": "D1184",
+      "name": "구름 정원사 토끼🐰",
+      "grade": 1,
+      "minTenths": 130,
+      "maxTenths": 840,
+      "largeTenths": 698,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1185",
+      "name": "구름 정원사 고양이🐱",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1186",
+      "name": "구름 정원사 강아지🐶",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1187",
+      "name": "구름 정원사 햄스터🐹",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 720,
+      "largeTenths": 598,
+      "giantTenths": 690,
+      "special": false
+    },
+    {
+      "id": "D1188",
+      "name": "구름 정원사 오리🐤",
+      "grade": 1,
+      "minTenths": 110,
+      "maxTenths": 780,
+      "largeTenths": 646,
+      "giantTenths": 747,
+      "special": false
+    },
+    {
+      "id": "D1189",
+      "name": "구름 정원사 펭귄🐧",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1190",
+      "name": "구름 정원사 판다🐼",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1320,
+      "largeTenths": 1092,
+      "giantTenths": 1263,
+      "special": false
+    },
+    {
+      "id": "D1191",
+      "name": "구름 정원사 여우🦊",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1080,
+      "largeTenths": 894,
+      "giantTenths": 1034,
+      "special": false
+    },
+    {
+      "id": "D1192",
+      "name": "구름 정원사 수달🦦",
+      "grade": 1,
+      "minTenths": 150,
+      "maxTenths": 1020,
+      "largeTenths": 846,
+      "giantTenths": 977,
+      "special": false
+    },
+    {
+      "id": "D1193",
+      "name": "수정 호수의 곰🧸",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1400,
+      "largeTenths": 1162,
+      "giantTenths": 1341,
+      "special": false
+    },
+    {
+      "id": "D1194",
+      "name": "수정 호수의 토끼🐰",
+      "grade": 2,
+      "minTenths": 160,
+      "maxTenths": 980,
+      "largeTenths": 816,
+      "giantTenths": 939,
+      "special": false
+    },
+    {
+      "id": "D1195",
+      "name": "수정 호수의 고양이🐱",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1196",
+      "name": "수정 호수의 강아지🐶",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1197",
+      "name": "수정 호수의 햄스터🐹",
+      "grade": 2,
+      "minTenths": 140,
+      "maxTenths": 840,
+      "largeTenths": 700,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1198",
+      "name": "수정 호수의 오리🐤",
+      "grade": 2,
+      "minTenths": 140,
+      "maxTenths": 910,
+      "largeTenths": 756,
+      "giantTenths": 872,
+      "special": false
+    },
+    {
+      "id": "D1199",
+      "name": "수정 호수의 펭귄🐧",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1190,
+      "largeTenths": 988,
+      "giantTenths": 1140,
+      "special": false
+    },
+    {
+      "id": "D1200",
+      "name": "수정 호수의 판다🐼",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1540,
+      "largeTenths": 1274,
+      "giantTenths": 1474,
+      "special": false
+    },
+    {
+      "id": "D1201",
+      "name": "수정 호수의 여우🦊",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1202",
+      "name": "수정 호수의 수달🦦",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1190,
+      "largeTenths": 988,
+      "giantTenths": 1140,
+      "special": false
+    },
+    {
+      "id": "D1203",
+      "name": "오로라 여행자 곰🧸",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1400,
+      "largeTenths": 1162,
+      "giantTenths": 1341,
+      "special": false
+    },
+    {
+      "id": "D1204",
+      "name": "오로라 여행자 토끼🐰",
+      "grade": 2,
+      "minTenths": 160,
+      "maxTenths": 980,
+      "largeTenths": 816,
+      "giantTenths": 939,
+      "special": false
+    },
+    {
+      "id": "D1205",
+      "name": "오로라 여행자 고양이🐱",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1206",
+      "name": "오로라 여행자 강아지🐶",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1207",
+      "name": "오로라 여행자 햄스터🐹",
+      "grade": 2,
+      "minTenths": 140,
+      "maxTenths": 840,
+      "largeTenths": 700,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1208",
+      "name": "오로라 여행자 오리🐤",
+      "grade": 2,
+      "minTenths": 140,
+      "maxTenths": 910,
+      "largeTenths": 756,
+      "giantTenths": 872,
+      "special": false
+    },
+    {
+      "id": "D1209",
+      "name": "오로라 여행자 펭귄🐧",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1190,
+      "largeTenths": 988,
+      "giantTenths": 1140,
+      "special": false
+    },
+    {
+      "id": "D1210",
+      "name": "오로라 여행자 판다🐼",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1540,
+      "largeTenths": 1274,
+      "giantTenths": 1474,
+      "special": false
+    },
+    {
+      "id": "D1211",
+      "name": "오로라 여행자 여우🦊",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1212",
+      "name": "오로라 여행자 수달🦦",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1190,
+      "largeTenths": 988,
+      "giantTenths": 1140,
+      "special": false
+    },
+    {
+      "id": "D1213",
+      "name": "유성 관측대의 곰🧸",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1400,
+      "largeTenths": 1162,
+      "giantTenths": 1341,
+      "special": false
+    },
+    {
+      "id": "D1214",
+      "name": "유성 관측대의 토끼🐰",
+      "grade": 2,
+      "minTenths": 160,
+      "maxTenths": 980,
+      "largeTenths": 816,
+      "giantTenths": 939,
+      "special": false
+    },
+    {
+      "id": "D1215",
+      "name": "유성 관측대의 고양이🐱",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1216",
+      "name": "유성 관측대의 강아지🐶",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1217",
+      "name": "유성 관측대의 햄스터🐹",
+      "grade": 2,
+      "minTenths": 140,
+      "maxTenths": 840,
+      "largeTenths": 700,
+      "giantTenths": 805,
+      "special": false
+    },
+    {
+      "id": "D1218",
+      "name": "유성 관측대의 오리🐤",
+      "grade": 2,
+      "minTenths": 140,
+      "maxTenths": 910,
+      "largeTenths": 756,
+      "giantTenths": 872,
+      "special": false
+    },
+    {
+      "id": "D1219",
+      "name": "유성 관측대의 펭귄🐧",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1190,
+      "largeTenths": 988,
+      "giantTenths": 1140,
+      "special": false
+    },
+    {
+      "id": "D1220",
+      "name": "유성 관측대의 판다🐼",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1540,
+      "largeTenths": 1274,
+      "giantTenths": 1474,
+      "special": false
+    },
+    {
+      "id": "D1221",
+      "name": "유성 관측대의 여우🦊",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1260,
+      "largeTenths": 1044,
+      "giantTenths": 1206,
+      "special": false
+    },
+    {
+      "id": "D1222",
+      "name": "유성 관측대의 수달🦦",
+      "grade": 2,
+      "minTenths": 180,
+      "maxTenths": 1190,
+      "largeTenths": 988,
+      "giantTenths": 1140,
+      "special": false
+    },
+    {
+      "id": "D1223",
+      "name": "은빛 방패 기사 곰🧸",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1560,
+      "largeTenths": 1298,
+      "giantTenths": 1495,
+      "special": false
+    },
+    {
+      "id": "D1224",
+      "name": "은빛 방패 기사 토끼🐰",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1200,
+      "largeTenths": 1000,
+      "giantTenths": 1150,
+      "special": false
+    },
+    {
+      "id": "D1225",
+      "name": "은빛 방패 기사 고양이🐱",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1320,
+      "largeTenths": 1100,
+      "giantTenths": 1265,
+      "special": false
+    },
+    {
+      "id": "D1226",
+      "name": "은빛 방패 기사 강아지🐶",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1440,
+      "largeTenths": 1202,
+      "giantTenths": 1381,
+      "special": false
+    },
+    {
+      "id": "D1227",
+      "name": "은빛 방패 기사 햄스터🐹",
+      "grade": 3,
+      "minTenths": 180,
+      "maxTenths": 1020,
+      "largeTenths": 852,
+      "giantTenths": 978,
+      "special": false
+    },
+    {
+      "id": "D1228",
+      "name": "은빛 방패 기사 오리🐤",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1140,
+      "largeTenths": 952,
+      "giantTenths": 1093,
+      "special": false
+    },
+    {
+      "id": "D1229",
+      "name": "은빛 방패 기사 펭귄🐧",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1230",
+      "name": "은빛 방패 기사 판다🐼",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1680,
+      "largeTenths": 1394,
+      "giantTenths": 1609,
+      "special": false
+    },
+    {
+      "id": "D1231",
+      "name": "은빛 방패 기사 여우🦊",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1380,
+      "largeTenths": 1148,
+      "giantTenths": 1322,
+      "special": false
+    },
+    {
+      "id": "D1232",
+      "name": "은빛 방패 기사 수달🦦",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1233",
+      "name": "붉은 망토 검사 곰🧸",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1560,
+      "largeTenths": 1298,
+      "giantTenths": 1495,
+      "special": false
+    },
+    {
+      "id": "D1234",
+      "name": "붉은 망토 검사 토끼🐰",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1200,
+      "largeTenths": 1000,
+      "giantTenths": 1150,
+      "special": false
+    },
+    {
+      "id": "D1235",
+      "name": "붉은 망토 검사 고양이🐱",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1320,
+      "largeTenths": 1100,
+      "giantTenths": 1265,
+      "special": false
+    },
+    {
+      "id": "D1236",
+      "name": "붉은 망토 검사 강아지🐶",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1440,
+      "largeTenths": 1202,
+      "giantTenths": 1381,
+      "special": false
+    },
+    {
+      "id": "D1237",
+      "name": "붉은 망토 검사 햄스터🐹",
+      "grade": 3,
+      "minTenths": 180,
+      "maxTenths": 1020,
+      "largeTenths": 852,
+      "giantTenths": 978,
+      "special": false
+    },
+    {
+      "id": "D1238",
+      "name": "붉은 망토 검사 오리🐤",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1140,
+      "largeTenths": 952,
+      "giantTenths": 1093,
+      "special": false
+    },
+    {
+      "id": "D1239",
+      "name": "붉은 망토 검사 펭귄🐧",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1240",
+      "name": "붉은 망토 검사 판다🐼",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1680,
+      "largeTenths": 1394,
+      "giantTenths": 1609,
+      "special": false
+    },
+    {
+      "id": "D1241",
+      "name": "붉은 망토 검사 여우🦊",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1380,
+      "largeTenths": 1148,
+      "giantTenths": 1322,
+      "special": false
+    },
+    {
+      "id": "D1242",
+      "name": "붉은 망토 검사 수달🦦",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1243",
+      "name": "푸른 별 마법사 곰🧸",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1560,
+      "largeTenths": 1298,
+      "giantTenths": 1495,
+      "special": false
+    },
+    {
+      "id": "D1244",
+      "name": "푸른 별 마법사 토끼🐰",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1200,
+      "largeTenths": 1000,
+      "giantTenths": 1150,
+      "special": false
+    },
+    {
+      "id": "D1245",
+      "name": "푸른 별 마법사 고양이🐱",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1320,
+      "largeTenths": 1100,
+      "giantTenths": 1265,
+      "special": false
+    },
+    {
+      "id": "D1246",
+      "name": "푸른 별 마법사 강아지🐶",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1440,
+      "largeTenths": 1202,
+      "giantTenths": 1381,
+      "special": false
+    },
+    {
+      "id": "D1247",
+      "name": "푸른 별 마법사 햄스터🐹",
+      "grade": 3,
+      "minTenths": 180,
+      "maxTenths": 1020,
+      "largeTenths": 852,
+      "giantTenths": 978,
+      "special": false
+    },
+    {
+      "id": "D1248",
+      "name": "푸른 별 마법사 오리🐤",
+      "grade": 3,
+      "minTenths": 200,
+      "maxTenths": 1140,
+      "largeTenths": 952,
+      "giantTenths": 1093,
+      "special": false
+    },
+    {
+      "id": "D1249",
+      "name": "푸른 별 마법사 펭귄🐧",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1250",
+      "name": "푸른 별 마법사 판다🐼",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1680,
+      "largeTenths": 1394,
+      "giantTenths": 1609,
+      "special": false
+    },
+    {
+      "id": "D1251",
+      "name": "푸른 별 마법사 여우🦊",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1380,
+      "largeTenths": 1148,
+      "giantTenths": 1322,
+      "special": false
+    },
+    {
+      "id": "D1252",
+      "name": "푸른 별 마법사 수달🦦",
+      "grade": 3,
+      "minTenths": 220,
+      "maxTenths": 1260,
+      "largeTenths": 1052,
+      "giantTenths": 1208,
+      "special": false
+    },
+    {
+      "id": "D1253",
+      "name": "황혼 성채의 용🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1254",
+      "name": "황혼 성채의 불사조🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1255",
+      "name": "황혼 성채의 구미호🟡",
+      "grade": 4,
+      "minTenths": 300,
+      "maxTenths": 1800,
+      "largeTenths": 1500,
+      "giantTenths": 1725,
+      "special": false
+    },
+    {
+      "id": "D1256",
+      "name": "황혼 성채의 유니콘🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1257",
+      "name": "황혼 성채의 기린🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1258",
+      "name": "황혼 성채의 백호🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1259",
+      "name": "황혼 성채의 크라켄🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1260",
+      "name": "황혼 성채의 페가수스🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2150,
+      "largeTenths": 1790,
+      "giantTenths": 2060,
+      "special": false
+    },
+    {
+      "id": "D1261",
+      "name": "황혼 성채의 바실리스크🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1262",
+      "name": "황혼 성채의 그리핀🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1263",
+      "name": "청록 폭풍의 용🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1264",
+      "name": "청록 폭풍의 불사조🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1265",
+      "name": "청록 폭풍의 구미호🟡",
+      "grade": 4,
+      "minTenths": 300,
+      "maxTenths": 1800,
+      "largeTenths": 1500,
+      "giantTenths": 1725,
+      "special": false
+    },
+    {
+      "id": "D1266",
+      "name": "청록 폭풍의 유니콘🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1267",
+      "name": "청록 폭풍의 기린🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1268",
+      "name": "청록 폭풍의 백호🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2000,
+      "largeTenths": 1670,
+      "giantTenths": 1918,
+      "special": false
+    },
+    {
+      "id": "D1269",
+      "name": "청록 폭풍의 크라켄🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1270",
+      "name": "청록 폭풍의 페가수스🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2150,
+      "largeTenths": 1790,
+      "giantTenths": 2060,
+      "special": false
+    },
+    {
+      "id": "D1271",
+      "name": "청록 폭풍의 바실리스크🟡",
+      "grade": 4,
+      "minTenths": 400,
+      "maxTenths": 2400,
+      "largeTenths": 2000,
+      "giantTenths": 2300,
+      "special": false
+    },
+    {
+      "id": "D1272",
+      "name": "청록 폭풍의 그리핀🟡",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": false
+    },
+    {
+      "id": "D1273",
+      "name": "태양 신전의 수호신 호월이🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2760,
+      "largeTenths": 2288,
+      "giantTenths": 2642,
+      "special": false
+    },
+    {
+      "id": "D1274",
+      "name": "태양 신전의 여신 토끼🐰",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2530,
+      "largeTenths": 2094,
+      "giantTenths": 2421,
+      "special": false
+    },
+    {
+      "id": "D1275",
+      "name": "태양 신전의 정령 여우🦊",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2588,
+      "largeTenths": 2141,
+      "giantTenths": 2477,
+      "special": false
+    },
+    {
+      "id": "D1276",
+      "name": "태양 신전의 봉황🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1277",
+      "name": "태양 신전의 신룡🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3220,
+      "largeTenths": 2666,
+      "giantTenths": 3082,
+      "special": false
+    },
+    {
+      "id": "D1278",
+      "name": "태양 신전의 고래 신🔴",
+      "grade": 5,
+      "minTenths": 500,
+      "maxTenths": 3450,
+      "largeTenths": 2860,
+      "giantTenths": 3303,
+      "special": false
+    },
+    {
+      "id": "D1279",
+      "name": "태양 신전의 성스러운 사슴🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1280",
+      "name": "태양 신전의 백호 신🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2932,
+      "largeTenths": 2426,
+      "giantTenths": 2806,
+      "special": false
+    },
+    {
+      "id": "D1281",
+      "name": "태양 신전의 예언자 부엉이🔴",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2645,
+      "largeTenths": 2186,
+      "giantTenths": 2531,
+      "special": false
+    },
+    {
+      "id": "D1282",
+      "name": "태양 신전의 세계수 정령🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3335,
+      "largeTenths": 2758,
+      "giantTenths": 3191,
+      "special": false
+    },
+    {
+      "id": "D1283",
+      "name": "달의 왕좌의 수호신 호월이🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2760,
+      "largeTenths": 2288,
+      "giantTenths": 2642,
+      "special": false
+    },
+    {
+      "id": "D1284",
+      "name": "달의 왕좌의 여신 토끼🐰",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2530,
+      "largeTenths": 2094,
+      "giantTenths": 2421,
+      "special": false
+    },
+    {
+      "id": "D1285",
+      "name": "달의 왕좌의 정령 여우🦊",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2588,
+      "largeTenths": 2141,
+      "giantTenths": 2477,
+      "special": false
+    },
+    {
+      "id": "D1286",
+      "name": "달의 왕좌의 봉황🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1287",
+      "name": "달의 왕좌의 신룡🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3220,
+      "largeTenths": 2666,
+      "giantTenths": 3082,
+      "special": false
+    },
+    {
+      "id": "D1288",
+      "name": "달의 왕좌의 고래 신🔴",
+      "grade": 5,
+      "minTenths": 500,
+      "maxTenths": 3450,
+      "largeTenths": 2860,
+      "giantTenths": 3303,
+      "special": false
+    },
+    {
+      "id": "D1289",
+      "name": "달의 왕좌의 성스러운 사슴🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2990,
+      "largeTenths": 2472,
+      "giantTenths": 2861,
+      "special": false
+    },
+    {
+      "id": "D1290",
+      "name": "달의 왕좌의 백호 신🔴",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2932,
+      "largeTenths": 2426,
+      "giantTenths": 2806,
+      "special": false
+    },
+    {
+      "id": "D1291",
+      "name": "달의 왕좌의 예언자 부엉이🔴",
+      "grade": 5,
+      "minTenths": 350,
+      "maxTenths": 2645,
+      "largeTenths": 2186,
+      "giantTenths": 2531,
+      "special": false
+    },
+    {
+      "id": "D1292",
+      "name": "달의 왕좌의 세계수 정령🔴",
+      "grade": 5,
+      "minTenths": 450,
+      "maxTenths": 3335,
+      "largeTenths": 2758,
+      "giantTenths": 3191,
+      "special": false
+    },
+    {
+      "id": "D1293",
+      "name": "무한 궤도의 항성 용🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1294",
+      "name": "무한 궤도의 성운 봉황🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1295",
+      "name": "무한 궤도의 은하 구미호🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3255,
+      "largeTenths": 2694,
+      "giantTenths": 3115,
+      "special": false
+    },
+    {
+      "id": "D1296",
+      "name": "무한 궤도의 시간 부엉이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1297",
+      "name": "무한 궤도의 공허 고래🌌",
+      "grade": 6,
+      "minTenths": 600,
+      "maxTenths": 3885,
+      "largeTenths": 3228,
+      "giantTenths": 3721,
+      "special": false
+    },
+    {
+      "id": "D1298",
+      "name": "무한 궤도의 차원 사슴🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1299",
+      "name": "무한 궤도의 혜성 백호🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1300",
+      "name": "무한 궤도의 별빛 페가수스🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1301",
+      "name": "무한 궤도의 광자 정령🌌",
+      "grade": 6,
+      "minTenths": 400,
+      "maxTenths": 2835,
+      "largeTenths": 2348,
+      "giantTenths": 2714,
+      "special": false
+    },
+    {
+      "id": "D1302",
+      "name": "무한 궤도의 별볼 호월이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1303",
+      "name": "영겁 회랑의 항성 용🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1304",
+      "name": "영겁 회랑의 성운 봉황🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1305",
+      "name": "영겁 회랑의 은하 구미호🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3255,
+      "largeTenths": 2694,
+      "giantTenths": 3115,
+      "special": false
+    },
+    {
+      "id": "D1306",
+      "name": "영겁 회랑의 시간 부엉이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1307",
+      "name": "영겁 회랑의 공허 고래🌌",
+      "grade": 6,
+      "minTenths": 600,
+      "maxTenths": 3885,
+      "largeTenths": 3228,
+      "giantTenths": 3721,
+      "special": false
+    },
+    {
+      "id": "D1308",
+      "name": "영겁 회랑의 차원 사슴🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1309",
+      "name": "영겁 회랑의 혜성 백호🌌",
+      "grade": 6,
+      "minTenths": 500,
+      "maxTenths": 3465,
+      "largeTenths": 2872,
+      "giantTenths": 3317,
+      "special": false
+    },
+    {
+      "id": "D1310",
+      "name": "영겁 회랑의 별빛 페가수스🌌",
+      "grade": 6,
+      "minTenths": 550,
+      "maxTenths": 3675,
+      "largeTenths": 3050,
+      "giantTenths": 3519,
+      "special": false
+    },
+    {
+      "id": "D1311",
+      "name": "영겁 회랑의 광자 정령🌌",
+      "grade": 6,
+      "minTenths": 400,
+      "maxTenths": 2835,
+      "largeTenths": 2348,
+      "giantTenths": 2714,
+      "special": false
+    },
+    {
+      "id": "D1312",
+      "name": "영겁 회랑의 별볼 호월이🌌",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": false
+    },
+    {
+      "id": "D1313",
+      "name": "첫 봄을 깨운 호월이🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3800,
+      "largeTenths": 3140,
+      "giantTenths": 3635,
+      "special": false
+    },
+    {
+      "id": "D1314",
+      "name": "첫 번개를 품은 황금 용🌠",
+      "grade": 7,
+      "minTenths": 550,
+      "maxTenths": 4300,
+      "largeTenths": 3550,
+      "giantTenths": 4113,
+      "special": false
+    },
+    {
+      "id": "D1315",
+      "name": "첫 꽃을 피운 붉은 봉황🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3800,
+      "largeTenths": 3140,
+      "giantTenths": 3635,
+      "special": false
+    },
+    {
+      "id": "D1316",
+      "name": "첫 달을 비춘 은빛 여우🦊",
+      "grade": 7,
+      "minTenths": 450,
+      "maxTenths": 3700,
+      "largeTenths": 3050,
+      "giantTenths": 3538,
+      "special": false
+    },
+    {
+      "id": "D1317",
+      "name": "새벽 바람을 연 사슴🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 4000,
+      "largeTenths": 3300,
+      "giantTenths": 3825,
+      "special": false
+    },
+    {
+      "id": "D1318",
+      "name": "산맥의 심장을 깨운 곰🧸",
+      "grade": 7,
+      "minTenths": 550,
+      "maxTenths": 4200,
+      "largeTenths": 3470,
+      "giantTenths": 4018,
+      "special": false
+    },
+    {
+      "id": "D1319",
+      "name": "첫 바다를 채운 흰 고래🌠",
+      "grade": 7,
+      "minTenths": 600,
+      "maxTenths": 4600,
+      "largeTenths": 3800,
+      "giantTenths": 4400,
+      "special": false
+    },
+    {
+      "id": "D1320",
+      "name": "별의 씨앗을 심은 토끼🐰",
+      "grade": 7,
+      "minTenths": 450,
+      "maxTenths": 3500,
+      "largeTenths": 2890,
+      "giantTenths": 3348,
+      "special": false
+    },
+    {
+      "id": "D1321",
+      "name": "첫 시간을 알린 부엉이🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3900,
+      "largeTenths": 3220,
+      "giantTenths": 3730,
+      "special": false
+    },
+    {
+      "id": "D1322",
+      "name": "첫 꿈을 펼친 호월이🌠",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3600,
+      "largeTenths": 2980,
+      "giantTenths": 3445,
+      "special": false
+    },
+    {
+      "id": "D1323",
+      "name": "운명의 실을 잇는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4500,
+      "largeTenths": 3720,
+      "giantTenths": 4305,
+      "special": false
+    },
+    {
+      "id": "D1324",
+      "name": "새벽을 조각하는 호월이👑",
+      "grade": 8,
+      "minTenths": 650,
+      "maxTenths": 5000,
+      "largeTenths": 4130,
+      "giantTenths": 4783,
+      "special": false
+    },
+    {
+      "id": "D1325",
+      "name": "은하를 그리는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4600,
+      "largeTenths": 3800,
+      "giantTenths": 4400,
+      "special": false
+    },
+    {
+      "id": "D1326",
+      "name": "생명을 숨 쉬게 하는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4700,
+      "largeTenths": 3880,
+      "giantTenths": 4495,
+      "special": false
+    },
+    {
+      "id": "D1327",
+      "name": "시간의 문을 여는 호월이👑",
+      "grade": 8,
+      "minTenths": 650,
+      "maxTenths": 4900,
+      "largeTenths": 4050,
+      "giantTenths": 4688,
+      "special": false
+    },
+    {
+      "id": "D1328",
+      "name": "꿈의 세계를 짓는 호월이👑",
+      "grade": 8,
+      "minTenths": 550,
+      "maxTenths": 4300,
+      "largeTenths": 3550,
+      "giantTenths": 4113,
+      "special": false
+    },
+    {
+      "id": "D1329",
+      "name": "달의 궤도를 빚는 호월이👑",
+      "grade": 8,
+      "minTenths": 550,
+      "maxTenths": 4400,
+      "largeTenths": 3630,
+      "giantTenths": 4208,
+      "special": false
+    },
+    {
+      "id": "D1330",
+      "name": "별의 심장을 깨우는 호월이👑",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4600,
+      "largeTenths": 3800,
+      "giantTenths": 4400,
+      "special": false
+    },
+    {
+      "id": "D1331",
+      "name": "희망의 빛을 심는 호월이👑",
+      "grade": 8,
+      "minTenths": 650,
+      "maxTenths": 4800,
+      "largeTenths": 3970,
+      "giantTenths": 4593,
+      "special": false
+    },
+    {
+      "id": "D1332",
+      "name": "우주의 노래를 쓰는 호월이👑",
+      "grade": 8,
+      "minTenths": 700,
+      "maxTenths": 5200,
+      "largeTenths": 4300,
+      "giantTenths": 4975,
+      "special": false
+    },
+    {
+      "id": "D1333",
+      "name": "무한의 설계자 호월이✡️",
+      "grade": 9,
+      "minTenths": 900,
+      "maxTenths": 6500,
+      "largeTenths": 5380,
+      "giantTenths": 6220,
+      "special": false
+    },
+    {
+      "id": "D1334",
+      "name": "영겁의 관측자 호월이✡️",
+      "grade": 9,
+      "minTenths": 1000,
+      "maxTenths": 7000,
+      "largeTenths": 5800,
+      "giantTenths": 6700,
+      "special": false
+    },
+    {
+      "id": "D1335",
+      "name": "스페셜 황금 행운 호월이🍀",
+      "grade": 0,
+      "minTenths": 150,
+      "maxTenths": 1000,
+      "largeTenths": 830,
+      "giantTenths": 958,
+      "special": true
+    },
+    {
+      "id": "D1336",
+      "name": "스페셜 꿀단지를 품은 호월이🍯",
+      "grade": 1,
+      "minTenths": 180,
+      "maxTenths": 1200,
+      "largeTenths": 996,
+      "giantTenths": 1149,
+      "special": true
+    },
+    {
+      "id": "D1337",
+      "name": "스페셜 달빛 보석 호월이💎",
+      "grade": 2,
+      "minTenths": 210,
+      "maxTenths": 1400,
+      "largeTenths": 1162,
+      "giantTenths": 1341,
+      "special": true
+    },
+    {
+      "id": "D1338",
+      "name": "스페셜 황금 망토 호월이🦸",
+      "grade": 3,
+      "minTenths": 250,
+      "maxTenths": 1560,
+      "largeTenths": 1298,
+      "giantTenths": 1495,
+      "special": true
+    },
+    {
+      "id": "D1339",
+      "name": "스페셜 왕관의 주인 호월이👑",
+      "grade": 4,
+      "minTenths": 350,
+      "maxTenths": 2100,
+      "largeTenths": 1750,
+      "giantTenths": 2013,
+      "special": true
+    },
+    {
+      "id": "D1340",
+      "name": "스페셜 소원을 이루는 호월이🌠",
+      "grade": 5,
+      "minTenths": 400,
+      "maxTenths": 2760,
+      "largeTenths": 2288,
+      "giantTenths": 2642,
+      "special": true
+    },
+    {
+      "id": "D1341",
+      "name": "스페셜 차원을 넘는 호월이🌀",
+      "grade": 6,
+      "minTenths": 450,
+      "maxTenths": 3150,
+      "largeTenths": 2610,
+      "giantTenths": 3015,
+      "special": true
+    },
+    {
+      "id": "D1342",
+      "name": "스페셜 첫빛을 품은 호월이🌅",
+      "grade": 7,
+      "minTenths": 500,
+      "maxTenths": 3800,
+      "largeTenths": 3140,
+      "giantTenths": 3635,
+      "special": true
+    },
+    {
+      "id": "D1343",
+      "name": "스페셜 운명을 빚는 호월이🧵",
+      "grade": 8,
+      "minTenths": 600,
+      "maxTenths": 4500,
+      "largeTenths": 3720,
+      "giantTenths": 4305,
+      "special": true
+    },
+    {
+      "id": "D1344",
+      "name": "스페셜 영원의 주인 호월이♾️",
+      "grade": 9,
+      "minTenths": 1000,
+      "maxTenths": 7000,
+      "largeTenths": 5800,
+      "giantTenths": 6700,
+      "special": true
     }
   ]
 }

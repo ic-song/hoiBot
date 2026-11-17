@@ -55,7 +55,7 @@ const GLOBAL_CONFIG = {
     manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
     petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, grandPercent: 10, royalPercent: 20, arcanaPercent: 30, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main과 같은 환경별 필터 메모리 공유 키
-    doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
+    doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자✡️(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
@@ -3905,6 +3905,11 @@ function generateBagOutput(bagItems) {
             if (!isRetiredCarrotValue(sItem) && bagItems[sItem]) specialItemsSorted.push(sItem);
 			var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
 			if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
+            if (sItem.indexOf("엘리트인형상자✡️") === 0) {
+                var oldEliteBox = sItem.replace("✡️", "💠"), oldEliteSpacedBox = oldEliteBox.replace("/인형상자오픈", "/인형상자오픈 ");
+                if (bagItems[oldEliteBox]) specialItemsSorted.push(oldEliteBox);
+                if (oldEliteSpacedBox !== oldEliteBox && bagItems[oldEliteSpacedBox]) specialItemsSorted.push(oldEliteSpacedBox);
+            }
 		}
 
 		//  2) 나머지 아이템(특수 제외 + 친밀도 제외)
@@ -3951,7 +3956,7 @@ function generateBagOutput(bagItems) {
 		}
 
 		// 기존 상자 재고의 저장 키와 가방 번호는 보존하고 사용법 표기만 붙여서 출력한다.
-		bagOutput = bagOutput.trim().replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2");
+		bagOutput = bagOutput.trim().replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2").replace(/엘리트인형상자💠/g, "엘리트인형상자✡️");
 	}
 
 	return {
