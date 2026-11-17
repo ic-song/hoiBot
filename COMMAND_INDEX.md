@@ -5,12 +5,219 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+- 2026-11-17, ver_2.859: 주사위 대회 도움말·규칙·시작·준비·결과·탈락 안내를 기획서의 지정 문구와 줄바꿈에 맞췄다. 도움말 뒤 규칙 중복과 재시작 관련 부가 설명을 제거하고 참가/초기8강 보상을 나눠 표시한다. 결승은 2강 대신 결승으로 표기한다. 보상·대진·중단·재개 정책과 기존 JSON 정리 경로는 유지한다.
+
+## 주사위 대회 · 길드 기록 통합 (2026-11-17, ver_2.858)
+
+Status: VERIFIED
+
+- `/주사위참가`·`/주사위참가명단`·`/주사위대진표`·`/ㄹㄷ`와 MASTER `/주사위시작`·`/주사위탈락 등록닉네임`·`/주사위중단`·`/주사위재개`·`/주사위명령어`는 `getDiceTournamentRequest` → `runDiceTournamentEntry`로 진입한다. 무인수 명령은 정확 일치, 탈락은 줄바꿈 없는 등록 닉네임 전체 한 명만 허용한다.
+- 단일 대회: 2026-11-22 21:00 KST 공지, MASTER 수동 시작, `GLOBAL_CONFIG.diceTournament.publicRoom`(기존 메인 공개방)에서 참가·준비. MASTER는 기존 허용 관리자방 권한을 사용한다. 공개 조회·도움말은 보상·대회 상태를 저장하지 않는다. 길드 가입만 참가 조건이며 기존 개인 주사위 프리미엄·일일 횟수를 적용하지 않는다. 종료 후 재시작하지 않는다.
+- 참가 시작 시 길드 가입·계정을 재확인하고 최소8명, 최초 무작위 대진·고정 경기번호·부전승으로 진행한다. 현재 경기 한 곳만 준비, 각 경기 준비 초기화, A1→B1→A2→B2 네 굴림, 실제 굴림 공지 전송 후3초 공개, 동점은 준비 없이 재경기. 2분은 경고만이며 MASTER 탈락으로 처리한다. 양쪽 탈락은 진출자 없음, 기진출자 탈락은 미래 자리만 비우고 과거 결과를 보존한다.
+- 회원 루트 `diceTournament`에 고유 계정별 등록 닉네임·단계별 지급 표시·대진·준비·확정 숫자·공지 진행을 보관한다. 포인트와 동일 `saveJsonFile(data, filePath)`로 저장해 지급 표시와 잔액을 함께 확정한다. `runDiceTournamentWork`는 기존 직렬화·데이터 잠금 안에서 최신 원본으로 한 단계만 처리하며, 대기 중에는 잠금을 점유하지 않는다. DEV/PROD 타이머·저장·공지는 분리한다. 시작 시 기존 활성 대회만 재예약하고 데이터 정리·백업 검색은 하지 않는다.
+- 참가100억, 8강100억, 4강200억, 결승300억, 우승1000억을 각각 한 번 누적한다. 최초 유효 준비에만 참가·초기8강 보상을 지급하며 부전승도 본인 준비가 필요하다. `grantDiceTournamentReward`는 기존 고유 ID를 이용해 닉네임 변경·재경기·중복 입력·재시작으로 중복 지급하지 않는다.
+- `getGuildWarRecords`는 과거 원본 배열과 새 `war24.recordStore` 고유번호 참조를 함께 읽는다. `recordGuildWar`는 새 원본을 한 번만 저장하고 양쪽 길드에 번호를 연결한다. 길드별 최근30건·보류 보상 원본·표시 순서를 유지하며 미참조 새 원본만 정리한다. 공격권 복원·정책 전환·상세 조회·검증은 같은 해석기를 사용한다.
+- `compactGuildWarRecords(state, previewOnly)`는 순수 계산이며 과거 전환 실행은 확인된 `/데이터정리` 분기 한 곳에만 있다. 미리보기 지문에 원본을 포함해 변경 시 재확인하고, 같은 번호의 다른 내용이나 참조 누락은 오류로 거절한다. 일반 명령·컴파일·기동에서 과거 기록을 전환하거나 보관 백업을 정리하지 않는다.
+- `/길드전쟁`·`/전쟁지도`는 선행 조건 문구를 생략하되 🔒/⚔️/🏴·진격 조건·점령 한도를 유지한다. `/자유시장판매가이드`·`자유시장 판매가이드`는 거래 자료 로드·매물 회수·변경 배치 전에 기존 `buildFreeMarketV2Guide`만 출력한다. 삼성전자 설명은 육백만전자로 표기한다.
+
+## 보급대·보급 지원·군량미 (2026-11-13, ver_2.840)
+
+Status: VERIFIED
+
+- 진입: 정확한 무인수 /길드보급 → getGuildWarRequest → runGuildWarEntry → applyGuildWarSupply. 기존 응답 MQ·전체 데이터 잠금 안에서 최신 회원과 실제 길드 소속을 재확인한다. 등록 길드톡·출석·정지·개인톡의 공통 조건을 유지하며 수량·안내문이 붙으면 지급하지 않는다. 사용자 후속 확정으로 보급대만 참여할 수 있다. getGuildWarSupplyMembers로 실제 최신 정찰·자폭·공격3·방어3 역할 중 하나라도 있으면 저장 전에 거부하며 일반 직책만 있는 회원은 허용한다. 편성 변경 시 당일 지원 기록은 유지한다. 마지막 전쟁 역할이 해제될 때 recordGuildWarSupplyRoleRelease가 회원의 guildSupplyRoleReleasedDay에 현재 KST 주기를 남긴다. 직접/일괄/전체 초기화·탈퇴/제명·가입 정리·길드 해산/전체 초기화·소속 정리 모두 동일 기록을 사용한다. hasGuildWarSupplyRoleReleaseToday가 당일 보급을 차단하고 다음 주기에만 해제한다. 단순 순서 변경·남은 겸직·실패한 편성은 새 제한을 만들지 않는다. 편성/정리 명령은 회원과 길드를 함께 게시한다. 전쟁 중·공용/개인 선포권 소진 중에도 보급대는 지원 가능하다.
+- GLOBAL_CONFIG.guildWar.supply는 개인 포인트 200,000,000·군량미1·전환단위100을 정의한다. 회원의 guildSupplyDay를 getVaultRobberyDay 기준으로 확인하므로 회원 데이터 이관·길드 이동·편성 변경·재시작·동일 주기 초기화로 재지원할 수 없다. helpers에서 신규 IO를 하지 않는다.
+- getGuildWarSupplyRice는 war24.guilds[gid].supplyRice 부재만0으로 읽고 손상은 오류로 전파한다. 합산값의 몫은 calculateGuildWarExtraTickets로 기존 정규화된 큰 정수 문자열 extraTickets에 더하고 나머지는 보존한다. 기존 적립량은 축소하지 않으며 실물 아이템·개인 선포권·기본권·지휘관권을 지급/차감/복구하지 않는다. 기존 일일/관리자 초기화는 군량미와 추가권을 유지한다.
+- 회원 지원 기록·개인 포인트·길드 군량미·추가권은 publishGuildWar(data, guildData, true)로 기존 회원/길드 게시·복구 범위에 함께 저장한 뒤 응답한다. 저장 전 오류는 성공 응답 없이 중단하고 기존 롤백/재시작 복구를 따르며, 성공 응답 실패 후 재입력도 회원 기록으로 중복 차단한다.
+- getGuildWarSupplyMembers는 정찰·자폭·공격3·방어3 중 아무 역할도 없는 고유 현재 길드원을 계산한다. 일반 직책은 보존한다. /길드전쟁의 보급 인원·군량미 표시는 2026-11-16 통합 지도에서 제외했다. 보급 기능·전쟁편성 명단은 유지한다. /전쟁편성은 기존 번호·능력치·8칸·allsee를 유지하고 미편성 명단을 오늘 지원 완료/가능 보급대 명단으로 바꾼다. /전쟁지도는 2026-11-16부터 /길드전쟁과 같은 지도를 출력한다. /길드전쟁가이드와 별칭 /전쟁가이드는 같은 본문을 출력한다.
+
+## 길드 전투 아이템 기부·사용처 (2026-11-12, ver_2.832)
+
+Status: VERIFIED
+
+- 네 아이템은 기습10/40%·방어20/50%의 `영지` 접두어만 제거한다. `normalizeGuildCombatLoadedData`가 현재 회원 가방·길드창고·상품/설명/시장 참조를 읽을 때 수량을 보존해 변환한다. 구/신 가방 키는 검증 후 합산하고 반복 전환은 멱등이다. 이름만 바뀌어도 기부·보상을 만들지 않는다. 백업/운영 스냅샷은 수정하지 않으며 손상·범위 초과는 오류로 전파한다.
+- `/길드창고`는 본인 소속 길드원의 실제 자금·일반 재화와 기부 고정번호1~4 재고(0 포함)·개당 보상을 표시한다. `/길드정보`·상세 정보의 공통 `buildGuildResourceDisplay`에는 일반 재화·조회 안내만 표시하고 전투 재고를 노출하지 않는다. 별도 전쟁톡 제한·사용 설정은 없다.
+- `/길드기부 번호 수량`은 양의 정수 전체 일치만 실행한다. 인수 생략/오류는 고정 번호와 사용법을 안내한다. `applyGuildCombatDonation`이 고유 계정·실제 소속·보유량·창고와 보상의 안전 정수 범위를 먼저 검증하고 개인 차감/창고 적립/개인 포인트(개당500만 또는1000만)를 함께 변경한다. 길드자금 차감·일일/누적 보상 한도·회수 기능은 없다.
+- `runGuildCombatEntry`는 기존 응답 MQ·전체 데이터 잠금·출석/정지/개인톡 검사를 유지하고 `publishGuildWar(..., true)`로 회원·길드를 원자 게시한 후 응답한다. 회원의 `guildCombatDonationReceipts`는 고유 계정과 접수별 완료 응답을 보존한다. 같은 접수 재처리는 멱등, 별도 새 접수의 동일 문구는 허용한다. 선택적 기존 콜백 ID가 있으면 사용하며 기본7인수에서는 별도 도착한 중복 콜백 식별은 불가하다.
+- 길드전쟁은 선포 당시 창고 보유 후보와 경기 시 현재 잔고를 모두 확인하고 `decreaseGuildCombatItem`으로 소속 길드창고만 차감한다. 기존 등급 순서·방어 합산·기습·크리·대장전 제외는 유지한다. 소비 roll에 원천 길드 ID를 보존하며 취소 시 한 번 환급한다. 이전 대진 원천 창고도 `snapshotGuildWarSettlement` 복원 범위에 포함한다. 구 개인 소비 기록의 환급은 개인 가방을 유지한다.
+- 기존 시간제 길드영지전도 같은 창고에서 확인/발동 차감하며 기존 휴식 상태와 판정 순서는 유지한다. 펫무쌍은 이름만 바꾸고 개인 가방 확인/발동 차감을 유지한다. 같은 마지막 재고는 기존 전역 잠금에서 직렬 처리한다. helper의 신규 IO·신규 저장 경로는 없다.
+
+## 길드전쟁 펫스킬·추가 공격권·전쟁지도 (2026-11-12 개발)
+
+Status: VERIFIED
+
+- 이 절은 아래 과거 길드전쟁의 번호·개인2회 제한·전체알림 설명보다 우선한다. 최신 지역은 동부1·중앙2·서부3·펫스킬4·다이아5·호월킹덤6이다. 기존 시간제 영지전의 1번은 변경하지 않는다.
+- `initializeGuildWarCampaign`은 `war24.campaignVersion`으로 점령·진행 전투·양측 완료 기록·대기 알림의 지역을 한 번 재배치한다. 영주·잔액·시각·기존 소모량과 진행 중 전투를 보존한다. 구 전투에는 스킬을 소급하지 않으며 손상·미완료 전환 표시를 초기화하지 않는다. 광산 점령의 구 전체알림 대기만 제외하고 당사자·호월킹덤 알림은 유지한다.
+- `getGuildWarUserRights`·`getGuildWarPersonalAvailability`는 길마 기본1·정찰1·공격1·장착 전투형 지휘관1을 합산한다. 사용자 확정으로 기존 개인2회 상한은 제거하고 겸직 길마 최대4회를 허용한다. 공용 기본권이 있으면 길마 기본권부터 사용하며 편성·스킬 변경으로 실제 개인 사용량이나 이미 소모한 역할권을 복구하지 않는다. 사용자 후속 확정(2026-11-12)으로 전투형 지휘관의 +1회는 실제 추가 선포권이며 공용 기본/추가권 없이 길마가 하루1회 사용한다. 미확인 구 사용량의 보수적 예약은 유지한다.
+- `/전쟁공격사용 양의정수`는 등록 길드톡의 길드원 누구나 개인 아이템을 소모해 길드 `extraTickets`에 충전한다. 값은 정규화된 큰 정수 문자열이며 `calculateGuildWarExtraTickets`가 표준 Rhino 래핑·BigInteger로 정확히 가감한다. 저장량·만료·일일 충전 상한은 없고 입력·보유 아이템의 기존 안전 정수 검증은 유지한다. 개인 선포권은 증가하지 않고 탈퇴 시에도 충전분은 길드에 남는다.
+- `getGuildWarDeclarationTicket`·`applyGuildWarDeclarationTicket`은 일반 개인권이 남으면 기본권 우선, 기본0이면 추가권+개인권을 사용한다. 미사용 지휘관권은 기존 역할 순서에서 공용권 없이 소비하고 공용 기본0이면 지휘관권을 먼저 찾는다. 개인권을 소진한 기존 유자격자는 기본권을 유지하고 추가권만 사용한다. 적용 직전 잔고·자격을 재검증한다. `war.ticketSource`의 base/extra/commander·`personalTicket`·`declaredAccountId`·추가권 전후 잔고로 소비와 동일 원천 일회 환급을 검증한다. 지휘관은 개인 사용량·역할권과 `commanderFreeUsed`만 바꾸며 공용 잔고는 유지한다. 기본권 합계에서 실제 지휘관 무료 사용분만 제외한다. 구 필드 부재는0이며 이미 사용된 구 지휘관 역할권·전쟁·잔고는 재지급/재계산하지 않는다. 추가권만 쓴 선포는 개인권을 복구하지 않는다. 일일·관리자 기본권 초기화는 추가권 잔고를 지우지 않으며 지휘관 사용량도 기존 역할권과 함께 초기화한다. 지휘관 취소는 같은 날짜·회차의 지휘관권만 한 번 복구하고 기본/충전권을 늘리지 않는다.
+- 개인 사용량은 `personalByAccount`에 기존 회원 고유 ID로 저장한다. `initializeGuildWarTicketAccounts`가 기존 이름별 이력을 계정에 연결하고 기존 게시 흐름으로 저장한다. 편성·닉네임 변경·재시작에도 이력과 불명확한 구 사용량의 보수적 예약을 유지한다. 편성의 길마·정찰은 해당 역할권만, 공격 진형은 실제 개인 역할권 합계를 잔여/총으로 표시한다. `getGuildWarCommanderRightCount`로 길마 줄에 지휘관권 잔여도 별도 표시한다.
+- `getGuildWarMasterSkills`는 현재 길마가 실제 장착한 스킬만 반영한다. 신규 선포의 `skillSnapshot`으로 공격3%·방어2%를 고정하고 `resolveGuildWarMatch`·`getGuildWarDefenseBonuses`가 기존 위치·정찰·참여 보정과 가산한다. 진행 중 길마·스킬 변경은 기존 대진에 영향을 주지 않는다. 점령자 변경 재대진은 기존 공격 고정값을 유지하며 새 방어 측만 다시 고정한다.
+- `getGuildWarAdvance`·`getGuildWarAdvanceTargets`는 상대 광산 공격에 금광1곳, 상대 킹덤 공격에 핵심광산1곳을 요구한다. 전쟁선포·자폭만 적용하고 정찰·미점령 무혈입성에는 적용하지 않는다. 선포 후 거점 상실은 진행 전투를 취소하지 않는다. 실패 시 횟수 미차감·실제 가능한 지역과 명령을 안내한다.
+- `/길드전쟁`은 운영 현황, `/전쟁지도`는 여섯 지역의 독립 진격 조건을 표시한다. `buildGuildWarTicketLine`으로 기본·추가권을 나누고 개인 소진·공용 부족을 다른 UI로 안내한다. 편성에는 줄을 늘리지 않고 길마 스킬 축약을 표시한다. 현황·편성·성공한 펫스킬 상세의 요청자 헤더는 생략하고 지도·행동·실패 응답은 전체 닉네임을 유지한다. 침공 알림은 실제 세 방어자의 닉네임·포지션을 줄별로 표시한다.
+- `creditGuildWarVictory`의 조각은4번, 다이아는5번, 영주·전체알림은6번이다. 금광은1~3번이며 기존 정액·큐브·개인 보상과 `/방어` 5천만은 유지한다. `getGuildWarKingdomNo`로 이관 전후 영주·탐험 혜택의 실제 지역을 구분한다.
+- 아이템 차감과 추가권은 기존 `publishGuildWar(data, guildData, true)`로 함께 확정한다. 신규 helper의 파일 IO·새 경로는 없다. 회원/길드 저널·롤백·복구·DEV/PROD 선택·명령 배타 잠금을 유지한다.
+
+## 길드창고 다이아 통합 (2026-11-11 개발)
+
+Status: VERIFIED
+
+- 아래 과거 길드창고 상자 보관·분배 설명보다 이 절을 우선한다. `/길드정보`(ㄱㄱㄱ)·`/길드상세정보`·유효한 `/길드분배`가 `convertGuildWarehouseDiamondBoxes`로 모든 길드의 상자·기존 다이아·합산 안전 정수 범위를 먼저 검증한 후 `warehouse.diamond`에 1:1 합산하고 `diamondBox`를 제거한다. 변경된 경우 명령 진입점에서 `guildData`를 `guildPath`에 저장하며, helper에 IO·별도 경로·새 완료 표식을 추가하지 않는다. 상자 필드가 없으면 반복 저장·가산하지 않는다.
+- `buildGuildResourceDisplay`와 분배 결과는 다이아만 표시한다. `/길드분배`는 전환 후 총량을 기존 전체/지정 인원에게 균등 분배하고 나머지를 남기며, 지급 대상의 다이아 범위를 전원 사전 확인한다. 개인 가방의 상자·기존 수수료/아이템·권한은 유지한다.
+- `creditGuildWarVictory`는 구/신규 규칙 모두 현행 5번 다이아 광산 승리 시 길드창고 다이아로 지급한다. 이미 확정된 보상 기록·중복 정산 차단·다른 지역 보상은 유지하며 과거 기록의 상자 표시는 당시 기록 그대로 남긴다.
+- 전환 저장에는 기존 `saveJsonFile` → 관리 JSON 검증 교체·명령 롤백을 재사용한다. 로드 실패를 기본 자료로 대체하지 않으며 DEV/PROD 분리는 유지한다.
+
+## 길드전쟁 UI·참여·교체 규칙 정리 (2026-11-11 개발)
+
+Status: VERIFIED
+
+- 이 절은 아래 과거 길드전쟁 UI·교체·보상 설명보다 우선한다. `buildGuildWarMain`은 가입/미가입 모두 6곳을 접지 않고 표시하고, 공용 공격권·소유 지역번호·전쟁톡·정찰/자폭 잔여량은 가입자에게만 표시한다. 영주 줄은 호월킹덤 점령 중에만 표시한다.
+- `buildGuildWarFormation`은 8슬롯과 길마 기본권·정찰 역할권·공격자 개인 합계를 구분한다. 정찰·자폭은 횟수를 제목 줄에, 담당자·실행 안내를 다음 줄에 표시한다. 공격·방어 자리는 `🥇선/🥈중/🥉대`로 축약하고 방어 캐슬버프는 한 줄로 표시한다. 개인 선포·교체·정찰·자폭 횟수는 모두 잔여/총이며 전체보기 패딩은 `📚 길드원 현황·편성 설명·방법 전체보기` 직후 한 번이다. 겸직 제한·범례·전환 제한 안내와 기존 전체 길드원 상세는 접힌 영역에 보존한다. `/정찰`은 기존 길드명 인자 형식을 유지한다.
+- 잔여 표기는 `getGuildWarPersonalAvailability.remaining`을 재사용하며 길마·정찰 행은 해당 역할 소진 여부도 확인한다. 정찰 역할 잔여는 공용 재고와 별도이고 실제 선포 판정은 유지한다. 교체는 기존 한도에서 사용량을 한 번 빼며 초기 무료 편성·동일 재입력·미기록 구 진형 사용량0·기존 이력/리셋을 유지한다. `buildGuildWarTicketHelp`는 실제6개 인수의 회원 자료로 잔여 개인 합계와 다른 선포자를 안내한다.
+- 자폭 성공확률은 `GLOBAL_CONFIG.guildWar.bombSuccessRate = 0.5`이며 실제 `applyGuildWarBomb` 판정과 편성 완료·가이드·교육·스케줄 안내가 모두 50%로 일치한다. 일일 실행·교체 한도와 보상·점령 처리·저장 흐름은 유지한다. `buildGuildWarRosterDetails`는 `/길드정보` 번호와 현재 직책·캐슬/종합 계산을 유지해 고유 길드원 한 명당 두 줄로 표시한다. 전체 명령·규칙·보상은 `GLOBAL_CONFIG.guildWar.guide`의 7개 장에 통합한다.
+- `commitGuildWarRoster`는 정찰·자폭·공격·방어 후보 전체를 검증한 뒤 유형별 교체를 함께 반영한다. 공격·방어·자폭은 각각 2회, 최초 무료·동일 재입력 무료·해제/초기화/재편성 이력 유지이며 소진한 행동권을 복구하지 않는다. 기존 저장본의 없는 공격/방어 교체 필드만 기존 편성 유무로 시작하고, 존재하는 손상 필드는 `requireGuildWarState`에서 거절한다. `resetGuildWarDay`에서 기존 일일 기준으로 교체 횟수를 초기화한다.
+- `setGuildWarFormation`은 진행 중 방어 인원·자리 변경을 전부 차단한다. 공격 정찰 승리 시 해당 전쟁 기존 3명의 임시 순서 변경은 유지하며 기본 진형/교체 한도에 합산하지 않는다. 전체 길드원 공격 편성·직책 유지·최대2역·공방 중복 금지·개인 선포권 보호는 유지한다.
+- `/방어`는 `getGuildWarRequest`의 정확 일치로만 실행한다. `runGuildWarEntry` → `applyGuildWarDefenseJoin`에서 등록 길드톡·확정 방어자·준비 시간·현재 소속을 검증하고, 시작이 빠른 대상 전투 한 건에만 캐슬+5%·방어확률+5%·개인5천만을 반영한다. `requireGuildWarDefenseJoins`가 전투/계정 중복·기한·보상 기록을 검증한다. `getGuildWarDefenseBonuses`를 UI/실제 `resolveGuildWarMatch`에서 공용으로 사용해 13/8/15/5% 가산을 일치시킨다.
+- 방어 참여는 회원·길드를 `publishGuildWar(data, guildData, true)`의 기존 저널·분리 저장 보호로 함께 확정한 뒤 성공 응답한다. 실패는 기존 롤백/재시작 복구를 유지하며 helper에 파일 IO를 추가하지 않는다. 기본 편성은 길드만, 정찰·자폭 개인 보상은 기존 회원+길드 저장 흐름을 유지한다. DEV/PROD 경로·로드 실패 전파·자동 결과 알림 정책은 유지한다.
+- `queueGuildWarDefenseNotice`/`refreshGuildWarDefenseNotice`는 침공 알림을 대진과 연결하고 발송·재시도 시 실제 남은 준비 시간을 갱신한다. 정찰 성공·실패·부재 모두 실제 방어자와 `/방어` 안내를 제공하되 비공개 상대정보는 노출하지 않는다. 기한 종료·취소·상대 교체 후 지난 대진의 참여 안내는 보내지 않는다. `retargetGuildWar`는 지난 대진의 참여 기록을 이력에 보존하고 새 대진의 참여 상태를 분리한다.
+- 신규 규칙 전쟁의 길드자금은 금광 점령5억/방어2.5억, 기타 점령3억/방어1억·공격실패1억이다. 기존 큐브3 추가율·광산 조각/다이아·무혈입성 보상·전투원 각1억은 유지한다. 단독 정찰·자폭의 실제 실행자 개인 보상은 성패 모두1억, 계정별 종류별 하루1회다. 자폭은 확정 뒤 입력자 직접 결과와 상대톡의 관점별 결과를 한 번씩 보내며 개인 보상은 상대에게 표시하지 않는다.
+
+## /빼빼로타이틀오픈 [수량]
+
+Status: VERIFIED
+
+- 명령어는 수량 생략 시 1개, 수량 지정 시 1~100개만 실행하며 잘못된 인자·추가 안내 문장은 소비 없이 안내한다. `GLOBAL_CONFIG.peperoTitle`의 16종을 각 6.25%로 독립 추첨한다. 상품 판매가격은 자동 지정하지 않으며 `getDiamondShopItemNames`에 전용 상자를 등록 가능한 이름으로 제공한다.
+- `applyPeperoTitleOpen`은 사본에서 타이틀 중복·포인트 범위·원본 형식을 검증한 뒤 회원 가방·포인트와 `member_title.member[user].title.list`를 반영한다. 신규 가격은 1억, 중복 보상은 5,000만이며 `title.num`을 바꾸지 않는다. 같은 일괄 개봉 안의 중복도 보상한다.
+- 명령 진입에서 타이틀을 로드하고 기존 회원 분리 저장 계획과 회원·신규 타이틀 원문을 `publishOperationalRows`로 함께 확정한다. `validateAdventurePublication`·`assertAdventurePublicationReady`가 `member_title.json`도 검증·보호하며 기존 시작/명령 진입 복구가 동일 원문을 재게시한다. 로드 실패는 기존 오류 흐름을 유지한다. helper에 파일 IO를 추가하지 않는다.
+- 게시 완료 후 개인 결과와 실제 특별 당첨별 공지방 알림을 보낸다. `🪦 11월 11일 솔로 확정`은 신규·중복 모두 알림 대상이며 다른 15종은 알리지 않는다. 한 수신방 전송 실패가 다른 방 발송을 막지 않고 확정 보상도 되돌리지 않는다. DEV는 기존 DEV 데이터 경로와 DEV 공지방만 사용한다. 실제 네트워크 전달 실패는 로그로 남기며 자동 재발송을 추가하지 않는다.
+
+## 펜던트 획득 전체알림
+
+Status: VERIFIED
+
+- `PENDANT_GRADE_TABLE`의 신화(왕좌의 펜던트)는 `notice: false`로 전체알림을 보내지 않는다. 초월·창세·창조의 기존 알림은 유지한다. `runPendantOpen`의 획득 결과·지급·확률·재료 소모는 유지한다.
+
+## 교육2·8번 스탯트리·평수 안내 (2026-11-12)
+
+Status: VERIFIED
+
+- `GLOBAL_CONFIG.gmEducation.chapters`의2·8번 학습·명령·확인·주의 문구만 갱신한다. 2번은 `/레벨`·`/스탯` 조회 및 투자 초기화 불가, 8번은 평수당 캐슬/레이드 각75,000과 `/가구정보` 조회를 설명한다. 기존12챕터·제목·보상·allsee·수료/지급 원본과 나머지10챕터는 유지한다.
+- 선행 효과는 Main/Info 계산과 정보·확장·진단에서 동일한 기본분을 한 번 사용한다. `/펫홈` UI·별채 레벨/버프 규칙·가구 및 교육 저장 정책은 유지한다.
+
+## 평수 확장 매력 안내
+
+Status: VERIFIED
+
+- `buildPetHomeFloorExpansion`은 제목 바로 뒤 allsee를 유지하고 예상 평수/확장 완료·캐슬·레이드 누적 기본분(이번 증가분)·두 모드 합계를 표시한다. 평수당 각75,000이며 빌리지·인테리어 배율을 제외한다. 평수·재료·대기·저장 흐름은 유지한다.
+
+## /다이아상점관리 예상 시세
+
+Status: VERIFIED
+
+- `buildDiamondShopForecast`는 당일 상품의 마감 계산값만 복사하고 기존 `advanceDiamondShopDay`를 재사용해 다음 KST 00:01 예상 단가·실제 보정률 변화를 표시한다. 원본 상품·구매량·가격·예약·판매기록과 저장 흐름을 바꾸지 않는다.
+- 현재 B·유효량·누적률의 상하한·반올림·최저가·점검일 동결·이전 예약을 실제 마감 규칙대로 반영한다. OFF는 고정가, OFF→ON 예약·운영 집계 미확인은 집계 확인 필요로 표시한다. 전날 기록이 없어도 오늘 정상 집계가 확인되면 오늘 값으로 예측하며 미기록을 0으로 대체하지 않는다.
+- `buildDiamondShopView`의 관리 화면만 상품별 예상 시세와 하단 B 1 안내를 추가한다. `다음 운영일: 변경 없음`은 제거하고 실제 예약이 있을 때만 별도 설정 안내를 보존한다. 일반 상점·개인 구매현황·기존 관리 통계와 `allsee` 위치는 유지한다.
+
+## 다이아상점 판매기록 표시
+
+Status: VERIFIED
+
+- `buildDiamondShopSales`는 페이지의 첫 5건만 미리 보여주고 `allsee` 뒤에는 6번째부터 이어서 표시해 같은 거래를 중복 출력하지 않는다. 5건 이하인 페이지는 전체보기 구분을 생략한다. 날짜·페이지 필터와 완료 기록·구매 제한·판매 집계는 변경하지 않는다.
+
+## 2026-11-09 다이아상점 UI 정리 (ver_2.789)
+
+Status: VERIFIED
+
+- 사용자 후속 요청으로 `/다이아상점` 조회만 직접 닉네임 헤더를 생략한다. 구매·관리·기타 직접 응답은 기존 헤더를 유지한다. `buildDiamondShopView`는 보유량 뒤와 시세 안내 뒤에 구분선을 표시한다. `buildDiamondCombineGuide`는 기존 `formatKoreanShort`로 조합 비용을 표시하고 상자 획득 줄을 분리한다. 상품·구매 한도·시세·조합 비용 계산과 상자 개봉 안내는 유지한다.
+
+## 2026-11-09 지도 UI 정합성 보완 (ver_2.788)
+
+Status: VERIFIED
+
+- `buildPetExploreStatusMessage`의 기본 지도는 노션 3-1 예시와 같은 영역·줄 순서를 사용한다. 현재·고정 표시, 독립된 최근5회 영역, 광산/던전/미궁의 명령 범위·구분선, 6번 입장 제한을 표시한다. 공지·구회차·재선택 안내가 있으면 별도 구분선으로 분리한다.
+- 시간은 시작 후60분 주기를 안내하고 실제 예약은 기존대로 유지한다. 확률 상세는 양수 항목을 최대3개씩 나누고 확률UP·디버프와 합계를 마지막에 표시한다. 아이템 등록명, 실제 데이터·확률 계산·정산·전환·allsee 위치와 별도 이벤트 지도 분기는 유지한다.
+
+## 2026-11-09 후속 보완 (ver_2.787 후보)
+
+Status: VERIFIED
+
+- 자동탐험: 기존 시작 후 60분 간격을 유지한다. 수동 정산은 완료 후 예약을 새로 만들고 60분 뒤부터 실행한다. `capturePetExploreTick`이 내부 타이머의 예약 ID·회차·접수 시각만 요청에 고정하므로 다른 채팅은 자동 정산을 실행하지 않는다. `isPetExploreTickPending`은 현재 예약 및 확정된 마지막 회차를 비교하며 완료 시각의 경과 시간은 차단 기준으로 사용하지 않는다.
+- MQ/중단: 내부 예약 요청은 일반 요청의 120초 대기 만료 대상에서 제외하되 기존 접수 제약은 유지한다. `stopAllIntervals`는 예약 식별자도 지워 이미 접수된 이전 예약을 무효화한다. 자동 정산의 회차 표식과 회원 보상은 기존 확정 게시로 함께 저장하고 빈 회차도 기록한다. 이벤트 탐험도 자동 예약 회차를 중복 기준으로 사용한다.
+- 안내/경험치: 지도·스케줄·이벤트 안내의 정각 고정 문구를 실제 60분 주기로 맞췄다. `grantPetExploreExperience`가 실제 지급한 기본·티어·가호 추가 EXP를 반환하며 기본 탐험 보고서는 총합·내역·가호 사용량을 표시한다.
+- 길마 전환: `getGuildWarPersonalUsage`는 선포자 미확인 구기록을 현재 길마에게 추정 귀속하지 않는다. `prepareGuildWarPersonalTransition`이 당일 미확인 길마권 사용을 감지해 편성 제한을 저장한다. 정찰·공격을 바꾸는 후보는 반영 전 거절하며 순수 방어·자폭 변경은 기존 조건으로 허용한다. 기록 삭제·길마 변경·관리자 선포권 초기화 뒤에도 제한을 유지하고 실제 다음 KST 일일 초기화에서만 해제한다.
+
+## 2026-11-09 신규 READY 3건 개발 (ver_2.786)
+
+Status: VERIFIED
+
+- 이 절은 아래 동일 기능의 과거 설명보다 우선한다. 운영 반영 전 소스 개발 기준이며 Notion 상태·운영반영일·운영반영버전은 원격 운영 반영 확인 전 변경하지 않는다.
+- 기간권: `/호패10일오픈`, `/호패20일오픈`, `/호패30일오픈`, `/호패프리미엄10일오픈`, `/호패프리미엄20일오픈`, `/호패프리미엄30일오픈`은 생략 시1개, 안전한 양의 정수 개수만 허용한다. `/호패프리미엄오픈`은 30일권 호환 별칭이다. `GLOBAL_CONFIG.passDuration` → `parsePassDurationRequest` → `applyPassDurationExtension`에서 KST 종료일 포함, 미가입·만료는 당일을 첫날로 계산하고 활성 상태면 기존 종료일에 가산한다. 일반·프리미엄은 별도이며 활성 영구권은 무차감 거절한다. 기존 2자리 날짜 표현 범위(2099년)·비정상 날짜·보유량·접미 문구를 검증한다.
+- 기간권 저장: 활성 연장은 member만, 프리미엄 최초/재활성화는 기존 홈뱃지·잠금 스킬 복원을 포함한다. `beginFreeMarketMutation` → 회원 분리 저장 계획 → `publishOperationalRows`로 차감·종료일·자격을 함께 확정하며 재시작 복구는 같은 원문만 게시한다. 자동탐험권·일일 지급 기록·자동 설정을 중복 초기화하지 않는다. 기존 관리자 부여/삭제·개인채팅 이용 조건은 유지한다.
+- 패키지 연계: 엔트리에서 `packageInfo.json`을 로드하고 `requirePackageInfoData`로 배열 형식만 확인한다. 코드에서 기간권 6종이나 과거 패키지 19종을 자동 추가하지 않는다. 목록·구성·번호·활성 여부는 저장된 카탈로그만 따른다. 구매→미개봉 패키지, `/패키지사용`→가방 이용권, 기간권 명령→기간 적용 순서다. `normalizePassDurationItemName`은 신규 지급의 구 30일권 이름을 정식 이름으로 통일하며 기존 가방 구·신 수량은 합산 차감한다. 개봉된 6종 이용권은 자유시장 판매 불가, 미개봉 패키지는 기존 거래 규칙을 따른다.
+- 기간권 패키지 검증: 보상 구성은 저장된 카탈로그를 따르며 `/패키지수정`에서 해당 이용권 1개로 강제하지 않는다. 공통 보상 타입·수량 검증과 `validatePassDurationPackageStock`의 동일 보상·구신 30일권 합산 검증은 유지한다. 정식 6종은 다이아 상품갯수1개만 등록/구매 가능하며 구매 묶음 수·가격·한도는 기존 운영 설정을 따른다.
+- 탐험 번호: 사용자 번호1~6은 기존 지역 식별자1·2·4·5·8·9에 대응한다. `getExploreRegionKey`/`getExplorePublicNumber`로 입력·자동고정·조회 번호를 해석하고 저장된 지역 식별자와 과거 기록은 유지한다. 기존 참가 회차는 `reworkVersion=1`로 먼저 정산하고 새 기본 참가를 일시 보류한 뒤 `advanceExploreRework`가 신규 회차를2로 전환한다. 삭제 지역3·6·7의 고정/현재 선택은 해제·재선택 안내하며 재전환하지 않는다. 별도 이벤트0·10·11은 유지하고 보조 탐사대원 기능은 신설하지 않는다.
+- 탐험 보상: 신규 기본 탐험 정상 정산 성공/실패에만 `applyExploreCommonReward`로 1억포인트상자1개. 실패 먹이2개는 대체하며 성공 기존 보상·티어/가호EXP·입장권 부족 광산 이동·미궁 자격은 유지한다. 별도 이벤트·입장 불성립·조회에는 추가 지급하지 않는다. 기본 광산의 기존5% 이벤트 던전 진입은 기본 회차로 보아 공통 상자를 지급하고 원래 기본 지역 이모지로 기록한다. 최근5회는 전환 이후 실제 기본 정산부터 기록하며 전적 합계로 과거 순서를 만들지 않는다.
+- 탐험 UI: `/지도`는 전체 닉네임·현재확률·지역/고정·최근5회·6지역 인원을 먼저 표시하고 지정 문구 직후 allsee를 사용한다. 같은 실제 확률 계산을 상세에 사용하고 보유 확률UP만 표시한다. 보고서의 레벨 상승 명단은 접기 전, 상세는 접기 후이며 실제 보상은 유지한다. `/탐험유저확인 번호`도 신규 번호로 조회하되 기존 참가 회차 동안은 이전 번호라고 명시한다.
+- 저장: 프리미엄은 회원·펫스킬·홈활동, 탐험은 회원·탐험 회차 상태를 `beginFreeMarketMutation`/`finishFreeMarketMutation`의 기존 확정 게시로 함께 저장한다. `validateAdventurePublication`은 기존 `petHomeActivityData.json`/`petExploreData.json`을 허용한다. 회원 분리 저장 계획과 DEV/PROD 경로를 재사용하며 Main 복구 전·Info 미완료 게시 상태의 읽기 차단은 유지한다. 수동 정산은 신규 회차, 자동 중복 호출과 중단 회차 복구는 추가 지급하지 않는다.
+- 길드전쟁: 신규 선포는 `rulesVersion=2`로 준비120초·15초 중계, 금광 점령8억/방어3억·기타 점령5억/방어2억·공격 정상 패배1억. 승리만 큐브3 적용, 패배 위로금은 별도 수혜 길드에 한 번 지급한다. 기존 진행 건은 표식 없는 구규칙180초·점령3억/방어1억·광산상자를 유지하며 재정찰도 당시 시간으로 진행한다.
+- 길드창고: `/길드정보`(ㄱㄱㄱ)·`/길드상세정보`·유효한 `/길드분배` 진입에서 `convertGuildWarehouseDiamondBoxes`가 모든 창고의 `diamondBox`를 전체 검증 후 1:1로 `diamond`에 합산·삭제하고 변경이 있을 때 `guildPath`에 저장한다. 상자 필드가 없으면 재전환·추가 저장하지 않는다. 조회·분배는 다이아만 표시하며 개인 가방 상자는 유지한다. 구규칙 진행 전쟁을 포함해 이후 다이아광산 보상은 다이아로 지급한다. 양측 보상과 점령은 기존 전쟁 복구 게시로 함께 확정한다.
+- 길드 편성: `validateGuildWarRoles`/`commitGuildWarRoster`는 최대2역·공방 중복/동일진형 중복 금지와 후보 전체 검증을 적용한다. 공격은 현재 소드마스터, 방어는 공격 역할 없는 길드원이며 직책은 자동 변경하지 않는다. `/전쟁정찰해제`/`/전쟁자폭해제`는 길마·부길마·등록 길드톡·진행전쟁 잠금과 변경 횟수를 검사한다. 해제 후 재지정도 이력을 유지하고 동일 입력은 무료다. 전체초기화도 실제 해제되는 정찰·자폭 변경 횟수를 소모하며 잔여 부족 시 전체 유지한다. 일괄 편성 실패는 전체 유지한다.
+- 공격 진형 순서 변경 뒤에도 실제 계정에 남은 개인권은 미사용 공격 진형권으로 선포할 수 있다. `getGuildWarPersonalAvailability`는 attack0/1/2의 미사용 원천만 보완하며 다른 계정의 사용량·공용권·길마/정찰/지휘관 권리를 초기화하거나 이전하지 않는다. 소모·환급·일일 초기화·편성 표시는 같은 판정을 사용한다.
+- 개인 선포: `getGuildWarPersonalUsage`·`getGuildWarPersonalUseCount`로 실제 사용 이력을 겸직/이동 뒤에도 유지한다. 현행 역할 합산·지휘관 최대4회는 위 최신 절을 따른다. 공용 소모량과 확정 개인 이력의 차이는 모든 개인 한도에서 보수적으로 예약하며 실제 기록에는 중복 적립하지 않는다. 일일/관리자 초기화와 같은 회차 환급만 반영하고, `getGuildWarDeclaredUser`로 복원한 과거 선포자도 환급 시 개인 이력을 차감한다.
+- 길드 UI/알림: `/길드정보`의 전쟁 역할 행·범례를 제거하고 일반 직책은 유지한다. `/전쟁편성` allsee 뒤 동일 길드원 번호·배정/보급대(오늘 지원 여부)·현재 캐슬/종합 축약 매력을 표시한다. 신규 전쟁의 모든 지역 실제 점령에만 전체알림을 예약한다. 수신방별 전송 성공은 재전송하지 않으며 명시적 실패는 한 번 재시도하고, 전송 중 재시작으로 결과가 불명인 경우 중복 방지를 위해 로그를 남기고 자동 재전송하지 않는다.
+
+- 시장 반환 원본 검증: `validateFreeMarketReturnStorage`는 전환 사전 검증의 복사·초기화 전과 공용 반환 함수 진입 시 저장소·사용자·가방 형식을 검사한다. 일반/스킬 가방은 객체, 미니펫/가구/펜던트 보관함은 배열이어야 하며 이미 존재하는 잘못된 값은 초기화하지 않는다. 누락 항목의 기존 초기화는 유지한다. `getUniversalCollectionKeyBagMappings`의 이름 대응을 공유해 병합 전 원래/현재 수량과 다중 합계를 정확한 정수 범위로 검증한다. 이 검증은 전환·취소·강제취소·구매의 공용 반환 경로에 적용된다.
+
+- 전환 앞단 분기: `/자유시장전환`과 `/자유시장전환 실행`은 초기 복구·회원 최초 로드 후 전용 분기에서 권한·시장 원본·보상·반환 검증을 완료하고 종료한다. 미리보기도 `validateFreeMarketReturns`를 통과해야 하며 백업·저장을 하지 않는다. 공통 운영 보정과 `ensurePetSkillSystemData`는 전환 두 명령에서 실행되지 않으므로, 이전 시스템 버전이나 비참가자의 기존 스킬 자료도 임의 보정하지 않는다. 실행의 백업·확정 게시·복구 경로는 유지한다.
+
+- 시장 단가 표기: `formatFreeMarketUnitPrice`가 실제 총액/수량을 BigDecimal로 나누어 기본 소수2자리까지 표시하고 정확히 일치하지 않으면 `≈`를 붙인다. 매우 작은 양수는 유효3자리로 표시해0으로 보이지 않도록 한다. `formatFreeMarketUnitPriceText`의 상품명 옆 단가만 표시하고 `buildFreeMarketV2List`의 가격 행에서는 중복 개당 문구를 생략한다. 실제 묶음 가격·결제·정렬 값은 변경하지 않는다.
+
+## 2026-11-09 READY 개발 (ver_2.785)
+
+Status: VERIFIED
+
+- 대상: 펫홈 평수, 인형 수동 도감 추가, 자유시장 2.0(기획·검토답변 2문서), 다이아상점 2.0, 길드전쟁 확장. 아래 같은 기능의 과거 설명보다 현재 코드와 이 절을 우선한다. 교육·스탯트리 개편과 후속 인형 확장은 포함하지 않는다.
+- 펫홈: Main/Info의 `getPetHomeFloorCharm`이 전체 평수당 캐슬·레이드 각각 75,000을 더한다. 평수 기본분은 빌리지·별채 %와 인테리어 장인 10%에서 제외하고 기존 집·가구 효과 뒤에 한 번 더한다. 기존 레벨·퀘스트·큐브 최종 배율은 유지한다. `/가구정보`와 확장 안내는 배율 없는 평수 기본분을 표시한다. `/집짓기` 확인은 환경·입력자·계정·현재 평수·다음 조건을 다시 확인한다. `집뚝딱`/`생각해본다` 및 기존 슬래시 별칭을 지원한다. `/가구정보`/`/집짓기`에 전체보기 평수 세부 정보를 표시한다.
+- `/인형도감추가, 닉네임 인형도감이름 cm 형태 개수`: 기존 Admin/Master 권한. 공식 도감·실존 계정을 유일하게 해석하고 0.1cm·형태·안전한 정수 개수를 검증한다. `parseDollManualAddition`/`applyDollManualAddition`이 최초·중복 수집, 최고 크기, 최초일, 순위, 작업자/전후 로그를 함께 반영한다. 이용권·재화·경험치·자동판매는 적용하지 않는다. 기존 `dollPending.json` 원본 복구 흐름을 사용한다.
+- 시장 전환: `/자유시장전환` 미리보기 → Master의 `/자유시장전환 실행`. `requireFreeMarketSource`/`planFreeMarketConversion`/`validateFreeMarketReturns`로 원본을 보정 없이 검증하고, 고유 백업 폴더에 회원·분리 참조·펫·스킬·홈·시장·상품 정의를 원문 검증 복사한다. 미판매 매물의 실제 보관 정보를 원래 가방에 반환한 뒤 보유 당근·기록된 등록비를 개당 5천만 포인트로 정산한다. 가방·스킬 반환은 실제 저장 이름의 전후 수량 차이가 매물 수량과 일치해야 한다. 시장 스킬 반환은 획득 한도로 자르지 않으며, 구매 전 공간 검사와 일반 획득 한도는 유지한다. 누락된 홈 사용자는 실제 반환 함수의 기본 홈 초기화 흐름을 검증하며, 기존 홈 구조 오류는 그대로 실패한다. 음수 포인트 원본도 보존한다. 등록비 미기록은 거래번호를 별도 확인 목록에 남기며 추정 지급하지 않는다. 완료한 전환은 다시 지급하지 않는다. 전환 전에는 시장 거래를 차단한다. 전환 조회·실행 오류는 저장 확정 래퍼를 거치지 않는 원래 요청 응답으로 실행 방에 알린다.
+- 자유시장: 킹 이상, 등록 한도 1/3/8/10 유지. 다이아 묶음 신규 등록·가격수정 최소50·등록비 무료(기존10~49 매물 유지). 판매자 현재 회원권 기준 수수료20%/10%를 반올림하고 나머지를 지급한다. `/자유시장`(`ㅈㅈ`), `/자유시장검색`, `/내판매상품`, `/자유시장가격수정`, `/자유시장정보`, 기존 5종 등록·구매·취소·강제취소를 연결한다. 출력과 실행 모두 실제 거래 ID를 사용한다. 검색은 분류·이름, 실제 등급·강화/매력·개당 가격·수량·등록시각을 적용하며 정보가 없으면 뒤로 보낸다. 미개봉 패키지 거래는 허용하고 통화 다이아·상자·폐지 당근은 등록할 수 없다.
+- 시장 확인: 구매 `/거래확인 1|2`, 기존 `자유시장거래`/`자유시장거래취소` 유지. 환경·방·입력자별 최신 요청 하나, 60초. 구매는 원본 매물·가격 지문, 등록은 현재 보관 상태를 재확인한다. 완료 공개 기록은100건이며 예전 포인트 거래를 다이아로 오표시하지 않는다. 목록은 전체보기와 자동 분할 전송을 사용한다.
+- 폐지 당근: 개인 이전5종과 펜던트 호환 별칭·직접 당근 지급을 MQ 전에 차단한다. 일반 아이템 지급 함수와 상점의 신규 당근 지급도 차단한다. 미개봉 패키지는 `normalizeLegacyPackageReward`/`getPackagePointAward`로 개봉 시 당근 대신 동일 금액 포인트를 지급하고 차감 전에 합산 범위를 검증한다. 기존 직접 개봉4종도 같은 환산율을 적용한다. 달토끼·황금당근·온도기 종료는 문서 하단의 최신 종료 정책을 따른다.
+- 다이아상점: `ensureDiamondShopV2`가 예전 판매 목록을 보존하고 활성 상품을 비운다. Master의 `/다이아상점추가 상품명 상품갯수 다이아갯수 [하루구매갯수]`로 새 등록부터 시작한다. 정식 아이템 이름과 숫자 조합이 모호하면 거절한다. `/다이아구매`와 기존 `/다이아상점구매`는 같은 구매·퀘스트13 흐름이다. `/다이아명령어`, 추가/삭제, `/다이아시세설정`, `/다이아상점관리`, `/다이아상점판매기록`은 Master 전용이며 MQ 전에 권한을 확인한다. `buildDiamondShopView`는 가격·전일 대비·기본가 대비·오늘 구매를 줄별로 표시하며 고정가는 가격과 구매제한만 표시한다. 전일 가격 기록이 없으면 가격 차이를 만들지 않는다. 상점 운영일과 상자 개봉 부가 안내는 표시하지 않는다.
+- 다이아 시세: 운영일 경계 KST00:01, 신규OFF·B20. `/다이아시세설정`은 ON/OFF·B를 즉시 적용하고 기존 예약을 해제한다. OFF→ON은 기본가에서 시작하고 ON→ON의 B 변경은 누적 보정률을 유지하며 OFF는 즉시 기본가로 복귀한다. 당일 계정별 구매·유효량과 실제 회수 다이아·판매기록은 유지한다. `priceAdjustment`는 실제 결제 합계와 현재 가격×당일 판매량의 차이이며 기존 미기록은 0으로 검증한다. 다음 운영일에는 계정·판매 집계와 함께 0으로 초기화한다. 기존 저장된 익일 예약은 새 설정 명령으로 덮어쓰지 않는 한 종전대로 마감 후 적용한다. `getDiamondShopCorrection`의 일일 자동 갱신은 -5/0/+5/+10%p, 누적 -20~+60%, 비복리·반올림·최소1이다. 일일 구매 한도와 계정별 시세 집계 최대20묶음을 별도로 유지한다. 실제 응답 콜백이 없던 운영일은 미운영으로 보수적으로 동결한다. Master는 `/다이아상점관리 점검|정상 YYYY-MM-DD`로 오늘 이후 운영일 기준을 지정할 수 있다. 정상 지정일의 판매0건은 하락한다.
+- 노션 수용기준 재대조 보완: 검색어 없는 `/자유시장검색`은 사용법, 구매 확인은 보유·구매 후 잔액, 등록/가격수정은 현재 수수료·예상 실수령액을 표시한다. `/다이아조합법`·상점 획득 안내는 실시간 조합 시세로 표시하고 다이아 부족액·조합 양쪽 재료의 부족/충족을 계산한다. 직접 응답은 입력자 실제 전체 닉네임을 보존한다. 상점 관리는 전날 가격/유효량·오늘 전체 완료/판매/회수 통계를 제공하며 삭제 상품의 당일 완료도 포함한다. `getDiamondShopSales`가 기존 다이아 사용내역의 완료 구매와 새 판매기록을 함께 조회하고 새 거래의 원장 연결 ID로 중복을 제외한다. 과거 미기록 필드는 추정하지 않는다.
+- 다이아 구매 저장: 상품별 고유 ID·공통 계정 ID를 사용하며 삭제 후 같은 이름/번호로 재등록해도 이력이 연결되지 않는다. 완료 판매는 `currencyLog.diamondShopSales`에 제한 없이 보존하고 최근5건/100건 페이지 및 날짜 조회를 제공한다. `/다이아조합`은 조회만 하며, 수량 신청 후 60초 안에 `/다이아조합선택 1`로 신청 가격을 확정한다.
+- 공통 확정 게시: `beginFreeMarketMutation`/`finishFreeMarketMutation`이 명령 내 변경 파일만 메모리에 모은 뒤 `publishOperationalRows`로 확정 원문을 먼저 보존한다. 집 확장도 같은 `adventureGrowthPending.json` 복구 흐름을 사용한다. 회원 분리 저장 계획의 실제 쓰기/참조를 함께 게시하고 일반 명령 롤백이 확정 게시를 되돌리지 않도록 경계를 분리한다. 성공 응답 전 저장하며 Info는 미완료 게시 중 결과를 표시하지 않는다. DEV/PROD 경로 및 기존 로드 실패 전파를 유지한다.
+- 길드전쟁: 기존 version2 원본에 확장 표식을 사용한다. 최초 전환은 진행 전쟁 양측 무효·선포권1회 환급·실소모 복구·무보상, 소유권/영주 유지 후6번 다이아광산을 지구방위대 소유로 추가한다. 초기 추가 보상은 없다. `processGuildWars`가 경기 예정시각→선포시각→ID 순서로 처리해 동시 전쟁의 소모품을 중복 사용하지 않는다. 같은 길드·같은 지역만 중복 제한하며 각 전쟁의 3분/15초 절차와 공용5회·역할권은 유지한다.
+- 상대 교체: 매 경기 직전 최신 소유권을 확인한다. `retargetGuildWar`가 기존 대진 중단 이력·실소모를 보존하고 원래 공격 능력치·순서를 유지해 새 방어 스냅샷/재정찰/3분 준비로 재개한다. 교체 횟수 제한·추가 선포권 소모·중간 보상은 없다. 자기 길드 소유가 되면 무보상 무효 종료·원래 선포일 권리1회 환급. 탈퇴한 원래 공격 전투원은 재정찰 후에도 탈퇴 상태를 유지한다.
+- `/일괄전쟁편성`은 정찰·자폭·공격3·방어3의8숫자를 모두 검증 후 적용한다. 정찰·자폭·방어0 허용, 공격0 금지, 기존7인 중복 금지, 자폭 겸직 유지. 같은 자리 재입력 무차감·미편성 변경은 변경 이력에 포함한다. `/전쟁편성초기화`는8칸 해제하되 최초 편성 이력·권한·횟수를 유지한다. 진행 전쟁이 하나라도 있으면 기본 변경/일괄/초기화는 차단한다. `/전쟁공격편성 번호 번호 번호`만 허용하며 네 숫자·추가 안내문은 실행하지 않는다. 준비 중 대상 공격전이 하나일 때 정찰 승리·동일3인 순서 변경만 허용하고 여러 공격전이면 기존 순서를 유지한 채 안내한다.
+- 길드 보상: 점령3억/방어1억에 수상 길드의 현재 큐브3을 한 번 적용해 내림한다. 큐브1/2는 기존 공통 매력 계산에 이미 반영되므로 전쟁에서 추가 곱하지 않는다.5번 광산은 공방 성공 조각1,6번은 공방 성공 상자1을 건별1회·일일 제한 없이 지급한다. 상자는 통화 `warehouse.diamond`와 분리한 `warehouse.diamondBox`에 보관하고 기존 길드창고 표시/길드분배에 연결한다. 자폭은30%·하루2회·교체1회다. 직접 응답은 전체 닉네임 헤더, 자동 길드 알림은 기존 헤더를 유지한다. `/전쟁기록`은 최신5건 요약+30건 상세·KST 시각이며 과거 누락 정보는 미기록으로 표시한다.
+
+## 2026-11-09 운영 명령 제거 (ver_2.784)
+
+Status: VERIFIED
+
+- 삭제 명령: `/꽃집보상지급`, `/꽃집보상현황`, `/꽃집보상공지확정`, `/정령컨텐츠보상`, `/펫스킬북보상`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`, `/환생회수`, `/스타터중복확인`, `/스타터중복회수`, `/스타터중복회수 실행`, `/펫홈소셜뱃지마이그레이션`, `/펫홈피드마이그레이션`, `/펫홈패스개편정리`, `/장착가구동기화`. Main/Info 실행 분기·접수 권한 및 예외·안내 연결을 제거했다. 아래 해당 명령의 과거 구현 설명은 현재 실행 경로가 아니다.
+- `/데이터정리`, `/필터데이터정리`, 나머지 동기화·파일 생성·복구·정기 지급은 유지한다. 공용 저장·로드·자동 복구, 완료 표식과 기존 보상 원장은 삭제하지 않는다.
+- 꽃집 보상 호출·파서·명령 전용 요약과 스타터 회수 미리보기 함수도 제거했다. 기존 자료를 검증하는 헬퍼는 보존한다.
+
+## MQ 접수 제약 · /MQ상태 · /mq상태
+
+Status: VERIFIED
+
+- `main.js`의 7인수 `response(...)`가 방·운영 명령 권한(`isResponseAdmissionDenied`), 레이드(`getServerRaidAdmissionBlock`), `/요청설정`의 시간·횟수·예외를 확인한 뒤 일반 요청을 메모리 `responseQueue`에 넣는다. 내부 자동 명령은 기존 현재 작업에서 실행한다. 회원·패스·길드 역할 등 데이터가 필요한 조건은 기존 실행 단계에서 확인한다.
+- 레이드 사전 검사는 기존 허용 명령·DEV 단축어·가입 및 확인 입력을 유지하고 차단 시 메시지를 보내지 않는다. 접수 후 레이드가 시작된 경우도 실행 단계에서 무응답 차단한다. 기한이 지난 회차는 기존 마감·정산 재개 경로로 전달한다.
+- `serverRaidAdmissionStates`는 환경별 회원 경로를 키로 쓰는 작은 문자열 캐시다. 실제 회원·분리 자료 로드 성공 또는 `writeVerifiedJsonFile` 원자 교체 성공 뒤 갱신한다. 미공개 자동일퀘 배치 객체·저장 실패는 공개하지 않으며, 기존 복구 쓰기도 같은 경로로 갱신한다. 접수 검사와 상태 조회는 파일 IO를 하지 않는다.
+- 요청 집계는 `responseQueueLock`으로 보호하며 접수 시 검사한 요청은 실행 시 다시 세지 않는다. 기준은 기존 감지와 같은 `시간 내 횟수 >= 설정 횟수`이며 설정된 예외 명령·방과 내부 자동 명령은 제외한다. 동일 명령 전용 별도 TTL은 없다.
+- Admin·Master 명단 또는 기존 주문기록방 봇은 제약 통과 후 MQ만 우회한다. `processResponse`의 기존 흐름·데이터 잠금과 저장 트랜잭션은 유지하므로 데이터 잠금 대기는 발생할 수 있다.
+- `/MQ상태`, `/mq상태`는 정확히 일치하는 두 별칭이며 관리자·MASTER 본인 명단으로 모든 방에서 MQ 밖 즉시 조회한다. 전체 테스트방 전용 모드는 유지한다. 메모리 저장, 대기/한도128, 최장 대기, 실제 작업자 상태·시작 오류, 진행 명령/단계/경과, 운영자 직접 처리 건수, 만료120초를 표시하며 명령 인수는 표시하지 않는다. 큐 잠금이 바쁘면 기다리지 않고 부분 상태를 표시한다.
+- `responseQueueWorker`는 실제 Java 작업자다. 종료된 작업자는 다음 일반 접수에서 재시작하며 살아 있는 작업자는 교체하지 않는다. 종료 정리에서 후속 작업자의 상태를 지우지 않는다. 큐와 상태는 재컴파일·재시작 시 초기화된다.
+
 ## 시작 단계의 요청 모니터링 설정 저장
 
 Status: VERIFIED
 
-- `main.js`: `requestMonitorConfigPath`에서 설정을 읽고 기존 기준대로 누락·잘못된 설정값을 보완한다.
-- 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`는 `GLOBAL_CONFIG`와 저장 잠금 초기화 이후, 지급 복구·최초 회원 로드 이전에 실행한다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조한다.
+- `main.js`: `GLOBAL_CONFIG`·저장 잠금·스레드별 상태 초기화 이후, 지급 복구·최초 회원 로드 이전에 `requestMonitorConfigPath`를 읽고 기존 기준대로 누락·잘못된 설정값을 보완한 뒤 요청 제한값 반영과 최초 `saveJsonFile(requestMonitorConfig, requestMonitorConfigPath)`를 실행한다.
+- 파일 로드의 미완료 지급 보호 검사도 `GLOBAL_CONFIG.diamondLive` 등을 참조하므로 읽기부터 이 순서를 지킨다. 저장 계층의 `isJsonRollbackSnapshot`·`writeJsonStream`은 `GLOBAL_CONFIG.storage`를 참조하며 기존 오류 전파·보호 검사를 유지한다.
 - `loadJsonFile`·`saveJsonFile`·DEV/PROD 경로 선택과 저장 실패 전파 방식은 유지한다.
 
 ## /꽃집보상지급 · /꽃집보상현황 · /꽃집보상공지확정
@@ -582,6 +789,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- 정상 완료한 입력자에게 `awardDailyBattlePoints`로 승패 무관 25,000,000P를 지급한다. 실제 지급액과 결과 UI는 `GLOBAL_CONFIG.daily.battlePointReward`를 사용하며 경험치·CP·리셋권은 유지한다.
+
 ## Command Anchors
 
 - Search in `main.js`: `/캐슬대전`
@@ -670,7 +879,7 @@ Status: VERIFIED
 - 큐 접수 전 `room`, `msg`, `sender`를 `String(...)`으로 변환한다. Java 문자열 객체와 원시 문자열을 같은 명령·방·권한 비교에 사용하며, 공백 제거·별칭 추가·권한 확대는 하지 않는다.
 - `response(...)`는 실제 콜백의 `arguments`를 `getServerRaidCallbackEvent`로 접수 시 해석하고 `request.callbackEvent`에 보관한다. `processResponse`는 그 값을 사용하며 내부 8번째 인수인 큐 요청을 신뢰된 이벤트로 해석하지 않는다. 기본 7인수는 `null` 이벤트를 유지해 레이드 공격 진입에서 호출별 UUID를 생성하고, 기존 신뢰 어댑터 8번째 객체·선택적 네이티브 11인수의 메시지/방/운영자 식별값은 이전 규칙 그대로 보존한다. 확장 인수는 필수가 아니다.
 - `drainResponseQueue` → `executeResponseRequest` → `processResponse` 순으로 기존 데이터 흐름 잠금과 `dataTransactionLock.lock()`을 얻은 뒤 최신 데이터를 읽는다. Main 일반 채팅도 기존 글자수·경험치 처리를 위해 같은 큐를 사용한다. Info.js 콜백은 변경하지 않는다.
-- `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않고 안내한다. 초과 접수·작업자 시작 실패도 안내한다. 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다.
+- `GLOBAL_CONFIG.commandQueue`: 실행 중인 1건 외 대기 최대 128건, 꺼내기 시점에 접수 후 120,000ms를 초과한 요청은 실행하지 않는다. 공통 반복 요청 차단·접수 실패·대기 만료·실행 오류의 사용자 안내 전송 5곳은 임시 주석 처리되어 있다. 접수 제한·만료 폐기·운영자 과부하 알림·오류 로그는 유지하며, 처리 오류는 자동 재시도하지 않고 다음 요청을 계속한다. 개별 콘텐츠 안내와 운영 조회 전용 진단은 변경하지 않는다.
 - `responseQueueThread`가 설정된 현재 작업자의 내부 `response(...)` 재호출은 바로 실행한다. 자동일퀘의 캡처 응답·중첩 트랜잭션·DEV 컨텍스트를 유지하며 자기 큐를 기다리지 않는다.
 - 큐는 메모리에만 존재한다. 같은 명령도 입력마다 실행되며, 재시작 후 미실행 요청은 자동 재생하지 않는다. 실행에 들어간 명령은 기존 저장·백업·자동·수동 복구를 사용한다. 실제 MessengerBot의 지연 `replier` 응답과 재컴파일 동작은 운영자 적용 후 확인이 필요하다.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
@@ -836,7 +1045,6 @@ Status: VERIFIED
 - `buildHoiPassPremiumBagMessage`
 - `formatHoiPassPremiumBagExpiry`
 - `isHoiPassPremiumActive`
-- `getChuseokCarrotBalance`
 - `checkRank`
 
 ## Data Usage
@@ -849,9 +1057,6 @@ Status: VERIFIED
 - `data.member[sender].boostercnt`
 - `data.member[sender].pass.premium`
 - `data.member[sender].hidePremiumBagPoint`
-- `petExploreData.chuseokEvent.active`
-- `petExploreData.chuseokEvent.balances[sender]`
-- `data.member[sender].bag["황금당근🌕(/황금당근오픈 숫자)"]`
 - `data.adv`
 
 ## Save Flow
@@ -873,7 +1078,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - 프리미엄 전용 가방은 포인트 공개 상태에서 `/포인트잠금` 안내를 표시하고, 잠금 상태에서는 포인트를 `쉿 비밀🤫`로 표시한다.
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
-- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 이벤트 기간의 황금당근, 봉인금고·열쇠, 모험가 칭호, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 황금당근은 달토끼상점과 같은 이벤트 잔액을 표시하며 기존 가방 저장 잔액도 전환 전까지 합산한다. 프리미엄 가방의 레벨 영역에는 캐슬·레이드 보너스를 표시하지 않는다.
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 모험가 칭호, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 프리미엄 가방의 레벨 영역에는 캐슬·레이드 보너스를 표시하지 않는다.
 - 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
@@ -1078,19 +1283,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Files
-
-- `main.js`
-
-## Related Helpers
-
-- `formatGachaProbability`
-- `pickByProbability` (명령 내부)
-
-## AI Notes
-
-- 낚시대 파손은 기존 독립 30% 판정을 유지한다. 성공 시 정규화한 `fishTable`에서 생선을 추첨하고, 결과의 `낚시 성공 후 획득 확률`은 정규화된 생선 비율을 소수점 최대 6자리 백분율로 표시한다. 황금잉어 확률을 정수 절삭해 0%로 표시하지 않는다.
-- 패키지 소모, 생선·포인트·칭호 지급과 기존 저장 흐름은 유지한다.
+- 사용자 요청으로 명령어와 낚시 전용 보상·칭호·저장 헬퍼를 제거했다.
+- 상품 사용을 종료하며 통합 `/패키지사용`으로 이전하지 않는다. 기존 가방 아이템은 삭제하지 않는다.
 
 ---
 
@@ -2007,7 +2201,7 @@ Status: VERIFIED
 - `/펫정보`는 레이드→캐슬, 종합매력·닉네임 순위는 캐슬→레이드 순서를 유지한다. 스킬 초기화·별채 검증·모드별 보너스와 반올림은 각각 기존 위치에서 수행하며, 펜던트 승급값 정규화 후 데이터 상태도 유지한다. 전역 사용자 캐시나 추가 파일 입출력은 없다.
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
 - `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함), 길드공헌 큐브, 모험가 레벨, 퀘스트 누적 보너스를 0.001% 단위로 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
-- 일반 종합매력 펫스킬 12종은 `Info.js`의 공통 매력표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
+- 일반 종합매력 펫스킬은 `Info.js`의 공통 매력표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
 - `getMiniPetSkillCharmRate`는 창조림·엘리트 박사의 등급 조건을 대표·보조 슬롯에서 각각 판정해 대표 100% + 보조 50%를 합산하며 가방 보유만 한 미니펫은 제외한다. `getEquippedNonTierPetSkillExp`는 장착 목록만 합산해 프리미엄 잠금 스킬을 제외한다. 엘리트 기존 표기는 유지하고 창세 등급은 창조림에서 제외한다.
 - `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
@@ -2220,40 +2414,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `main.js`: `/당근게시판`
-
-## Files
-
-- `main.js`
-
-## Related Helpers
-
-- `checkRank`
-
-## Data Usage
-
-- `carrotBoardPath`
-- `carrotBoard.memo`
-
-## Save Flow
-
-- View branch is read-only
-- Nearby board creation and cleanup branches save to `carrotBoardPath`
-
-## Related Commands
-
-- `/당근`
-- `/당근완료`
-- `/당근게시판삭제`
-
-## AI Notes
-
-- Canonical public market board display
-- Good anchor for carrot-board schema and output order
-
----
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /가구정보 [닉네임]
 
@@ -2460,6 +2621,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Threshold-based mini-pet cleanup and sale command
+- 숫자 기준 매력 전체 형식만 실행한다. `getSafeSalePoint`와 `isSafePointSaleCredit`로 모든 대상의 가격·합산 보상·지급 후 잔액을 검사한 후 가방을 교체한다. 잘못된 값이 하나라도 있으면 포인트·가방을 변경하지 않는다.
 - `창조`, `창세`, `태초+`, `태초`, and elite mini-pets are protected from cleanup sale
 - Inspect this branch first for reports about unexpected bulk removals
 
@@ -2468,6 +2630,8 @@ Status: VERIFIED
 # /미니펫대전
 
 Status: VERIFIED
+
+- 정상 완료 보상은 `awardDailyBattlePoints`의 25,000,000P로 고정한다. 완료 보상의 야수의 본능 2배 계산·안내는 적용하지 않으며 기존 경험치·아이템·별도 약탈 효과와 횟수 정책은 유지한다.
 
 ## Command Anchors
 
@@ -2509,7 +2673,8 @@ Status: VERIFIED
 - 수동 미니펫대전에서 레벨업·승급·대승급이 발생하면 대전 결과 다음 메시지로 안내를 별도 출력한다. 자동일퀘에서는 기존 즉시 안내만 출력해 중복을 막는다.
 - 카드 상단의 경험치 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`와 양쪽 사용자로 표시한다.
 - 기본 아이템 보상은 봉인금고를 제외한 기존 6종 중 1종을 같은 비율로 추첨한다. 봉인금고는 일일퀘스트 완료 보상으로 하루 1개 지급한다.
-- `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
+- `약탈자`는 대상의 실제 유효 포인트가 GLOBAL_CONFIG.petSkill.effects.robberStealPoint(1,000만) 이상일 때만 기존70% 확률로 발동한다. 지급자 잔고·수령자 잔고와 수령 후 안전 범위를 journal 준비 전에 확인한다. 부족·잘못된 잔액·수령 범위 초과는 차감/지급/성공 기록/성공 응답을 만들지 않으며 미니펫대전의 기본 보상·횟수·퀘스트와 저장은 유지한다. 정확히1,000만은 성공 후0이며, 수동·자동일퀘가 같은 분기를 사용한다.
+- `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 기존 약탈 journal·분리 이력·배치 저장 흐름을 유지한다. 스킬 설명과 약탈 기록 안내도 최소 잔액 조건을 표시한다.
 
 ---
 
@@ -2609,6 +2774,8 @@ Status: VERIFIED
 # /자동일퀘
 
 Status: VERIFIED
+
+- 수동·자동·정리의 공통 `claimQuestReward`는 일반 일퀘 최초 수령 분기에서 `dailyQuestDungeonTicketReward`만큼 펫던전 입장권을 추가한다. 기존 완료 표식을 재사용하며 주간·패스 전용 수령에는 추가하지 않는다. main/Info의 `buildDailyQuestInfoMessage`와 공통 지급 결과에 같은 입장권 수량을 표시한다.
 
 ## Command Anchors
 
@@ -2801,6 +2968,7 @@ Status: VERIFIED
 - 실적은 최초 성공 시 명시적으로 준비하고, 기존 GRANT 중 시각·담당자·상품명·수량이 확인되는 원본만 한 번 가져온다. 과거 목록번호를 현재 번호로 추정하지 않는다. 조회는 초기 가져오기까지 메모리에서만 처리하며 파일·회원·교육실적을 저장하지 않는다. 기록 시작 월 이전은 불완전할 수 있다는 안내를 표시한다.
 - `packageGrantStats.json`은 기존 검증 교체·동기화 저장과 `_back`/`_back2` 백업을 사용한다. 손상 원본이나 백업이 남은 누락 원본을 빈 값으로 대체하지 않는다. `/데이터상태`, `/데이터복구 packageGrantStats 1|2`로 확인·수동 복구한다. DEV 파일·백업·복구 기록은 DEV 경로로 분리한다.
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
+- `parsePackageUseCommand`는 전체 숫자 인수만 받는다. `validatePackageRewardStock`은 실제 가방을 바꾸지 않고 패키지 보유량·정규화된 구성품·동일 보상 합산·지급 후 수량을 검사한다. 사용 기록 번호와 포인트도 차감 전에 검증하며 기존 저장·롤백 경로를 유지한다.
 - `/패키지알림` mutates `data.operationNotices.packageBag` and saves `member.json`
 
 ## Related Commands
@@ -2828,6 +2996,7 @@ Status: VERIFIED
 - 1차 지원 보상 타입은 `item`, `point` only
 - Package name is also the bag item name; package data no longer needs a separate `itemName`
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
+- `requirePackageInfoData` validates the loaded array without injecting defaults; list/add/edit/remove/enable/grant/bag/use and shop catalog lookups share the stored catalog. Removed entries stay removed after reload.
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
 - `/패키지실적`은 `/교육실적`과 같은 MASTER·교육방 판정을 사용한다. 기본은 자신의 현재 KST 월이며 공백 포함 담당자와 지난달·전체 조회를 지원한다. 지급 횟수/수량을 별도로 표시하고 횟수 동률은 1등·1등·3등, 동률 내 닉네임 정렬, 상단 최대3명·전체보기 당시 상품명/번호/대상/시각·최신순을 제공한다. 출력 제한 시 표시 건수와 원본 전체 건수를 안내한다.
@@ -3144,53 +3313,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `main.js`: `/아아`
-- Search in `main.js`: `GLOBAL_CONFIG.coffeePackage`
-
-## Files
-
-- `main.js`
-- `member.json`
-- `member_title.json`
-
-## Related Helpers
-
-- `getCoffeePackageSpecialIndex`
-- `isExclusiveDataMutationCommandMessage`
-- `ensureTitleUserData`
-- `addTitle`
-- `addItemToBag`
-- `checkRank`
-
-## Data Usage
-
-- `GLOBAL_CONFIG.coffeePackage`
-- `data.member[sender].bag`
-- `titleData.member[sender].title.list`
-
-## Save Flow
-
-- `/아아` 또는 `/아아 [숫자]` consumes `아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)`, grants 200 coffee items per use, and separately draws one mutually exclusive special situation from a cumulative 15% table
-- Special situations grant `미니펫뽑기🐹(/미니펫오픈)` and add the matching member title only when it is not already owned
-- The command loads member data in the response flow and member-title data once, then saves `filePath` and saves `memberTitlePath` only when a new title is added
-- `/아아`와 `/아아 [숫자]` are handled as exclusive multi-file mutation commands, including when entered through the DEV command context
-
-## Related Commands
-
-- `/아아`
-- `/아아 [숫자]`
-- `/판매 [아이템번호] [수량]`
-- `/타이틀목록`
-- `/미니펫오픈`
-
-## AI Notes
-
-- Exact/full-pattern guards allow only `/아아` or `/아아 [숫자]`; suffix guide text does not execute
-- `/아아` uses one item, while `/아아 [숫자]` has no hard count cap and is limited only by the user's package inventory
-- Bulk results group identical base/special outcomes, so at most six result-image messages plus one summary are sent
-- Coffee items use the existing general `/판매` value of 100,000 points per item
+- 사용자 요청으로 단일·수량 개봉 명령어, 전용 설정·추첨 헬퍼 및 복합 저장 명령 분류를 제거했다.
+- 상품 사용을 종료하며 통합 `/패키지사용`으로 이전하지 않는다. 기존 커피 아이템 판매와 획득한 칭호는 유지한다.
 
 ---
 
@@ -3350,6 +3474,7 @@ Status: VERIFIED
 
 - `formatSkillBagMessage`
 - `getPetSkillData`
+- `findPetSkillInfoData`
 - `buildPetSkillInfoMessage`
 - `getTierPetSkillSearchName`
 - `buildTierPetSkillInfoLine`
@@ -3371,7 +3496,9 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Dual-purpose lookup: skill effect lookup or admin user-bag lookup
+- `findPetSkillInfoData`는 모든 스킬명과 티어 조회명의 공백을 무시한 전체 일치를 지원한다. 표준 이름과 기존 별칭은 먼저 조회하며 공백 제거 뒤 다른 스킬이 겹치면 임의 선택하지 않는다.
+- 스킬 조회를 회원 닉네임 조회보다 우선한다. 회원 조회는 원래 닉네임과 관리자 권한을 그대로 확인한다. 저장된 스킬명과 표시 효과·확률은 바꾸지 않는 읽기 전용 처리다.
+- 빈 입력·아이콘만 입력한 경우에는 스킬을 임의로 선택하지 않는다. 정보 조회는 레거시 닉네임 길이 제한·펫 초기화 이전에 실행해 긴 닉네임과 펫 데이터 없는 계정도 응답한다.
 - 창조림·엘리트 박사는 기존 획득 확률 0.3%·0.1%를 유지하며 `획득 확률`로 안내한다. 효과 설명에는 대표 100%·보조 50%와 양쪽 합산, 퍼센트 보너스 적용 전 수치를 표시한다.
 - `무쌍신화📙[B]`는 고정 확률 0.5%이며, `무쌍귀신📙[A]`과 동시에 장착할 수 있다.
 - `전설의 몽둥이📙[한정판]` 조회는 확률 줄 없이 한정판 등급과 레이드·캐슬 매력 50만 효과를 표시한다.
@@ -4082,90 +4209,22 @@ Status: VERIFIED
 ---
 
 # /당근 [받을유저닉] [가방번호] [수량]
+
 Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/당근`
-## Files
-- `main.js`
-## Related Helpers
-- `generateBagOutput`
-- `isTradableItem`
-- `isMemberTierKing`
-- `getCarrotTradeRequest`, `getCarrotTradeRows`, `validateCarrotTrade`, `findCarrotTradeConfirmedRow`
-- `applyConfirmedCarrotTrade`, `buildCarrotTradeMessage`, `buildCarrotTradeNotice`, `startCarrotTradeExpiry`
-## Data Usage
-- `data.member[sender].bag`
-- `data.member[receiver].bag`
-## Save Flow
-- 최초 요청은 검증과 확인창만 출력하며 거래 파일을 저장하지 않는다. 같은 계정·단체방 여부·방의 정확한 확인 응답만 처리한다.
-- `거래한다`는 원래 명령으로 출석·계정정지·대전·장소 공통 검사를 거친 뒤 최신 대상으로 재검증한다. 기존 약관 범위와 펜던트의 부수 보상 차이도 유지한다.
-- `carrotTradePending`은 DEV/PROD 계정별 1건이며 60초 자동 만료한다. `안한다`·만료·재검증/저장 실패는 대기를 끝내고 전송하지 않는다. 새 요청은 기존 대상·시간을 덮어쓰지 않는다.
-- 실제 아이템 내용과 ID(있는 경우), 최초 순서/번호를 보존한다. 번호가 바뀌어도 대상을 식별하면 진행하며 식별 불가 시 취소한다.
-- 확정 시 회원 저장 후 해당 pet/skill/home 파일을 기존 명령 트랜잭션으로 저장한다. 가구 원문은 변경 전 진입부에서 읽어 롤백 인수로 전달한다.
-- 완료 응답은 모든 저장 뒤 전송하며 응답 실패가 완료된 이전을 되돌리지 않는다. 메모리 대기는 재컴파일 후 재실행되지 않으며, 새 영속 저널은 추가하지 않는다.
-- 일반 아이템·미니펫·펫스킬·가구 거래 완료 안내는 관련 파일 저장이 모두 성공한 뒤 출력한다.
-- 가구 거래는 진입부에서 읽은 원문 스냅샷을 사용하고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
-## Related Commands
-- `/당근게시판`
-- `/당근완료`
-- `/미니펫당근`
-- `/가구당근`
-- `/펫스킬당근`
-- `/펜던트당근`
 
-## AI Notes
-- Direct carrot trades require both sender and receiver to be currently tier `킹` or higher before inventory mutation.
-- `/당근`, `/미니펫당근`, `/가구당근`, `/펫스킬당근`은 `isCarrotTradeCommand` 공통 판정과 `isCarrotTradeRoomAllowed` 실제 단체방 검사로 커뮤니티에서만 허용한다.
-- `GLOBAL_CONFIG.carrotTrade.communityRoom`은 기존 `room5`의 `호이월드 커뮤니티[티어 킹 이상 입장가능]`이다. 회원의 소속 서버와 DEV 여부는 거래 장소 예외가 아니다.
-- response의 패스·출석 검사 및 게임 데이터 변경 전에 차단한다. 패스 미보유 일대일톡에도 `buildCarrotTradeBlockedMessage`의 체크랭크·입장 링크·미소모 안내를 한 번 출력하고 종료한다.
-- 차단 시 `member.json`, `member_pet.json`, 가구·펫스킬 데이터, 당근온도기 및 거래 횟수는 변경·저장하지 않는다. 안내용 member·pet·guild 로드는 command entry에서 수행한다.
-- 개당 당근 기준은 일반 1개, 미니펫·가구 100개, 펫스킬·펜던트 300개이다. 일반/스킬은 기존 수량을 곱하고 미니펫·가구·펜던트는 기존 단건 전송이다.
-- 실행 분기는 닉네임과 마지막 정수 인수를 전체 패턴으로 확인한다. 접미 안내 문구·음수·소수는 거래를 실행하지 않는다. 가구 번호 상한을 검사한다.
-- `/당근게시판`, `/당근등록`, `/당근완료`, `/당근게시판삭제`, `/펜던트당근`, 자유시장은 이번 커뮤니티 전용 제한 대상이 아니다.
-
----
-
-
-## Confirmation UI and Validation
-- `buildCarrotTradeMessage`는 자유시장 miniPet/furniture 상세·펜던트 형식을 재사용하며 체크랭크 닉네임, 쉼표, 총 당근·잔여량을 표시한다.
-- `haveCarrotTradeNumbersChanged`는 확인 이후·전송 이후 번호 변경이 실제로 확인된 경우에만 다음 가방 확인 안내를 추가한다.
-- 만료 콜백은 응답과 같은 잠금 순서를 사용하고 거래 고유 ID가 일치하는 대기만 취소한다. 이전 거래 타이머는 새 거래/완료 거래를 건드리지 않는다.
-- tools/test_carrot_confirmation.js: 실제 진입·검증·이전·저장·타이머·UI 16그룹. tools/test_carrot_confirmation_rhino.js: 전체 컴파일·실제 명령과 Java 잠금 20쌍(합성 파일 저장).
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /당근완료
-Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/당근완료`
-## Files
-- `main.js`
-## Related Helpers
-- carrot-board user filter in branch
-## Data Usage
-- `carrotBoard.memo`
-## Save Flow
-- Removes sender post and saves `carrotBoardPath`
-## Related Commands
-- `/당근게시판`
-- `/당근`
 
----
+Status: VERIFIED
+
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /당근게시판삭제
-Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/당근게시판삭제`
-## Files
-- `main.js`
-## Related Helpers
-- admin-only board reset
-## Data Usage
-- `carrotBoard.memo`
-## Save Flow
-- Resets board and saves `carrotBoardPath`
-## Related Commands
-- `/당근게시판`
 
----
+Status: VERIFIED
+
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /편지 [내용]
 Status: VERIFIED
@@ -4656,30 +4715,10 @@ Status: VERIFIED
 ---
 
 # /펫스킬당근 [닉] [번호] [개수]
+
 Status: VERIFIED
-## Command Anchors
-- Search in main.js: `/펫스킬당근`
-## Files
-- `main.js`
-## Related Helpers
-- `getPetSkillBagList`
-- `initPetSkillUser`
-- `getPetSkillBagRemainCount`
-- `addPetSkillToBag`
-- `removePetSkillFromBag`
-- `isMemberTierKing`
-## Data Usage
-- sender/receiver `petSkillData[*].bag`
-## Save Flow
-- Moves skills between users and saves `petSkillData`
-## Related Commands
-- `/펫스킬가방`
-- `/당근`
 
-## AI Notes
-- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 300개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
-
----
+- 실행·조회·저장과 내부 개인거래 처리는 제거했다. 옛 슬래시 입력은 MQ 전 무응답 차단하며 데이터 정리 기준은 아래 2026-11-16 종료 항목을 따른다.
 
 # /미니펫장착 [번호]
 Status: VERIFIED
@@ -4891,7 +4930,7 @@ Status: PARTIAL
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
 - 공통 누적 조회: `getServerRaidCurrentParticipant`, `buildServerRaidCumulativeRecord`, `appendServerRaidOwnRecord`. 같은 현재 소속·기간·계정 집합에서 정산 누적과 미지급 진행 회차를 한 번만 합산한다. 개인·서버의 데미지·기여도·순위가 같은 기준이다.
-- 최근 참가 조회: `getServerRaidLatestRecord`, `getServerRaidAttackRewardGuide`. 진행·정산 회차에 참여했으면 해당 회차를 우선하며, 과거 공격은 당시 실제 지급 기준을 안내한다. 조회 헬퍼는 파일 IO·지급·저장을 하지 않는다.
+- 최근 참가 조회: `getServerRaidLatestRecord`, `getServerRaidAttackRewardGuide`. 진행·정산 회차를 우선하고 완료 기록은 기존 레이드 원본 history에서 같은 계정·서버·소속 기간의 마지막 지급 완료 참가자를 읽는다. `serverRaidAccount.latest` 중복 요약을 생성/참조하지 않는다. 조회 헬퍼는 파일 IO·지급·저장을 하지 않는다.
 - 출력: `formatServerRaidServer` / `formatInfoServerRaidServer`, `isServerRaidLocked` / `isInfoServerRaidLocked`.
 - 상금 출력: `formatServerRaidPrize`, `getServerRaidResultPrize`, `buildServerRaidResultNotice`. 종료 시 확정된 참가자 1인당 지급액을 사용하고, 이전 저장 형식은 참가자의 확정 금액을 읽는다. 출력 헬퍼는 지급하거나 저장하지 않는다.
 
@@ -5022,6 +5061,7 @@ Status: VERIFIED
 - `data.member[sender].point`
 ## Save Flow
 - Removes selected mini-pet, adds points, saves member data and `petData`
+- Before removal, `getSafeSalePoint` validates a nonnegative safe-integer price (numeric strings allowed), and `isSafePointSaleCredit` checks the wallet and credit result. Missing/zero mini-pet prices retain the 100,000-point default. Invalid data aborts without a point or bag mutation.
 ## Related Commands
 - `/미니펫가방`
 - `/미니펫가방정리`
@@ -5053,6 +5093,7 @@ Status: VERIFIED
 ## AI Notes
 - Accepted as `/미니펫지정판매 [start]~[end]`; suffix guide text must not execute.
 - Uses the same default mini-pet sale price fallback as `/미니펫판매`.
+- `/미니펫지정판매`·`/미니펫등급정리`는 모든 판매 대상의 가격과 합계를 검증하고 지급 후 잔액을 확인한 다음 가방을 변경한다. 대상 외 미니펫은 검증·판매하지 않는다.
 
 ---
 
@@ -5388,6 +5429,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
+- 모든 포인트 상품 구매의 첫 성공 응답은 저장 완료 후 기존 createRequesterReplier로 실제 구매자의 전체 닉네임을 한 번 붙인다. 구매 완료 제목과 빈 줄 없이 이어지며 기존 본문과 추가 보너스/쿠폰 메시지는 유지한다.
 - 구매·쿠폰·보너스·펫 외형/성격 변경 완료 메시지는 길드·회원·펫 저장이 끝난 뒤 출력한다. 저장 실패 시 기존 명령 트랜잭션이 세금·차감·쿠폰·지급을 되돌린다.
 - 티켓 이름을 포함한 상품은 구매 수량만큼 보유 쿠폰을 높은 할인율부터 티켓 1개당 1장씩 적용하고, 구매가 성공한 뒤 할인율별 적용 수량을 차감한다. 보유 쿠폰이 부족하면 보유 수량까지만 할인하며 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
@@ -6307,6 +6349,22 @@ Status: PARTIAL
 
 Status: VERIFIED
 
+- 자유시장·다이아상점·조합·펫스킬정보의 직접 응답은 공통 데이터 로드 뒤 `createRequesterReplier`로 실제 입력자의 전체 닉네임을 붙인다. 같은 입력자의 기존 짧은/전체 헤더만 교체·중복 제거하고 다른 사람 이름이 있는 본문은 유지한다. 긴 목록은 헤더 길이를 빼서 이어보내며 전체보기는 기존 위치 한 번이다.
+- 다이아 관리 권한 거부는 큐 진입 후 공통 초기화 전에 bootstrap 회원·길드만 읽어 전체 닉네임으로 응답한다. 권한·거래·전투 규칙은 그대로이며 로드 실패를 기본 데이터로 바꾸지 않는다. 길드전쟁은 기존 직접 응답 래퍼가 전체 닉네임을 제공한다.
+
+- `/자유시장검색`은 `parseFreeMarketSearch`·`getFreeMarketSearchGrade`로 공백 없는 실제 분류·등급·이름을 판정한다. 카테고리+등급+이름은 AND, 복수 등급은 OR이다. 전체 목록·검색·내 판매·상세는 입력자 전체 닉네임을 맨 위에 표시하며 검색 결과만 유형별 구획을 사용한다. 기본 목록(`/자유시장`·`ㅈㅈ`)은 유형 구분 없이 최근 등록 시각 내림차순, 같은 시각이면 거래번호 내림차순으로 표시한다. `/내판매상품`도 본인 매물만 최근 등록순으로 표시하며 검색 결과의 기존 정렬·UI는 유지한다. 분류 해석은 다른 매물의 유무에 영향을 받지 않으며, 검색의 개당 가격은 `compareFreeMarketUnitPrices`로 안전 정수 범위의 분수를 정확히 비교한다. `일반 아이템` 분류는 입력 위치와 공백에 관계없이 등급보다 먼저 분리해 `일반` 등급으로 오인하지 않는다. `isFreeMarketSearchGradeForCategory`와 `searchGradeAliases`로 유형별 실제 등급을 구분하며, 해당 유형에 없는 등급 단어는 상품명으로 유지한다. 종류 미지정 검색에서도 `아르카나 하우스`·`로열 하우스`처럼 등급 단어와 겹치는 다른 유형의 상품명을 누락하지 않는다. 등급 단독 검색은 실제 등급을 우선하며, `matchesFreeMarketFullName`은 전체 상품명(명령 안내·끝 장식 이모지 제외)이 일치하면 이름 안의 등급 단어 때문에 누락하지 않는다. 실제 등급+전체 상품명도 인정하고, 명시한 다른 종류나 잘못된 추가 등급 조건은 통과시키지 않는다. `getFreeMarketMiniPetSearchGrades`는 등급표·미니펫 카탈로그의 원본 등급을 검색에만 사용하며 엘리트 정렬 순위를 만들지 않는다.
+- `/내판매기록`은 진입에서 읽은 시장 데이터의 완료 기록을 본인 판매자 기준으로 먼저 거르고 완료 시각·거래번호 내림차순으로 정렬한 뒤 최대 10건을 표시한다. `buildFreeMarketHistoryMessage`에 판매자를 전달하며 전체 거래현황은 기존 전체 기록을 유지한다. 파일 저장은 추가하지 않는다.
+- `petSkillSearchAliases`의 단독 검색어(`펫스킬북`, `펫 스킬북`, `펫스킬`, 공백 변형)는 `parseFreeMarketSearch.petSkillRelated`를 통해 개별 스킬 원본 매물과 이름에 `펫스킬`이 들어간 가방/패키지 매물을 함께 찾는다. 실제 매물 유형별 정렬·구획은 유지한다. 등급·추가 이름·다른 분류를 명시한 복합 검색은 기존 조건을 적용하며, 여러 분류 단어가 있으면 먼저 명시한 분류를 우선한다. `일반 아이템`은 등급 분리 전에 한 분류로 처리한다.
+- `isFreeMarketTradableItem`은 시장 전용 확정 금지 12종·통화 자체·재화 전용 묶음만 제외하며 일반 아이템/미확정 혼합 패키지는 허용한다. 기존 개인거래 `isTradableItem` 정책을 바꾸지 않는다.
+- `GLOBAL_CONFIG.freeMarket.minPrice`는 신규 5종 등록·가격수정에 묶음 전체 최소50다이아를 적용하고, `legacyMinPrice`는 기존10~49다이아 매물의 조회·구매·취소를 유지한다. `buildFreeMarketMinPriceMessage`가 등록/가격수정의 최소가 미달 UI를 구성하며 기존 전체 닉네임 응답 래퍼를 사용한다. 저장 경로·재료 이동·가격 지문 검증과 과거 완료 내역은 유지한다.
+- `calculateFreeMarketTradeFee`는 총가격을 정수 몫·나머지로 나눠 20%/10% 반올림 수수료를 계산하고 예상 실수령 안내와 실제 구매 확정에 함께 사용한다. `formatFreeMarketUnitPrice`는 순수 표시값만 소수·근삿값으로 계산하며 실제 총액·수수료 계산은 변경하지 않는다. 안전 정수 범위 밖의 금액·수량은 거절한다.
+- `validateFreeMarketBagMergeCounts`는 가방 이름 병합 전의 형식·합산 범위를, `validateFreeMarketReturnStorage`는 수령 가방/스킬가방의 현재 이름·기존 수량+지급 수량을 실제 변경 전에 확인한다. 구매 안내·확정은 보관소 초기화 및 결제 전에 재검증하고 등록도 차감·이름 보정 전에 원본 수량을 검증한다. 누락 회원에게 반환한 것으로 처리하지 않으며, 합산 검증은 복사본만 사용하고 helper에서 파일 IO를 추가하지 않는다.
+- 시장 진입에서 로드한 상품 정의를 `recallFreeMarketBlockedItems`에 넘겨 금지 가방 매물을 전부 검증한 뒤 원래 가방에 반환한다. `beginFreeMarketMutation` → 회원/시장 저장 수집 → `finishFreeMarketMutation`의 확정 원문 게시로 반환과 매물 제거를 함께 반영하고 회원을 다시 로드한다. 별도 회수 안내는 추가하지 않는다. 구매 확정에서도 같은 허용 판정을 반복한다.
+
+- 메인과 목록의 판매가이드 링크는 `/자유시장판매가이드`다. `buildFreeMarketV2List`는 입력자 전체 닉네임과 실제 보유 다이아·활성 거래 건수를 표시하고 기존 물품 목록 앞 지정 위치에 allsee를 한 번 둔다.
+- `/자유시장판매가이드` 및 기존 `자유시장 판매가이드`는 거래 파일 로드·차단 매물 회수·저장 배치 진입 전에 `buildFreeMarketV2Guide`로 안내만 출력한다. 새 명령은 정확히 일치해야 하며 `/자유시장 판매가이드` 별칭은 추가하지 않는다.
+- 가이드는 제목·부제·첫 구분선 뒤 allsee 한 번, 등록5종→펜던트 거래정보→판매관리→거래조건 순서다. 펜던트는 수량 인자가 없으며, 묶음 전체 최소50다이아·수수료20/10%·등록비무료·기존 제한을 안내한다.
+
 ## Command Anchors
 
 - Search in `main.js`: `/자유시장`
@@ -6379,7 +6437,7 @@ Status: VERIFIED
 - Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
 - Registration fees consume `🥕당근이세요?` immediately; cancel/force-cancel refunds the stored `carrotFee` only when the seller currently holds `자유시장회원권🏪`
-- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 17%, and sellers holding `자유시장회원권🏪` use 10%
+- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 20%, and sellers holding `자유시장회원권🏪` use 10%
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends the logged member fee rate only when `memberFeeApplied: true`; old 5%/7% rows keep their recorded rate.
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
@@ -6397,6 +6455,9 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- 던전 성공률 감소는 `GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty = 7`이다. 현재 공개 번호 `/탐 3~4`가 내부 지역 4·5의 던전이며, 광산(`/탐 1~2`)·미궁(`/탐 5~6`)·이벤트의 감소량은 유지한다.
+- `getGuildWarKingdomExploreBonus`는 계산 시점의 점령자·회원 소속·실제 길드 명단을 모두 확인한다. 점령 길드원 +5%p와 영주 개인 +10%p는 중복 합산하지 않으며 예약/지도/실제 정산의 공통 계산과 상세 표시에 반영한다.
+
 ## Files
 - main.js
 
@@ -6404,7 +6465,6 @@ Status: VERIFIED
 - buildExploreBetMessage
 - buildPetExploreStatusMessage
 - doPetExploreInterval
-- doChuseokExploreInterval
 - getPetExploreBaseExperience
 - grantPetExploreExperience
 - buildPetExploreLevelUpSummary
@@ -6447,23 +6507,14 @@ Status: VERIFIED
 - `/탐 8`
 - `/탐 9`
 - `/탐 10` when the guild raid event is active
-- `/탐 11` when the Chuseok moon-rabbit event is active
 - `/지도`
-- `/탐험알림`
+- `/탐험알림` (설정·조회 기능은 유지하며 일반 `/지도`에는 알림 문구를 표시하지 않는다.)
 - `/탐험유저확인`
 - `/탐 0` when the event mine is active
 - `/펫탐험이벤트활성화`
 - `/펫탐험이벤트비활성화`
 - `/레이드이벤트활성화`
 - `/레이드이벤트비활성화`
-- `/추석이벤트활성화`
-- `/추석이벤트비활성화`
-- `/달토끼상점`
-- `/달토끼상점구매 [번호] [횟수]`
-- `/황금당근오픈 [숫자]`
-- `/황금당근수정 [아이디] [수량|+수량|-수량]`
-- `/달토끼상점추가 [상품명] [상품수량] [가격] [계정당한도]`
-- `/달토끼상점삭제 [번호]`
 - `/레이드박스오픈`
 - `/펜던트미궁박스오픈`
 - `/대마법박스오픈`
@@ -6479,24 +6530,15 @@ Status: VERIFIED
 - `doPetExploreInterval` uses the shared success-rate calculation immediately before consuming the selected probability-UP item and rolling the result, so premium, pendant, home-badge, and penalty values match the displayed formula and the final rate remains capped at 100%
 - 일반 광산 1~3에서 이벤트 던전 `E` 보상으로 전환되어도 성공률은 입장권 재확인까지 끝난 원래 광산 기준으로 계산하므로 `광산탐험가📙` 효과가 사라지지 않는다.
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
-- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3`, `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`, and one +5% explorer bonus to `/탐 11` when either explorer skill is equipped.
+- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3`, `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`.
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
-- 추석 이벤트가 활성화되면 일반 탐험 선택·정산을 일시 중지하고 길드 가입 유저의 `/탐 11`만 받는다. 수동 `/탐 11` 등록은 다음 정산 1회 후 초기화된다. 자동 참여는 자동탐험권을 보유하고 `/자동탐고정 11`을 설정한 사용자에게만 적용된다. 매시간 정각 현재 길드 가입과 5천만 포인트 보유를 다시 확인하며, 실제 참가자는 5천만 포인트를 내고 기존 유저별 성공률과 확률UP 로직을 적용한다. 성공하면 황금당근 1~3개를 같은 확률로 받고 실패하면 황금당근을 받지 않는다.
-- `/탐 11` 예약 화면은 상세 성공률을 표시한다. 이벤트 `/지도`는 저장된 수동 참여자와 `자동탐험권 보유 + /자동탐고정 11` 사용자를 합쳐 다음 정각의 현재 참여 인원을 계산하며, 자신의 자동고정 상태와 해제 명령을 함께 표시한다. 기본·티어·매력·영주·펫스킬·펜던트·호이패스·홈뱃지·확률UP·디버프의 상세 성공률은 `allsee` 뒤에 표시한다.
-- `/황금당근오픈 [숫자]`는 복합 데이터 변경 쓰기 잠금 안에서 `황금당근🌕(/황금당근오픈 숫자)` 아이템을 같은 수량의 달토끼상점 전용 잔액으로 바꾸고 `member.json`과 `petExploreData.json`을 한 번씩 저장한다. 추석 이벤트 활성화·비활성화, 상점 상품 추가·삭제·구매도 같은 쓰기 잠금을 사용한다.
-- `/황금당근수정 [아이디] [수량|+수량|-수량]`은 Master 전용이며 부호가 없는 수량은 증가로 처리한다. 복합 데이터 변경 쓰기 잠금 안에서 기존 가방 잔액을 이벤트 잔액으로 합친 뒤 황금당근을 증감하고, 음수 결과와 안전 정수 범위 초과는 저장 전에 차단하며 `member.json`과 `petExploreData.json`을 함께 저장한다.
-- `/탐 11`은 길드 가입 여부와 5천만 포인트 보유 여부를 선택 시점에 먼저 확인하며, 조건을 충족하지 못하면 탐험지에 등록하지 않는다.
-- `/달토끼상점`은 비길드 유저도 열람할 수 있지만 구매는 현재 길드 가입 유저만 가능하다. 이벤트 잔액과 기존 가방의 황금당근을 합산해 표시하고, 첫 구매나 이벤트 보상 지급 시 이벤트 잔액으로 옮긴다. 황금당근 차감, 계정별 누적 구매 한도, 구성품 지급을 한 번에 저장하며 이벤트 종료 시 이벤트 잔액·기존 잔액·미개봉 황금당근 아이템과 정산 시간 기록을 비우고 `/탐 11` 참가자를 1~3번 광산으로 이동하며 전체 자동탐험 고정 설정을 초기화한다. 상품별 구매 이력과 비활성 상품 번호는 보존한다.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
-- `/자동탐고정해제`는 저장된 자동탐험 고정 번호를 삭제한다. 추석 이벤트 중 11번 자동 등록 상태였다면 해당 자동 등록도 제거하지만, 사용자가 직접 신청한 `/탐 11` 참여는 유지한다.
-- 펫탐험은 성공·실패와 관계없이 실제 정산까지 완료한 계정에 일반 광산 3 EXP, 일반·무작위 이벤트 던전 5 EXP, 미궁 7 EXP를 지급한다. 다이아 광산(`/탐 0`), 길드레이드던전(`/탐 10`), 달토끼 탐색(`/탐 11`)은 각각 10 EXP를 지급한다. 입장 실패·미참여에는 지급하지 않으며, 입장권 부족으로 광산 이동이 발생하면 최종 실제 탐험지 종류를 기준으로 한다. 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용한다.
+- `/자동탐고정해제`는 저장된 자동탐험 고정 번호를 삭제한다.
+- 펫탐험은 성공·실패와 관계없이 실제 정산까지 완료한 계정에 일반 광산 3 EXP, 일반·무작위 이벤트 던전 5 EXP, 미궁 7 EXP를 지급한다. 다이아 광산(`/탐 0`), 길드레이드던전(`/탐 10`)은 각각 10 EXP를 지급한다. 입장 실패·미참여에는 지급하지 않으며, 입장권 부족으로 광산 이동이 발생하면 최종 실제 탐험지 종류를 기준으로 한다. 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용한다.
 - 펫탐험 정산 메시지는 실제 기본·티어·가호 합산값을 `📊 총 획득 경험치`로 표시한다. 레벨업·승급·대승급 안내는 결과 보고서의 `allsee` 앞에 별도 표시해 접힌 상세 결과에 가려지지 않게 한다.
-- 달토끼 탐색 결과 상단은 참여·성공·실패 인원을 한 줄에 표시한다. 성공한 참가자를 먼저 표시하고 실패한 참가자를 그 뒤에 표시하며, 각 그룹 안에서는 기존 참가 처리 순서를 유지한다. 미참여·길드 미가입·포인트 부족 인원 요약 아래에는 길드 미가입 유저와 포인트 부족 유저의 닉네임을 각각 표시한 뒤 참가자 상세용 `allsee`를 연결한다.
-- 달토끼 탐색은 매 정각 현재 길드 가입과 참가비 보유 조건을 다시 확인하고, 같은 정각의 자동 중복 차감·보상과 0명 결과 재출력을 막는다. 포인트 부족자는 처리 완료로 기록하지 않아 충전 후 다음 정각에 참여할 수 있다. 관리자 수동 `/펫탐험정산`은 기존 Master·`오픈채팅봇`과 `호이월드 GM 관리자방`의 Admin이 실행할 수 있으며, DEV·운영 모두 입력할 때마다 새로운 탐험 회차로 실행한다.
-- 달토끼 탐색의 시작 알림과 지도 참여 인원은 현재 길드 가입·참가비 조건을 충족한 등록자만 집계한다. 실제 참여자가 0명이면 0명 출발 알림과 대기를 생략하고, 접힌 빈 상세 없이 탐험 선택 유지와 다음 정각 참여 조건을 안내한다.
 - `/자동탐험시작`은 기존 타이머를 정리하고 명령 입력 시각을 자동 주기 기준으로 저장한 뒤 첫 자동 정산을 60분 후 실행한다. 시작 명령에서는 정산·출발 대기를 수행하지 않고 즉시 종료한다. 관리자 `/펫탐험정산`은 즉시 한 회차를 정산하고, 기존 타이머를 정리한 뒤 정산 완료 시각을 다음 자동 정산의 60분 기준시각으로 다시 설정한다. 참가자 유무와 관계없이 실제 정산 함수가 끝난 뒤 명령 실행 방에 정산 완료와 다음 자동 정산까지 60분 안내를 출력한다. 수동·자동 정산은 같은 참가자 판정·보상·저장 함수를 사용하며, 수동 추석 정산만 즉시 새 회차 실행을 위해 같은 시간대 처리 기록을 초기화한다. 이후 타이머는 별도 채팅 입력을 기다리지 않고 정산 응답을 직접 실행하며, DEV에서 시작한 타이머는 DEV 데이터 경로를 유지한다.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket and applies a `-5%` success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-15%` success penalty and check `펫던전 입장권🌋` at settlement.
@@ -6665,7 +6707,7 @@ Status: VERIFIED
 
 ---
 
-# /다이아조합
+# /다이아조합 · /다이아조합선택 · /포인트통계 · 기준값 설정
 
 Status: VERIFIED
 
@@ -6675,25 +6717,38 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `hasItem`
-- `removeItem`
-- `addPoint`
-- `addItem`
+- `initializeDiamondLiveState`, `requireDiamondLiveState`, `verifyDiamondLiveReceipt`, `buildDiamondLiveReceipt`
+- `applyDiamondLiveBaselinePolicy`, `parseDiamondLiveBaselineValue`, `changeDiamondLiveBaseline`
+- `collectDiamondLiveOwned`, `collectDiamondLiveReserved`, `getDiamondLiveSnapshot`
+- `collectDiamondLiveOwned`는 포인트를 안전 범위의 부호 있는 정수 잔액으로 검증해 음수도 원래 값 그대로 합산한다. 포인트상자·다이아·다이아상자는 계속 음이 아닌 안전 정수만 허용한다. `getDiamondLiveMaterials`도 같은 잔액 검증을 사용하며 음수 잔액의 최대 변환량은0, 부족액은 총 비용에서 실제 잔고를 뺀 정확한 큰 정수다. 집계 기준·운영자 제외·회원 잔액·아이템과 저장 흐름은 바꾸지 않는다.
+- `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`, `getDiamondLiveCancelAlias`
+- `getDiamondLiveMaterials`, `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveStatisticsChange`, `formatDiamondLiveStatisticsAmount`, `buildDiamondLiveStatisticsDetail`, `calculateDiamondLivePriceDetails`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
 
 ## Data Usage
 
-- `data.member[sender].bag["전설의 돌맹이🗿"]`
-- `data.member[sender].point`
-- `data.member[sender].bag["다이아상자💎(/다이아상자오픈)"]`
+- 기존 `member.json`의 `diamondLiveMarket`: 기준 points/diamonds/members·운영자 고유ID, 계정별 확인 대기1건. `migrations.diamondLiveInitialized`와 함께 검증하며 유실 시 자동 재초기화하지 않는다.
+- 별도 `diamondLiveBaseline.json`과 회원 기준·운영자ID·`pointBasisVersion`을 대조한다. 기존 기록이 없거나 손상·불일치하면 재생성하지 않고 중단한다. 과거 회원 백업 복원도 별도 기록과 대조한다.
+- 현재 회원의 개인 point와 정확한 가방 아이템 `1억포인트상자🪙(/포인트상자오픈)` 개수×100,000,000을 합쳐 통계와 실제 시세가 같은 포인트 총량을 사용한다. 현금·상자 수·환산액을 별도 구성값으로 전달한다. diamond와 정식 다이아상자는 기존대로 집계한다. 길드자금·미개봉 패키지 내부 재화는 제외하며 호이 남은 고정한 계정ID로 제외한다. 같은ID 행은 포인트상자를 포함한 모든 재화가 같아야1회 집계하며 불일치는 차단한다. 상자 개봉·지급·회수는 회원 최종 원문이 바뀐 뒤 재집계하며 결제에 포인트상자를 자동 사용하지 않는다.
+- 자유시장 구매 확인의 계정ID·매물ID·지문·60초·환경을 확인해 아직 차감하지 않은 다이아 대기액을 통계에서 한 번만 제외한다. 실제 잔고는 미변경이며 취소/만료/가격변경/완료 매물은 제외 해제한다. 보유 다이아 초과 대기는 집계 오류로 중단한다.
+- `isDiamondLiveExactMathReady`·`withDiamondLiveExactMath`가 현재 스레드에서 큰 정수 계산을 표준 Rhino 자바 래핑으로 실행하고 성공·오류 모두 원래 WrapFactory로 복원한다. 합계·곱셈·가격은 문자열+Java BigInteger/BigDecimal로 계산한다.
+- 1.5억×포인트 비율+2억×다이아 비율, 회원 증가와 재화 증가가 겹친 부분50% 보정은 유지한다. 백만 단위 사사오입 후 최소350,000,000을 적용하며 상한은 없다. 정상0 재화도 하한을 적용하지만 누락·손상·잘못된 숫자를 하한으로 대체하지 않는다. 상품별 다이아 판매 시세(-20~+60%)에는 이 포인트 하한을 적용하지 않는다.
+- 검증 회원 원문이 같을 때만 환경별 합계를 재사용하고 구매 대기는 매번 최신 반영한다. 회원 쓰기/복구/미게시 배치 읽기 시 캐시를 무효화하며 원문 변경·재시작 후 재집계한다. 기준 변경도 관련 환경 캐시를 비운다. 일반 채팅마다 가방 전체를 추가 탐색하거나 상시 타이머를 만들지 않는다.
 
 ## Save Flow
 
-- Saves member data through `saveJsonFile(data, filePath)` after successful combination
-
-## AI Notes
-
-- Exact/full-pattern command guard: `/다이아조합` or `/다이아조합 숫자`
-- Each count consumes `전설의 돌맹이🗿` 1개 and `🅟500,000,000`, then grants `다이아상자💎(/다이아상자오픈)` 1개.
+- 신규 기준은 포인트15조와 당시 다이아·회원 총량으로 생성한다. 기존 기준은 별도 기록 검증 후 최초 한 번만 포인트15조로 변경하고 `pointBasisVersion:2`를 함께 저장한다. 이후 MASTER 변경값은 재시작·날짜 변경·조회로 덮어쓰지 않는다. 다이아·회원 기준 및 실제 회원 재화는 이 변경으로 바꾸지 않는다.
+- `/포인트기준설정 금액`, `/다이아기준설정 개수`는 MASTER만 1~9,007,199,254,740,991의 정확한 정수 한 개를 쉼표 없이 입력할 수 있다. 무인수는 현재 저장값·사용법만 조회하며 잘못된 인수·접미 설명·권한 오류는 저장하지 않는다. 설정은 해당 기준 하나만 바꾸고 `baselineHistory`에 변경 전후·처리자·시각을 기록한다. 개인 재화·회원 기준·가격 하한은 유지한다.
+- 기준 최초 생성·1회 정책 변경·MASTER 변경은 별도 기준 기록과 member를 같은 `beginFreeMarketMutation`/`finishFreeMarketMutation` 확정 게시에 포함한다. 실패 시 성공을 알리지 않으며 미완료 확정 journal은 읽기를 차단하고 기존 복구 경로로 게시한다. 새 저장 파일·helper IO는 없다.
+- `/다이아조합`·`/다이아조합법`: 현재 시세와 두 재료 기준 최대 변환 가능 수량을 조회한다. `/다이아조합 양의정수`: 신청 즉시 재료를 검사하고 충분할 때만 재료 차감 없이60초 확인한다. 부족하면 확인창 없이 실제 부족분만 표시하고 가능한 수량의 재입력 명령을 안내한다(0개는 재료 확보 안내). 새 신청은 같은 계정의 이전 대기를 교체하며, 재료 부족으로 거절된 새 신청도 이전 대기를 해제해 다른 수량이 체결되지 않게 한다. 신청가·수량·총액·방 문맥을 저장한다. `/다이아조합선택 1|2`는 계정·유효기한·접수시각·재료를 검증하며 기존 유효 신청은 시세나 기준이 바뀌어도 신청가를 보장한다. 패치 전 하한 미만 신청은 취소·재신청 안내하며 몰래 인상하거나 저가 체결하지 않는다.
+- 앞뒤 공백을 제거한 `변환하기`는 확인1, `안하기`는 본인의 대기가 있는 방 또는 같은 방의 최근60초 조합 문맥에서 취소2로 조기에 연결한다. DEV 접두어도 처리한다. 다른 콘텐츠의 취소와 단독숫자1·2는 선점하지 않으며 기존 출석·정지·전투 제한을 따른다. 반복 확인·취소는 결과를 안내하고 추가 차감하지 않는다.
+- `getDiamondLiveMaterials`는 신청·조회·확정에 같은 BigInteger 계산을 사용한다. 확정 때는 저장된 신청가로 재검사하며 부족분과 최대 수량을 다시 안내한다. UI 기능 용어는 명령어를 제외하고 변환으로 통일한다.
+- 성공은 돌 차감·포인트 차감·정식 다이아상자 지급·대기 제거를 같은 회원 원문으로 게시한다. 확인·완료는 실제 지급물인 상자를 표시한다. 저장 오류는 롤백 후 전체 닉네임과 오류 안내를 전송하되 확정 게시 여부를 확인하지 못한 경우 무차감을 단언하지 않는다.
+- `/포인트통계`, `/포인트다이아통계`, `/포인트통계다이아`는 같은 MASTER 전용 통계다. 정확한 명령 일치로만 조회하며 공통 초기화 전 권한 검사·입력 정리·전체 닉네임 응답에 같은 별칭을 연결한다. 기존 보유 포인트·상자·환산액·제외량·회원·두 기준값 변경 안내를 유지한다.
+- `buildDiamondLiveStatistics`는 회원 수 증감률·재화 총량 증감률·최종 가격 등락률을 구분하고 제목 아래 구분선을 배치한다. 실제 증감이 있으나 소수 첫째 자리에서 0.0%가 되는 경우 통계에서만 방향과 `0.1% 미만`을 표시한다. 전체보기 패딩은 마지막 상세 안내 뒤 한 번이며 원본 전체 숫자와 보유·상자·제외량을 재집계하지 않는다.
+- `calculateDiamondLivePriceDetails`는 기존 정수 분수 가격식·회원 증가 중복분 보정·백만 단위 반올림·최저가를 유지해 실제 가격과 설명용 기여액을 함께 반환한다. `calculateDiamondLivePrice`도 같은 결과의 가격을 사용한다. 통계 엔트리는 같은 조회 스냅샷·설정으로 한 번 계산한 결과를 기본 화면과 상세에 전달한다.
+- `buildDiamondLiveStatisticsDetail`은 포인트/다이아 반영액·실제 회원 보정·반올림 전 계산값·최종가·최저가 적용을 표시한다. 중간 소수를 생략한 금액에는 `약`을 붙이며 표시용 반올림을 가격 계산에 재사용하지 않는다. 기준값 오류·누락 집계·가격 불일치는 기존 오류 응답으로 전파하고 기본값으로 대체하지 않는다. 저장·기준값 정책과 실제 결제·지급은 변경하지 않는다.
+- `/다이아명령어`는 기존 운영8개와 통계·두 기준값 설정·예시를 함께 안내하며 조회로 기준을 바꾸지 않는다.
+- `/다이아상점`은 닉네임·제목·잔액을 붙여 표시하고 전돌1개+시세변동 포인트→다이아1개 획득 안내를 제공한다. 실제 지급은 미개봉 상자이며 상품 번호/가격/한도/시세 규칙과 접기·목록은 유지한다. MASTER 명령은 일반 상점에 표시하지 않는다. 집계 오류 시 상품 목록은 보존하고 신규 조합 가격 확정만 중단한다.
 
 ---
 
@@ -6826,7 +6881,6 @@ Status: VERIFIED
 - `drawSealedVaultWeightedReward`
 - `ensureSealedVaultUserState`
 - `ensureSealedVaultRootData`
-- `appendSealedVaultRareRecord`
 - `appendSealedVaultAdminLog`
 - `addItem`
 - `removeItem`
@@ -6837,31 +6891,29 @@ Status: VERIFIED
 - `member.json -> member[user].bag["해방의 열쇠🗝️(/봉인금고오픈 숫자)"]`
 - `member.json -> member[user].sealedVault`
 - `member.json -> sealedVault.monthlyRewards`
-- `member.json -> sealedVault.rareRecords`
 - `member.json -> sealedVault.adminLogs`
 
 ## Save Flow
 - `/봉인금고오픈 [숫자]`는 요청 횟수만큼 `호이의 봉인금고🔒(/봉인금고오픈 숫자)`와 `해방의 열쇠🗝️(/봉인금고오픈 숫자)`를 모두 보유한 회원만 실행할 수 있다.
-- `/봉인금고오픈 [숫자]`는 1~100개의 봉인금고와 열쇠를 한 번에 사용하며, 각 회차를 순서대로 추첨한 뒤 두 아이템 차감·보상·누적 상태·희귀 기록을 `member.json`에 한 번 저장한다.
+- `/봉인금고오픈 [숫자]`는 1~100개의 봉인금고와 열쇠를 한 번에 사용하며, 각 회차를 순서대로 추첨한 뒤 두 아이템 차감·보상·누적 상태를 `member.json`에 한 번 저장한다.
 - 30번째 개봉마다 해당 회차의 일반·플래티넘·초대형 최종 보상을 2배 지급하고 부스터 누적을 초기화한다.
 - 플래티넘이 199회 연속 나오지 않으면 200번째 개봉에서 플래티넘을 확정한다. 초대형 보상은 플래티넘 미등장 누적을 초기화하지 않는다.
-- 플래티넘과 초대형 보상은 개인·전체 희귀 기록에 남기고, 저장 완료 후 전체 알림을 시도한다.
+- 플래티넘과 초대형 보상은 정상 지급하고 저장 완료 후 전체 알림을 시도한다. 개인·전체 희귀 기록은 생성하지 않는다.
 - `/해방열쇠조합 [숫자]`는 열쇠 1개당 봉인금고 100개를 소모한다. 성공 결과에 사용자 체크랭크, 소모·획득 수량, 남은 호봉과 현재 열쇠 수량을 표시한다. `runSealedVaultKeyCombine`은 메모리만 변경하고 기존 명령 진입부에서 `member.json`에 한 번 저장한다. 재료 부족·0·계산 범위 초과는 차감하지 않고 후행 안내문이 붙은 입력은 실행하지 않는다.
 - `해방열쇠조합` 또는 `/해방열쇠조합`은 사용법만 안내한다. 열쇠 부족 안내에 조합 안내를 추가하고 봉인금고 부족 안내는 일일퀘스트 획득 경로를 표시한다.
 - 일일퀘스트 보상은 `claimQuestReward`의 기존 중복 수령 방지와 저장 경로를 재사용하며 main·Info 퀘스트 창과 지급 결과에 봉인금고 1개를 표시한다.
-- `/봉인금고`, `/봉인금고확률`, `/봉인금고기록`은 조회 전용이다.
+- `/봉인금고`, `/봉인금고확률`은 조회 전용이다.
 - `/봉인금고`는 보유 호봉금고와 해방의 열쇠 수량, 부스터·플래티넘 확정까지의 남은 횟수와 진행 게이지를 함께 표시하고, 하단 명령어 목록에 `확인: /봉인금고`를 안내한다.
-- `/봉인금고오픈 [숫자]` 결과 제목 아래에는 `/봉인금고` 확인 명령어와 현재 부스터·플래티넘 보상 기록 확인 안내를 표시하며, 플래티넘·초대형 보상 당첨 여부, 남은 열쇠·호봉금고 수량, 부스터·플래티넘 확정까지의 남은 횟수와 진행 게이지를 안내한다.
+- `/봉인금고오픈 [숫자]` 결과 제목 아래에는 `/봉인금고` 확인 명령어와 현재 부스터·플래티넘 확정 진행도 안내를 표시하며, 플래티넘·초대형 보상 당첨 여부, 남은 열쇠·호봉금고 수량, 부스터·플래티넘 확정까지의 남은 횟수와 진행 게이지를 안내한다.
 - 같은 아이템도 일반 획득분과 2배 부스터 적용분을 별도 합산해 일반 줄 다음에 `🔥2배` 줄을 표시한다. 플래티넘·초대형 전체 알림도 실제 최종 지급량과 부스터 적용 여부를 같은 기준으로 표시하며, 당첨 요약은 횟수를 함께 안내한다.
 - 플래티넘 금고에서 획득한 보상은 일반 보상과 별도로 합산하고 해당 보상 줄 바로 아래에 `└ 플래티넘 금고💎 당첨`을 표시한다. 2배 부스터가 함께 적용되면 최종 지급 수량 뒤의 `🔥2배` 표시도 유지한다.
-- 관리자 명령은 열쇠 지급·회수, 계정 상태 조회, 부스터·천장 누적 조정, 월별 초대형 보상 설정, 전체 희귀 기록 조회를 지원한다.
+- 관리자 명령은 열쇠 지급·회수, 계정 상태 조회, 부스터·천장 누적 조정, 월별 초대형 보상 설정을 지원한다.
 - `해방의 열쇠🗝️`는 가방 특수 아이템에 표시하며 판매·당근 거래를 막는다.
 - 데이터 변경 명령은 기존 회원 데이터 명령 단위 잠금과 저장 실패 롤백 흐름을 재사용한다.
+- 희귀 기록 조회 두 명령은 종료했다. 기존 개인/전체 `rareRecords`와 레이드 `serverRaidAccount.latest`는 `/데이터정리` 미리보기→확인 때만 `cleanupMemberRecordRedundancy`로 제거한다. 기존 백업/복구본은 별도로 열거나 정리하지 않으며 초기화·일반 명령·정산은 이 필드를 다시 만들지 않는다. 개봉·부스터·플래티넘 확정 진행도·월별 보상·관리자 이력·계정 ID·레이드 누적 전적·길드기부 영수증은 보존한다.
 
 ## Related Commands
 - `/봉인금고확률`
-- `/봉인금고기록`
-- `/봉인금고기록전체`
 - `/해방열쇠지급 [아이디] [숫자]`
 - `/해방열쇠회수 [아이디] [숫자]`
 - `/봉인금고상태 [아이디]`
@@ -7332,6 +7384,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Strictly validates the selected backup and safely replaces only the selected original without rotating or overwriting either backup generation.
+- `validateMemberSplitRecovery` checks the selected member backup's exact raid/log split ID and revisions before replacing the original; unmatched or malformed split files remain errors. The existing automatic managed recovery applies the same check to each candidate.
+- Normal member saves register both member backup generations with `writeMemberSplitSlot`, matching `preserveMemberSplitBackupStores`; transaction rollback restores the member and split backups together.
 
 ## AI Notes
 
@@ -7529,6 +7583,7 @@ Status: VERIFIED
 - `/퀘스트완료`는 다른 퀘스트 조회·타이틀 명령과 같이 채팅방 제한 없이 실행한다. 완료 조건과 보상·저장 흐름은 기존 규칙을 따른다.
 - 분리 후 퀘스트 명령 진입에서 기록을 한 번 로드해 `attachAdventureRecordStore`로 배열을 비열거 연결한다. 일반 행동/정보/보상 계산은 과거 배열을 다시 생성하거나 로드하지 않는다. `saveJsonFile`은 실제 기록 변경 시 복구 원문을 먼저 저장하고 기록·회원/보상을 함께 저장한 뒤 완료 표시를 지운다. 실패 시 트랜잭션 롤백, 중단 시 원문 복구를 사용한다. 이전 회원 백업보다 새 기록이 있거나 완료 단계와 기록이 다르면 완료/재지급을 차단한다. 명시적 계정 삭제는 해당 계정의 별도 기록도 삭제한다.
 - 스타터 회원 보상은 `/호여!!`에서 지급한다. 7·8·14단계 최초 1회 지급 재료는 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다. 화면에는 실제 아이템명과 `최초 1회 지급`을 표시한다.
+- 퀘스트 분리 기록의 계삭 정리 문맥은 공통 정지·개인톡 검사에서 회원을 다시 읽은 뒤 최종 회원 객체에 연결한다. /계삭진행·/계정잠수삭제가 member.json을 저장할 때 삭제 계정의 분리 기록도 기존 복구 단위로 함께 정리하며, 재가입 첫 조회에서 남은 기록을 자동 삭제하지 않는다.
 - 단계 준비 여부는 `receipts.preparedStages`의 단계별 자리값으로 저장한다. `getAdventureQuestPreparedMask`가 구형 `stage1Prepared`~`stage16Prepared`도 함께 읽으므로 압축 전에도 재지급하지 않는다. 숫자 범위·잘못된 값·구형 false와 압축된 준비 완료의 충돌은 지급·압축 전에 거부한다. 다른 영수증과 현재 진행·시작 시각·완료 기록·타이틀·누적 보상은 보존한다.
 - `/데이터정리`의 미리보기에는 준비 기록 압축 인원·예상 글자 감소량을 표시하고 확인 서명에 대상을 포함한다. 확인 뒤 전체 회원 기록을 먼저 검증한 후 구형 표시만 압축하며 기존 회원 저장에 함께 반영한다. 재실행은 추가 압축·지급이 없고 별도 파일·헬퍼 IO는 만들지 않는다. 신규 단계 준비는 압축 표시를 저장하며, 기존 완료 단계의 progress·시작 시각·준비물을 다시 초기화하지 않는다.
 - 대부분의 행동 기록은 실제 기능 성공 흐름에서 기록한다. 2단계는 티어 승급티켓🎟 1개 이상을 보유한 상태의 `/티어적용` 입력만 인정하며 상점 조회·구매·티어 조회와 실제 승급 성공은 요구하지 않는다. 6단계는 `/지도` 조회, 실제 `/탐 [번호]` 지정, 해당 탐험지의 정산 결과 수령 순서로 완료한다. 7단계는 `/냠냠 [수량]`으로 펫먹이 100,000개 이상을 한 번에 정상 사용하면 완료한다. 13단계는 다이아상점 조회 후 상품명이 `홈뱃지뽑기🛡️`로 시작하는 상품 구매만 인정하고, 그런 상품이 없을 때만 다른 상품 구매를 인정한다. 묶음 내용물이 아닌 구매 명령의 수량을 합산하며 구매 시점에만 기록하므로 과거 구매는 자동 소급하지 않는다.
@@ -8088,6 +8143,7 @@ Status: VERIFIED
 
 - 정상 입찰 시 할인 적용 여부에 따라 입찰 포인트와 수수료를 차감하고 경매 최고 입찰 정보를 갱신한 뒤 응답 마지막의 `saveJsonFile(data, filePath)`로 저장한다.
 - 기존 최고 입찰자가 밀리면 `highestBidCost`를 환급하며, 이 필드가 없는 기존 경매 데이터는 `highestBid`를 환급한다.
+- `parseSafePointAmount`로 입찰액을 변환 전에 검사한다. `GLOBAL_CONFIG.auction.bidFee`를 포함한 차감액·현재 잔액·환급액·환급 후 잔액이 안전한 범위일 때만 환급과 신규 차감을 함께 적용한다. 잘못 저장된 환급액을 표시 금액으로 대체하지 않는다.
 
 ## Related Commands
 
@@ -8158,6 +8214,51 @@ Status: VERIFIED
 
 ---
 
+# /스탯 · /스탯 힘 · /스탯 집중 · /스탯 교감 · /스탯포인트
+
+Status: VERIFIED
+
+## Command Anchors
+
+- main.js: /스탯, /스탯 힘|집중|교감, /스탯 힘|집중|교감 개수, /스탯포인트 횟수
+- 투자 확인 중인 같은 환경·방·입력자에게만 1 또는 `스탯 찍기`=확정, 2 또는 `안 찍기`=취소. 다른 입력은 이전 대기를 닫는다.
+- Info.js: /레벨의 스탯 잔고·현재 단계 및 성장 보너스 요약
+
+## Related Helpers
+
+- getAdventureStatState, ensureAdventureStatState, isAdventureStatCount
+- parseAdventureStatRequest, getAdventureStatSessionKey, getAdventureStatIdentity
+- prepareAdventureStatInvestment, prepareAdventureStatItem
+- getAdventureStatBonus, getAdventureStatRank, formatAdventureStatReward
+- buildAdventureStatMain, buildAdventureStatDetail, buildAdventureStatProgress
+- buildAdventureStatConfirmation, buildAdventureStatApplied, buildAdventureStatCancelled, buildAdventureStatCompleted, buildAdventureStatError
+- processAdventureLevelUps, publishAdventureMutation, recoverAdventurePublication
+- getPetModeCharmPercent, buildCharmBuffDebugMessage, Main/Info calculateCastleExp·calculateRaidExp
+
+## Data Usage
+
+- GLOBAL_CONFIG.adventureStats: 공통 300단계 이름·보상, 호칭·특별 축하 문구·확인 만료시간·아이템명
+- member.adventureStats: points와 strength/focus/bond의 [완료 단계, 현재 단계 투입량]. 잔고1+진행6개 정수만 저장.
+- member.lv, member.bag[모험가 스탯포인트🆙(/스탯포인트 횟수)], petData[user].upgrade
+- adventureStatSessions: 환경·방·입력자별 메모리 확인 대기. 계정 ID/가입일·잔고/진행도·60초 유효시간을 확정 시 재검증.
+
+## Save Flow
+
+- 미참여자는 현재 레벨-1의 최초 소급 잔고와 0/0 진행을 저장 없이 조회한다. 실제 레벨 변경 전에 최초 잔고를 확정하고, 실제 레벨업당 1점을 기존 레벨업 저장에 합산한다. 직접 레벨 설정·속성 수정·테스트 초기화는 기존 잔고와 진행을 보존하며 소급분을 재지급하지 않는다.
+- 조회·투자 확인·취소·잘못된 입력·재료 부족에는 추가 저장과 개인 상태 생성이 없다. 숫자·선택 문구 확인은 원래 명령으로 연결해 기존 출석·정지·게임 잠금 검사를 유지한다.
+- 확인 전에는 차감하지 않는다. 현재 단계 잔여량 초과는 자동 이월 없이 거절하고, 부분 투자에는 보상이 없다. 최종 1 또는 `스탯 찍기` 입력 때만 진행·잔고·교감 실제 강화값을 기존 모험가 게시 단위로 함께 확정한다. 아이템도 차감과 잔고 증가를 같은 게시 단위에 포함한다.
+- 확정 기록 이전 오류는 취소하며 확정 기록 이후 게시 중단은 기존 복구 원문으로 같은 결과를 완성한다. 저장 오류에는 성공 메시지를 보내지 않고 대기를 다시 실행하지 않는다. DEV/PROD 경로·잠금·복구 흐름을 재사용한다.
+- 교감은 단계 완료 시 실제 upgrade에 한 번 가산한다. 강화 시도·성공확률·강화석 비용과 연결하지 않으며 조회에서 재합산하지 않는다. 등록 펫이 없거나 안전 정수 범위를 넘으면 완료 전에 거절한다.
+
+## UI and Calculation
+
+- /스탯 메인은 현재 단계만, 분야별 상세는 현재·다음 단계와 전체 100단계를 표시한다. 지정된 전체보기 위치·개인화·확인 문구를 유지한다.
+- 투자 확인 대기의 숫자1/2와 화면 선택 문구 `스탯 찍기`/`안 찍기`를 같은 확정/취소 처리로 연결한다. DEV 전처리의 슬래시도 같은 방식으로 해석한다. 확인 대기가 있는 같은 환경·방·회원·그룹 문맥에서만 원래 `/스탯 분야 수량`으로 복원하며 공통 출석·정지·대전·개인톡 검사를 유지한다. 만료·계정/잔고 변경·다른 입력 취소·중복 실행 차단·게시 순서는 유지한다.
+- 힘·집중 완료 보상을 기존 모험가 보너스에 %p로 가산한다. 누적 최종값은 각각 +2095.50%p/+3143.25%p이며 교감은 실제 +2290강이다. 단계당 비용=단계 번호, 계열별5050점/전체15150점이다.
+- 레벨업 알림은 최고 성장 종류 한 건만 표시하고, 일반 단일 레벨업에는 전체보기가 없다. 승급·대승급은 산출 근거, 다중 레벨업은 각 레벨의 기본·승급 증가분만 전체보기에 표시한다.
+
+---
+
 # /레벨 · /레벨순위 · 레벨 리뉴얼 전환
 
 Status: VERIFIED
@@ -8202,7 +8303,7 @@ Status: VERIFIED
 - `/리셋`의 `resetAttendance`는 한국시간 날짜를 한 번 계산하고, 정상적인 `YYYYMMDD` 달력 날짜이며 오늘보다 이전인 `chatExperienceDaily`만 제거한다. 오늘·미래·잘못된 날짜·날짜가 없는 기록은 유지한다. 같은 날 반복 리셋·자동 재출석 후에도 오늘 집계·한도 도달 안내 상태는 유지하며, 누적 EXP·레벨·가호는 이 정리로 바꾸지 않는다. 헬퍼에 파일 IO를 추가하지 않고 기존 `/리셋`의 `saveJsonFile(data, filePath)`로 함께 저장한다.
 - 레벨업 알림 전 `member.json`을 저장한다.
 - 일반 레벨업 알림은 다음 10레벨 단위 승급까지 남은 레벨을 표시하고, 상세에서는 기본·승급·대승급 증가분을 구분한다.
-- 레벨업 알림은 한 번에 여러 레벨과 승급을 통과해도 모든 처리가 끝난 실제 현재 레벨과 칭호를 상단에 표시한다. 현재 레벨과 칭호 사이에는 빈 줄을 두고, `📋 이번 레벨업 상세` 제목까지 기본 화면에 표시한 뒤 상세 행부터 `allsee`로 접는다.
+- 레벨업 알림은 전후 레벨·최종 칭호·이번 게임 포인트와 캐슬/레이드 증가·스탯 포인트를 상단에 한 번 표시한다. 일반 단일 레벨업에는 상세 접기를 생략하고, 승급/대승급 및 다중 레벨업만 `📋 이번 레벨업 상세` 직후 `allsee`에서 산출 근거를 표시한다.
 - `/레벨`은 채크랭크, 현재 칭호와 전체 승급 차수, 레벨·게이지·EXP와 소수 셋째 자리 진행률, 가호 수량, 캐슬·레이드 보너스, 다음 승급과 대승급까지 남은 레벨을 한 화면에 표시한다.
 - `/레벨`의 캐슬·레이드 누적 보너스는 소수 셋째 자리에서 반올림해 둘째 자리까지 보존하고, 끝의 불필요한 0은 표시하지 않는다. 예: `1.20% → 1.2%`, `1.85% → 1.85%`.
 - `/레벨수정 [아이디] [레벨]`은 `호이 남`만 실행할 수 있다. 대상의 레벨만 정확히 변경하고 기존 EXP·티어 경험치 잔여값을 유지한 채 저장을 재검증하며, 레벨·칭호·전체/일반/대승급·필요 EXP·캐슬/레이드 보너스의 전후 값과 상승·하락 수치를 표시한다.
@@ -8216,9 +8317,9 @@ Status: VERIFIED
 ## AI Notes
 
 - 필요 경험치: `1000 + (현재 레벨 - 1) × 1000`, 즉 현재 레벨 × 1000 EXP.
-- `/레벨` 하단 안내는 진행 안내 → 전체 기록 → `👉 타이틀 장착 /퀘스트타이틀` 순서이며 전체보기 앞에 표시한다. 타이틀 목록에서 `/퀘스트타이틀장착 [번호]`로 장착한다.
+- `/레벨`은 가호 다음에 스탯 잔고·현재 단계 요약을 표시하고, 퀘스트 진행·진행 안내 → 전체 기록 → `👉 타이틀 장착 /퀘스트타이틀`은 상세 보상 제목의 전체보기 아래에 표시한다. 모험가 성장 보너스에 힘·집중을 합산하며 교감 누적분은 이미 받은 실제 강화량으로만 안내한다.
 - 캐슬·레이드 각각의 레벨 보너스: `(레벨 - 1) × 0.15% + 일반 승급 × 0.5% + 대승급 × 5%`.
-- 캐슬·레이드 보너스 적용은 0.01% 정수 단위로 계산해 경계값의 부동소수점 내림 오차를 방지한다.
+- 캐슬·레이드 보너스 적용은 0.001% 정수 단위로 계산해 경계값의 부동소수점 내림 오차를 방지한다.
 - `/매력버프체크`의 계산 검증은 실제 기본 구성 합계에 모험가 레벨·퀘스트·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다. 퀘스트가 붙은 값을 기본값으로 역산하지 않는다.
 - 10레벨마다 승급, 100레벨마다 대승급하며 1000레벨 이후에는 마지막 칭호를 유지하고 보상 주기는 계속된다.
 - `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 단독 1위는 현재 레벨 이전의 필요 EXP까지 합산한 누적 EXP로 2위와의 차이를 표시하고, 공동 1위는 차이 0으로 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
@@ -8540,7 +8641,7 @@ Status: VERIFIED
 - 모험가 퀘스트14 기본/미완료 안내에 `/홈뱃지큐브 [슬롯] [옵션] [사용횟수]`를 표시한다. 완료 조건·큐브 실행·보상은 유지한다.
 - getFurnitureMaxSlots는 100평까지 기존 규칙, 초과분은 floor((평수-100)/5). 보너스 전 100·104평 21개, 105·109평 22개, 110평 23개, 200평 41개다. 기존 건물주·베란다·프리미엄을 합산하고 현재 평수에서 매번 산출하므로 별도 이전/중복 증가가 없다.
 - GLOBAL_CONFIG.carrotTrade.costs: 일반 1, 미니펫/가구 100, 스킬/펜던트 300. 개인 스킬 거래와 시장 묶음 등록의 수량 배수는 유지한다. 개인 펜던트 마지막 인수는 기존 가방번호다.
-- 자유시장 판매자 수수료 일반 17%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
+- 자유시장 판매자 수수료 일반 20%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
 - tools/test_oct19_ready.js와 tools/test_carrot_community_trade.js는 합성 데이터에서 경계·보너스·수수료·이력·취소·거래 저장 실패를 확인한다.
 - ver_2.659 시장·가구 원문 스냅샷을 같은 명령의 저장 롤백에 연결한다. tools/test_oct19_market_flow.js는 거래 5종의 등록/구매/취소·모든 저장 지점 실패·DEV 격리·관리자 취소를 검증한다. tools/test_oct19_lock_rhino.js는 실제 응답 진입부 잠금과 합성 임계구역을 Java 스레드 20쌍으로 검증한다.
 
@@ -8557,6 +8658,11 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+## 2026-11-11 종료 시 칭호 삭제·종료 후 재정리 (ver_2.808, 현재 정책)
+- MASTER `/할로윈종료`는 활성 여부와 관계없이 획득한 할로윈 칭호를 삭제한다. 이미 종료 정리가 끝난 세대에서도 잔여 가방·칭호를 다시 정리하며, 비활성 상태에서는 종료 전체알림을 중복 전송하거나 완료 세대를 불필요하게 증가시키지 않는다.
+- `runHalloweenEntry`가 현재 DEV/PROD 루트의 정확한 `halloweenAccount_<공통 ID>.json` 일반 파일을 모두 읽어 검증한다. 회원과 연결되지 않은 계정도 포함하며, 목록 조회나 기존 JSON 검증이 실패하면 가방 변경·저장 전에 중단한다. 칭호가 남은 계정의 `titles`만 비우고 기존 `cleanupWrites`·복구 journal로 가방·상태와 함께 확정한다. 파일 IO를 helper로 옮기거나 새 저장 파일을 추가하지 않는다.
+- 종료 안내는 칭호 소멸과 교환 보상 아이템 보존을 표시한다. 종료 후 `/할로윈칭호`는 빈 목록을 표시한다. 사탕 소멸, 추가 입장 충전분, 상점 누적 한도, 주문 기록, 미개봉 패키지·교환 보상 보존은 기존 정책대로 처리한다. 아래 과거 버전의 칭호 보존·전체 계정 미조회 설명은 당시 정책 기록이다.
+
 ## 가방 사탕 전환·신규 패키지 아이템 개봉 (ver_2.745)
 - `/데이터정리`는 기존 가방의 정확한 `할로윈 사탕🍬`만 계정의 단일 사탕 잔액으로 더하고 가방 키를 제거한다. 미리보기·확인·완료 안내에 전환 인원과 수량을 표시한다. 전체 대상 수량·계정 원본·안전 정수·중복 ID를 검증한 뒤 회원과 대상 계정을 기존 할로윈 journal로 함께 저장한다. 전환 확정 뒤 일반 정리를 이어가며, 일반 정리 실패가 확정된 전환을 되돌리지 않는다. 종료 중에는 전환하지 않는다.
 - 신규 패키지 구성품은 정확히 `할로윈 사탕🍬(/사탕오픈 숫자)`를 사용한다. 기존 일반 아이템 지급으로 가방에 들어가며 `/사탕오픈 숫자`가 요청 수량을 소모하고 같은 수량을 사탕 재화로 적립한다. 인자 누락·잘못된 입력은 사용법을 안내하고, 0·초과 수량·부족 재고·종료 상태는 개봉하지 않는다. 접미 설명이 붙은 입력은 실행하지 않는다.
@@ -8567,7 +8673,7 @@ Status: VERIFIED
 - Main·Info의 `getHalloweenBalance`는 계정 세대가 이벤트 상태보다 앞서 있으면 오류를 발생시킨다. `refreshHalloweenAccount`도 변경 전에 같은 검증을 수행해 맞지 않는 원본을 0으로 덮어쓰지 않는다. 구 세대 만료·단일 잔액 전환·일일 리셋 정책은 유지한다.
 - 종료 상태의 구매·선택·입장권 사용·사탕 패키지 사용은 과거 성공 영수증을 반환하지 않고 기존 비활성 안내로 처리한다. 활성 중 중복 요청과 비활성 중에도 허용되는 패키지 지급은 기존 재사용 정책을 유지한다.
 
-## 2026-10-30 단일 사탕·종료 시 전액 소멸 (ver_2.738, 현재 정책)
+## 2026-10-30 단일 사탕·종료 시 전액 소멸 (ver_2.738, 당시 기준)
 - 사용자 확정으로 무료/유료 잔액 구분과 우선 차감을 종료했다. 새 계정은 `candy` 한 값만 사용하고 탐험·완주·패키지는 `creditHalloweenCandy` 또는 단일 잔액에 지급한다. `halloweenSource`는 지급·차감 분류에 사용하지 않는다. 과거 거래·주문 이력은 보존한다.
 - Main·Info의 `getHalloweenBalance`가 구 형식도 동일하게 읽는다. `refreshHalloweenAccount`가 현재 유효한 구 잔액만 합치고 `free`·`paid` 필드를 제거해 다음 계정 저장에 함께 확정한다. 이미 소멸한 구 무료 사탕을 복원하지 않으며, 혼합 형식·음수·안전 정수 초과는 거부한다.
 - `/할로윈종료`는 가방 사탕·입장권을 삭제하고 `candyClearEpoch`로 구 보존 잔액까지 포함한 모든 사탕을 즉시 0으로 판정한다. 전체 계정 파일을 읽지 않으며, 재시작/재개방 후에도 소멸 잔액이 복원되지 않는다. 다음 계정 처리 시 만료된 값·진행 탐험을 정리한다. 새 파일 종류·회원 진행 필드를 추가하지 않는다.
@@ -8612,11 +8718,11 @@ Status: VERIFIED
 - 상점은 사용자 확정 후속 표: 다이아25/100/50묶음, 금고5/50/무제한, 열쇠5/75/무제한, 큐브400/200/7묶음, 황제상품1/37500/2묶음, 도파민1/3500/11묶음. 단일 사탕 잔액에서 차감하고 쿠폰·스킬 할인은 적용하지 않는다. 부족·한도 초과는 부분 구매 없이 거부한다.
 
 ## Data / Entry Save Flow
-- runHalloweenEntry만 파일 IO를 수행한다. 작은 halloweenEvent.json은 활성 상태·종료정리 epoch/candyClearEpoch·일일 리셋 기준일/회차·MASTER 시작/종료 기록, halloweenAccount_<공통 UUID>.json은 계정별 기본횟수·추가입장·단일 candy 잔액·탐험·이벤트 전체 구매량·영구 칭호·지급/사용/관리/주문/중복 영수증을 저장한다. 최초 상태/계정은 신규 기능의 명시적 생성 경로에서만 만든다. 존재하는 잘못된 JSON을 기본값으로 바꾸지 않는다.
+- runHalloweenEntry만 파일 IO를 수행한다. 작은 halloweenEvent.json은 활성 상태·종료정리 epoch/candyClearEpoch·일일 리셋 기준일/회차·MASTER 시작/종료 기록, halloweenAccount_<공통 UUID>.json은 계정별 기본횟수·추가입장·단일 candy 잔액·탐험·이벤트 전체 구매량·종료 시 삭제되는 할로윈 칭호·지급/사용/관리/주문/중복 영수증을 저장한다. 최초 상태/계정은 신규 기능의 명시적 생성 경로에서만 만든다. 존재하는 잘못된 JSON을 기본값으로 바꾸지 않는다.
 - member.json에는 기존 공통 ID(없는 구회원만 최초1회 보충)와 실제 가방 아이템 차감/지급만 연동한다. 방 이동·보상·칭호마다 회원 파일을 저장하지 않는다. 기본 상태는 비활성이며 운영자가 업로드·컴파일 후 /할로윈시작으로 연다. 예정11월10일 자동 종료는 없다.
 - 복합 변경은 halloweenPending.json의 이전 원문 snapshot → 기존 회원 saveJsonFile / 이벤트·packageLog writeMemberSplitSlot → pending 비우기 순서다. 회원 분리 상세 슬롯을 건드리는 계획은 거부한다. 실패 시 두/세 원문을 즉시 복구하고, 재시작·다음 명령은 회원 로드 전에 미완료 journal을 복구한다. 미완료 journal 중 다른 회원 저장과 Info 부분 조회를 차단한다.
 - mutation은 기존 배타 데이터 잠금에 연결한다. 확장 메시지 ID가 있을 때만 영속 영수증으로 재사용하고, 기본7인수 레거시에서는 같은 buy/ticket/choice 입력을 같은 방에서 2초 이내 반복하면 직전 결과를 재사용한다. 방 상태 자체도 중복 결과 지급을 막는다. 확장 인자를 필수로 요구하지 않는다.
-- 종료는 활성 상태 off·epoch/candyClearEpoch 변경으로 사탕 전액과 미완료 탐험을 무효화하고, 가방 사탕·입장권도 정리한다. 구 잔액은 다음 계정 접근 때 단일 잔액으로 정리한다. 주문·추가 입장·칭호·구매 한도·같은 날짜 기본횟수는 보존한다. 판매 상품 제작은 운영자 범위다.
+- 종료는 활성 상태 off·epoch/candyClearEpoch 변경으로 사탕 전액과 미완료 탐험을 무효화하고, 가방 사탕·입장권도 정리한다. 구 잔액은 다음 계정 접근 때 단일 잔액으로 정리한다. 획득한 할로윈 칭호는 종료 후 재실행에서도 삭제하고 기존 journal로 저장한다. 주문·추가 입장·구매 한도·같은 날짜 기본횟수는 보존한다. 판매 상품 제작은 운영자 범위다.
 - runHalloweenInfoEntry는 복구 대기 중 조회를 보류하고, 기존 파일을 검증해 동일 잔액을 표시한다. DEV/PROD 파일·계정·journal은 각 컨텍스트 root로 분리한다.
 
 ## Existing Package Integration
@@ -8673,36 +8779,17 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Commands and permissions
-- main.js: getGuildWarRequest → runGuildWarEntry. 실행 명령은 전체 문법 일치, 안내문·추가 인수는 미실행. 공개 조회는 /길드전쟁·/길드전쟁가이드, 나머지는 자기 등록 길드톡의 소속 길드원만 사용한다.
-- /전쟁선포 지역번호(1~5)는 길마 기본권1 + 정찰병 역할권1 + 공격 선봉/중견/대장 각1, 하루 총5회. 부길마 직책만으로 선포 불가, 길마 겸직은 기본권부터 소모한다. 역할칸의 소모 이력과 전체 예산을 보존해 편성 교체로 복구되지 않는다.
-- /전쟁공격편성 번호3개, /전쟁방어편성 번호3개(동시 방어전은 영지번호 추가), /전쟁정찰편성 번호, /전쟁자폭편성 번호는 길마·부길마. 기존7인 중복 금지, 자폭병만 기존 역할과 겸직 가능. 기본 진형은 전쟁 중 변경 불가, 정찰 승리 측만 3분 준비 중 해당 전쟁의 기존3명 순서 변경 가능.
-- /전쟁편성초기화는 공격·방어만 해제하며 정찰병·자폭병·사용량 유지. /정찰 길드명은 등록 정찰병만 하루2회, 정찰병 변경은 하루2회(최초무료). /자폭 지역번호는 등록 자폭병만 하루1회·성공10%, 자폭병 변경 하루1회(최초무료).
-- /전쟁기록은 길드별 최근30건의 공격/방어 길드·승리 길드만 표시한다. 취소에는 승자 없음. /전쟁기록 번호는 실행하지 않는다. 내부 상세와 최종 결과 allsee는 유지한다.
-- /전쟁톡등록은 길마·부길마·MASTER. /전쟁톡확인 길드명과 /전쟁톡해제 길드명은 MASTER 원격 기능. 전쟁 중 등록 교체·해제는 MASTER도 불가. room은 마크 제외 정확한 길드명이다.
-- /길드전쟁공격초기화는 MASTER가 현재 등록 길드톡의 해당 길드만 초기화한다. 진행 전쟁·기록·점령·보상을 재처리하지 않으며 공개 가이드에 노출하지 않는다. 초기화 회차가 다른 이전 전쟁의 환급으로 권한을 중복 복구하지 않는다.
-
-## Data and battle flow
-- 원본 guildData.json/war24의 version2·rewardPolicy3. 지역1 호월킹덤, 2~4 금광, 5 펫스킬 광산. 기존 시간제 영지전의 번호·보상과 별개다. 신규 광산은 지구방위대에 최초1회 배정하며 배정 보상 없음.
-- initializeGuildWar는 구 version1 진행 전쟁을 일반 마감보다 먼저 양측 무효 취소·환급하고 기존 당일 순사용량을 새5회에서 차감한다. 전날 선포 취소는 당일 추가권을 만들지 않는다. 사용량 불일치·누락 원본은 오류를 유지한다. 정상 완료 전쟁·잔액·기존 점령·영주를 보존하고 전환 반복으로 환급/배정을 반복하지 않는다.
-- snapshotGuildWarFighter/Scout는 선포 당시 캐슬/종합매력·닉네임·아이템 자격을 고정한다. 침공 감지는 정찰 성패와 무관하게 방어톡으로 예약한다. 0:0·방어 정찰병 미편성에는 변경권/정찰버프가 없다.
-- processGuildWars/getGuildWarNextDue는 3:00·3:15·3:30의 경기별 matches/wins를 저장한다. 2승을 먼저 해도 3경기 진행, 재시작 시 이미 확정된 경기·아이템을 재판정하지 않는다. 최종 경기에서만 점령·보상을 확정한다.
-- resolveGuildWarMatch는 최종 방어 자리 선봉+3%/중견+10%, 정찰 방어 승리 선봉+5%를 합산(선봉합계8%). 방어권+큐브 합산 → 기습권 → 크리티컬 → 캐슬 비교, 동률 방어 승리. 대장전은 두 특수 아이템만 제외하고 큐브 패시브는 유지한다. 각 경기에서 실제 남은 아이템을 재확인한다.
-- creditGuildWarVictory: 공격 점령3억·방어1억을 기존 길드자금에 지급, 지역5 공격 점령은 warehouse.petSkillBook +1. 실제 미점령에만 3경기 없는 즉시 무혈입성, 공격권1회·동일 점령 보상. 공격대장 탈퇴 호월킹덤 점령 예외 유지.
-- applyGuildWarBomb는 성공/실패 모두 하루1회 소모·양쪽 등록방 통보. 전쟁 중 지역·미점령·자기 소유는 미차감 거부. 성공은 소유권null, 일반 전투 보상 없음. 호월킹덤이면 lord 공백·taxRate0 및 기존 영지 참조를 함께 갱신해 영주권한과 사용자 세금 부과 모두 중단한다.
-- occupyGuildWarTerritory는 호월킹덤의 공격 대장 새 영주·기본세율 초기화·전체알림을 기존 방식으로 처리한다. 이미 적립된 세금 누계를 다시 지급하지 않는다.
-- snapshotGuildWarSettlement/restoreGuildWarSettlement는 전쟁의 아이템·창고·점령·영주·역할권·기록·알림을 복원한다. 오류 취소는 해당 전쟁 권한만 환급하고 이전 단계 소모 아이템도 복구한다. 정상 패배·알림 전송 실패는 재판정/환급하지 않는다.
-- resetGuildWarDay는 기존 /리셋의 새 KST 날짜에서만 역할권5·단독정찰2·정찰변경2·자폭1·자폭변경1을 복구하며 진행 전쟁·선포일은 보존한다. detachGuildWarMember/reconcileGuildWarRoster는 탈퇴·직책변경에 따른 기본 역할을 해제하며 전쟁 참가자 탈퇴 표식은 유지한다.
-
-## Save and recovery
-- prepareGuildWarPublication → publishGuildWar → cleanupGuildWarPublication의 기존 저널·고정 사본을 재사용한다. 길드만 변경하면 원본/백업3개, 회원 변경은 회원/길드/레이드/로그14개 사본을 보존한다. helper 내부 load/save는 새로 추가하지 않는다.
-- prepareGuildWarPublication과 recoverGuildWarPublication은 getGuildWarRecoveryReference → validateGuildWarRecoveryReferences로 현재 회원 및 두 세대 백업의 레이드·로그 식별자/버전을 확인한다. 준비 단계는 readGuildWarRecoveryReference의 작은 분리 헤더(비표준 형식은 전체 파싱)로 사본 생성 전에 검사하고, 재생 단계는 전체 해시/JSON 검증 후 첫 원본 교체 전에 불완전한 참조를 차단한다. 현재 슬롯이 존재하는 경우에만 일반 로더와 같은 정확한 버전의 백업 대체를 허용한다. 손상·누락·다른 콘텐츠 게시 충돌을 숨기지 않으며 DEV/PROD 경로는 유지한다.
-- rollbackDataSaveTransaction은 회원 원문을 먼저 복원하고 실패하면 나머지 롤백을 중단한다. 기존 파일 복원이 모두 성공한 뒤에만 신규 파일을 삭제하므로, 회원 복구 실패 시 현재 참조 중인 신규/덮어쓴 분리 슬롯을 보존한다.
-- flushGuildWarNotices는 확정 후 전송하고 첫 실패는 다음 예약에서1회만 추가 시도한다. 전송 재시도는 게임 정산을 재실행하지 않는다. scheduleGuildWarWork는 다음 단계 시각과 복구/미전송 알림만 예약한다.
-
-## Linked UI and legacy pause
-- buildGuildWarFormation/Main/MemberRole/Result/RoundResult: 8역할칸·상단 공용공격권·정찰/자폭 잔여량·방어 헤더 버프·겸직 역할 한 줄·수신자 우선 대진·빈 줄·최종 allsee 상세를 표시한다. /스케줄 및 /교육9(12회차와 보상 유지)에 연결한다.
-- GLOBAL_CONFIG.guildWar.legacyPaused는 기존 시간제 영지전 준비·시작·공격·예약을 휴식 처리하고, runDailyRankingPayoutEntry의 territory만 자동/개별/통합 모두 미지급한다. 다른4종 순위보상과 기존 포인트·기록·이미 지급한 보상은 보존한다.
+- `main.js`: `getGuildWarRequest` → `runGuildWarEntry`. `/길드전쟁`·`/전쟁지도`는 같은 `buildGuildWarMain` 통합 지도를 출력한다. 1~3 금광, 4 펫스킬 광산, 5 다이아 광산, 6 요새, 7 킹덤. 공개 지도에는 개인 수치를 넣지 않는다.
+- `initializeGuildWarLegacy`는 과거 전환만 맡고 `initializeGuildWarSiege`가 기존 6지역의 킹덤6 또는 7지역의 요새6·킹덤7을 요새7·킹덤8로 한 번 이전하고 새 미강석 광산6만 미점령으로 만든다. 소유자·시각·영주·세율·수익·진행 전쟁·기록·알림은 보존한다. 옛 복구 사본도 단계별 원래 번호로 검증한다.
+- `getGuildWarOwned`와 `getGuildWarAdvance`가 실제 소유권·진격·단계별 한도·같은 단계 진행 전쟁을 구분한다. 금광·광산·요새·킹덤은 각각1곳, 총4곳이다. 미점령은 선행 거점 예외만 적용하고 한도는 지킨다. 자폭은 점령 한도·예약으로 제한하지 않는다.
+- 같은 길드의 신규 동일 단계 선포는 준비 중 포함 한 건만 접수한다. 기존 초과 점령과 진행 전쟁은 임의 회수·취소하지 않는다. 마지막 경기 승리 시 이미 같은 단계가 차 있으면 `captureBlocked`로 점령만 차단하며 길드 점령/실패 보상 없이 기존 개인 참가 보상을 확정한다.
+- `/기습공격`은 무변경 조회, `/기습공격 숫자`만 실행한다. 현재 공격 대장·등록 자기 길드톡·점령0곳·상대 금광1~3·진행전쟁 없음·길드 KST 하루1회와 선포권을 검사한 뒤 50%를 한 번 판정한다. 공통 MQ·데이터 잠금·출석·정지 조건을 유지한다.
+- `applyGuildWarAmbush`는 기존 `applyGuildWarDeclarationTicket`을 사용한다. 성공·실패 모두 실제 선택한 권리와 기습1회를 소모한다. 지휘관 공용권 미소모·개인권 소진 후 충전권 경로·계정별 사용 이력은 유지한다. 기습 성공만 금광5억+큐브, 실패 길드보상/방어보상/3대3보상 없음. 시도자 첫 기습 개인1억은 회원 `guildWarRewards.ambush`의 KST 일자로 중복 차단한다.
+- 정찰·자폭 개인 보상은 각각 성공·실패1억/계정/일, 자폭50%·길드 하루2회이다. 기본 공격권5·정찰/자폭/진형 교체2회·군량미·추가권·방어 참여·아이템 발동/전투원 보상은 기존 흐름을 유지한다. `resetGuildWarDay`는 기습도 새 KST 주기에만 복구한다.
+- `buildGuildWarFormation` 제목에 실제 편성수/8칸, 기습 잔여·조건을 표시한다. 지도는 같은 상태로 상단 개수/번호와 하단 단계별 실제 개수를 산출한다. 초과 점령을 1/1로 숨기지 않는다. 요새는 전용 버프·아이템·시간 생산이 없다.
+- 지도 지역 행의 `· 금광 한도`·`· 핵심 광산 한도` 접미 문구는 표시하지 않는다. 잠금 아이콘·하단 점령 수와 실제 한도 검사·거절 안내는 유지한다.
+- `buildGuildWarRecords`는 최신5건 요약과 allsee 아래 나머지 요약만 표시한다. `/전쟁기록 고유번호`는 자기 등록 길드톡의 현재 길드 최근30건에서 한 건만 찾는다. 목록·상세·오류는 한 메시지, 자동 분할/페이지 명령 없음. 기록은 기존30건+미정산 개인보상 추가 보존, 현재 능력치로 과거를 재구성하지 않는다.
+- 회원·길드·보상·기록·알림을 기존 `publishGuildWar` 저널로 함께 확정하고 `flushGuildWarNotices`가 양쪽 결과를 발송한다. 저장 중단은 기존 전체 이전 상태 복구, 알림 재전송은 재추첨·재지급하지 않는다. DEV/PROD와 7인자 callback은 유지한다.
 
 # 호월 추리소설
 
@@ -8737,3 +8824,84 @@ Status: VERIFIED
 - `runGuildWarEntry`는 `response`에서 이미 읽은 회원 원본을 인자로 받는다. 명령 진입 시 회원·분리 로그를 다시 읽지 않는다.
 - 일반 명령의 공통 길드 로드는 초기 영지전 제한 검사에서 읽은 원본을 같은 정상 트랜잭션 안에서 재사용한다. 복구로 트랜잭션이 바뀌었거나 길드 저장·실패·롤백 표시가 있으면 다시 읽으며 요청 사이에는 캐시하지 않는다.
 - 기존 `/맞짱시간체크 닉네임`의 응답 진입 총 시간은 잠금 전 최초 진입부터 계산한다. 공통 잠금·진입 대기, 초기 복구 검사, 초기 길드 로드, 최초 회원·분리 데이터 로드가 공통 시간 항목에 포함된다.
+
+## 신규 펫스킬북 3종·SSS 등급
+
+- `PET_SKILL_LIST`: 망작귀의 지팡이📙[SS]는 캐슬/레이드 각200만, 강철왁뿌볼📙[S]는 각100만(종합200만), 삼성전자📙[SSS]는 각300만. 원문 효과 설명을 유지하며 기존 `/펫스킬오픈`에서 획득한다.
+- 꽃집 대장장이는 신규 추첨·확률표·컬렉션에서 제외하며 기존 보유/보상 원문은 보존한다. 폐지 표시로 신규 거래도 차단한다. `/펫스킬정보`는 스킬명 일치를 회원 닉네임보다 우선하며 모든 스킬명의 띄어쓰기 변형도 인식한다.
+- 사용자 확정 확률: 기존 SS0.1%·S0.3%, 삼성전자 SSS는 S의 절반인0.15%. `PET_SKILL_FIXED_ACTUAL_RATES`에 SSS0.15를 추가하고, 기존 D 잔여 균등 배분 규칙을 유지한다. SSS~C 고정 확률 합계가 늘어 D 전체 확률은0.55%p 감소한다. 다른 기존 고정 확률은 유지한다.
+- Main/Info `getEquippedNonTierPetSkillExp`가 장착된 서로 다른 스킬의 매력을 합산하고 소멸 후 제외한다. 동일 스킬 중복 장착 거절은 기존대로 유지한다. Info의 `GLOBAL_CONFIG.petSkill.charmSkills`도 같은 수치다.
+- SSS는 확률표·오픈 결과·가방·컬렉션·자유시장 등급 검색/정렬에서 SS보다 먼저 표시한다. 삼성전자 컬렉션은 사용자 확정으로 최대3개, 1개당 홈뱃지 큐브💟1,500개(총4,500개). SS/S 컬렉션 규칙은 유지한다.
+- `/펫스킬컬렉션등록` → `등록`은 재료 차감 중 이름 정규화가 교체한 현재 컬렉션을 다시 참조해 등록 횟수와 보상을 함께 반영한다. 만능열쇠 다중 선택도 같은 SSS3개 한도·보상을 따른다. 기존 명령·저장 파일·DEV/PROD 경로를 재사용한다.
+
+---
+
+# 운영자 포인트 변경·미니펫 타이틀 판매 안전 검사
+
+Status: VERIFIED
+
+- `main.js`: `/속성증가`·`/속성감소 [유저명] point [정수]`, `/포인트수정 [유저명] [정수]`, `/미니펫타이틀판매 [번호]`의 전체 입력 형식을 검사한다. 설명 접미문은 실행하지 않는다.
+- 운영자 수량은 `parseSafePointAmount`로 0~9,007,199,254,740,991의 정수만 허용한다. 포인트 속성 변경은 기존 값과 결과도 검사해 0 미만·안전 범위 초과를 거절한다. 기존 레벨·권한 규칙은 유지한다.
+- `/포인트수정`은 MASTER만 실행하며 0 설정과 기존 잘못된 잔액의 명시적 수정을 허용한다. 검증 실패 시 기존 회원 값을 보존한다.
+- 미니펫 타이틀은 `getSafeSalePoint(..., 0)`과 `isSafePointSaleCredit` 검사 후 목록 제거·포인트 지급·기존 두 파일 저장을 실행한다. 0원 타이틀, 장착 중 판매 금지와 기존 저장 경로는 유지한다.
+- 두 판매 검증 helper에는 파일 IO가 없다. 정상 판매는 기존 음수 잔액도 실제 보상만큼만 증가시키며 임의 초기화하지 않는다. 나락상자와 공통 `addPoint`의 손실 정책은 변경하지 않는다.
+
+---
+
+# 기존 개별 패키지 명령의 통합 전환
+
+Status: VERIFIED
+
+- `main.js`: 개별 개봉 19종과 지급 13종의 실행 분기는 제거된 상태다. 통합 `/패키지리스트`·`/패키지지급`·`/패키지가방`·`/패키지사용`은 저장된 `packageInfo.json`에 등록된 패키지만 사용한다.
+- 과거 패키지의 고정 보상 정의와 기간권 패키지 자동 추가를 제거했다. 저장되지 않은 패키지를 생성하거나 삭제한 항목을 다시 넣지 않는다. 이미 저장된 항목은 `/패키지제거`·`/패키지리스트제거`로 삭제할 수 있으며 회원 가방 원본은 일괄 변경하지 않는다.
+- 전환 개봉: /주인탓입니다4, /초보오픈1, /초보오픈2, /초보오픈3, /초보오픈4, /초보오픈5, /초보오픈6, /광산오픈4, /광산오픈5, /홈패키지오픈2, /미강오픈, /시련오픈, /펫탐험오픈1, /오픈하면부처가됩니다, /나한테잘하자4, /나한테잘하자3, /도파민오픈1, /도파민오픈2, /오픈하면어린이가됩니다
+- 전환 지급: /초보2,, /초보3,, /초보4,, /초보5,, /초보6,, /미강,, /펫탐,, /도파민,, /도파민민, /가정정정,, /가정정정정,, /어린,, /부처,
+- 기존 미니펫·가구·타이틀·길드창고 직접 변경 및 구성 확인이 필요한 패키지, 혼합 묶음 지급은 기존 실행을 보존한다. 이름이 비슷한 최신 상품과 과거 보상을 합치지 않는다.
+- 가방 번호는 현재 목록 순서다. 보상으로 다른 패키지를 받으면 번호가 바뀔 수 있으므로 다음 사용 전 `/패키지가방`에서 확인한다.
+- 입찰은 수수료 포함 차감 후 잔액과 경매 종료 시각을 검증한 뒤 확정한다. MASTER 등 기존 권한의 `/경매마감`은 기존 표시 입찰가의 50% 환급을 유지하되 최고 입찰액·실차감 기록·대상 계정·환급 후 잔액을 먼저 검사한다. 잘못된 값이면 환급·공지·경매 제거를 하지 않는다.
+
+## 출력 문구 정리
+
+- Info의 `/레벨`은 Main `/스탯`과 같은 `buildAdventureStatProgress` 문자열을 사용한다. 이모지·이름·각 스탯 사이에 공백을 넣지 않으며 진행 수치와 보너스 계산은 유지한다.
+- `/자유시장`·검색·내 판매 공통 목록은 상품명 옆 `[개당 💎...]`를 유지하고 두 번째 총액 행의 `(개당 ...)`만 제거한다. 단가의 소수·근삿값 계산과 실제 결제 값은 유지한다.
+- 인수 없는 `/펫스킬정보` 안내에는 일반 유저에게 스킬 효과 조회 방법만 표시한다. Admin/Master에게만 닉네임 조회 안내를 추가한다. 기존 스킬명 우선 조회와 다른 회원 가방 조회 권한은 유지한다.
+
+## 지정 패키지 명령어 사용 종료
+
+- 개봉 9개: `/고생하셨습니다`, `/낚시오픈`, `/아아`, `/홈패키지오픈테스트`, `/황제패키지오픈3`, `/미니오픈테스트`, `/미니펫엘리트오픈`, `/이랏싸이마쎄`, `/해피할로윈오픈시펫외형이바뀝니다안에는어마어마한상품이있습니다`.
+- 묶음 지급 6개: `/슬롯모두,`, `/상중하모두,`, `/초보모두,`, `/벚꽃모두1,`, `/벚꽃모두2,`, `/벚꽃모두3,`.
+- 상품 사용 종료·명령어만 삭제하는 사용자 결정에 따라 보상 이전·보유분 변환·데이터 삭제를 하지 않는다. 통합 패키지와 지정하지 않은 개봉·개별 지급 명령은 유지한다.
+
+- 사용 종료 상품의 개별 지급 4개도 제거했다: `/미니엘리트,`, `/황제제제,`, `/태초,`, `/낚시,`. 명령어 이름 뒤 수량을 붙이는 형태도 함께 제거하며 다른 상품 지급과 통합 `/패키지지급`·`/패키지사용`은 유지한다.
+- `/황제제`의 입력 판별은 자기 명령과 수량·대상 형식으로 한정하여 제거된 `/황제제제`가 잘못 연결되지 않게 한다.
+
+## 스탯 투자 확인·확정 성능
+
+- `parseAdventureStatRequest`가 투자로 해석한 요청만 최초 검증 회원을 요청 내부에 보관한다. `canReuseAdventureStatMemberData`는 같은 객체·트랜잭션·환경이며 실패/롤백/회원 게시가 없을 때 개인톡·정지 검사에서 재사용한다. 경계가 달라지면 기존 `loadJsonFile`로 다시 읽고 오류를 그대로 전파한다. 잠금·권한·출석·대전·확인 대기 검사는 유지한다.
+- 투자 확정에서 펫 강화값이 바뀌지 않을 때 엔트리가 읽은 펫 원문을 `publishAdventureMutation`에 전달한다. 생성한 펫 JSON과 정확히 같고 객체형 JSON일 때만 확정 기록에서 펫 행을 생략한다. 다른 공통 처리로 펫이 바뀌었거나 원문 표현이 다르면 기존처럼 포함한다. 교감 완료·스탯 아이템·집 확장은 기존 게시 대상을 유지한다.
+- 기존 확정 기록 형식·확정 전 실패 취소·확정 후 재게시·분리 저장·백업·복구 순서는 유지한다. 상태·계정·만료 확인 및 대기 삭제를 건너뛰지 않는다.
+
+## 길드보급 출석 안내 헤더
+
+- `runGuildWarEntry`의 보급 미출석 분기는 닉네임·프리미엄/직책 안내가 포함된 기존 `buildAttendanceRequiredMessage`를 원래 컨텍스트 응답기로 직접 전달한다. 길드전쟁용 헤더를 추가하지 않아 전체 닉네임은 한 번만 표시하며 DEV 헤더·이벤트 닉네임 처리는 유지한다.
+- 출석 검사 위치·길드톡/소속/정지 조건·보급 지급과 저장 경로는 변경하지 않는다. 출석한 회원의 성공·실패 응답은 기존 전쟁 헤더를 유지한다.
+
+## 당근·온도기·달토끼·황금당근 종료 (2026-11-16)
+
+Status: VERIFIED
+
+- 일반 당근·온도기의 보유분·통계·순위·게시판·개인거래와 이벤트 달토끼·황금당근의 탐험11·상점·잔액·구매/정산 기록·패키지를 종료한다. 별개 이름의 기존 당근 패키지·가구·보드게임 지역은 일괄 삭제하지 않는다.
+- 최신 사용자 지시: 보관 백업·복구본은 열거·정리·삭제하지 않는다. 종료 데이터가 복원되더라도 조회·지급·사용·이벤트 활성화로 재사용하지 않는다.
+- 컴파일/시작/일반 응답의 전체 정리 호출과 `planCarrotLegacyFiles`/`runCarrotRetirementEntry`를 제거했다. `initializeGuildWarStartup`이 전체 저장소를 읽는 경로가 없다.
+- 실제 사용 자료의 정리는 관리자 `/데이터정리`의 미리보기→확인에서만 실행한다. `scrubCarrotLegacy`는 전달받은 현행 객체만 변경하고 파일 IO를 수행하지 않는다. 미리보기의 대상 지문에는 종료 데이터도 포함하며 취소·만료에는 정리하지 않는다.
+- 현재 회원·상점·탐험·아이템/패키지 정의·공용 거래/정산 기록만 기존 저장 트랜잭션으로 정리한다. 기존 포인트·다이아·현행 다이아 거래/고유번호와 다른 콘텐츠는 유지한다. 기존 미개봉 패키지의 일반 당근 구성품은 기존 포인트 대체 정책을 유지한다.
+- 달토끼 전용 설정·생성·참여·자동탐험·상점·수동 잔액 수정·보상/정산·Main/Info 표시를 제거했다. 초기화 후에도 슬롯11/이벤트 상점을 다시 만들지 않는다. 이벤트0·길드레이드10은 유지한다.
+- `catalogPolicy.shopNumbers`는 폐지 상품 자리만 null로 남겨 옛 번호가 다른 상품 구매로 바뀌지 않게 한다. 이미 2.851 정리를 완료했어도 `/데이터정리`는 추가 종료 대상을 다시 검사한다.
+- 옛 명령은 MQ 전에 무응답 처리한다. 운영 Git 반영은 단말 접근/컴파일을 포함하지 않으며 실제 JSON 제거는 운영자가 `/데이터정리`를 실행해야 한다.
+
+## 길드전쟁 미강석 광산 추가 (2026-11-16)
+
+- `siegeVersion=2`: 1~5 유지, 미강석 광산6, 루미에르 요새7, 호월킹덤8. 기존 소유자·점령 시각·수익·영주·세금·진행전쟁·기록·알림과 사용한 일일 기습을 보존한다. 기존 6/7/8지역의 반복 전환과 보상 재지급을 막는다.
+- 펫스킬·다이아·미강석 세 광산은 같은 단계 합계1곳 한도·예약을 공유하며 미강석 보유도 요새 진격을 허용한다. 기습은 계속 금광1~3만 대상으로 한다.
+- 실제 공격 점령/무혈입성/방어 성공에만 기존 길드창고 `miniPet` 잔고에 강화석5개를 더한다. 실패·취소·한도 초과·자폭·단순 방어 참여에는 지급하지 않는다. 길드자금의 큐브 보정은 유지하며 강화석 수량은 보정하지 않는다.
+- `war.reward.miniPetStones`는 기존 전투/점령 고유번호와 함께 확정되어 중복 정산을 차단한다. 결과와 기록은 실제 지급 수량을 표시한다. 지도/가이드/선포·자폭 번호 안내는 1~8을 사용한다.
