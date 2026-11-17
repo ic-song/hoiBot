@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.868"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.869"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -957,14 +957,17 @@ var COMMON_DATA_FILE_MAP = {
     "petSweetHomeInfo.json": true
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
-var commandDataFlowLock = new java.util.concurrent.locks.ReentrantReadWriteLock(true); // 자동일퀘와 일반 응답의 데이터 처리 순서 보호
-var dataTransactionLock = new java.util.concurrent.locks.ReentrantLock(); // 명령 단위 데이터 로드·백업·변경·저장 동시 실행 방지
+const LEGACY_SHARED_LOCK_PREFIX = "hoibot.legacy.main.lock."; // GLOBAL_CONFIG 이전 저장 계층 부트스트랩에 필요한 JVM 공용 키
+var commandDataFlowLock = getLegacySharedLock("flow", true); // 재컴파일된 인스턴스도 같은 명령 흐름 잠금 사용
+var dataTransactionLock = getLegacySharedLock("data", false); // 로드·변경·저장을 인스턴스 사이에서도 직렬화
 var responseQueueLock = new java.util.concurrent.locks.ReentrantLock(); // 접수·작업자 전환만 짧게 보호
 var responseQueue = []; // 데이터 대신 원래 입력과 접수 정보만 보관
 var responseQueueRunning = false;
 var responseQueueWorker = null; // 살아 있는 작업자를 중복 시작하지 않기 위한 실제 스레드
 var responseQueueActiveState = new java.util.concurrent.atomic.AtomicReference(); // 관리자 조회용 현재 작업의 작은 불변 원문
 var responseQueueLastCompletedState = new java.util.concurrent.atomic.AtomicReference(); // 직전 MQ 작업의 시간 진단만 메모리에 보관
+var mainDiagnosticNoticeSending = new java.util.concurrent.atomic.AtomicBoolean(false);
+var mainDiagnosticNotices = {}; // 반복 알림만 제한하며 오류·지연 원문은 별도 로그에 보존
 var responseQueueLastStartError = "";
 var responseQueueDirectOperators = new java.util.concurrent.atomic.AtomicInteger(); // MQ를 우회한 운영자 요청의 실행 중 건수
 var responseQueueThread = new java.lang.ThreadLocal(); // 내부 명령은 현재 작업에서 바로 실행
@@ -1044,6 +1047,7 @@ const GLOBAL_CONFIG = {
             auctionOperators: ["칠가 남", "감자 여", "벨라 여", "티모 여", "진주 여"]
         }
     },
+    diagnostics: { fileName: "mainDiagnostics.jsonl", previousFileName: "mainDiagnostics.previous.jsonl", maxBytes: 262144, slowQueueMs: 5000, slowWorkMs: 1000, noticeIntervalMs: 30000, noticeKeys: 64, maxErrorChars: 1800, maxWriteStates: 8, maxNotices: 32, maxDebugRows: 4, noticeMaxChars: 3000 },
     howolMystery: { reward: 100000000, sessionLimit: 5000, suspects: ["호월이", "호동이", "봄봄이"], cases: [
         {"id":1,"title":"🍰 사라진 마지막 케이크","difficulty":"쉬움","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님이 카페 냉장고에 넣어 둔 케이크가 사라졌다. 케이크는 불투명한 상자에 담겨 있었다.\n\n🐱 호월이: “서재에서 책을 읽었어. 케이크는 보지도 않았어.”\n🐾 호동이: “부엌에서 생크림을 만들었어. 손에 크림이 묻었지.”\n💕 봄봄이: “딸기 한 알 올린 케이크는 원래 별로 안 좋아해요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 상자를 닫기 직전 올린 딸기 장식은 당신만 봤다.\n② 호동이가 만든 생크림에는 딸기가 들어가지 않았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"봄봄이는 볼 수 없던 딸기 장식을 알고 있었다. 호동이 손의 크림은 별도 요리에서 묻은 것이었다.","ending":"봄봄이는 케이크를 깜짝 파티용으로 옮겼다고 실토하고 새 접시를 꺼냈다."},
         {"id":2,"title":"📸 남아 있지 않은 사진","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 1/2\n━━━━━━━━━━━━\n저녁 8시 무렵, [채크랭크] 님의 카메라에서 메모리 카드가 사라졌다. 카메라는 7시 55분에 확인한 뒤 8시 5분에 다시 보니 카드가 없었다.\n\n🐱 호월이: “난 카메라를 만지지 않았어.”\n🐾 호동이: “난 그 시각에 정원에 있었어.”\n💕 봄봄이: “8시에 카메라에서 사진을 골라 봤어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 카메라 배터리는 7시 50분에 완전히 방전됐고 그날 교체하거나 외부 전원을 연결한 기록도 없었다.\n② 저녁 7시 55분부터 8시 5분까지 마당 영상에 호월이와 호동이가 함께 찍혀 있었다. 봄봄이만 카메라가 있던 방에 남았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"8시에 카메라에서 사진을 골라 봤다는 봄봄이의 진술은 방전된 기기의 상태와 맞지 않는다. 카드가 사라진 10분 동안 다른 두 사람은 마당 영상에 있었고 봄봄이만 카메라에 접근할 수 있었다.","ending":"봄봄이는 카드에 담긴 낮 사진을 깜짝 전시하려고 가져갔다고 밝혔다."},
@@ -4018,7 +4022,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     if (msg === "/MQ상태" || msg === "/mq상태") {
         var statusContext = createCommandContext(false, room), statusPrevious = enterCommandContext(statusContext);
-        try { if (isAdminIdentity(sender) || isMasterIdentity(sender)) Api.replyRoom(room, buildResponseQueueStatusMessage()); }
+        try { if (isAdminIdentity(sender) || isMasterIdentity(sender)) Api.replyRoom(room, buildResponseQueueStatusMessage(room === testRoom)); }
         finally { exitCommandContext(statusPrevious); }
         return;
     }
@@ -4094,12 +4098,13 @@ function notifyRequestFlood(request, info) {
 
 // 현재 최상위 MQ 작업의 단계와 경과 기준만 개인정보 없이 공개하는 함수
 function updateResponseQueueStage(request, stage) {
+    if (request.queueStage !== stage) request.queueStageStartedAt = Date.now();
+    request.queueStage = stage;
+    publishMainDiagnosticOwner(request);
     if (!request.queueRoot) return;
     var command = getServerRaidAdmissionCommand(request.msg);
     var sessionInput = userState[request.sender] || worldNewsDraftState[getWorldNewsDraftKey(request.sender, request.room)];
     var label = command.charAt(0) === "/" ? command.split(/[\s,]/)[0].substring(0, GLOBAL_CONFIG.commandQueue.statusCommandChars) : sessionInput ? "세션 응답" : isPlainChatInput(command) ? "일반 채팅" : "단축 명령";
-    if (request.queueStage !== stage) request.queueStageStartedAt = Date.now();
-    request.queueStage = stage;
     request.queueCommand = request.petExploreTick ? "내부 예약" : label;
     responseQueueActiveState.set(JSON.stringify({ command: request.queueCommand, stage: stage, stageStartedAt: request.queueStageStartedAt, startedAt: request.queueStartedAt, receivedAt: request.receivedAt }));
 }
@@ -4114,7 +4119,7 @@ function recordResponseQueueCompletion(request) {
 }
 
 // 데이터 잠금과 MQ 대기를 거치지 않고 메모리 대기열 상태를 표시하는 함수
-function buildResponseQueueStatusMessage() {
+function buildResponseQueueStatusMessage(includeDetails) {
     var now = Date.now(), count = null, oldestMs = 0, workerState = "접수 상태 확인 중", lastError = "";
     var locked = responseQueueLock.tryLock();
     if (locked) {
@@ -4131,9 +4136,9 @@ function buildResponseQueueStatusMessage() {
     else lines.push("진행 작업: 없음");
     lines.push("관리자·MASTER 직접 처리: " + responseQueueDirectOperators.get() + "건", "대기 만료 기준: " + (GLOBAL_CONFIG.commandQueue.maxWaitMs / 1000) + "초");
     if (lastError) lines.push("작업자 시작 오류: " + lastError.substring(0, GLOBAL_CONFIG.commandQueue.statusErrorChars));
-    if (active) lines.push("단계 경과: " + (Math.max(0, now - active.stageStartedAt) / 1000).toFixed(1) + "초");
+    if (includeDetails && active) lines.push("단계 경과: " + (Math.max(0, now - active.stageStartedAt) / 1000).toFixed(1) + "초");
     var completedText = responseQueueLastCompletedState.get(), completed = completedText === null ? null : JSON.parse(String(completedText));
-    if (completed) {
+    if (includeDetails && completed) {
         lines.push("최근 작업: " + completed.command, "최근 처리: " + completed.elapsed + "ms", "최근 큐 대기: " + completed.queueMs + "ms");
         for (var timingIndex = 0; timingIndex < completed.rows.length; timingIndex++) lines.push(completed.rows[timingIndex].label + ": " + completed.rows[timingIndex].ms + "ms");
     }
@@ -4357,17 +4362,25 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
     var prevCtx = null;
     updateResponseQueueStage(request, "명령 흐름 잠금 대기");
     var responseFlowLockStartMs = Date.now(); // 큐에서 실행된 뒤 명령 흐름 잠금을 기다린 시작 시각
+    var observedLockOwner = java.lang.System.getProperty(LEGACY_SHARED_LOCK_PREFIX + "owner");
+    request.observedLockOwner = observedLockOwner === null ? null : String(observedLockOwner);
+    request.flowLockAtEntry = String(commandDataFlowLock.writeLock());
     responseDataLock.lock();
     //데이터 검사
     try {
         updateResponseQueueStage(request, "데이터 잠금 대기");
         var responseDataLockStartMs = Date.now(); // 명령 흐름 잠금 획득 후 데이터 잠금 대기 시작 시각
+        request.dataLockAtEntry = String(dataTransactionLock);
         dataTransactionLock.lock(); // 자동 작업이 보유한 잠금도 기다린 뒤 최신 데이터를 읽는다.
+        request.previousLockOwner = java.lang.System.getProperty(LEGACY_SHARED_LOCK_PREFIX + "owner");
         responseTransactionAcquired = true;
         var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
         beginDataSaveTransaction();
         dataSaveTransactionEntered = true;
         ctx = createCommandContext(isDevCommandMessage(msg), room);
+        request.diagnosticId = String(java.util.UUID.randomUUID());
+        ctx.diagnosticRequest = request;
+        publishMainDiagnosticOwner(request);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
         var diamondPermissionCommand = getServerRaidAdmissionCommand(msg);
@@ -6427,7 +6440,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 } catch (dollNoticeError) { debuggerLog("[인형 전송 오류] " + dollNoticeError); }
             }
             recordDollTiming(dollTimingRows, "결과·기존 디버그 전송", dollReplyStartedAt);
-            if (isDebuggerFlag) { try { debuggerLog(buildDollTimingMessage(dollTimingRows, Date.now() - miniGameRequestAt, responseTimingRows)); } catch (dollTimingLogError) {} }
+            request.diagnosticFeatureRows = dollTimingRows; // 정상 처리마다 전송하지 않고 오류·지연 진단에만 포함
             return;
         }
         if (msg === "/펫무쌍준비") {
@@ -30543,7 +30556,8 @@ replier.reply(
             sender: sender
         };
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.error = errorObj.error;
-        debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
+        request.diagnosticError = errorObj.error;
+        try { request.diagnosticStack = String(error.stack || (error.rhinoException ? error.rhinoException.getScriptStackTrace() : "")).substring(0, GLOBAL_CONFIG.diagnostics.maxErrorChars); } catch (stackError) {}
         if ((msg === "/자유시장전환" || msg === "/자유시장전환 실행") && isMasterIdentity(sender)) {
             try { createContextReplier(request.replier, ctx).reply("❌ 자유시장 전환 처리 중 오류가 발생했습니다.\n" + errorObj.error.substring(0, 300) + "\n원인 확인 후 /자유시장전환으로 완료 여부를 다시 확인해주세요."); }
             catch (marketConversionReplyError) { debuggerLog("[자유시장 전환 오류 안내 실패] " + marketConversionReplyError); }
@@ -30574,9 +30588,13 @@ replier.reply(
                 if (dataSaveTransactionEntered) endDataSaveTransaction();
             } finally {
                 try {
-                    if (responseTransactionAcquired) dataTransactionLock.unlock();
+                    if (responseTransactionAcquired) {
+                        releaseMainDiagnosticOwner(request);
+                        dataTransactionLock.unlock();
+                    }
                 } finally {
-                    responseDataLock.unlock();
+                    try { responseDataLock.unlock(); }
+                    finally { finishMainDiagnostic(request, ctx, responseFlowLockStartMs); }
                 }
             }
         }
@@ -32964,7 +32982,7 @@ function notifyManagedJsonRecovery(path, backupPath, reason) {
         "백업 파일: " + String(new java.io.File(backupPath).getName()) + "\n" +
         "발생 시각: " + formatDateTime(new Date());
     try {
-        Api.replyRoom(room90, message);
+        queueMainDiagnosticNotice(message);
     } catch (notifyError) {
         debuggerLog("[ERROR : 데이터 복구 알림 실패] " + notifyError.toString());
     }
@@ -32980,7 +32998,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
         "확인: " + String(detail || "정상 백업 없음") + "\n" +
         "발생 시각: " + formatDateTime(new Date());
     try {
-        Api.replyRoom(room90, message);
+        queueMainDiagnosticNotice(message);
     } catch (notifyError) {
         debuggerLog("[ERROR : 데이터 복구 실패 알림 전송 실패] " + notifyError.toString());
     }
@@ -33181,12 +33199,146 @@ function rollbackDataSaveTransaction() {
     }
 }
 
+// 현재 데이터 잠금 보유 요청의 작은 상태만 JVM에 공개하는 진단 함수
+function publishMainDiagnosticOwner(request) {
+    try {
+        if (!request.diagnosticId || !dataTransactionLock.isHeldByCurrentThread()) return;
+        var command = getServerRaidAdmissionCommand(request.msg);
+        java.lang.System.setProperty(LEGACY_SHARED_LOCK_PREFIX + "owner", JSON.stringify({ id: request.diagnosticId, thread: String(java.lang.Thread.currentThread().getName()),
+            command: command.charAt(0) === "/" ? command.split(/[\s,]/)[0].substring(0, GLOBAL_CONFIG.commandQueue.statusCommandChars) : isPlainChatInput(command) ? "일반 채팅" : "단축 명령", stage: request.queueStage }));
+    } catch (diagnosticError) {}
+}
+
+// 중첩 내부 요청은 부모 진단을 복원하고 최상위 잠금 해제 시 보유 상태를 지우는 함수
+function releaseMainDiagnosticOwner(request) {
+    try {
+        var key = LEGACY_SHARED_LOCK_PREFIX + "owner", current = java.lang.System.getProperty(key);
+        if (current === null || JSON.parse(String(current)).id !== request.diagnosticId) return;
+        if (dataTransactionLock.getHoldCount() > 1 && request.previousLockOwner != null) java.lang.System.setProperty(key, request.previousLockOwner);
+        else java.lang.System.clearProperty(key);
+    } catch (diagnosticError) {}
+}
+
+// 실패 순간의 파일 상태만 읽어 원본 내용 없이 교체 경로를 진단하는 함수
+function getJsonWriteDiagnostic(path, stage, error) {
+    var row = { path: String(path), stage: stage, error: String(error).substring(0, GLOBAL_CONFIG.diagnostics.maxErrorChars), thread: String(java.lang.Thread.currentThread().getName()), files: [] };
+    var names = [String(path), String(path) + ".tmp", String(path) + ".rollback"];
+    for (var i = 0; i < names.length; i++) {
+        var file = new java.io.File(names[i]);
+        row.files.push({ path: names[i], exists: file.exists(), bytes: file.length(), writable: file.canWrite(), modified: file.lastModified() });
+    }
+    var parent = new java.io.File(path).getParentFile();
+    row.freeBytes = parent ? parent.getUsableSpace() : null;
+    return row;
+}
+
+// 저장 진단을 현재 요청에 연결하고 독립 작업은 별도 로그로 남기는 함수
+function recordJsonWriteDiagnostic(row) {
+    try {
+        var ctx = getCurrentContext(), request = ctx && ctx.diagnosticRequest;
+        if (request) {
+            if (!request.diagnosticWrites) request.diagnosticWrites = [];
+            if (request.diagnosticWrites.length < GLOBAL_CONFIG.diagnostics.maxWriteStates) request.diagnosticWrites.push(row);
+        } else emitMainDiagnostic(ctx, { kind: "STORAGE", writes: [row] });
+    } catch (diagnosticError) {} // 진단 실패로 기존 저장 예외를 바꾸지 않음
+}
+
+// 기존 복구 알림 문구를 현재 요청의 상세 진단에 모으는 함수
+function queueMainDiagnosticNotice(message) {
+    try {
+    var ctx = getCurrentContext(), request = ctx && ctx.diagnosticRequest;
+    if (request) {
+        if (!request.diagnosticNotices) request.diagnosticNotices = [];
+        if (request.diagnosticNotices.length < GLOBAL_CONFIG.diagnostics.maxNotices) request.diagnosticNotices.push(String(message).substring(0, GLOBAL_CONFIG.diagnostics.maxErrorChars));
+    } else emitMainDiagnostic(ctx, { kind: "RECOVERY", notices: [String(message).substring(0, GLOBAL_CONFIG.diagnostics.maxErrorChars)] });
+    } catch (diagnosticError) {} // 알림 실패가 정상 복구를 실패로 바꾸지 않음
+}
+
+// 잠금을 해제한 요청 중 오류·복구·지연만 기록하는 함수
+function finishMainDiagnostic(request, ctx, flowStartedAt) {
+    try {
+        var now = Date.now(), config = GLOBAL_CONFIG.diagnostics;
+        var queueMs = request.queueStartedAt ? Math.max(0, request.queueStartedAt - request.receivedAt) : 0;
+        var workMs = Math.max(0, now - (request.queueStartedAt || flowStartedAt)); // 실제 실행·잠금 대기를 포함하고 MQ 대기는 제외
+        var kind = request.diagnosticError || request.diagnosticWarning ? "ERROR" : request.diagnosticWrites ? "STORAGE" : request.diagnosticNotices ? "RECOVERY" :
+            queueMs >= config.slowQueueMs || workMs >= config.slowWorkMs ? "SLOW" : null;
+        if (!kind) return;
+        var command = getServerRaidAdmissionCommand(request.msg);
+        emitMainDiagnostic(ctx, { kind: kind, id: request.diagnosticId, command: command.charAt(0) === "/" ? command.split(/[\s,]/)[0].substring(0, GLOBAL_CONFIG.commandQueue.statusCommandChars) : isPlainChatInput(command) ? "일반 채팅" : "단축 명령",
+            elapsedMs: now - request.receivedAt, queueMs: queueMs, workMs: workMs, stage: request.queueStage,
+            error: request.diagnosticError ? String(request.diagnosticError).substring(0, config.maxErrorChars) : null, stack: request.diagnosticStack || null,
+            timings: request.responseTimingRows || [], featureTimings: request.diagnosticFeatureRows || [], writes: request.diagnosticWrites || [], notices: request.diagnosticNotices || [], debug: request.diagnosticDebug || [],
+            observedOwner: request.observedLockOwner, flowLockAtEntry: request.flowLockAtEntry, dataLockAtEntry: request.dataLockAtEntry,
+            flowLock: String(commandDataFlowLock), dataLock: String(dataTransactionLock) });
+    } catch (diagnosticError) {} // 상세 진단 오류는 게임 결과와 롤백에 영향을 주지 않음
+}
+
+// 07 백업에 포함되는 제한 용량 JSONL과 팻 테스트방 전용 비동기 알림을 기록하는 저장 계층 함수
+function emitMainDiagnostic(ctx, row) {
+    var lock = getLegacySharedLock("diagnostics", false), notice = null;
+    lock.lock();
+    try {
+        var config = GLOBAL_CONFIG.diagnostics, root = ctx && ctx.rootPath ? ctx.rootPath : DATA_ROOT_PATH;
+        row.version = "ver_" + HoiBotVersion;
+        var at = Date.now();
+        row.at = new Date(at).toISOString();
+        row.atKst = formatServerRaidKstTime(at);
+        row.environment = ctx && ctx.isDev ? "DEV" : "PROD";
+        if (!row.id) row.id = String(java.util.UUID.randomUUID());
+        var text = JSON.stringify(row) + "\n", bytes = new java.lang.String(text).getBytes("UTF-8");
+        var file = new java.io.File(root + config.fileName), previous = new java.io.File(root + config.previousFileName);
+        var output = null;
+        try {
+            if (file.length() + bytes.length > config.maxBytes) {
+                if (previous.exists() && !previous.delete()) throw new Error("Diagnostic rotation cleanup failed");
+                if (file.exists() && !file.renameTo(previous)) throw new Error("Diagnostic rotation failed");
+            }
+            output = new java.io.FileOutputStream(file, true);
+            output.write(bytes); output.flush();
+            row.persisted = true;
+        } catch (diagnosticWriteError) { row.persisted = false; }
+        finally { if (output) { try { output.close(); } catch (closeError) {} } }
+        var key = row.environment + "|" + row.kind + "|" + String(row.error || row.command || (row.writes && row.writes[0] ? row.writes[0].path : "")).substring(0, config.maxErrorChars);
+        if (!mainDiagnosticNotices[key] && Object.keys(mainDiagnosticNotices).length >= config.noticeKeys) mainDiagnosticNotices = {};
+        var prior = mainDiagnosticNotices[key], now = Date.now();
+        if (!prior || now - prior.at >= config.noticeIntervalMs) {
+            row.repeatedNotices = prior ? prior.suppressed : 0;
+            mainDiagnosticNotices[key] = { at: now, suppressed: 0 };
+            notice = "[Main 상세 진단]\n" + JSON.stringify(row, null, 2).substring(0, config.noticeMaxChars);
+        } else prior.suppressed++;
+    } catch (diagnosticError) {} // 로그 파일 문제로 게임 저장을 취소하지 않음
+    finally { lock.unlock(); }
+    if (notice && mainDiagnosticNoticeSending.compareAndSet(false, true)) {
+        try {
+            new java.lang.Thread(new java.lang.Runnable({ run: function () {
+                try { Api.replyRoom(testRoom, notice); }
+                catch (sendError) {} // 알림 실패 시에도 07 로그는 유지
+                finally { mainDiagnosticNoticeSending.set(false); }
+            } }), "hoiBot-diagnostics").start();
+        } catch (startError) { mainDiagnosticNoticeSending.set(false); }
+    }
+}
+
+// JVM 공용 Java 잠금을 원자적으로 등록하여 서로 다른 컴파일 인스턴스도 같은 잠금을 쓰는 함수
+function getLegacySharedLock(name, readWrite) {
+    var properties = java.lang.System.getProperties(), key = LEGACY_SHARED_LOCK_PREFIX + name;
+    var register = function () {
+        var stored = properties.get(key);
+        if (stored !== null) return stored;
+        var created = readWrite ? new java.util.concurrent.locks.ReentrantReadWriteLock(true) : new java.util.concurrent.locks.ReentrantLock();
+        properties.put(key, created);
+        return created;
+    };
+    var scope = Packages.org.mozilla.javascript.ScriptableObject.getTopLevelScope(register);
+    return new Packages.org.mozilla.javascript.Synchronizer(register, properties).call(Packages.org.mozilla.javascript.Context.getCurrentContext(), scope, scope, []);
+}
+
 // 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
 function getProtectedJsonSaveLock(path) {
     path = String(path);
     if (String(new java.io.File(path).getName()).indexOf(GLOBAL_CONFIG.storage.transactionPrefix) === 0) return dataTransactionLock;
     if (!protectedJsonSaveLocks[path]) {
-        protectedJsonSaveLocks[path] = new java.util.concurrent.locks.ReentrantLock();
+        protectedJsonSaveLocks[path] = getLegacySharedLock("file." + String(new java.io.File(path).getCanonicalPath()), false);
     }
     return protectedJsonSaveLocks[path];
 }
@@ -33203,6 +33355,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
     var rollbackFile = new java.io.File(path + ".rollback");
     var outputStream = null;
     var writer = null;
+    var writeStage = "prepare", writeFailure = null, renameRetry = null;
 
     lock.lock();
     try {
@@ -33215,6 +33368,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         if (tempFile.exists() && !tempFile.delete()) {
             throw new Error("Temporary JSON file cleanup failed: " + tempFile.getPath());
         }
+        if (rollbackFile.exists() && !targetFile.exists()) throw new Error("Pending JSON rollback recovery required: " + path);
         if (rollbackFile.exists() && !rollbackFile.delete()) {
             throw new Error("Rollback JSON file cleanup failed: " + rollbackFile.getPath());
         }
@@ -33230,6 +33384,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
             if (repeatedSaveMatches) return;
         }
 
+        writeStage = "write-temp";
         outputStream = new java.io.FileOutputStream(tempFile, false);
         writer = new java.io.OutputStreamWriter(outputStream, "UTF-8");
         writer.write(jsonText);
@@ -33239,10 +33394,12 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         writer = null;
         outputStream = null;
 
+        writeStage = "validate-temp";
         var raidAdmissionState = null; // 기존 임시 파일 검증 결과에서 작은 접수 상태만 보관
         if (path === resolveActiveDataPath(filePath)) raidAdmissionState = buildServerRaidAdmissionState(parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path));
         else parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
+        writeStage = "backup";
         var seedManagedBackup = false;
         var managedBackupPath = getManagedJsonBackupPath(path);
         var secondaryManagedBackupPath = getManagedJsonSecondaryBackupPath(path);
@@ -33293,12 +33450,17 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
                 if (secondaryManagedBackupPath) writeVerifiedJsonFile(secondaryManagedBackupPath, jsonText, true);
             }
         }
+        writeStage = "original-to-rollback";
         if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
             throw new Error("Current JSON file backup failed: " + path);
         }
+        writeStage = "temp-to-original";
         if (!tempFile.renameTo(targetFile)) {
-            if (rollbackFile.exists()) rollbackFile.renameTo(targetFile);
-            throw new Error("Verified JSON file replace failed: " + path);
+            try { renameRetry = getJsonWriteDiagnostic(path, writeStage, "renameTo returned false"); } catch (diagnosticError) {}
+            // 사업 처리는 재실행하지 않고, 검증 원문이 그대로이며 목적지가 비어 있을 때만 파일 교체를 한 번 재시도한다.
+            var canRetryRename = !targetFile.exists() && tempFile.exists() && String(FileStream.read(tempFile.getPath(), "utf-8")) === jsonText;
+            if (!canRetryRename || !tempFile.renameTo(targetFile)) throw new Error("Verified JSON file replace failed: " + path);
+            if (renameRetry) renameRetry.retried = true;
         }
         if (typeof serverRaidNoticeMemberRevisions !== "undefined" && path === resolveActiveDataPath(filePath)) serverRaidNoticeMemberRevisions[path] = (serverRaidNoticeMemberRevisions[path] || 0) + 1;
         var publishedTransaction = getDataSaveTransaction();
@@ -33309,8 +33471,10 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         }
         if (canReuseVerifiedJson) repeatedSaveEntry.verifiedJsonText = jsonText;
     } catch (e) {
+        try { writeFailure = getJsonWriteDiagnostic(path, writeStage, e); } catch (diagnosticError) {}
         if (!targetFile.exists() && rollbackFile.exists()) {
-            rollbackFile.renameTo(targetFile);
+            var restoredOriginal = rollbackFile.renameTo(targetFile);
+            if (writeFailure) writeFailure.originalRestored = restoredOriginal;
         }
         throw e;
     } finally {
@@ -33322,8 +33486,16 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
             if (outputStream) outputStream.close();
         } catch (ignoreStreamClose) {
         }
-        if (tempFile.exists()) tempFile.delete();
-        lock.unlock();
+        try {
+            if (tempFile.exists() && !tempFile.delete()) recordJsonWriteDiagnostic(getJsonWriteDiagnostic(path, "cleanup-temp", "Temporary JSON cleanup returned false"));
+        } catch (cleanupError) {
+            try { recordJsonWriteDiagnostic(getJsonWriteDiagnostic(path, "cleanup-temp", cleanupError)); } catch (diagnosticError) {}
+        }
+        finally {
+            lock.unlock();
+            if (renameRetry) recordJsonWriteDiagnostic(renameRetry);
+            if (writeFailure) recordJsonWriteDiagnostic(writeFailure);
+        }
     }
 }
 
@@ -42133,14 +42305,17 @@ function applyTax(point, data, guildData, taxAmountOverride) {
 }
 
 function debuggerLog(msg) {
-    if (isDebuggerFlag && msg) {
-        if (msg) {
-            if (typeof msg == "Object") {
-                msg = JSON.stringify(msg);
-            }
-            Api.replyRoom(testRoom, msg);
-        }
-    }
+    if (!msg) return;
+    try {
+        var text = String(msg), fault = /^\[(?:ERROR|WARN)(?:\s|:|\])/.test(text) || /^\[[^\]\r\n]*(?:오류|저장 실패|복구 실패)\]/.test(text);
+        if (!fault && !isDebuggerFlag) return;
+        var ctx = getCurrentContext(), request = ctx && ctx.diagnosticRequest;
+        if (request) {
+            if (!request.diagnosticDebug) request.diagnosticDebug = [];
+            if (request.diagnosticDebug.length < GLOBAL_CONFIG.diagnostics.maxDebugRows) request.diagnosticDebug.push(text.substring(0, GLOBAL_CONFIG.diagnostics.maxErrorChars));
+            if (fault) request.diagnosticWarning = true;
+        } else if (fault) emitMainDiagnostic(ctx, { kind: "ERROR", error: text.substring(0, GLOBAL_CONFIG.diagnostics.maxErrorChars) });
+    } catch (diagnosticError) {} // 상세 로그 실패가 게임 처리로 전파되지 않음
 }
 // 펜던트 전환 중 기존 반지 강화석은 자동 변환하지 않고 보존
 function normalizePendantTransitionItemName(itemName) {
