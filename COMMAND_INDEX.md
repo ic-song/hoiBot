@@ -5,6 +5,8 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+- 2026-11-17, ver_2.859: 주사위 대회 도움말·규칙·시작·준비·결과·탈락 안내를 기획서의 지정 문구와 줄바꿈에 맞췄다. 도움말 뒤 규칙 중복과 재시작 관련 부가 설명을 제거하고 참가/초기8강 보상을 나눠 표시한다. 결승은 2강 대신 결승으로 표기한다. 보상·대진·중단·재개 정책과 기존 JSON 정리 경로는 유지한다.
+
 ## 주사위 대회 · 길드 기록 통합 (2026-11-17, ver_2.858)
 
 Status: VERIFIED
