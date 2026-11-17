@@ -4362,23 +4362,25 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
     var prevCtx = null;
     updateResponseQueueStage(request, "명령 흐름 잠금 대기");
     var responseFlowLockStartMs = Date.now(); // 큐에서 실행된 뒤 명령 흐름 잠금을 기다린 시작 시각
-    var observedLockOwner = java.lang.System.getProperty(LEGACY_SHARED_LOCK_PREFIX + "owner");
-    request.observedLockOwner = observedLockOwner === null ? null : String(observedLockOwner);
-    request.flowLockAtEntry = String(commandDataFlowLock.writeLock());
+    try {
+        var observedLockOwner = java.lang.System.getProperty(LEGACY_SHARED_LOCK_PREFIX + "owner");
+        request.observedLockOwner = observedLockOwner === null ? null : String(observedLockOwner);
+        request.flowLockAtEntry = String(commandDataFlowLock.writeLock());
+    } catch (diagnosticError) {} // 진단 조회 실패에도 실제 잠금·명령 처리는 계속함
     responseDataLock.lock();
     //데이터 검사
     try {
         updateResponseQueueStage(request, "데이터 잠금 대기");
         var responseDataLockStartMs = Date.now(); // 명령 흐름 잠금 획득 후 데이터 잠금 대기 시작 시각
-        request.dataLockAtEntry = String(dataTransactionLock);
+        try { request.dataLockAtEntry = String(dataTransactionLock); } catch (diagnosticError) {}
         dataTransactionLock.lock(); // 자동 작업이 보유한 잠금도 기다린 뒤 최신 데이터를 읽는다.
-        request.previousLockOwner = java.lang.System.getProperty(LEGACY_SHARED_LOCK_PREFIX + "owner");
         responseTransactionAcquired = true;
+        try { request.previousLockOwner = java.lang.System.getProperty(LEGACY_SHARED_LOCK_PREFIX + "owner"); } catch (diagnosticError) {}
         var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
         beginDataSaveTransaction();
         dataSaveTransactionEntered = true;
         ctx = createCommandContext(isDevCommandMessage(msg), room);
-        request.diagnosticId = String(java.util.UUID.randomUUID());
+        try { request.diagnosticId = String(java.util.UUID.randomUUID()); } catch (diagnosticError) {}
         ctx.diagnosticRequest = request;
         publishMainDiagnosticOwner(request);
         prevCtx = enterCommandContext(ctx);
