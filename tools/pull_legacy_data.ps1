@@ -5,6 +5,8 @@
     [string]$Destination
 )
 
+. (Join-Path $PSScriptRoot 'show_main_diagnostics.ps1')
+
 # ADB read commands return an exit code and captured diagnostic output.
 function Invoke-HoiBackupAdb {
     param([string]$Executable, [string[]]$Arguments)
@@ -51,6 +53,14 @@ function Copy-HoiBackupData {
     $root = [IO.Path]::GetFullPath($LocalRoot)
     if (Test-Path -LiteralPath $root) { throw 'Backup destination already exists.' }
     $files = @(Get-HoiBackupManifest $Executable $Serial $RemoteRoot)
+    # Capture diagnostics before required game-data checks so a failed 07 can still explain a missing original.
+    [IO.Directory]::CreateDirectory($root) | Out-Null
+    foreach ($name in @('mainDiagnostics.previous.jsonl', 'mainDiagnostics.jsonl')) {
+        if ($files -ccontains $name) {
+            $diagnosticResult = Invoke-HoiBackupAdb $Executable @('-s', $Serial, 'pull', ($RemoteRoot + '/' + $name), ([IO.Path]::Combine($root, $name)))
+            if ($diagnosticResult.ExitCode -ne 0) { Write-Host ('[WARN] Diagnostic prefetch failed: ' + $name) }
+        }
+    }
     $required = @('member.json', 'member_pet.json', 'petSkillData.json', 'petHomeActivityData.json')
     foreach ($name in $required) {
         if ($files -cnotcontains $name) { throw "Required data file is missing: $name" }
@@ -93,6 +103,7 @@ function Copy-HoiBackupData {
         throw 'Stable file list changed during backup. Retry with a new destination.'
     }
     Write-Host "[OK] $index files pulled; .tmp and .rollback excluded."
+    Show-HoiMainDiagnostics -Root $root
     return $index
 }
 
@@ -104,6 +115,7 @@ if ($MyInvocation.InvocationName -ne '.') {
         Copy-HoiBackupData $AdbExe $Device $RemoteDir $Destination | Out-Null
         exit 0
     } catch {
+        if ($Destination -and (Test-Path -LiteralPath $Destination -PathType Container)) { Show-HoiMainDiagnostics -Root $Destination }
         Write-Host ('[FAIL] ' + $_.Exception.Message)
         exit 1
     }
