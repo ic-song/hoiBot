@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.864"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.865"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -3128,7 +3128,7 @@ blockedNicknameTerms: [
         maxLength: 30 // 타이틀 선물 내용 최대 길이
     },
     petSkill: { // 펫스킬 시스템 설정
-        gradeTotalRates: { SSS: 1.5, SS: 0.6, S: 6.3, A: 10.4, B: 12, C: 30 }, // D는 100%에서 나머지 등급의 총확률을 뺀 잔여분
+        gradeTotalRates: { SSS: 0.15, SS: 0.6, S: 6.3, A: 10.4, B: 12, C: 30 }, // D는 100%에서 나머지 등급의 총확률을 뺀 잔여분
         slots: { maxCount: 100, introBonus: 3, intimacyLevelsPerSlot: 100, expansionItemName: "펫스킬 슬롯 확장권📜(/펫스킬슬롯오픈 숫자)", legacyExpansionItemName: "펫스킬 슬롯 확장권📜" },
         miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
