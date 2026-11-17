@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.863"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.864"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -102,14 +102,6 @@ const PET_SKILL_COMPAT_GROUPS = [
     ["쇼핑광", "VIP블랙카드"],
     ["기도", "신성한 기도", "호월신의 총애"]
 ];
-const PET_SKILL_FIXED_ACTUAL_RATES = {
-    SSS: 0.15,
-    SS: 0.1,
-    S: 0.3,
-    A: 0.4,
-    B: 0.6,
-    C: 1.5
-};
 const PET_SKILL_LIST = [
     { name: "반짝반짝", grade: "SSS", rate: 0.15, effect: "장착 시 /다이아조합에서 현재 다이아 시세보다 5% 할인된 가격으로 변환할 수 있습니다.\n※ 할인 후 개당 가격이 3억 5천만 포인트 미만이면 3억 5천만 포인트로 적용됩니다.\n※ /다이아조합에만 적용됩니다." },
     { name: "수수료 시져시져", grade: "SSS", rate: 0.15, effect: "장착 시 자유시장 다이아 판매 수수료가 50% 감소합니다.\n회원권 미보유: 20% → 10%\n회원권 보유: 10% → 5%\n※ 자유시장회원권 보유 여부에 따라 자동 적용됩니다." },
@@ -3136,6 +3128,7 @@ blockedNicknameTerms: [
         maxLength: 30 // 타이틀 선물 내용 최대 길이
     },
     petSkill: { // 펫스킬 시스템 설정
+        gradeTotalRates: { SSS: 1.5, SS: 0.6, S: 6.3, A: 10.4, B: 12, C: 30 }, // D는 100%에서 나머지 등급의 총확률을 뺀 잔여분
         slots: { maxCount: 100, introBonus: 3, intimacyLevelsPerSlot: 100, expansionItemName: "펫스킬 슬롯 확장권📜(/펫스킬슬롯오픈 숫자)", legacyExpansionItemName: "펫스킬 슬롯 확장권📜" },
         miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
@@ -53364,10 +53357,12 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
     return { ok: true, reason: "" };
 }
 
-function getPetSkillTotalRate() {
+// 같은 등급별 배분표로 전체 추첨 확률 합계를 계산하는 함수
+function getPetSkillTotalRate(gradeWeights) {
+    gradeWeights = gradeWeights || getPetSkillGradeRandomWeights();
     var totalRate = 0;
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-        totalRate += getPetSkillRandomWeight(PET_SKILL_LIST[i]);
+        totalRate += getPetSkillRandomWeight(PET_SKILL_LIST[i], gradeWeights);
     }
     return totalRate;
 }
@@ -53382,33 +53377,33 @@ function getOpenablePetSkillCountByGrade(grade) {
     return count;
 }
 
-// SSS~C 등급의 스킬별 고정 확률 합계를 반환
-function getPetSkillFixedActualRateTotal() {
-    var totalRate = 0;
-    for (var grade in PET_SKILL_FIXED_ACTUAL_RATES) {
-        if (!PET_SKILL_FIXED_ACTUAL_RATES.hasOwnProperty(grade)) continue;
-        totalRate += getOpenablePetSkillCountByGrade(grade) * PET_SKILL_FIXED_ACTUAL_RATES[grade];
+// 등급별 총확률과 D의 잔여 확률을 오픈 가능한 같은 등급 스킬끼리 균등 배분하는 함수
+function getPetSkillGradeRandomWeights() {
+    var totals = GLOBAL_CONFIG.petSkill.gradeTotalRates, weights = {}, assigned = 0;
+    for (var grade in totals) {
+        if (!Object.prototype.hasOwnProperty.call(totals, grade)) continue;
+        var rate = totals[grade], count = getOpenablePetSkillCountByGrade(grade);
+        if (grade === "D" || typeof rate !== "number" || !isFinite(rate) || rate < 0 || rate > 0 && count === 0) throw new Error("Invalid pet skill grade rate total");
+        assigned += rate; // D를 제외한 등급 전체의 배정 확률
+        weights[grade] = count > 0 ? rate / count : 0;
     }
-    return totalRate;
+    var remaining = 100 - assigned, dCount = getOpenablePetSkillCountByGrade("D"); // 최하 등급이 가져갈 잔여 확률과 분배 대상 수
+    if (remaining < 0 || remaining > 0 && dCount === 0) throw new Error("Invalid pet skill grade rate total");
+    weights.D = dCount > 0 ? remaining / dCount : 0;
+    return weights;
 }
 
-// 등급별 고정 확률과 D등급 잔여 균등 배분을 반영한 추첨 가중치를 반환
-function getPetSkillRandomWeight(skillData) {
+// 같은 등급의 균등 배분표에서 해당 스킬의 추첨 가중치를 반환하는 함수
+function getPetSkillRandomWeight(skillData, gradeWeights) {
     if (!skillData || skillData.openable === false) return 0;
-    var fixedActualRate = PET_SKILL_FIXED_ACTUAL_RATES[skillData.grade];
-    if (typeof fixedActualRate === "number") return fixedActualRate;
-    if (skillData.grade !== "D") return 0;
-    var dGradeCount = getOpenablePetSkillCountByGrade("D");
-    var fixedActualRateTotal = getPetSkillFixedActualRateTotal(); // SSS~C에 배정된 전체 확률
-    if (fixedActualRateTotal > 100) throw new Error("Invalid pet skill fixed actual rate total");
-    var dGradeRemainRate = 100 - fixedActualRateTotal; // SSS~C 배정 후 D등급에 남는 전체 확률
-    return dGradeCount > 0 ? dGradeRemainRate / dGradeCount : 0;
+    gradeWeights = gradeWeights || getPetSkillGradeRandomWeights();
+    return Object.prototype.hasOwnProperty.call(gradeWeights, skillData.grade) ? gradeWeights[skillData.grade] : 0;
 }
 
 function getPetSkillActualRate(skillData) {
-    var totalRate = getPetSkillTotalRate();
+    var gradeWeights = getPetSkillGradeRandomWeights(), totalRate = getPetSkillTotalRate(gradeWeights);
     if (!skillData || totalRate <= 0) return 0;
-    return (getPetSkillRandomWeight(skillData) / totalRate) * 100;
+    return (getPetSkillRandomWeight(skillData, gradeWeights) / totalRate) * 100;
 }
 
 // 불필요한 0을 제거해 실제 펫스킬 확률을 최대 소수 둘째 자리까지 표시
@@ -53419,13 +53414,15 @@ function formatPetSkillRate(rate) {
 
 // 무작위 펫 스킬을 선택하는 함수
 function pickRandomPetSkill() {
-    var totalRate = getPetSkillTotalRate();
+    var gradeWeights = getPetSkillGradeRandomWeights(), totalRate = getPetSkillTotalRate(gradeWeights);
     var roll = Math.random() * totalRate;
     var acc = 0;
     var lastRandomSkill = null;
     for (var j = 0; j < PET_SKILL_LIST.length; j++) {
+        var weight = getPetSkillRandomWeight(PET_SKILL_LIST[j], gradeWeights);
+        if (weight <= 0) continue;
         lastRandomSkill = PET_SKILL_LIST[j];
-        acc += getPetSkillRandomWeight(PET_SKILL_LIST[j]);
+        acc += weight;
         if (roll < acc) return PET_SKILL_LIST[j];
     }
     return lastRandomSkill;
@@ -68289,9 +68286,9 @@ function queueDiceTournamentNotice(state, text, control, anchor) {
 }
 
 // 참가·경기 공개 조회에서 고정 번호와 참가자별 준비 상태를 출력하는 함수
-function buildDiceTournamentBracket(env, state) {
+function buildDiceTournamentBracket(env, state, alreadyFolded) {
     if (!state.matches.length) return "🎲 현재 진행 중인 주사위 대회가 없습니다.";
-    var text = "🏆 주사위 대회 전체 대진표\n" + (state.status === "PAUSED" ? "⏸️ 일시 중단\n" : ""), previousStage = 0;
+    var text = "🏆 주사위 대회 전체 대진표" + (alreadyFolded ? "" : allsee) + "\n" + (state.status === "PAUSED" ? "⏸️ 일시 중단\n" : ""), previousStage = 0;
     for (var i = 0; i < state.matches.length; i++) {
         var match = state.matches[i];
         if (match.stage !== previousStage) { text += "\n━━ 🎲 " + diceTournamentStageLabel(match.stage) + " ━━\n"; previousStage = match.stage; }
@@ -68537,7 +68534,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
             if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명";
             else {
                 startDiceTournament(state, eligible, Math.random); changed = true;
-                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n\n🎁 첫 경기에서 /ㄹㄷ로 참석을 확인하면\n참가 보상 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 보상 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 신청만 하고 첫 경기에 미참석하면 보상은 지급되지 않습니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state), false);
+                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n\n🎁 첫 경기에서 /ㄹㄷ로 참석을 확인하면\n참가 보상 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 보상 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 신청만 하고 첫 경기에 미참석하면 보상은 지급되지 않습니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state, true), false);
                 advanceDiceTournament(env, state); text = "✅ 주사위 대회를 시작했습니다.";
             }
         }
