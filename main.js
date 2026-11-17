@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.858"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.859"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -68168,6 +68168,11 @@ function diceTournamentNumber(value) {
     return String(value).replace(/\d/g, function (digit) { return caps[Number(digit)]; });
 }
 
+// 기획서의 라운드 이름을 사용하고 마지막 라운드는 결승으로 표시하는 함수
+function diceTournamentStageLabel(stage) {
+    return stage === 2 ? "결승" : diceTournamentNumber(stage) + "강";
+}
+
 // 조회만으로 저장하지 않는 이번 일회성 대회의 접수 상태를 만드는 함수
 function createDiceTournament() {
     return { version: 1, id: GLOBAL_CONFIG.diceTournament.id, status: "REGISTERING", room: GLOBAL_CONFIG.diceTournament.publicRoom,
@@ -68241,7 +68246,7 @@ function buildDiceTournamentBracket(env, state) {
     var text = "🏆 주사위 대회 전체 대진표\n" + (state.status === "PAUSED" ? "⏸️ 일시 중단\n" : ""), previousStage = 0;
     for (var i = 0; i < state.matches.length; i++) {
         var match = state.matches[i];
-        if (match.stage !== previousStage) { text += "\n━━ 🎲 " + diceTournamentNumber(match.stage) + "강" + (match.stage === 2 ? " · 결승" : "") + " ━━\n"; previousStage = match.stage; }
+        if (match.stage !== previousStage) { text += "\n━━ 🎲 " + diceTournamentStageLabel(match.stage) + " ━━\n"; previousStage = match.stage; }
         text += "【" + diceTournamentNumber(match.id) + "경기】\n";
         for (var side = 0; side < 2; side++) {
             var id = match.slots[side], source = match.from[side] ? state.matches[match.from[side] - 1] : null;
@@ -68256,12 +68261,12 @@ function buildDiceTournamentBracket(env, state) {
 
 // 첫 준비 보상과 자동 경기·중단 원칙을 실제 전체보기 안에 안내하는 함수
 function buildDiceTournamentRules() {
-    return "🎲 각자 6️⃣면 주사위를 2️⃣번씩 번갈아 굴립니다.\n⏳ 굴림마다 3️⃣초 뒤 결과를 공개해요. 합계가 높으면 승리, 동점이면 자동 재경기해요.\n✅ 자기 경기에서 /ㄹㄷ · 다음 경기에서도 다시 준비해 주세요.\n⏰ 준비 대기 2️⃣분 후에는 경고만 하며 MASTER가 불참자를 처리해요.\n👑 3️⃣·4️⃣위전은 없어요.\n\n🎁 누적 보상\n첫 유효 준비: 참가 1️⃣0️⃣0️⃣억\n8️⃣강: 추가 1️⃣0️⃣0️⃣억\n4️⃣강: 추가 2️⃣0️⃣0️⃣억\n결승: 추가 3️⃣0️⃣0️⃣억\n우승: 추가 1️⃣0️⃣0️⃣0️⃣억 · 최대 누적 1️⃣7️⃣0️⃣0️⃣억\n신청·대회 시작만으로 보상을 지급하지 않아요. 처음부터 8️⃣강이면 첫 준비 때 8️⃣강 보상도 받아요.\n부전승도 본인의 /ㄹㄷ 참석 확인이 필요해요. 단계별 보상은 한 번만 지급해요.\n역전승·최대 합계에는 추가 보상이 없어요.\n중단·재시작 후에도 대진·확정 숫자·지급 내역을 유지해요.";
+    return "🎲 각자 6️⃣면 주사위를 2️⃣번씩 굴립니다.\n🔄 서로 번갈아 던지며 합계가 높은 사람이 승리합니다.\n⏳ 매번 주사위가 굴러간 뒤 3️⃣초 후 결과를 공개합니다.\n🤝 최종 합계가 같으면 재경기합니다.\n✅ 자기 경기 안내가 나오면 /ㄹㄷ를 입력해 주세요.\n🔥 두 참가자가 모두 준비되면 자동으로 진행됩니다.\n🏆 승자는 다음 라운드로 자동 진출합니다.\n💰 참가 보상 1️⃣0️⃣0️⃣억은 첫 경기에서 /ㄹㄷ로 참석 확인 시 지급됩니다.\n🚫 첫 경기 미참석자는 참가 보상을 받을 수 없습니다.\n💰 참가·진출·우승 보상은 누적 지급됩니다.\n👑 3️⃣·4️⃣위전은 없습니다.\n\n참가: 추가 1️⃣0️⃣0️⃣억 / 누적 1️⃣0️⃣0️⃣억\n\n8️⃣강 진출: 추가 1️⃣0️⃣0️⃣억 / 누적 2️⃣0️⃣0️⃣억\n\n4️⃣강 진출: 추가 2️⃣0️⃣0️⃣억 / 누적 4️⃣0️⃣0️⃣억\n\n결승 진출: 추가 3️⃣0️⃣0️⃣억 / 누적 7️⃣0️⃣0️⃣억\n\n우승: 추가 1️⃣0️⃣0️⃣0️⃣억 / 누적 1️⃣7️⃣0️⃣0️⃣억";
 }
 
 // MASTER에게 아홉 명령의 권한·시점·예시를 언제나 조회로 안내하는 함수
 function buildDiceTournamentHelp() {
-    return "🎲 주사위 대회 명령어 안내 [MASTER]" + allsee + "\n\n👥 참가자·공개 조회 명령어\n\n1️⃣ /주사위참가\n권한: 길드 가입 유저 · 시작 전\n중복 신청·시작 후 추가 참가 불가. 신청만으로 보상은 지급되지 않아요.\n예시: /주사위참가\n\n2️⃣ /주사위참가명단\n권한: 누구나 · 언제나\n현재 참가명단 확인\n예시: /주사위참가명단\n\n3️⃣ /주사위대진표\n권한: 누구나 · 언제나\n전체 대진과 진행 상황 확인\n예시: /주사위대진표\n\n4️⃣ /ㄹㄷ\n권한: 현재 경기 참가자 · 진행방\n첫 유효 참석 확인 때 참가 보상을 지급하고, 두 선수 준비 후 자동 진행해요. 다음 경기에서는 다시 준비해 주세요.\n예시: /ㄹㄷ\n\n🔐 MASTER 운영 명령어\n\n5️⃣ /주사위시작\n권한: MASTER · 접수 중\n자격을 다시 확인하고 최소 8️⃣명부터 무작위 대진으로 시작해요. 시작 보상은 없어요.\n예시: /주사위시작\n\n6️⃣ /주사위탈락 아이디\n권한: MASTER · 중단 중 사용 불가\n장식 없이 등록 닉네임 전체를 정확히 입력해 주세요. 상대의 준비 확인 후 부전승 처리해요.\n예시: /주사위탈락 찰리 남\n\n7️⃣ /주사위중단\n권한: MASTER · 진행 중\n준비 시간과 경기 진행을 멈춰요. 중단 중에는 조회와 재개만 가능해요.\n예시: /주사위중단\n\n8️⃣ /주사위재개\n권한: MASTER · 중단 중\n대진·확정 숫자·지급 내역을 유지하고 이어가요.\n예시: /주사위재개\n\n9️⃣ /주사위명령어\n권한: MASTER · 시작 전/진행/중단/종료 후\n이 전체 도움말을 확인해요. 대회 상태·보상은 바뀌지 않아요.\n예시: /주사위명령어\n\n🏰 길드 가입 안내\n/길드상점 → /길드상점구매 1 1\n/길드목록 → /길드가입 번호\n가입 후 /주사위참가\n\n" + buildDiceTournamentRules();
+    return "🎲 주사위 대회 명령어 안내 [MASTER]" + allsee + "\n\n👥 참가자·공개 조회 명령어\n\n1️⃣ /주사위참가\n권한: 길드 가입 유저\n기능: 대회 시작 전에 참가 신청\n예시: /주사위참가\n※ 중복 신청·시작 후 추가 참가는 불가합니다. 신청만으로 보상이 지급되지는 않습니다.\n\n2️⃣ /주사위참가명단\n권한: 누구나\n기능: 현재 참가 인원과 참가명단 확인\n예시: /주사위참가명단\n\n3️⃣ /주사위대진표\n권한: 누구나\n기능: 전체 대진표와 경기 진행 상황 확인\n예시: /주사위대진표\n\n4️⃣ /ㄹㄷ\n권한: 현재 안내된 경기의 참가자\n기능: 자기 경기 준비 완료 및 참석 확인\n예시: /ㄹㄷ\n※ 두 선수 모두 준비하면 자동 진행됩니다. 다음 경기에서도 다시 준비해 주세요.\n※ 첫 경기의 유효한 참석 확인 시 참가 보상 1️⃣0️⃣0️⃣억을 한 번 지급합니다. 첫 경기 미참석자는 지급 대상이 아닙니다.\n\n🔐 MASTER 운영 명령어\n\n5️⃣ /주사위시작\n권한: MASTER\n기능: 참가자 확정·무작위 대진표 생성·규칙 안내·대회 시작\n예시: /주사위시작\n※ 길드 가입 조건을 충족하는 참가자가 최소 8️⃣명이어야 합니다. 시작 시 보상을 일괄 지급하지 않습니다.\n\n6️⃣ /주사위탈락 아이디\n권한: MASTER\n기능: 불참자 등 지정 참가자를 탈락 처리\n예시: /주사위탈락 찰리 남\n※ 아이디에는 채크랭크 장식을 제외한 등록 닉네임 전체를 입력합니다. 공백도 포함해 정확히 일치해야 합니다.\n※ 상대가 준비 완료이면 부전승으로 진출하며, 상대도 미준비이면 /ㄹㄷ 참석 확인 후 진출합니다.\n\n7️⃣ /주사위중단\n권한: MASTER\n기능: 준비 대기시간과 경기 진행을 일시 정지\n예시: /주사위중단\n※ 중단 중에는 조회와 재개만 가능합니다.\n\n8️⃣ /주사위재개\n권한: MASTER\n기능: 중단된 지점부터 대회 이어서 진행\n예시: /주사위재개\n※ 대진·주사위 결과·지급 내역을 유지하며 보상을 중복 지급하지 않습니다.\n\n9️⃣ /주사위명령어\n권한: MASTER\n기능: 이 전체 명령어 도움말 확인\n예시: /주사위명령어\n\n🏰 길드 미가입자 안내에 사용하는 명령어\n/길드상점 — 길드가입권 판매 목록 확인\n/길드상점구매 1 1 — 길드가입권 1개 구매\n/길드목록 — 가입할 길드 번호 확인\n/길드가입 번호 — 선택한 길드에 가입\n※ 길드 가입 후 /주사위참가를 입력하도록 안내합니다.";
 }
 
 // 최초 한 번의 무작위 배치로 빈 경기 없이 부전승과 고정 연결을 생성하는 함수
@@ -68302,18 +68307,19 @@ function syncDiceTournamentSlots(state) {
 }
 
 // 승자를 확정하고 단계별 보상을 한 번 합산한 뒤 다음 대진으로 연결하는 함수
-function finishDiceTournamentMatch(env, state, match, winner, bye) {
+function finishDiceTournamentMatch(env, state, match, winner, bye, resultText) {
     match.phase = "DONE"; match.winner = winner; match.bye = !!bye; match.dueAt = 0;
     state.notices = state.notices.filter(function (notice) { return !notice.anchor || notice.anchor.match !== match.id; });
-    var text = "【" + diceTournamentNumber(match.id) + "경기】";
-    if (!winner) text += " 진출자 없이 종료합니다.";
+    var text = resultText || "";
+    if (!winner) text += "진출자 없이 종료합니다.";
     else {
         var key = match.stage === 16 ? "quarter" : match.stage === 8 ? "semi" : match.stage === 4 ? "final" : match.stage === 2 ? "champion" : null;
         var amount = key ? grantDiceTournamentReward(env, state, winner, key) : 0;
-        text += "\n🏆 " + diceTournamentName(env, state, winner) + (bye ? " 부전승!" : " 승리!") + "\n" + (match.stage === 2 ? "👑 우승!" : "🎉 " + diceTournamentNumber(match.stage / 2) + "강 진출!");
+        if (bye) text += "🏆 " + diceTournamentName(env, state, winner) + "님, 부전승!\n";
+        text += match.stage === 2 ? "👑 " + diceTournamentName(env, state, winner) + "님, 우승!" : bye ? "🎉 " + diceTournamentStageLabel(match.stage / 2) + "에 진출합니다!\n" : "🏆 " + diceTournamentStageLabel(match.stage / 2) + " 진출!";
         if (amount) text += "\n💰 " + (match.stage === 2 ? "우승" : "진출") + " 보상 " + diceTournamentNumber(amount / 100000000) + "억 포인트 지급!";
     }
-    queueDiceTournamentNotice(state, text + "\n📋 대진표가 갱신되었습니다!", false);
+    queueDiceTournamentNotice(state, text + (bye && match.stage > 2 ? "\n📋 다음 라운드 대진표에 반영되었습니다." : "\n\n📋 대진표가 갱신되었습니다!"), false);
     syncDiceTournamentSlots(state);
 }
 
@@ -68326,7 +68332,7 @@ function advanceDiceTournament(env, state) {
         if (!match.slots[0] && !match.slots[1]) { finishDiceTournamentMatch(env, state, match, null, true); state.cursor++; continue; }
         if (!match.announced) {
             match.announced = true;
-            var text = "🎲 " + diceTournamentNumber(match.stage) + "강 【" + diceTournamentNumber(match.id) + "경기】\n";
+            var text = "🎲 " + diceTournamentStageLabel(match.stage) + " 【" + diceTournamentNumber(match.id) + "경기】\n";
             for (var side = 0; side < 2; side++) if (match.slots[side]) text += diceTournamentName(env, state, match.slots[side]) + " ⏳ 준비 대기\n";
             queueDiceTournamentNotice(state, text + "준비되셨다면 /ㄹㄷ를 입력해 주세요!", false, { kind: "ready", match: match.id, cycle: match.cycle });
         }
@@ -68340,7 +68346,7 @@ function advanceDiceTournament(env, state) {
 function buildDiceTournamentLastChance(env, state, match) {
     var target = match.rolls[0] + match.rolls[2], current = match.rolls[1]; // 앞 선수의 최종 합계와 뒤 선수의 첫 굴림
     var tie = target - current, win = tie + 1; // 동점이 되는 숫자와 승리에 필요한 최소 숫자
-    var text = "🔥 " + diceTournamentName(env, state, match.slots[1]) + "님의 마지막 기회!\n현재 누적 " + diceTournamentNumber(current) + "!\n";
+    var text = "🔥 " + diceTournamentName(env, state, match.slots[1]) + "님의 마지막 기회!\n\n현재 누적 " + diceTournamentNumber(current) + "!\n";
     if (win <= 1) return text + "어떤 숫자가 나와도 승리 조건을 충족합니다!";
     if (win <= 6) text += diceTournamentNumber(win) + " 이상이면 승리";
     else text += "이번 굴림으로 역전할 수 없습니다";
@@ -68364,17 +68370,16 @@ function revealDiceTournamentRoll(env, state, match, random) {
     queueDiceTournamentNotice(state, text, false); match.turn++;
     if (match.turn < 4) { beginDiceTournamentRoll(env, state, match, random); return; }
     var a = match.rolls[0] + match.rolls[2], b = match.rolls[1] + match.rolls[3]; // 두 선수의 최종 합계
-    var summary = "🎲 최종 누적 주사위\n" + diceTournamentName(env, state, match.slots[0]) + "\n" + diceTournamentNumber(match.rolls[0]) + " + " + diceTournamentNumber(match.rolls[2]) + " = 【" + diceTournamentNumber(a) + "】\n\n" + diceTournamentName(env, state, match.slots[1]) + "\n" + diceTournamentNumber(match.rolls[1]) + " + " + diceTournamentNumber(match.rolls[3]) + " = 【" + diceTournamentNumber(b) + "】\n";
+    var summary = "🎲 최종 누적 주사위\n\n" + diceTournamentName(env, state, match.slots[0]) + "\n" + diceTournamentNumber(match.rolls[0]) + " + " + diceTournamentNumber(match.rolls[2]) + " = 【" + diceTournamentNumber(a) + "】\n\n" + diceTournamentName(env, state, match.slots[1]) + "\n" + diceTournamentNumber(match.rolls[1]) + " + " + diceTournamentNumber(match.rolls[3]) + " = 【" + diceTournamentNumber(b) + "】\n\n";
     if (a === b) {
         queueDiceTournamentNotice(state, summary + "🤯 합계까지 같습니다! 재경기로 이어집니다!", false);
         match.rolls = [0, 0, 0, 0]; match.turn = 0; match.cycle++; beginDiceTournamentRoll(env, state, match, random); return;
     }
     var winnerSide = a > b ? 0 : 1, reversed = winnerSide === 0 ? match.rolls[0] < match.rolls[1] : match.rolls[1] < match.rolls[0];
-    summary += reversed ? "🔥 역전승입니다아아아아!" : "🛡️ 끝까지 승부를 지켜냈습니다!";
-    if (Math.abs(a - b) === 1) summary += "\n😱 단 1️⃣점 차!";
+    summary += reversed ? "🔥 역전승입니다아아아아!\n" + diceTournamentName(env, state, match.slots[winnerSide]) + "님이 승부를 뒤집었습니다!" : match.rolls[0] === match.rolls[1] ? "🏆 " + diceTournamentName(env, state, match.slots[winnerSide]) + "님 승리!" : "🛡️ 끝까지 리드를 지켜냈습니다!";
+    if (Math.abs(a - b) === 1) summary += "\n😱 단 1️⃣점 차! 마지막까지 손에 땀을 쥐는 승부!";
     if (a === 12 || b === 12) summary += "\n💥 최대 합계 1️⃣2️⃣! 주사위가 폭발했습니다!";
-    queueDiceTournamentNotice(state, summary, false);
-    finishDiceTournamentMatch(env, state, match, match.slots[winnerSide], false); advanceDiceTournament(env, state);
+    finishDiceTournamentMatch(env, state, match, match.slots[winnerSide], false, summary + "\n\n"); advanceDiceTournament(env, state);
 }
 
 // 현재 경기의 첫 유효 준비에만 참석 보상을 지급하고 중복 입력은 조회하는 함수
@@ -68383,17 +68388,20 @@ function readyDiceTournament(env, state, id, random) {
     if (!id || !state.users["$" + id] || side < 0 || state.users["$" + id].eliminated) return { changed: false, text: "현재 경기 참가자만 /ㄹㄷ를 사용할 수 있습니다." };
     if (match.ready[side]) return { changed: false, text: "✅ 이미 준비 완료했습니다. 경기 진행을 기다려 주세요." };
     if (match.phase !== "READY") return { changed: false, text: "🎲 현재 경기가 진행 중입니다." };
-    var amount = grantDiceTournamentReward(env, state, id, "attendance");
-    if (match.stage === 8) amount += grantDiceTournamentReward(env, state, id, "quarter");
+    var attendance = grantDiceTournamentReward(env, state, id, "attendance");
+    var quarter = match.stage === 8 ? grantDiceTournamentReward(env, state, id, "quarter") : 0;
     match.ready[side] = true;
     var text = "✅ " + diceTournamentName(env, state, id) + "님, 준비 완료!";
-    if (amount) text += "\n💰 첫 참석 보상 " + diceTournamentNumber(amount / 100000000) + "억 포인트 지급!";
-    for (var p = 0; p < 2; p++) if (match.slots[p]) text += "\n" + diceTournamentName(env, state, match.slots[p]) + (match.ready[p] ? " ✅ 준비 완료" : " ⏳ 준비 대기 · /ㄹㄷ");
+    var readyText = [];
+    for (var p = 0; p < 2; p++) if (match.slots[p]) readyText.push(diceTournamentName(env, state, match.slots[p]) + (match.ready[p] ? " ✅ 준비 완료" : " ⏳ 준비 대기"));
+    text += "\n\n" + readyText.join("\n");
     if (!match.slots[1 - side]) { finishDiceTournamentMatch(env, state, match, id, true); advanceDiceTournament(env, state); }
     else if (match.ready[0] && match.ready[1]) {
-        queueDiceTournamentNotice(state, "🔥 두 선수 모두 준비됐습니다!\n" + diceTournamentNumber(match.stage) + "강 【" + diceTournamentNumber(match.id) + "경기】 시작합니다아아아아!", false, { kind: "start", match: match.id, cycle: match.cycle });
+        text = readyText.join("\n") + "\n\n🔥 두 선수 모두 준비됐습니다!\n" + diceTournamentStageLabel(match.stage) + " 【" + diceTournamentNumber(match.id) + "경기】 시작합니다아아아아!";
         beginDiceTournamentRoll(env, state, match, random);
-    }
+    } else text += "\n\n📢 " + diceTournamentName(env, state, match.slots[1 - side]) + "님!\n준비되셨다면 /ㄹㄷ를 입력해 주세요!";
+    if (attendance) text += "\n\n💰 참가 보상 " + diceTournamentNumber(attendance / 100000000) + "억 포인트 지급!";
+    if (quarter) text += "\n💰 8️⃣강 보상 " + diceTournamentNumber(quarter / 100000000) + "억 포인트 지급!";
     return { changed: true, text: text };
 }
 
@@ -68404,7 +68412,7 @@ function eliminateDiceTournament(env, state, nick) {
     var id = ids[0].substring(1), user = state.users[ids[0]];
     if (user.eliminated) return { changed: false, text: "이미 탈락 처리된 참가자입니다." };
     user.eliminated = true;
-    queueDiceTournamentNotice(state, "📢 MASTER의 참가자 탈락 처리\n🚫 " + diceTournamentName(env, state, id) + "님이 탈락 처리되었습니다.", false);
+    var noticeText = "📢 MASTER의 참가자 탈락 처리\n\n🚫 " + diceTournamentName(env, state, id) + "님이 탈락 처리되었습니다.", completed = false;
     if (state.status === "ACTIVE") {
         var match = state.matches[state.cursor], involved = match.slots.indexOf(id) >= 0;
         if (involved) state.notices = state.notices.filter(function (notice) { return !notice.anchor || notice.anchor.match !== match.id; });
@@ -68412,10 +68420,11 @@ function eliminateDiceTournament(env, state, nick) {
         if (involved) {
             match.phase = "READY"; match.dueAt = 0;
             var side = match.slots[0] ? 0 : match.slots[1] ? 1 : -1;
-            if (side < 0 || match.ready[side]) { finishDiceTournamentMatch(env, state, match, side < 0 ? null : match.slots[side], true); advanceDiceTournament(env, state); }
+            if (side < 0 || match.ready[side]) { finishDiceTournamentMatch(env, state, match, side < 0 ? null : match.slots[side], true, noticeText + "\n\n"); advanceDiceTournament(env, state); completed = true; }
         }
     }
-    return { changed: true, text: "✅ 등록 닉네임 [" + nick + "] 탈락을 반영했습니다." };
+    if (!completed) queueDiceTournamentNotice(state, noticeText, false);
+    return { changed: true, text: "✅ [" + nick + "]님이 탈락 처리되었습니다." };
 }
 
 // 대회 명령의 권한·진행방·저장을 진입부에서 처리하고 조회는 저장하지 않는 함수
@@ -68432,7 +68441,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
         for (var p = 0; p < state.roster.length; p++) { var participantId = state.roster[p]; text += "\n" + diceTournamentNumber(p + 1) + ". " + diceTournamentName(env, state, participantId) + (state.users["$" + participantId].eliminated ? " · 탈락" : ""); }
     } else if (kind === "bracket") text = buildDiceTournamentBracket(env, state);
     else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다. 조회와 /주사위재개만 가능합니다.";
-    else if (state.status === "FINISHED") text = "🏁 이번 대회는 종료되었습니다. 재시작·재참가·추가 탈락 처리는 할 수 없습니다.\n/주사위대진표";
+    else if (state.status === "FINISHED") text = "🏁 주사위 대회가 종료되었습니다.";
     else if (kind === "join" || kind === "ready") {
         if (!isGroupChat || room !== (ctx.isDev ? testRoom : state.room)) text = "🎲 참가 신청과 /ㄹㄷ는 대회 진행 공개방에서 입력해 주세요.";
         else if (!data.member[sender]) text = "등록된 계정이 필요합니다. 먼저 게임 가입을 완료해 주세요.";
@@ -68446,7 +68455,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
                 if (state.users[key]) text = state.users[key].eliminated ? "탈락 처리된 참가자는 다시 신청할 수 없습니다." : "✅ 이미 참가 신청했습니다.";
                 else {
                     state.users[key] = { nick: sender, eliminated: false, paid: 0 }; state.roster.push(identity.id); changed = true;
-                    text = "✅ [" + checkRank(data, null, guildData, sender) + "]님, 참가 신청 완료!\n📅 " + diceTournamentNumber(config.eventLabel) + "\n👥 현재 " + diceTournamentNumber(state.roster.length) + "명 · /주사위참가명단\n첫 경기에서 /ㄹㄷ로 참석을 확인하면 보상을 지급해요.";
+                    text = "✅ [" + checkRank(data, null, guildData, sender) + "]님, 참가 신청 완료!\n📅 " + diceTournamentNumber(config.eventLabel);
                 }
             }
         } else if (state.status !== "ACTIVE") text = "참가 접수 중입니다. MASTER가 대회를 시작하면 자기 경기에서 /ㄹㄷ를 입력해 주세요.";
@@ -68455,19 +68464,19 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
             changed = decision.changed; text = decision.text;
         }
     } else if (kind === "start") {
-        if (state.status !== "REGISTERING") text = "이미 시작된 대회입니다. 기존 대진·지급 내역을 유지합니다.";
+        if (state.status !== "REGISTERING") text = "이미 시작된 대회입니다.";
         else {
             var eligible = state.roster.filter(function (id) { var account = env.index[id], gid = account && getMyGuildId(data, account.user), guild = gid && guildData.guilds[gid]; return !state.users["$" + id].eliminated && account && !isAccountSuspended(data, account.user) && guild && guild.members[account.user]; });
             if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명 · 보상은 지급하지 않았습니다.";
             else {
                 startDiceTournament(state, eligible, Math.random); changed = true;
-                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n🎁 첫 유효 /ㄹㄷ 참석 확인 시 참가 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 첫 경기 미참석자는 보상을 받지 못합니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state), false);
-                advanceDiceTournament(env, state); text = "✅ 대회를 시작했습니다. 공개방에 대진과 현재 경기를 안내합니다.";
+                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n\n🎁 첫 경기에서 /ㄹㄷ로 참석을 확인하면\n참가 보상 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 보상 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 신청만 하고 첫 경기에 미참석하면 보상은 지급되지 않습니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state), false);
+                advanceDiceTournament(env, state); text = "✅ 주사위 대회를 시작했습니다.";
             }
         }
     } else if (kind === "pause") {
         if (state.status !== "ACTIVE") text = "진행 중인 대회가 없습니다.";
-        else { state.status = "PAUSED"; state.pausedAt = now; changed = true; text = "⏸️ 대회를 중단했습니다. 준비 시간·경기 진행이 정지되었습니다."; queueDiceTournamentNotice(state, text, true); }
+        else { state.status = "PAUSED"; state.pausedAt = now; changed = true; text = "⏸️ 대회를 일시 정지했습니다."; queueDiceTournamentNotice(state, text, true); }
     } else if (kind === "resume") {
         if (state.status !== "PAUSED") text = "중단된 대회가 없습니다.";
         else {
@@ -68476,7 +68485,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
             if (current && current.readyAt) current.readyAt += gap;
             state.status = "ACTIVE"; state.pausedAt = 0;
             for (var noticeIndex = 0; noticeIndex < state.notices.length; noticeIndex++) { state.notices[noticeIndex].attempts = 0; state.notices[noticeIndex].inFlight = false; }
-            changed = true; text = "▶️ 대회를 재개했습니다. 대진·확정 주사위·지급 내역을 유지합니다.";
+            changed = true; text = "▶️ 대회를 재개했습니다.";
             var oldNotices = state.notices; state.notices = []; queueDiceTournamentNotice(state, text, true); state.notices = state.notices.concat(oldNotices);
         }
     } else if (kind === "eliminate") { var elimination = eliminateDiceTournament(env, state, request.nick); changed = elimination.changed; text = elimination.text; }
@@ -68551,7 +68560,7 @@ function runDiceTournamentWork(ctx) {
             if (current.phase === "ROLL" && current.dueAt && current.dueAt <= now) revealDiceTournamentRoll(env, state, current, Math.random);
             else if (current.phase === "READY" && current.readyAt && current.readyAt <= now && !current.warned) {
                 current.warned = true;
-                queueDiceTournamentNotice(state, "⏰ 준비 안내 후 2️⃣분이 지났습니다.\n자동 탈락하지 않습니다. MASTER가 불참 여부를 확인해 주세요.\n/주사위탈락 등록닉네임", false, { kind: "warn", match: current.id, cycle: current.cycle });
+                queueDiceTournamentNotice(state, "⏰ 준비 안내 후 2️⃣분이 지났습니다.\nMASTER가 불참 여부를 확인해 주세요.", false, { kind: "warn", match: current.id, cycle: current.cycle });
             } else return;
             requireDiceTournament(state); saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
         }
