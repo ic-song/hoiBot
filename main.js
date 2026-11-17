@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.866"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.868"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -964,6 +964,7 @@ var responseQueue = []; // 데이터 대신 원래 입력과 접수 정보만 �
 var responseQueueRunning = false;
 var responseQueueWorker = null; // 살아 있는 작업자를 중복 시작하지 않기 위한 실제 스레드
 var responseQueueActiveState = new java.util.concurrent.atomic.AtomicReference(); // 관리자 조회용 현재 작업의 작은 불변 원문
+var responseQueueLastCompletedState = new java.util.concurrent.atomic.AtomicReference(); // 직전 MQ 작업의 시간 진단만 메모리에 보관
 var responseQueueLastStartError = "";
 var responseQueueDirectOperators = new java.util.concurrent.atomic.AtomicInteger(); // MQ를 우회한 운영자 요청의 실행 중 건수
 var responseQueueThread = new java.lang.ThreadLocal(); // 내부 명령은 현재 작업에서 바로 실행
@@ -1028,6 +1029,7 @@ const GLOBAL_CONFIG = {
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
     commandQueue: {
         capacity: 128, maxWaitMs: 120000, statusCommandChars: 60, statusErrorChars: 200,
+        plainInputExceptions: ["호월 봇 이용약관", "다음에 한다", "출발한다", "자유시장 판매가이드", "변환하기", "안하기", "스탯 찍기", "안 찍기", "확인", "취소", "초기화", "수정", "완료", "전체", "포인트", "아이템", "POINT", "ITEM", "DONE", "CANCEL", "해방열쇠조합", "가정", "가정정", "가정정정정정", "노동", "어버"],
         permissions: {
             adminMaster: ["/봇살리기", "/펫홈활동살리기", "/데이터상태", "/펫홈댓글파일생성", "/펫홈활동파일생성", "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제", "/필터리스트", "/필터데이터정리", "/필터추가", "/필터제거", "/맞짱시간체크", "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/펫스킬일괄지급", "/선물삭제", "/반지보상통계", "/건설수정", "/가구추가", "/데이터정리", "/펫홈방문초기화", "/좋아홈초기화", "/기록삭제", "/빌런", "/봉인금고보상설정", "/해방열쇠지급", "/해방열쇠회수", "/소식작성", "/소식관리", "/소식등록", "/소식취소", "/소식픽해제", "/소식삭제", "/소식수정", "/소식픽"],
             master: ["/다이아전체초기화","/주간횟수수정","/일퀘횟수수정","/주간횟수초기화","/휴면계정","/휴면계정리스트","/계정정지리스트","/휴면해제","/계정잠수명단","/광고","/편지삭제","/수정","/상점추가","/후원메모","/부스터","/부스터수정","/타이틀추가","/타이틀지급","/펫타이틀파일생성","/펫타이틀추가","/타이틀제거","/펫타이틀제거","/가방속성","/가방추가","/속성증가","/속성감소","/관리자추가","/관리자삭제","/펜던트추가","/펜던트삭제","/펜던트장착초기화","/펜던트강화수정","/펜던트내구도수정","/펫강화속성","/반지속성","/홈뱃지큐브수정","/길드상점추가","/길드상점삭제", "/경매초기화", "/계정잠수삭제", "/계삭진행", "/영주수익순위초기화", "/인형전체초기화"],
@@ -3971,6 +3973,42 @@ try {
     messageFilterCaches.DEV = { error: String(messageFilterDevError), text: messageFilterDevErrorText };
 }
 
+// 단축어·확인 답변·명령 형식을 제외한 일반 채팅 후보만 구분하는 함수
+function isPlainChatInput(message) {
+    if (typeof message !== "string" || !message.trim() || message !== message.trim()) return false;
+    if (/[\/@\r\n"“”'‘’]/.test(message) || /^\d/.test(message) || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(message)) return false;
+    return ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(message) === -1 && GLOBAL_CONFIG.commandQueue.plainInputExceptions.indexOf(message) === -1;
+}
+
+// 세션·이벤트·초기화가 필요한 요청은 기존 경로로 남기는 일반 채팅 검사 함수
+function canUsePlainChatFastPath(data, petData, petSkillData, sender, room, message, ctx) {
+    if (!isPlainChatInput(message) || sender === "오픈채팅봇" || !data.member[sender] || !petData[sender]) return false;
+    var onboarding = getAdventureOnboardingMemberState(data, sender);
+    if (onboarding && onboarding.stage !== "COMPLETE" || sender.length > 4 && !onboarding) return false;
+    if (userState[sender] || worldNewsDraftState[getWorldNewsDraftKey(sender, room)]) return false;
+    if (!data.petSkillSystem || data.petSkillSystem.version !== PET_SKILL_SYSTEM_VERSION) return false;
+    var stored = petSkillData[sender], skills = stored && stored.petSkills; // 공통 스킬 보정이 필요하지 않은 회원만 선택
+    if (!stored || Array.isArray(stored) || !skills || Array.isArray(skills) || !Array.isArray(skills.equipped) ||
+        !Array.isArray(skills.lockedPremium) || skills.lockedPremium.length || !skills.bag || typeof skills.bag !== "object") return false;
+    if (getExpiredHoiPassPremiumUsers(data, sender).length) return false;
+    if (!data.petMusou || data.petMusou.active !== false || !data.matzangField || data.matzangField.active !== false) return false;
+    if (!ctx.isDev && !petMusouScheduleTimers[ctx.key()]) return false;
+    return true;
+}
+
+// 기존 채팅 경험치의 승급·가호 소진·한도 응답을 같은 문구와 순서로 전송하는 함수
+function replyChatExperienceResult(data, petData, guildData, sender, room, chatExpResult, replier) {
+    if (chatExpResult && chatExpResult.levelUps.length > 0) {
+        var chatLevelMessage = buildAdventureLevelUpMessage(data, petData, guildData, sender, chatExpResult.levelUps);
+        replier.reply(chatLevelMessage);
+        var chatMajorLevel = getHighestMajorPromotionLevel(chatExpResult.levelUps);
+        if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
+    }
+    var chatBoosterDepletionMessage = chatExpResult ? buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, chatExpResult.boosterResult) : "";
+    if (chatBoosterDepletionMessage) replier.reply(chatBoosterDepletionMessage);
+    if (chatExpResult && chatExpResult.reachedLimit) replier.reply(buildDailyChatExperienceLimitMessage(data, petData, guildData, sender));
+}
+
 // 기본 7인수 콜백에서 접수 시각·회차를 보존하고 한 작업자에게 전달하는 함수
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     // Java 문자열도 접수 시 원시 문자열로 고정해 명령·방·권한 비교를 유지한다.
@@ -4058,8 +4096,21 @@ function notifyRequestFlood(request, info) {
 function updateResponseQueueStage(request, stage) {
     if (!request.queueRoot) return;
     var command = getServerRaidAdmissionCommand(request.msg);
-    var label = command.charAt(0) === "/" ? command.split(/[\s,]/)[0].substring(0, GLOBAL_CONFIG.commandQueue.statusCommandChars) : "일반 메시지/단축어";
-    responseQueueActiveState.set(JSON.stringify({ command: label, stage: stage, startedAt: request.queueStartedAt, receivedAt: request.receivedAt }));
+    var sessionInput = userState[request.sender] || worldNewsDraftState[getWorldNewsDraftKey(request.sender, request.room)];
+    var label = command.charAt(0) === "/" ? command.split(/[\s,]/)[0].substring(0, GLOBAL_CONFIG.commandQueue.statusCommandChars) : sessionInput ? "세션 응답" : isPlainChatInput(command) ? "일반 채팅" : "단축 명령";
+    if (request.queueStage !== stage) request.queueStageStartedAt = Date.now();
+    request.queueStage = stage;
+    request.queueCommand = request.petExploreTick ? "내부 예약" : label;
+    responseQueueActiveState.set(JSON.stringify({ command: request.queueCommand, stage: stage, stageStartedAt: request.queueStageStartedAt, startedAt: request.queueStartedAt, receivedAt: request.receivedAt }));
+}
+
+// MQ 루트 요청의 진단만 남기며 실패해도 작업자 종료 처리를 막지 않는 함수
+function recordResponseQueueCompletion(request) {
+    if (!request || !request.queueRoot) return;
+    try {
+        responseQueueLastCompletedState.set(JSON.stringify({ elapsed: Date.now() - request.receivedAt, queueMs: request.queueStartedAt - request.receivedAt,
+            command: request.queueCommand, stage: request.queueStage, rows: request.responseTimingRows || [] }));
+    } catch (diagnosticError) {} // 진단 실패는 처리 결과와 MQ 진행에 영향을 주지 않음
 }
 
 // 데이터 잠금과 MQ 대기를 거치지 않고 메모리 대기열 상태를 표시하는 함수
@@ -4080,6 +4131,12 @@ function buildResponseQueueStatusMessage() {
     else lines.push("진행 작업: 없음");
     lines.push("관리자·MASTER 직접 처리: " + responseQueueDirectOperators.get() + "건", "대기 만료 기준: " + (GLOBAL_CONFIG.commandQueue.maxWaitMs / 1000) + "초");
     if (lastError) lines.push("작업자 시작 오류: " + lastError.substring(0, GLOBAL_CONFIG.commandQueue.statusErrorChars));
+    if (active) lines.push("단계 경과: " + (Math.max(0, now - active.stageStartedAt) / 1000).toFixed(1) + "초");
+    var completedText = responseQueueLastCompletedState.get(), completed = completedText === null ? null : JSON.parse(String(completedText));
+    if (completed) {
+        lines.push("최근 작업: " + completed.command, "최근 처리: " + completed.elapsed + "ms", "최근 큐 대기: " + completed.queueMs + "ms");
+        for (var timingIndex = 0; timingIndex < completed.rows.length; timingIndex++) lines.push(completed.rows[timingIndex].label + ": " + completed.rows[timingIndex].ms + "ms");
+    }
     return lines.join("\n");
 }
 
@@ -4233,7 +4290,7 @@ function drainResponseQueue() {
         } catch (queueError) {
             try { debuggerLog("[명령 큐 실행 오류] " + queueError); } catch (logError) {}
             // 임시 안내 중지: if (!request.operatorReadDiagnostic || !request.operatorReadDiagnostic.notified) notifyResponseQueue(request, "⚠️ 처리 중 오류가 발생했어요. 결과를 확인한 후 다시 이용해 주세요.");
-        } finally { responseQueueActiveState.set(null); responseQueueThread.remove(); }
+        } finally { recordResponseQueueCompletion(request); responseQueueActiveState.set(null); responseQueueThread.remove(); }
     }
     } finally {
         responseQueueLock.lock();
@@ -4299,10 +4356,12 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
     var ctx = null;
     var prevCtx = null;
     updateResponseQueueStage(request, "명령 흐름 잠금 대기");
+    var responseFlowLockStartMs = Date.now(); // 큐에서 실행된 뒤 명령 흐름 잠금을 기다린 시작 시각
     responseDataLock.lock();
     //데이터 검사
     try {
         updateResponseQueueStage(request, "데이터 잠금 대기");
+        var responseDataLockStartMs = Date.now(); // 명령 흐름 잠금 획득 후 데이터 잠금 대기 시작 시각
         dataTransactionLock.lock(); // 자동 작업이 보유한 잠금도 기다린 뒤 최신 데이터를 읽는다.
         responseTransactionAcquired = true;
         var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
@@ -4337,9 +4396,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var responseStartMs = miniGameRequestAt; // 잠금·초기 복구를 포함한 실제 응답 진입 기준
         var responsePreprocessStartMs = Date.now();
         var responseTimingRows = [
-            { label: "공통 잠금·진입 대기", ms: responseLockReadyMs - miniGameRequestAt },
+            { label: "명령 큐 대기", ms: (request.queueStartedAt || responseFlowLockStartMs) - miniGameRequestAt },
+            { label: "큐 실행·잠금 진입", ms: responseFlowLockStartMs - (request.queueStartedAt || responseFlowLockStartMs) },
+            { label: "명령 흐름 잠금 대기", ms: responseDataLockStartMs - responseFlowLockStartMs },
+            { label: "데이터 잠금 대기", ms: responseLockReadyMs - responseDataLockStartMs },
             { label: "초기 복구 검사", ms: responsePreprocessStartMs - responseRecoveryStartMs }
         ];
+        request.responseTimingRows = responseTimingRows;
         function addResponseTiming(label, startMs) {
             responseTimingRows.push({ label: label, ms: Date.now() - startMs });
         }
@@ -4390,6 +4453,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         else if (msg === "ㅁㅌ") msg = "/마블통과";
         var territoryEntryGuildData, territoryEntryTransaction;
         var territoryEntryLoadStartMs = Date.now();
+        updateResponseQueueStage(request, "길드 자료 로드");
         try {
             territoryEntryGuildData = loadJsonFile(guildPath);
             territoryEntryTransaction = getDataSaveTransaction();
@@ -4585,6 +4649,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply("❌ DEV 데이터가 준비되지 않았습니다. Master가 dev/데이터백업을 먼저 실행해 주세요.");
             return;
         }
+        var contentRecoveryStartedAt = Date.now(); // 인형·강탈·교육·마블·퀘스트 복구 검사 시간
+        updateResponseQueueStage(request, "컨텐츠 복구 검사");
         // 인형 저장 중 재시작된 경우 기존 원문으로 복구한 뒤 회원 데이터를 읽는다.
         if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
             var dollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
@@ -4676,6 +4742,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
 
         recoverAdventureRecordPending(); // 회원을 읽기 전에 중단된 기록·회원·분리 저장본을 함께 복구
+        addResponseTiming("컨텐츠 복구 검사", contentRecoveryStartedAt);
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "회원 데이터 로드";
         var initialMemberLoadStartMs = Date.now();
@@ -4684,6 +4751,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var adventureStatEntryRequest = parseAdventureStatRequest(msg);
         var adventureStatMemberSnapshot = adventureStatEntryRequest && adventureStatEntryRequest.action === "invest" ? { data: data, transaction: getDataSaveTransaction(), path: resolveActiveDataPath(filePath) } : null; // 같은 투자 요청의 잠금 안에서 읽은 검증 원본
         addResponseTiming("최초 회원·분리 데이터 로드", initialMemberLoadStartMs);
+        var commonAdmissionStartedAt = Date.now(); // 회원 로드 이후 공통 제한·이벤트 경로 시간
+        updateResponseQueueStage(request, "공통 제한·이벤트 검사");
         if (!memberStorageCleanupAllowed && !dataCleanupAction && !getAutoDailyBatchContext()) {
             var operatingField = ensureMatzangFieldData(data), operatingNew = operatingField.diamondShopV2 === undefined;
             var operatingShop = ensureDiamondShopV2(operatingField, Date.now());
@@ -5330,6 +5399,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
 
         if (request.operatorReadDiagnostic) request.operatorReadDiagnostic.stage = "공통 명령 전처리";
+        addResponseTiming("공통 제한·이벤트 검사", commonAdmissionStartedAt);
         updateResponseQueueStage(request, "공통 명령 전처리");
         if (!request.admissionRateChecked && !isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
             let requestInfo = getUserRequestInfo(sender);
@@ -5824,7 +5894,18 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var pointShopBootstrapChanged = syncStoneBoxShopItems(data); // 돌멩이 단가와 상자 가격 동기화
         var incomingServerChanged = room === room15 && isGroupChat === true && assignUnspecifiedMemberServer(data, sender, roomToServer[room]); // 신규 방은 짧은 일반 채팅에서도 미지정 소속을 결정
         if (pointShopBootstrapChanged || incomingServerChanged) saveJsonFile(data, filePath);
+        if (isPlainChatInput(msg) && !data.member[sender]) {
+            updateResponseQueueStage(request, "미가입 채팅 인식");
+            var plainLightStartedAt = Date.now();
+            if (isGroupChat === true && /^[^\s]+ (남|여)$/.test(sender) && String(msg || "").trim()) {
+                var plainLightData = loadJsonFile(attendanceLightPath), plainLightSnapshot = JSON.stringify(plainLightData);
+                if (recordSearchAuthenticationChat(plainLightData, sender, room)) saveJsonFile(plainLightData, attendanceLightPath, false, plainLightSnapshot);
+            }
+            addResponseTiming("미가입 채팅 인식", plainLightStartedAt);
+            return;
+        }
         commonStepStart = Date.now();
+        updateResponseQueueStage(request, "펫 자료 로드");
         var petData = loadJsonFile(memberPetPath);
         addResponseTiming("member_pet.json 로드", commonStepStart);
         var dollManualRequest = getDollManualRequest(msg);
@@ -5863,6 +5944,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             saveJsonFile(petData, memberPetPath);
         }
         commonStepStart = Date.now();
+        updateResponseQueueStage(request, "펫스킬 자료 로드");
         var petSkillData = loadJsonFile(petSkillDataPath);
         addResponseTiming("petSkillData.json 로드", commonStepStart);
         commonStepStart = Date.now();
@@ -5903,6 +5985,30 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
         addResponseTiming("guildData.json 로드", commonStepStart);
+        if (canUsePlainChatFastPath(data, petData, petSkillData, sender, room, msg, ctx)) {
+            updateResponseQueueStage(request, "일반 채팅 집계");
+            var plainChatStartedAt = Date.now();
+            var plainAutoAttackChanged = disableInvalidGuildTerritoryAutoAttacks(data).length > 0;
+            castleSiegeFlag = guildData.castleSiegeFlag || false;
+            var plainChatExp = null;
+            if (msg.length > 3) {
+                data.member[sender].point++;
+                data.member[sender].chatcnt0++;
+                plainChatExp = hasAttendedToday(data, sender) ? awardDailyChatExperience(data, sender) : null;
+                if (!data.member[sender].server && roomToServer[room]) data.member[sender].server = roomToServer[room];
+            }
+            addResponseTiming("일반 채팅 집계", plainChatStartedAt);
+            updateResponseQueueStage(request, "일반 채팅 저장");
+            var plainChatSaveStartedAt = Date.now();
+            if (msg.length > 3 || plainAutoAttackChanged) saveJsonFile(data, filePath);
+            addResponseTiming("일반 채팅 저장", plainChatSaveStartedAt);
+            updateResponseQueueStage(request, "일반 채팅 결과 전송");
+            var plainChatReplyStartedAt = Date.now();
+            replyChatExperienceResult(data, petData, guildData, sender, room, plainChatExp, replier);
+            addResponseTiming("일반 채팅 결과 전송", plainChatReplyStartedAt);
+            return;
+        }
+        updateResponseQueueStage(request, "공통 게임 보정");
         var attendanceNoticeCommandPrefix = getAttendanceNoticeCommandPrefix(msg);
         if (attendanceNoticeCommandPrefix) {
             if (!isMasterIdentity(sender)) {
@@ -6268,9 +6374,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 replier.reply(dollRequest.kind === "box" ? buildDollBoxErrorMessage(data, petData, guildData, sender, dollResult) : buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 return;
             }
-            // 추첨은 메모리에서만 계산하며, 게시 전 디스크 원문 네 개를 기존 형식으로 보존한다.
-            var dollSnapshotNames = ["member.json", "member_pet.json", "dollIndex.json", dollShardName];
-            var dollSnapshots = [];
+            // 추첨은 메모리에서만 계산하며, 게시 전 변경할 파일의 디스크 원문을 기존 형식으로 보존한다.
+            var dollIndexChanged = JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore; // 대표 순위가 바뀐 요청만 저장·복구
+            var dollRecordChanged = dollRequest.kind === "box" || dollResult.eventRecorded; // 실패 추첨의 중복 방지 표식도 변경 기록에 포함
+            var dollSnapshotNames = ["member.json", "member_pet.json"];
+            if (dollIndexChanged) dollSnapshotNames.push("dollIndex.json");
+            if (dollRecordChanged) dollSnapshotNames.push(dollShardName);
+            var dollSnapshots = [], dollSnapshotTexts = {};
             var dollPetChanged = dollRequest.kind === "box" || dollResult.success; // 성공 시 매력이 바뀌며, 실패 시 공통 처리의 펫 변경도 확인
             for (var dollSnapshotIndex = 0; dollSnapshotIndex < dollSnapshotNames.length; dollSnapshotIndex++) {
                 var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
@@ -6278,16 +6388,18 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 var dollSnapshotData = parseJsonContent(dollSnapshotText, dollSnapshotName);
                 if (dollSnapshotName === "member_pet.json" && !dollPetChanged) dollPetChanged = !isDollPetDataUnchanged(dollSnapshotData, petData);
                 dollSnapshotData = null; // 검증한 대용량 원본 객체는 다음 파일을 읽기 전에 해제
+                if (dollSnapshotName === "member_pet.json" && !dollPetChanged) continue; // 공통 보정까지 없는 펫은 저장·복구 대상에서 제외
                 dollSnapshots.push({ name: dollSnapshotName, text: dollSnapshotText }); // 검증한 원문을 재사용해 직렬화 중 파일 재읽기를 피한다
+                dollSnapshotTexts[dollSnapshotName] = dollSnapshotText;
             }
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 원문 검증·펫 비교", dollStepStartedAt);
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 기록 저장", dollStepStartedAt);
-            if (dollRequest.kind === "box" || dollResult.eventRecorded) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
+            if (dollRecordChanged) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshotTexts[dollShardName]);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "개인 인형 기록 저장", dollStepStartedAt);
-            if (JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
+            if (dollIndexChanged) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshotTexts["dollIndex.json"]);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "대표 순위 저장", dollStepStartedAt);
-            if (dollPetChanged) saveJsonFile(petData, memberPetPath);
+            if (dollPetChanged) saveJsonFile(petData, memberPetPath, false, dollSnapshotTexts["member_pet.json"]);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "펫 저장", dollStepStartedAt);
             saveJsonFile(data, filePath);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "회원·분리 데이터 저장", dollStepStartedAt);
@@ -9018,6 +9130,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 }
 
                 if (msg.length > 3) {
+                    updateResponseQueueStage(request, "채팅 집계");
+                    var legacyChatStartedAt = Date.now();
                     data.member[sender].point++;
                     data.member[sender].chatcnt0++;
                     var chatExpResult = hasAttendedToday(data, sender) ? awardDailyChatExperience(data, sender) : null; // 출석 후 남은 일일 한도 안에서 실제 지급한 채팅 경험치
@@ -9028,18 +9142,12 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                             data.member[sender].server = roomToServer[room];
                         }
                     }
-                    if (chatExpResult && chatExpResult.levelUps.length > 0) {
-                        var chatLevelMessage = buildAdventureLevelUpMessage(data, petData, guildData, sender, chatExpResult.levelUps);
-                        replier.reply(chatLevelMessage);
-                        var chatMajorLevel = getHighestMajorPromotionLevel(chatExpResult.levelUps);
-                        if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
-                    }
-                    var chatBoosterDepletionMessage = chatExpResult ? buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, chatExpResult.boosterResult) : "";
-                    if (chatBoosterDepletionMessage) replier.reply(chatBoosterDepletionMessage);
-                    if (chatExpResult && chatExpResult.reachedLimit) replier.reply(buildDailyChatExperienceLimitMessage(data, petData, guildData, sender));
+                    replyChatExperienceResult(data, petData, guildData, sender, room, chatExpResult, replier);
+                    addResponseTiming("채팅 집계", legacyChatStartedAt);
                 }
 
 
+                updateResponseQueueStage(request, "명령 실행");
                 if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg) && !isOrderLogRoomBot(sender)) {
                     // 약관동의 안할 시 사용불가
                     saveJsonFile(data, filePath);
@@ -30405,8 +30513,13 @@ replier.reply(
                 }
 
                 // 마지막@
+                updateResponseQueueStage(request, "회원·펫 저장");
+                commonStepStart = Date.now();
                 saveJsonFile(petData, memberPetPath);
+                addResponseTiming("펫 저장", commonStepStart);
+                commonStepStart = Date.now();
                 saveJsonFile(data, filePath);
+                addResponseTiming("회원·분리 데이터 저장", commonStepStart);
             }
         }
     } catch (error) {

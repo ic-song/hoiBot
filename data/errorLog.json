@@ -1,1 +1,1 @@
-{"system":"main","error":"JavaException: java.io.FileNotFoundException: /sdcard/호이랜드/guildData_back.json.guildwar-rollback (No such file or directory)","version":"ver_2.851","msg":"애기는 아냐","room":"🚨30대 반말방💊도파민 비상사태💥","sender":"행운 남"}
+{"system":"main","error":"Error: Verified JSON file replace failed: /sdcard/호이랜드/member.json","version":"ver_2.868","msg":"알려주러 이리저리 다님핑","room":"떡잎방범대","sender":"맹구 여"}
