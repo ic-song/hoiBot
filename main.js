@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.862"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.863"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -111,6 +111,8 @@ const PET_SKILL_FIXED_ACTUAL_RATES = {
     C: 1.5
 };
 const PET_SKILL_LIST = [
+    { name: "반짝반짝", grade: "SSS", rate: 0.15, effect: "장착 시 /다이아조합에서 현재 다이아 시세보다 5% 할인된 가격으로 변환할 수 있습니다.\n※ 할인 후 개당 가격이 3억 5천만 포인트 미만이면 3억 5천만 포인트로 적용됩니다.\n※ /다이아조합에만 적용됩니다." },
+    { name: "수수료 시져시져", grade: "SSS", rate: 0.15, effect: "장착 시 자유시장 다이아 판매 수수료가 50% 감소합니다.\n회원권 미보유: 20% → 10%\n회원권 보유: 10% → 5%\n※ 자유시장회원권 보유 여부에 따라 자동 적용됩니다." },
     { name: "삼성전자", grade: "SSS", rate: 0.15, raidExp: 3000000, castleExp: 3000000, effect: "호이의 바램입니다. 매력만큼 상승하길 기원하는 마음이 깃들어 있습니다. 육백만전자 가즈아!\n장착 시 레이드매력 300만과 캐슬매력 300만, 총 종합매력 600만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "경제사범", grade: "한정판", limitedEdition: true, openable: false, effect: "누군가는 말합니다.\n“적당한 사기는 사기꾼이라 부르지만,\n그 규모가 조 단위가 되면 경제사범이라 부릅니다.”\n\n🔐 장착 시 금고 도전 횟수 +4회\n※ 금고털이범과 효과 중복 불가" },
     { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 경제사범과 효과 중복 불가" },
@@ -1009,7 +1011,7 @@ var adventurePublishingThread = new java.lang.ThreadLocal(); // 확정된 집 �
 const GLOBAL_CONFIG = {
     auction: { bidFee: 700000 },
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
-    diamondLive: { pointWeight: 150000000, diamondWeight: 200000000, roundingUnit: 1000000, confirmationMs: 60000, correctionPercent: 50, operatorName: "호이 남", baselineFile: "diamondLiveBaseline.json", pointBaseline: "15000000000000", minimumPrice: "350000000", pointBoxName: "1억포인트상자🪙(/포인트상자오픈)", pointBoxValue: "100000000" },
+    diamondLive: { pointWeight: 150000000, skillPricePercent: 95, diamondWeight: 200000000, roundingUnit: 1000000, confirmationMs: 60000, correctionPercent: 50, operatorName: "호이 남", baselineFile: "diamondLiveBaseline.json", pointBaseline: "15000000000000", minimumPrice: "350000000", pointBoxName: "1억포인트상자🪙(/포인트상자오픈)", pointBoxValue: "100000000" },
     passDuration: { // 기존 두 패스의 기간권·미개봉 패키지 정의
         legacyPremiumItem: "호이패스 프리미엄 30일👑(/호패프리미엄오픈)",
         legacyPremiumCommand: "/호패프리미엄오픈",
@@ -3115,6 +3117,7 @@ blockedNicknameTerms: [
         merchantSkillName: "타고난 장사꾼",
         tradeFeeRate: 0.2, // 자유시장 기본 거래 수수료율
         memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
+        skillFeeMultiplier: 0.5, // 수수료 시져시져 장착 시 판매 수수료 배율
         memberFeeTag: "자회원🏪(수수료 10%)",
         minPrice: 50, // 신규 등록·가격수정의 묶음 전체 최소 가격
         legacyMinPrice: 10, // 기존에 등록된 매물의 조회·구매 허용 최소 가격
@@ -6765,7 +6768,16 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (liveReceipt === null && new java.io.File(resolveActiveDataPath(liveBaselinePath) + ".rollback").exists()) throw new Error("시세 기준 기록 복구가 필요합니다.");
                 verifyDiamondLiveReceipt(data, liveReceipt);
                 if (liveChoice) {
-                    var liveResult = applyDiamondLiveChoice(data, sender, Number(liveChoice[1]), liveNow, request && request.receivedAt || liveNow);
+                    var liveChoicePricing = null;
+                    var liveChoiceMember = data.member[sender], liveChoiceState = data.diamondLiveMarket;
+                    var liveChoicePending = liveChoiceState && liveChoiceState.pending["$" + (liveChoiceMember.serverRaidAccount && liveChoiceMember.serverRaidAccount.id)];
+                    if (Number(liveChoice[1]) === 1 && liveChoicePending && liveNow < liveChoicePending.expiresAt) {
+                        var liveChoiceMarket = requireFreeMarketSource(loadJsonFile(freeMarketPath));
+                        var liveChoiceSnapshot = getDiamondLiveSnapshot(data, liveChoiceMarket, userState, ctx.rootPath, liveNow, ctx.diamondLiveMemberText);
+                        liveChoicePricing = getDiamondLiveConversionPrice(calculateDiamondLivePrice(requireDiamondLiveState(data).baseline, liveChoiceSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent), petSkillData, sender);
+                    }
+                    var liveResult = applyDiamondLiveChoice(data, sender, Number(liveChoice[1]), liveNow, request && request.receivedAt || liveNow, liveChoicePricing);
+                    if (liveResult.kind === "confirm") diamondLiveCancelAliasScopes[JSON.stringify([ctx.rootPath, sender, room, isGroupChat])] = liveResult.quote.expiresAt;
                     var liveReply = replier;
                     if (liveResult.changed) { livePersisting = true; liveReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier); saveJsonFile(data, filePath); }
                     liveReply.reply(buildDiamondLiveMessage(liveResult.kind, liveNick, liveResult.quote)); return;
@@ -6791,7 +6803,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 var liveCalculation = liveStatistics ? calculateDiamondLivePriceDetails(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent) : null;
                 var livePrice = liveCalculation ? liveCalculation.price : calculateDiamondLivePrice(liveState.baseline, liveSnapshot, GLOBAL_CONFIG.diamondLive.correctionPercent);
                 if (liveStatistics) { replier.reply(buildDiamondLiveStatistics(liveNick, liveState.baseline, liveSnapshot, livePrice, liveCalculation)); return; }
-                var liveMaterials = getDiamondLiveMaterials(data.member[sender], liveCount, livePrice);
+                var livePricing = getDiamondLiveConversionPrice(livePrice, petSkillData, sender);
+                var liveMaterials = getDiamondLiveMaterials(data.member[sender], liveCount, livePricing.price);
+                liveMaterials.pricing = livePricing;
                 if (!liveQuantity || liveQuantity[1] === undefined) { replier.reply(buildDiamondLiveMessage("view", liveNick, liveMaterials)); return; }
                 if (liveMaterials.missingStone > 0 || liveMaterials.missingPoint !== "0") {
                     var liveRejectedMember = data.member[sender], liveRejectedKey = "$" + (liveRejectedMember.serverRaidAccount && liveRejectedMember.serverRaidAccount.id); // 거절된 새 신청이 대체할 기존 대기 키
@@ -6803,7 +6817,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     liveRejectedReply.reply(buildDiamondLiveMessage("shortage", liveNick, liveMaterials)); return;
                 }
-                var liveQuote = prepareDiamondLiveQuote(data, sender, liveCount, livePrice, liveNow, String(java.util.UUID.randomUUID()), room, isGroupChat);
+                var liveQuote = prepareDiamondLiveQuote(data, sender, liveCount, livePricing.price, liveNow, String(java.util.UUID.randomUUID()), room, isGroupChat, livePricing);
                 diamondLiveCancelAliasScopes[JSON.stringify([liveRoot, sender, room, isGroupChat])] = liveQuote.expiresAt;
                 livePersisting = true;
                 var liveQuoteReply = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
@@ -8156,7 +8170,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
 
                 if (msg === "/자유시장판매가이드" || msg === "자유시장 판매가이드") {
-                    replier.reply(buildFreeMarketV2Guide());
+                    replier.reply(buildFreeMarketV2Guide(data, sender, petSkillData));
                     return;
                 }
                 if (isFreeMarketV2Command(msg)) {
@@ -8180,14 +8194,14 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
                         var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "", msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품");
                         if (msg === "/내판매상품") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
-                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매상품" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined)); return;
+                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매상품" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined, petSkillData)); return;
                     }
-                    if (msg === "/내판매기록") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, sender)); return; }
-                    if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2)); return; }
+                    if (msg === "/내판매기록") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, sender, petSkillData, sender)); return; }
+                    if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, undefined, petSkillData, sender)); return; }
                     if (msg === "/자유시장정보" || /^\/자유시장정보\s+\d+$/.test(msg)) {
                         var marketInfo = getFreeMarketListingById(marketV2, Number(msg.split(/\s+/)[1]));
                         if (!marketInfo) { replier.reply("❌ 거래번호를 확인해주세요. /자유시장정보 번호"); return; }
-                        replier.reply(buildFreeMarketV2List(data, petData, guildData, marketV2, sender, [marketInfo], "판매 상세") + (marketInfo.type === "pendant" ? "\n" + buildPendantTradeInfoMessage(marketV2, marketInfo.id) : "")); return;
+                        replier.reply(buildFreeMarketV2List(data, petData, guildData, marketV2, sender, [marketInfo], "판매 상세", undefined, petSkillData) + (marketInfo.type === "pendant" ? "\n" + buildPendantTradeInfoMessage(marketV2, marketInfo.id) : "")); return;
                     }
                     if (msg === "/자유시장가격수정" || /^\/자유시장가격수정\s+\d+\s+\d+$/.test(msg)) {
                         var marketEditParts = msg.split(/\s+/), marketEdit = getFreeMarketListingById(marketV2, Number(marketEditParts[1])), marketNewPrice = Number(marketEditParts[2]);
@@ -8195,7 +8209,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         if (marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(true)); return; }
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
                         marketEdit.price = marketNewPrice; saveJsonFile(marketV2, freeMarketPath);
-                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice)); return;
+                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice, petSkillData)); return;
                     }
                     if (msg === "/거래확인 1" || msg === "/거래확인 2") {
                         var marketPending = getFreeMarketConfirmState(sender);
@@ -8253,13 +8267,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
                 if (msg === "/자유시장" || msg === "ㅈㅈ") {
                     var freeMarketView = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView));
+                    replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView, petSkillData, sender));
                     return;
                 }
 
                 if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") {
                     var freeMarketHistory = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory));
+                    replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory, undefined, petSkillData, sender));
                     return;
                 }
 
@@ -8323,7 +8337,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, bagMarketItemName, bagMarketCount, bagMarketPrice, 0, ""));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, bagMarketItemName, bagMarketCount, bagMarketPrice, 0, "", petSkillData));
                         return;
                     }
                     removeItem(data, sender, bagMarketItemName, bagMarketCount);
@@ -8338,7 +8352,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + bagMarketItemName + "] " + numberWithCommas(bagMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(bagMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8398,7 +8412,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketMiniPetDetail(miniMarketTarget), miniMarketCount, miniMarketPrice, 0, "※ 강화/매력 수치가 같은 미니펫만 함께 등록됩니다."));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketMiniPetDetail(miniMarketTarget), miniMarketCount, miniMarketPrice, 0, "※ 강화/매력 수치가 같은 미니펫만 함께 등록됩니다.", petSkillData));
                         return;
                     }
                     miniMarketPickedIndexes.sort(function (a, b) {
@@ -8420,7 +8434,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + formatFreeMarketMiniPetDetail(miniMarketTarget) + "] " + numberWithCommas(miniMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(miniMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8469,7 +8483,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, 0, ""));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, 0, "", petSkillData));
                         return;
                     }
                     furnitureMarketPickedIndexes.sort(function (a, b) {
@@ -8491,7 +8505,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + getFreeMarketFurnitureDisplayName(furnitureMarketTarget) + "] " + numberWithCommas(furnitureMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(furnitureMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8530,7 +8544,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, 0, ""));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, 0, "", petSkillData));
                         return;
                     }
                     removePetSkillFromBag(petSkillData, sender, skillMarketName, skillMarketCount);
@@ -8546,7 +8560,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "[" + formatPetSkillName(skillMarketName) + "] " + numberWithCommas(skillMarketCount) + "개가\n" +
                         "💎" + numberWithCommas(skillMarketPrice) + "에 등록되었습니다.\n\n" +
                         "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender)
+                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
                     );
                     return;
                 }
@@ -8718,14 +8732,14 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply(buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, buyListing));
                         return;
                     }
-                    var freeMarketTradeFeeRate = getFreeMarketTradeFeeRate(data, buyListing.seller);
+                    var freeMarketTradeFeeRate = getFreeMarketTradeFeeRate(data, buyListing.seller, petSkillData);
                     var marketFee = calculateFreeMarketTradeFee(buyPrice, freeMarketTradeFeeRate);
                     var sellerReceive = buyPrice - marketFee;
                     if (!isPointShopSafeCount((data.member[buyListing.seller].diamond || 0) + sellerReceive)) { replier.reply("❌ 판매자 다이아 보유량을 확인해주세요."); return; }
                     data.member[sender].diamond = (data.member[sender].diamond || 0) - buyPrice;
                     data.member[buyListing.seller].diamond = (data.member[buyListing.seller].diamond || 0) + sellerReceive;
                     returnFreeMarketItemToOwner(data, petData, petSkillData, buyHomeData, buyListing, sender);
-                    addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee, freeMarketTradeFeeRate);
+                    addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee, freeMarketTradeFeeRate, hasFreeMarketMemberTicket(data, buyListing.seller));
                     removeFreeMarketListing(freeMarketBuyData, buyListing.id);
                     saveJsonFile(data, filePath);
                     if (buyListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
@@ -8740,7 +8754,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         "━━━━━━━━━━━━\n" +
                         "[" + getFreeMarketItemText(buyListing) + "]을\n" +
                         "💎" + numberWithCommas(buyPrice) + "에 구매했습니다.\n\n" +
-                        buildFreeMarketTradeFeeNotice(data, buyListing.seller)
+                        buildFreeMarketTradeFeeNotice(data, buyListing.seller, petSkillData)
                     );
                     return;
                 }
@@ -50998,9 +51012,9 @@ function buildFreeMarketMinPriceMessage(editing) {
     return (editing ? "❌ 가격수정 실패" : "❌ 자유시장 등록 실패") + "\n\n💎 최소 등록가는 " + minimum + "다이아입니다.\n📦 묶음 전체 가격을 " + minimum + "다이아 이상으로 입력해주세요.";
 }
 // 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
-function buildFreeMarketExpectedSettlement(data, seller, price) {
-    var rate = getFreeMarketTradeFeeRate(data, seller), fee = calculateFreeMarketTradeFee(price, rate);
-    return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개\n※ 실제 정산은 판매 완료 시 회원권 상태를 적용해요.";
+function buildFreeMarketExpectedSettlement(data, seller, price, petSkillData) {
+    var rate = getFreeMarketTradeFeeRate(data, seller, petSkillData), fee = calculateFreeMarketTradeFee(price, rate);
+    return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개";
 }
 
 // 한국 시각 00:01을 경계로 다이아상점 운영일 번호를 계산하는 함수
@@ -51563,8 +51577,8 @@ function replyFreeMarketV2(replier, message) {
     if (chunk) replier.reply(chunk);
 }
 // 검색 결과·내 판매·전체 매물을 같은 실제 거래번호와 가격으로 표시하는 함수
-function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery) {
-    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n💰 수수료: 일반 " + (GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "% / 회원권 " + (GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
+function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery, petSkillData) {
+    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, user, petSkillData, false, true) + "━━━━━━━━━━━━\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
     out = "[" + checkRank(data, petData, guildData, user) + "] 님\n\n" + out;
     if (!rows.length) out += searchQuery !== undefined ? "검색 결과가 없습니다.\n" + searchQuery : "📭 판매 중인 물품이 없습니다.";
     var previousCategory = null;
@@ -51578,7 +51592,7 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
     return out;
 }
 // 판매 등록·관리 명령과 거래 조건을 노션의 전체보기 순서로 안내하는 함수
-function buildFreeMarketV2Guide() {
+function buildFreeMarketV2Guide(data, user, petSkillData) {
     return [
         "📦 자유시장 판매가이드",
         "- 판매 등록 방법 상세 확인",
@@ -51625,9 +51639,7 @@ function buildFreeMarketV2Guide() {
         "📌 판매 전 확인해주세요",
         "",
         "💎 킹 이상 · 다이아 전용 · 등록비 무료",
-        "💰 판매 수수료",
-        "├ 일반 판매자: " + (GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%",
-        "└ 자유시장회원권🏪: " + (GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%",
+        buildFreeMarketFeeStatus(data, user, petSkillData, false, false).trim(),
         "",
         "💎 판매금액은 등록 수량 전체의 다이아 금액입니다.",
         "💎 최소 등록가",
@@ -51803,13 +51815,26 @@ function getFreeMarketRegisterLimit(data, petSkillData, user) {
 }
 
 // 자유시장 거래 수수료율을 판매자의 회원권 보유 여부에 따라 반환하는 함수
-function getFreeMarketTradeFeeRate(data, seller) {
-    return hasFreeMarketMemberTicket(data, seller) ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+function getFreeMarketTradeFeeRate(data, seller, petSkillData) {
+    var rate = hasFreeMarketMemberTicket(data, seller) ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+    return hasPetSkill(petSkillData, seller, "수수료 시져시져") ? rate * GLOBAL_CONFIG.freeMarket.skillFeeMultiplier : rate;
+}
+
+// 조회자의 회원 구분과 현재 판매 수수료를 기획서 형식으로 표시하는 함수
+function buildFreeMarketFeeStatus(data, user, petSkillData, history, balance) {
+    var member = hasFreeMarketMemberTicket(data, user);
+    var baseRate = member ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+    var rate = getFreeMarketTradeFeeRate(data, user, petSkillData);
+    var text = "🏷️ 회원 구분: " + (member ? "자유시장 회원" : "일반 회원") + "\n";
+    if (balance) text += "💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n";
+    text += "💰 " + (history ? "현재 내" : "내") + " 판매 수수료: " + Number(formatTransferFeeRate(rate * 100)) + "%\n";
+    if (hasPetSkill(petSkillData, user, "수수료 시져시져")) text += "📙 수수료 시져시져 적용 · " + Number(formatTransferFeeRate(baseRate * 100)) + "% → " + Number(formatTransferFeeRate(rate * 100)) + "%\n";
+    return text;
 }
 
 // 자유시장 거래 수수료 안내 문구를 판매자의 회원권 보유 여부에 맞춰 반환하는 함수
-function buildFreeMarketTradeFeeNotice(data, seller) {
-    return "※ 거래수수료는 판매자에게 " + formatTransferFeeRate(getFreeMarketTradeFeeRate(data, seller) * 100) + "% 부담됩니다.";
+function buildFreeMarketTradeFeeNotice(data, seller, petSkillData) {
+    return "※ 거래수수료는 판매자에게 " + formatTransferFeeRate(getFreeMarketTradeFeeRate(data, seller, petSkillData) * 100) + "% 부담됩니다.";
 }
 
 
@@ -51913,12 +51938,11 @@ function getFreeMarketItemText(listing) {
     return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개" + formatFreeMarketUnitPriceText(listing);
 }
 
-function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
+function buildFreeMarketListMessage(data, petData, guildData, freeMarketData, petSkillData, user) {
     var listings = getFreeMarketActiveListings(freeMarketData);
     var out = "🏪 호이월드 자유시장 🏪\n";
     out += "━━━━━━━━━━━━\n";
-    out += "💰수수료: 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
-    out += "🏪 자유시장회원권: 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n";
+    out += buildFreeMarketFeeStatus(data, user, petSkillData, false, false);
     out += "🛒구매: /자유시장구매 [번호]\n";
     out += "❌취소: /자유시장취소 [번호]\n";
     out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -51941,7 +51965,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 }
 
 // 전체 거래현황 또는 본인의 최근 판매 완료 기록을 표시하는 함수
-function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData, seller) {
+function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData, seller, petSkillData, viewer) {
     freeMarketData = ensureFreeMarketData(freeMarketData);
     var logs = freeMarketData.completedLogs.filter(function (log) { return seller === undefined || log.seller === seller; });
     logs.sort(function (a, b) {
@@ -51951,12 +51975,11 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
         return (b.id || 0) - (a.id || 0);
     });
     if (seller !== undefined) logs = logs.slice(0, GLOBAL_CONFIG.freeMarket.mySalesHistoryLimit);
-    var out = seller === undefined ? "🤝 호월 자유시장 거래현황 🤝\n" : "[" + checkRank(data, petData, guildData, seller) + "] 님\n📜 내 판매기록\n";
-    out += "━━━━━━━━━━━━\n";
+    var out = "[" + checkRank(data, petData, guildData, viewer) + "] 님\n\n" + (seller === undefined ? "🤝 호월 자유시장 거래현황 🤝\n" : "📜 내 판매기록\n");
+    out += "━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, viewer, petSkillData, true, false) + "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
-    out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-    out += "💰수수료는 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
-    out += "🏪자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
+    out += "📋 [아이템×갯수] [금액] [판매] 🤝 [구매]\n";
+    out += "※ 완료된 거래에는 거래 당시 수수료가 적용됩니다.\n";
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -51989,10 +52012,9 @@ function isFreeMarketMemberFeeLog(log) {
     return !!(log && log.memberFeeApplied === true);
 }
 
-function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount, feeRate) {
+function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount, feeRate, memberFeeApplied) {
     freeMarketData = ensureFreeMarketData(freeMarketData);
     var appliedFeeRate = Number(feeRate);
-    var memberFeeApplied = appliedFeeRate === GLOBAL_CONFIG.freeMarket.memberTradeFeeRate;
     var completedItemName = listing.itemName;
     if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
         completedItemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
@@ -52224,14 +52246,14 @@ function clearFreeMarketConfirmState(sender) {
     if (userState[sender] && userState[sender].freeMarket) delete userState[sender].freeMarket;
 }
 
-function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, unusedRegistrationFee, extraLine) {
+function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, unusedRegistrationFee, extraLine, petSkillData) {
     var msg = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
     msg += "🏪 자유시장 등록 확인서\n";
     msg += "━━━━━━━━━━━━\n";
     msg += "물품: [" + itemName + "] x" + numberWithCommas(quantity) + "개\n";
     msg += "묶음 판매금액: 💎" + numberWithCommas(price) + "\n";
     msg += "등록비: 무료\n";
-    msg += buildFreeMarketExpectedSettlement(data, sender, price) + "\n";
+    msg += buildFreeMarketExpectedSettlement(data, sender, price, petSkillData) + "\n";
     if (extraLine) msg += extraLine + "\n";
     msg += "\등록✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
     msg += "━━━━━━━━━━━━\n";
@@ -58104,6 +58126,17 @@ function getDiamondLiveMaterials(member, count, price) {
         missingPoint: String(total.subtract(points).max(new java.math.BigInteger("0")).toString()), maxCount: Number(String(maxCount.toString())) };
 }
 
+// 장착 스킬의 할인율과 최저 가격을 적용한 개당 변환 가격을 계산하는 함수
+function getDiamondLiveConversionPrice(marketPrice, petSkillData, user) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return getDiamondLiveConversionPrice(marketPrice, petSkillData, user); });
+    var applied = hasPetSkill(petSkillData, user, "반짝반짝");
+    var market = requireDiamondLiveInteger(marketPrice, true);
+    var discount = applied ? market.multiply(new java.math.BigInteger(String(GLOBAL_CONFIG.diamondLive.skillPricePercent))).divide(new java.math.BigInteger("100")) : market;
+    var minimum = new java.math.BigInteger(GLOBAL_CONFIG.diamondLive.minimumPrice);
+    var floor = discount.compareTo(minimum) < 0;
+    return { marketPrice: marketPrice, discountPrice: String(discount.toString()), price: String((floor ? minimum : discount).toString()), skillApplied: applied, floorApplied: floor };
+}
+
 // 변환 조회·확인·성공·실패·취소 메시지를 구성하는 함수
 function buildDiamondLiveMessage(kind, nick, quote) {
     var header = "[" + nick + "] 님\n", line = "━━━━━━ ✦ ━━━━━━";
@@ -58117,11 +58150,18 @@ function buildDiamondLiveMessage(kind, nick, quote) {
     }
     var simple = { policy: "⚠️ 다이아 변환 기준이 변경되었습니다.\n기존 신청은 취소되었으며 재료는 차감되지 않았습니다.\n/다이아조합 [숫자]로 다시 신청해주세요.", cancel: "❌ 다이아 변환 취소\n" + line + "\n변환 신청이 취소되었습니다.\n재료는 차감되지 않았습니다.", expired: "⏳ 다이아 변환 시간 만료\n" + line + "\n선택 유효시간 60초가 지났습니다.\n/다이아조합 [숫자]로 다시 신청해주세요.", missing: "⚠️ 확인할 다이아 변환 신청이 없습니다.\n/다이아조합 [숫자]로 다시 신청해주세요." };
     if (simple[kind]) return header + simple[kind];
-    var count = quote.count, total = numberWithCommas(quote.total), price = numberWithCommas(quote.price);
-    if (kind === "success") return header + "💎 다이아 변환 성공! 🎉\n" + line + "\n🎯 변환 완료: " + count + "개\n\n📦 사용한 재료\n├ 🗿 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득한 아이템\n└ 다이아상자💎 ×" + count + "\n" + line + "\n✨ 다이아 변환을 완료했습니다!";
+    var count = quote.count, total = numberWithCommas(quote.total), pricing = quote.pricing;
+    var floor = pricing && pricing.floorApplied ? "\n※ 최저 가격 3억 5천만 적용" : "";
+    line = "━━━━━━━━━━━━";
+    if (kind === "success") {
+        var skillSuccess = pricing && pricing.skillApplied ? "📙 반짝반짝 적용\n└ 개당 적용 가격: 🅟" + numberWithCommas(quote.price) + floor + "\n\n" : "";
+        return header + "💎 다이아 변환 성공! 🎉\n" + line + "\n🎯 변환 완료: " + count + "개\n\n" + skillSuccess + "📦 사용한 재료\n├ 🪨 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득한 아이템\n└ 다이아상자💎 ×" + count + "\n" + line + "\n✨ 다이아 변환을 완료했습니다.";
+    }
+    var marketPrice = pricing ? pricing.marketPrice : quote.price;
+    var skillText = pricing && pricing.skillApplied ? "\n📙 반짝반짝 적용 중\n├ 5% 할인 가격: 🅟" + numberWithCommas(pricing.discountPrice) + "\n└ 최종 개당 가격: 🅟" + numberWithCommas(quote.price) + floor + "\n" : "";
     var title = kind === "view" ? "💎 호이월드 다이아 변환" : "💎 다이아 변환 | 확인";
-    var text = header + title + "\n" + line + (kind === "view" ? "" : "\n🎯 변환 신청: " + count + "개\n") + "\n📊 실시간 다이아 시세\n💰 1개당 🅟" + price + "\n" + buildDiamondLiveChange(quote.price, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n━━━━━━━━━━━━\n📦 " + (kind === "view" ? "변환 재료 (1개 기준)" : "소모 재료") + "\n├ 🗿 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득 아이템\n└ 다이아상자💎 ×" + count + "\n" + line;
-    return text + (kind === "view" ? "\n🎯 변환: /다이아조합 [숫자]\n🧮 현재 변환 가능: 최대 " + numberWithCommas(quote.maxCount) + "개" : "\n💬 " + count + "개를 변환하시겠습니까?\n\n1. ✅ 변환하기\n2. ❌ 안하기\n입력: 변환하기 / 안하기\n⏳ 선택 유효시간: 60초");
+    var text = header + title + "\n" + line + (kind === "view" ? "" : "\n🎯 변환 신청: " + count + "개\n") + "\n📊 실시간 다이아 시세\n💰 1개당 🅟" + numberWithCommas(marketPrice) + "\n" + buildDiamondLiveChange(marketPrice, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n" + skillText + line + "\n📦 " + (kind === "view" ? "변환 재료 (1개 기준)" : "소모 재료") + "\n├ 🪨 전설의 돌맹이 ×" + count + "\n└ 🅟 포인트 " + total + "\n\n🎁 획득 아이템\n└ 다이아상자💎 ×" + count + "\n" + line;
+    return text + (kind === "view" ? "\n🎯 변환: /다이아조합 [숫자]\n🗓️ 현재 변환 가능: 최대 " + numberWithCommas(quote.maxCount) + "개" : "\n💬 " + count + "개를 변환하시겠습니까?\n\n1. ✅ 변환하기\n2. ❌ 안하기\n입력: 변환하기 / 안하기\n⏳ 선택 유효시간: 60초");
 }
 
 // 통계의 비교 대상을 구분하고 미세한 증감을 정확한 0%와 구별하는 함수
@@ -58176,8 +58216,8 @@ function buildDiamondLiveStatistics(nick, baseline, current, price, calculation)
     return text + "\n\n📊 실시간 다이아 변환 시세\n━━━━━━━━━━━━\n├ 기준 가격: 🅟" + numberWithCommas(basePrice) + "\n├ 현재 가격: 🅟" + numberWithCommas(price) + "\n├ " + (difference.signum() < 0 ? "하락" : difference.signum() === 0 ? "변동" : "상승") + ": 🅟" + numberWithCommas(String(difference.abs().toString())) + "\n├ 최저 가격: 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.minimumPrice) + "\n└ " + buildDiamondLiveStatisticsChange(price, basePrice, "가격 등락률") + "\n\n⚙️ 기준값 변경\n━━━━━━━━━━━━\n🅟 /포인트기준설정 금액\n💎 /다이아기준설정 개수\n※ 숫자는 쉼표 없이 입력\n\n━━━━━━ ✦ ━━━━━━\n🔄 실시간 시세 적용 중\n※ 기준값은 자동 변경되지 않습니다.\n※ 기준값 변경은 MASTER 명령으로만 가능합니다.\n※ 개인 보유 재화만 집계합니다.\n※ 미개봉 포인트상자: 개당 🅟" + numberWithCommas(GLOBAL_CONFIG.diamondLive.pointBoxValue) + " 합산\n※ 재화 총량 증감률과 변환 가격 등락률은 다릅니다.\n\n📚 변환 시세 계산 상세 · 전체보기" + allsee + "\n" + buildDiamondLiveStatisticsDetail(baseline, current, calculation);
 }
 // 60초 변환 신청을 계정별 한 건으로 저장하고 표시 금액을 정확히 고정하는 함수
-function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat) {
-    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat); });
+function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat, pricing) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGroupChat, pricing); });
     if (!isPointShopSafeCount(count) || count < 1) throw new Error("사용법: /다이아조합 [숫자]");
     var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
     if (typeof accountId !== "string" || !accountId) throw new Error("변환 계정 ID를 확인해주세요.");
@@ -58187,13 +58227,14 @@ function prepareDiamondLiveQuote(data, user, count, price, now, id, room, isGrou
     if (unitPrice.compareTo(new java.math.BigInteger(GLOBAL_CONFIG.diamondLive.minimumPrice)) < 0) throw new Error("변환 가격이 최저 기준보다 낮습니다. 다시 조회해주세요.");
     var total = unitPrice.multiply(new java.math.BigInteger(String(count)));
     var quote = { id: id, accountId: accountId, count: count, price: price, total: String(total.toString()), createdAt: now, expiresAt: now + GLOBAL_CONFIG.diamondLive.confirmationMs, room: room, isGroupChat: isGroupChat };
+    if (pricing) quote.pricing = pricing;
     state.pending["$" + accountId] = quote;
     return quote;
 }
 
 // 변환 확인의 기한·계정·재료를 재검사하고 확정된 한 요청만 차감·지급하는 함수
-function applyDiamondLiveChoice(data, user, choice, now, receivedAt) {
-    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return applyDiamondLiveChoice(data, user, choice, now, receivedAt); });
+function applyDiamondLiveChoice(data, user, choice, now, receivedAt, pricing) {
+    if (!isDiamondLiveExactMathReady()) return withDiamondLiveExactMath(function () { return applyDiamondLiveChoice(data, user, choice, now, receivedAt, pricing); });
     if (data.diamondLiveMarket === undefined && (!data.migrations || data.migrations.diamondLiveInitialized === undefined)) return { kind: "missing", changed: false };
     var state = requireDiamondLiveState(data), member = data.member[user], accountId = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var key = "$" + accountId, quote = state.pending[key];
@@ -58202,6 +58243,13 @@ function applyDiamondLiveChoice(data, user, choice, now, receivedAt) {
     if (requireDiamondLiveInteger(quote.price, true).compareTo(new java.math.BigInteger(GLOBAL_CONFIG.diamondLive.minimumPrice)) < 0) { delete state.pending[key]; return { kind: "policy", changed: true }; }
     if (now >= quote.expiresAt) { delete state.pending[key]; return { kind: "expired", changed: true }; }
     if (choice === 2) { delete state.pending[key]; return { kind: "cancel", changed: true }; }
+    if (pricing && pricing.price !== quote.price) {
+        var revisedMaterials = getDiamondLiveMaterials(member, quote.count, pricing.price);
+        if (revisedMaterials.missingStone > 0 || revisedMaterials.missingPoint !== "0") { delete state.pending[key]; return { kind: "shortage", changed: true, quote: revisedMaterials }; }
+        var revised = prepareDiamondLiveQuote(data, user, quote.count, pricing.price, now, quote.id, quote.room, quote.isGroupChat, pricing);
+        return { kind: "confirm", changed: true, quote: revised };
+    }
+    if (pricing) quote.pricing = pricing;
     var materials = getDiamondLiveMaterials(member, quote.count, quote.price);
     var boxes = member.bag[GLOBAL_CONFIG.items.diamondBoxName] === undefined ? 0 : member.bag[GLOBAL_CONFIG.items.diamondBoxName];
     if (!isPointShopSafeCount(boxes) || !isPointShopSafeCount(boxes + quote.count)) throw new Error("변환 아이템 보유 수량 오류");
@@ -61503,12 +61551,12 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
         return {
             ok: true,
             pending: true,
-            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 0, "")
+            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 0, "", petSkillData)
         };
     }
     var pendant = bag.splice(index - 1, 1)[0];
     addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, 0);
-    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n💎" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender) };
+    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n💎" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender, petSkillData) };
 }
 
 // 관리자 펜던트 지급 처리
