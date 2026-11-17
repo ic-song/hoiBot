@@ -4452,7 +4452,7 @@ Status: VERIFIED
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SSS/SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
 - 일반 등급 총 확률 아래 `한정판 등급` 구역에서 `전설의 몽둥이📙`, `베란다 확장📙`, `베란다 대확장📙`, `전설의 소매치기📙`, `광산에서 재벌까지📙`, `호월토벌대📙`를 별도로 표시하며, 이 스킬들은 일반 오픈 풀과 총 확률에 포함되지 않는다.
-- `GLOBAL_CONFIG.petSkill.gradeTotalRates`의 등급 총확률은 SSS1.5%·SS0.6%·S6.3%·A10.4%·B12%·C30%다. 각 등급 안에서 오픈 가능한 스킬 수로 균등 배분한다. D는 총합100%의 잔여39.2%를 6종에 균등 배분하며 현재 각 약6.5333%다. 스킬 추가·오픈 제외 시에도 등급 총확률은 유지한다.
+- `GLOBAL_CONFIG.petSkill.gradeTotalRates`의 등급 총확률은 SSS0.15%·SS0.6%·S6.3%·A10.4%·B12%·C30%다. 각 등급 안에서 오픈 가능한 스킬 수로 균등 배분한다. D는 총합100%의 잔여40.55%를 6종에 균등 배분하며 현재 각 약6.7583%다. 스킬 추가·오픈 제외 시에도 등급 총확률은 유지한다.
 
 ---
 
@@ -6731,7 +6731,7 @@ Status: VERIFIED
 - `collectDiamondLiveOwned`, `collectDiamondLiveReserved`, `getDiamondLiveSnapshot`
 - `collectDiamondLiveOwned`는 포인트를 안전 범위의 부호 있는 정수 잔액으로 검증해 음수도 원래 값 그대로 합산한다. 포인트상자·다이아·다이아상자는 계속 음이 아닌 안전 정수만 허용한다. `getDiamondLiveMaterials`도 같은 잔액 검증을 사용하며 음수 잔액의 최대 변환량은0, 부족액은 총 비용에서 실제 잔고를 뺀 정확한 큰 정수다. 집계 기준·운영자 제외·회원 잔액·아이템과 저장 흐름은 바꾸지 않는다.
 - `calculateDiamondLivePrice`, `prepareDiamondLiveQuote`, `applyDiamondLiveChoice`, `getDiamondLiveCancelAlias`
-- `getDiamondLiveConversionPrice`는 반짝반짝 장착 시 현재 시세×95%와 최저350,000,000 중 큰 개당 가격을 반환한다. 신청의 `pricing`에는 시세·할인 가격·장착/최저가 여부를 보관하고 조회·확인·성공 UI에 사용한다. 최대 수량과 실제 차감은 할인 적용 가격으로 계산한다. 두 스킬은 기존 SSS 추첨·중복 장착 규칙을 사용하며 정보 확률은 현재 SSS3종 균등 배분에 따라 각각 실제0.5%다.
+- `getDiamondLiveConversionPrice`는 반짝반짝 장착 시 현재 시세×95%와 최저350,000,000 중 큰 개당 가격을 반환한다. 신청의 `pricing`에는 시세·할인 가격·장착/최저가 여부를 보관하고 조회·확인·성공 UI에 사용한다. 최대 수량과 실제 차감은 할인 적용 가격으로 계산한다. 두 스킬은 기존 SSS 추첨·중복 장착 규칙을 사용하며 정보 확률은 현재 SSS3종 균등 배분에 따라 각각 실제0.05%다.
 - `getDiamondLiveMaterials`, `buildDiamondLiveMessage`, `buildDiamondLiveStatistics`, `buildDiamondLiveStatisticsChange`, `formatDiamondLiveStatisticsAmount`, `buildDiamondLiveStatisticsDetail`, `calculateDiamondLivePriceDetails`, `buildDiamondLiveBaselineUsage`, `buildDiamondLiveBaselineResult`
 
 ## Data Usage
@@ -8839,7 +8839,7 @@ Status: VERIFIED
 
 - `PET_SKILL_LIST`: 망작귀의 지팡이📙[SS]는 캐슬/레이드 각200만, 강철왁뿌볼📙[S]는 각100만(종합200만), 삼성전자📙[SSS]는 각300만. 원문 효과 설명을 유지하며 기존 `/펫스킬오픈`에서 획득한다.
 - 꽃집 대장장이는 신규 추첨·확률표·컬렉션에서 제외하며 기존 보유/보상 원문은 보존한다. 폐지 표시로 신규 거래도 차단한다. `/펫스킬정보`는 스킬명 일치를 회원 닉네임보다 우선하며 모든 스킬명의 띄어쓰기 변형도 인식한다.
-- 현행 사용자 확정 정책: 스킬별 고정 확률을 사용하지 않고 등급별 총확률을 균등 분배한다. SSS는 총1.5%/3종으로 삼성전자·반짝반짝·수수료 시져시져 각각0.5%다. SS~C 총확률은 변경 직전 등급별 합계로 고정하고 D는 나머지를 가져간다.
+- 현행 사용자 확정 정책: 스킬별 고정 확률을 사용하지 않고 등급별 총확률을 균등 분배한다. SSS는 총0.15%/3종으로 삼성전자·반짝반짝·수수료 시져시져 각각0.05%다. SS~C 총확률은 변경 직전 등급별 합계로 고정하고 D는 나머지를 가져간다.
 - Main/Info `getEquippedNonTierPetSkillExp`가 장착된 서로 다른 스킬의 매력을 합산하고 소멸 후 제외한다. 동일 스킬 중복 장착 거절은 기존대로 유지한다. Info의 `GLOBAL_CONFIG.petSkill.charmSkills`도 같은 수치다.
 - SSS는 확률표·오픈 결과·가방·컬렉션·자유시장 등급 검색/정렬에서 SS보다 먼저 표시한다. 삼성전자 컬렉션은 사용자 확정으로 최대3개, 1개당 홈뱃지 큐브💟1,500개(총4,500개). SS/S 컬렉션 규칙은 유지한다.
 - `/펫스킬컬렉션등록` → `등록`은 재료 차감 중 이름 정규화가 교체한 현재 컬렉션을 다시 참조해 등록 횟수와 보상을 함께 반영한다. 만능열쇠 다중 선택도 같은 SSS3개 한도·보상을 따른다. 기존 명령·저장 파일·DEV/PROD 경로를 재사용한다.
