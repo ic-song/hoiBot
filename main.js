@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.866"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.867"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -4299,10 +4299,12 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
     var ctx = null;
     var prevCtx = null;
     updateResponseQueueStage(request, "명령 흐름 잠금 대기");
+    var responseFlowLockStartMs = Date.now(); // 큐에서 실행된 뒤 명령 흐름 잠금을 기다린 시작 시각
     responseDataLock.lock();
     //데이터 검사
     try {
         updateResponseQueueStage(request, "데이터 잠금 대기");
+        var responseDataLockStartMs = Date.now(); // 명령 흐름 잠금 획득 후 데이터 잠금 대기 시작 시각
         dataTransactionLock.lock(); // 자동 작업이 보유한 잠금도 기다린 뒤 최신 데이터를 읽는다.
         responseTransactionAcquired = true;
         var responseLockReadyMs = Date.now(); // 실제 공통 잠금 대기 종료 시각
@@ -4337,7 +4339,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var responseStartMs = miniGameRequestAt; // 잠금·초기 복구를 포함한 실제 응답 진입 기준
         var responsePreprocessStartMs = Date.now();
         var responseTimingRows = [
-            { label: "공통 잠금·진입 대기", ms: responseLockReadyMs - miniGameRequestAt },
+            { label: "명령 큐 대기", ms: (request.queueStartedAt || responseFlowLockStartMs) - miniGameRequestAt },
+            { label: "큐 실행·잠금 진입", ms: responseFlowLockStartMs - (request.queueStartedAt || responseFlowLockStartMs) },
+            { label: "명령 흐름 잠금 대기", ms: responseDataLockStartMs - responseFlowLockStartMs },
+            { label: "데이터 잠금 대기", ms: responseLockReadyMs - responseDataLockStartMs },
             { label: "초기 복구 검사", ms: responsePreprocessStartMs - responseRecoveryStartMs }
         ];
         function addResponseTiming(label, startMs) {
@@ -6268,9 +6273,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 replier.reply(dollRequest.kind === "box" ? buildDollBoxErrorMessage(data, petData, guildData, sender, dollResult) : buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 return;
             }
-            // 추첨은 메모리에서만 계산하며, 게시 전 디스크 원문 네 개를 기존 형식으로 보존한다.
-            var dollSnapshotNames = ["member.json", "member_pet.json", "dollIndex.json", dollShardName];
-            var dollSnapshots = [];
+            // 추첨은 메모리에서만 계산하며, 게시 전 변경할 파일의 디스크 원문을 기존 형식으로 보존한다.
+            var dollIndexChanged = JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore; // 대표 순위가 바뀐 요청만 저장·복구
+            var dollRecordChanged = dollRequest.kind === "box" || dollResult.eventRecorded; // 실패 추첨의 중복 방지 표식도 변경 기록에 포함
+            var dollSnapshotNames = ["member.json", "member_pet.json"];
+            if (dollIndexChanged) dollSnapshotNames.push("dollIndex.json");
+            if (dollRecordChanged) dollSnapshotNames.push(dollShardName);
+            var dollSnapshots = [], dollSnapshotTexts = {};
             var dollPetChanged = dollRequest.kind === "box" || dollResult.success; // 성공 시 매력이 바뀌며, 실패 시 공통 처리의 펫 변경도 확인
             for (var dollSnapshotIndex = 0; dollSnapshotIndex < dollSnapshotNames.length; dollSnapshotIndex++) {
                 var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
@@ -6278,16 +6287,18 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 var dollSnapshotData = parseJsonContent(dollSnapshotText, dollSnapshotName);
                 if (dollSnapshotName === "member_pet.json" && !dollPetChanged) dollPetChanged = !isDollPetDataUnchanged(dollSnapshotData, petData);
                 dollSnapshotData = null; // 검증한 대용량 원본 객체는 다음 파일을 읽기 전에 해제
+                if (dollSnapshotName === "member_pet.json" && !dollPetChanged) continue; // 공통 보정까지 없는 펫은 저장·복구 대상에서 제외
                 dollSnapshots.push({ name: dollSnapshotName, text: dollSnapshotText }); // 검증한 원문을 재사용해 직렬화 중 파일 재읽기를 피한다
+                dollSnapshotTexts[dollSnapshotName] = dollSnapshotText;
             }
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 원문 검증·펫 비교", dollStepStartedAt);
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
             dollStepStartedAt = recordDollTiming(dollTimingRows, "복구 기록 저장", dollStepStartedAt);
-            if (dollRequest.kind === "box" || dollResult.eventRecorded) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
+            if (dollRecordChanged) saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshotTexts[dollShardName]);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "개인 인형 기록 저장", dollStepStartedAt);
-            if (JSON.stringify(dollIndex.users[sender]) !== dollIndexBefore) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
+            if (dollIndexChanged) saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshotTexts["dollIndex.json"]);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "대표 순위 저장", dollStepStartedAt);
-            if (dollPetChanged) saveJsonFile(petData, memberPetPath);
+            if (dollPetChanged) saveJsonFile(petData, memberPetPath, false, dollSnapshotTexts["member_pet.json"]);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "펫 저장", dollStepStartedAt);
             saveJsonFile(data, filePath);
             dollStepStartedAt = recordDollTiming(dollTimingRows, "회원·분리 데이터 저장", dollStepStartedAt);
