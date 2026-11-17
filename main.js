@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.856"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.858"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -111,7 +111,7 @@ const PET_SKILL_FIXED_ACTUAL_RATES = {
     C: 1.5
 };
 const PET_SKILL_LIST = [
-    { name: "삼성전자", grade: "SSS", rate: 0.15, raidExp: 3000000, castleExp: 3000000, effect: "호이의 바램입니다. 매력만큼 상승하길 기원하는 마음이 깃들어 있습니다. 육배만전자 가즈아!\n장착 시 레이드매력 300만과 캐슬매력 300만, 총 종합매력 600만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "삼성전자", grade: "SSS", rate: 0.15, raidExp: 3000000, castleExp: 3000000, effect: "호이의 바램입니다. 매력만큼 상승하길 기원하는 마음이 깃들어 있습니다. 육백만전자 가즈아!\n장착 시 레이드매력 300만과 캐슬매력 300만, 총 종합매력 600만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "경제사범", grade: "한정판", limitedEdition: true, openable: false, effect: "누군가는 말합니다.\n“적당한 사기는 사기꾼이라 부르지만,\n그 규모가 조 단위가 되면 경제사범이라 부릅니다.”\n\n🔐 장착 시 금고 도전 횟수 +4회\n※ 금고털이범과 효과 중복 불가" },
     { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 경제사범과 효과 중복 불가" },
 
@@ -998,6 +998,7 @@ var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파�
 var howolMysterySessions = {}; // 환경·계정별 페이지 위치만 보관
 var howolMysterySessionDay = -1;
 var guildWarTimers = {}; // 환경별 금광 적립·전쟁 예정 시각 예약
+var diceTournamentTimers = {}; // 대회 진행 중인 환경의 다음 연출만 예약
 var howolDramaSessions = {}; // 확인 화면은 재컴파일 시 취소되며 진행 원본은 보존
 var howolDramaPublishingThread = new java.lang.ThreadLocal();
 var petHomeUpgradeSessions = {}; // 환경·회원별 집 확장 확인 대기
@@ -1150,6 +1151,11 @@ const GLOBAL_CONFIG = {
         {"id":100,"title":"🍀 마지막 행운의 카드","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🍀 마지막 행운의 카드 (보통) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님의 행사 카드가 책상 서랍에서 없어졌다.\n\n🐱 호월이: “난 초록 카드를 만졌어.”\n🐾 호동이: “난 빨간 카드만 만졌어.”\n💕 봄봄이: “저는 가방을 옮겼어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🍀 마지막 행운의 카드 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 사라진 빨간 카드 앞면에는 아직 마르지 않은 붉은 잉크가, 뒷면에는 그 카드에만 바른 특수 검은 잉크가 있었다.\n② 호동이 손가락에는 빨간 카드 앞면의 붉은 잉크와 뒷면 특수 검은 잉크가 함께 묻어 있었고 다른 작업 도구에는 특수 잉크가 없었다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":2,"explanation":"호동이 손에는 사라진 빨간 카드 앞뒷면에서만 동시에 묻을 수 있는 두 가지 잉크가 함께 있다. 카드를 직접 뒤집어 만졌다는 강한 물증이다.","ending":"호동이는 기념 카드로 보관하려다 잊었다고 고백했다."}
     ] },
     storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, nativeLeafMaxKeys: 32, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
+    diceTournament: {
+        id: "2026-11-22", publicRoom: room8, eventLabel: "2026년 11월 22일(일) 저녁 9시 · 한국시간",
+        minPlayers: 8, rollDelayMs: 3000, readyTimeoutMs: 120000, retryMs: 5000, noticeDelayMs: 250, chunkChars: 3500,
+        rewards: { attendance: 10000000000, quarter: 10000000000, semi: 20000000000, final: 30000000000, champion: 100000000000 }
+    },
     guildWar: {
     "earthName": "지구방위대",
     "regions": ["동부 금광🪙", "중앙 금광🪙", "서부 금광🪙", "펫스킬 광산📕", "다이아 광산💎", "미강석 광산💫", "루미에르 요새🛡️", "호월킹덤🏰"],
@@ -4863,6 +4869,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 ctx.dollDeletion.snapshots.push(createJsonRollbackSnapshot(dollDeleteStore));
             }
         }
+        if (getDiceTournamentRequest(msg)) {
+            var tournamentGuildData = loadJsonFile(guildPath);
+            runDiceTournamentEntry(ctx, data, tournamentGuildData, sender, room, isGroupChat, msg, replier, Date.now());
+            return;
+        }
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
         // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
@@ -8144,6 +8155,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 }
 
 
+                if (msg === "/자유시장판매가이드" || msg === "자유시장 판매가이드") {
+                    replier.reply(buildFreeMarketV2Guide());
+                    return;
+                }
                 if (isFreeMarketV2Command(msg)) {
                     if (msg === "/자유시장생성") {
                         if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("❌ Admin/Master 전용 명령어입니다."); return; }
@@ -30139,6 +30154,7 @@ replier.reply(
                     var preparedCleanup = compactAdventureQuestPreparedRecords(data, false);
                     var unusedMemberCleanup = cleanupUnusedMemberFields(data, false);
                     var memberRecordCleanup = cleanupMemberRecordRedundancy(data, false);
+                    var guildRecordCleanup = compactGuildWarRecords(guildData.war24, false);
                     var robberyCleanupConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
                     var robberyCleanupPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.fileName);
                     var robberyAlreadySeparated = data.migrations && data.migrations[robberyCleanupConfig.markerKey] === true;
@@ -30318,6 +30334,7 @@ replier.reply(
                     out += "\n[할로윈 가방 사탕 전환]\n";
                     out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
                     out += "\n[레이드·봉인금고 기록 정리]\n레이드 중복 요약 " + memberRecordCleanup.raidUsers + "명 / 금고 개인 희귀 기록 " + memberRecordCleanup.personalRareRecords + "건 / 전체 희귀 기록 " + memberRecordCleanup.globalRareRecords + "건 제거\n";
+                    out += "\n[길드 전쟁 기록 정리]\n중복 원본 " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n최근 30건·상세·공격권·보상 기록은 유지했습니다.\n";
                     out += "\n[보상·교육 기록 정리]\n";
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
@@ -30636,6 +30653,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
     var prepared = compactAdventureQuestPreparedRecords(data, true);
     var unused = cleanupUnusedMemberFields(data, true);
     var recordCleanup = cleanupMemberRecordRedundancy(data, true);
+    var guildRecordCleanup = compactGuildWarRecords(guildData.war24, true);
     var retiredTargets = [];
     scrubCarrotLegacy(data, false, retiredTargets);
     scrubCarrotLegacy(guildData, false, retiredTargets);
@@ -30646,6 +30664,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
     }
     var targets = [["memberRecordCleanup", recordCleanup.targets], ["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var candyMigration = stores.halloweenCandyMigration;
+    targets.push(["guildWarRecords", guildRecordCleanup.signature]);
     if (!candyMigration) throw new Error("할로윈 가방 사탕 전환 대상을 확인할 수 없습니다.");
     targets.push(["halloweenCandy", candyMigration.targets]);
     var zeroCount = 0, zeroUsers = 0, pointUsers = 0, pointFraction = 0; // 제거할 포인트 소수점 합계
@@ -30694,6 +30713,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
         "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
         "• 레이드 중복 요약: " + recordCleanup.raidUsers + "명 제거\n" +
+        "• 길드 전쟁 중복 원본: " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n  길드별 최근 30건·상세·공격권·보상 기록은 유지합니다.\n" +
         "• 봉인금고 희귀 기록: 개인 " + recordCleanup.personalRareRecords + "건 / 전체 " + recordCleanup.globalRareRecords + "건 제거\n" +
         "  계정·누적 전적·금고 개봉/부스터/확정 진행도는 유지합니다.\n" +
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
@@ -31157,7 +31177,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    if (getHowolMysteryRequest(command) || isDevCommandMessage(msg) && command === "/ㅊㄹ" || getGuildWarRequest(command) || getHalloweenRequest(command) || getHowolDramaRequest(command)) return true;
+    if (getDiceTournamentRequest(command) || getHowolMysteryRequest(command) || isDevCommandMessage(msg) && command === "/ㅊㄹ" || getGuildWarRequest(command) || getHalloweenRequest(command) || getHowolDramaRequest(command)) return true;
     if (/^\/패키지(?:사용|지급)(?:\s|$)/.test(command)) return true;
     if (command === "/리셋") return true; // 전체 경기 환급·미니게임 초기화를 다른 복합 저장과 직렬화
     if (isDevCommandMessage(msg) && command === "/ㅎㅈ") return true;
@@ -31328,6 +31348,7 @@ function isGuildTerritoryWarCommandLockActive(guildData) {
 
 // 길드 영지전 중 허용되는 영지전 명령어인지 확인하는 함수
 function isGuildTerritoryAllowedDuringWarCommand(msg) {
+    if (getDiceTournamentRequest(msg)) return true;
     if (getGuildWarRequest(msg)) return true;
     if (typeof msg !== "string") return false;
     return (
@@ -33370,6 +33391,7 @@ function isServerRaidTurnQueryCommand(msg) {
 
 // 대전 중 기존 명령 처리로 통과시킬 추가 예외와 해당 인수 형식을 확인하는 함수
 function isServerRaidAdditionalCommand(msg) {
+    if (getDiceTournamentRequest(msg)) return true;
     return msg === "/기록보관소1" || /^\/기록보관소1\s+\d+$/.test(msg) || msg === "/글자수전체정리" || GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
         /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg) ||
         /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
@@ -66509,6 +66531,7 @@ try {
     if (recoverGuildWarPublication()) initData = loadJsonFile(filePath, "bootstrap");
     startupWork = initializeLegacyStartup(initData);
     initializeGuildWarStartup();
+    if (initData.diceTournament) scheduleDiceTournamentWork(createCommandContext(false, room8), requireDiceTournament(initData.diceTournament), Date.now());
 }
 finally { initData = null; }
 for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
@@ -66996,7 +67019,7 @@ function initializeGuildWarCampaign(guildData, now) {
     for (var no = 1; no <= 6; no++) territories[String(map[no])] = state.territories[String(no)];
     state.territories = territories;
     var rows = state.active.slice(0);
-    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) rows = rows.concat(state.records[gid]);
+    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) rows = rows.concat(getGuildWarRecords(state, gid));
     for (var i = 0; i < rows.length; i++) {
         if (!isPointShopSafeCount(rows[i].no) || !map[rows[i].no]) throw new Error("길드전쟁 이전 지역번호 오류");
         rows[i].no = map[rows[i].no];
@@ -67249,7 +67272,7 @@ function buildGuildWarDirectHeader(sender) {
 }
 // 최신 다섯 전쟁 요약과 최근 서른 건 상세를 같은 저장 결과에서 표시하는 함수
 function buildGuildWarRecords(state, guildData, gid, recordId) {
-    var stored = state.records[gid] || [], rows = stored.slice(0, GLOBAL_CONFIG.guildWar.recordLimit);
+    var stored = getGuildWarRecords(state, gid), rows = stored.slice(0, GLOBAL_CONFIG.guildWar.recordLimit);
     if (recordId !== undefined) {
         var found = rows.filter(function (war) { return war.id === recordId; })[0];
         return found ? buildGuildWarRecordDetail(found, gid) : "해당 전쟁기록을 찾을 수 없습니다. /전쟁기록에서 보관 중인 고유번호를 확인해 주세요.";
@@ -67281,7 +67304,7 @@ function createGuildWarRights() {
 function prepareGuildWarPersonalTransition(state, entry, gid) {
     if (entry.personalTransitionDay !== undefined && (!isPointShopSafeCount(entry.personalTransitionDay) || entry.personalTransitionDay > state.day)) throw new Error("길드전쟁 개인 전환 날짜 오류");
     if (entry.personalTransitionDay === state.day || !entry.rights.master || entry.personalDeclarations !== undefined) return false;
-    var rows = state.active.concat(state.records[gid] || []), known = false;
+    var rows = state.active.concat(getGuildWarRecords(state, gid)), known = false;
     for (var i = 0; i < rows.length; i++) {
         var war = rows[i];
         if (war.attackId === gid && war.day === state.day && war.ticketEpoch === entry.ticketEpoch && war.right === "master" && !war.refunded && typeof war.declaredBy === "string" && war.declaredBy) known = true;
@@ -67343,7 +67366,7 @@ function getGuildWarPersonalUsage(state, guild, entry, gid) {
         if (!entry.personalDeclarations || typeof entry.personalDeclarations !== "object" || Array.isArray(entry.personalDeclarations)) throw new Error("길드전쟁 개인 사용량 오류");
         legacy = cloneFreeMarketObject(entry.personalDeclarations);
     } else {
-        var rows = state.active.concat(state.records[gid] || []);
+        var rows = state.active.concat(getGuildWarRecords(state, gid));
         for (var i = 0; i < rows.length; i++) {
             var war = rows[i];
             if (war.attackId !== gid || war.day !== state.day || war.ticketEpoch !== entry.ticketEpoch || war.refunded || war.personalTicket === false || seen[war.id]) continue;
@@ -67820,6 +67843,13 @@ function requireGuildWarDeclarationReceipt(war) {
 // 길드전쟁 상태의 기본 구조와 주요 수치가 정상인지 검증하는 함수
 function requireGuildWarState(state) {
     if (!state || (state.version !== 1 && state.version !== 2) || !state.territories || !state.guilds || !state.records || !Array.isArray(state.active) || !Array.isArray(state.notices) || typeof state.earth !== "string") throw new Error("길드전쟁 저장 구조 오류");
+    if (state.recordStore !== undefined) {
+        if (!state.recordStore || typeof state.recordStore !== "object" || Array.isArray(state.recordStore)) throw new Error("길드전쟁 공통 기록 형식 오류");
+        for (var storedId in state.recordStore) if (Object.prototype.hasOwnProperty.call(state.recordStore, storedId)) {
+            var storedRecord = state.recordStore[storedId];
+            if (!storedRecord || !isPointShopSafeCount(storedRecord.id) || storedRecord.id < 1 || String(storedRecord.id) !== storedId) throw new Error("길드전쟁 공통 기록 번호 오류");
+        }
+    }
     if (state.expansionVersion !== undefined && (state.expansionVersion !== 1 || !isPointShopSafeCount(state.expandedAt))) throw new Error("길드전쟁 확장 정책 기록 오류");
     if (!isPointShopSafeCount(state.nextId) || state.nextId < 1 || !isPointShopSafeCount(state.day)) throw new Error("길드전쟁 회차 오류");
     if (state.version === 2 && (state.rewardPolicy !== GLOBAL_CONFIG.guildWar.rewardPolicy || !isPointShopSafeCount(state.rewardChangedAt))) throw new Error("길드전쟁 정책 기록 누락");
@@ -67886,8 +67916,7 @@ function requireGuildWarState(state) {
         if (state.campaignVersion !== undefined && daily.extraUsed + commanderFreeUsed > used || daily.tickets !== (state.campaignVersion === undefined ? Math.max(0, expectedTickets) : expectedTickets)) throw new Error("길드전쟁 공격권 합계 오류");
     }
     for (var recordGuild in state.records) if (Object.prototype.hasOwnProperty.call(state.records, recordGuild)) {
-        var records = state.records[recordGuild];
-        if (!Array.isArray(records)) throw new Error("길드전쟁 기록 개수 오류");
+        var records = getGuildWarRecords(state, recordGuild);
         for (var recordIndex = 0; recordIndex < records.length; recordIndex++) {
             requireGuildWarDefenseJoins(records[recordIndex]);
             requireGuildWarDeclarationReceipt(records[recordIndex]);
@@ -68123,21 +68152,495 @@ function buildGuildWarResult(war, recipientId) {
     return text + "━━━━━━━━━━━━\n" + pairs.join("\n\n") + "\n\n📚 전투 상세정보" + allsee + "\n" + details.join("\n\n");
 }
 
+// 인수가 없는 대회 명령과 공백을 포함하는 등록 닉네임을 정확히 구분하는 함수
+function getDiceTournamentRequest(msg) {
+    var commands = { "/주사위참가": "join", "/주사위참가명단": "roster", "/주사위대진표": "bracket", "/ㄹㄷ": "ready", "/주사위시작": "start", "/주사위중단": "pause", "/주사위재개": "resume", "/주사위명령어": "help" };
+    if (Object.prototype.hasOwnProperty.call(commands, msg)) return { kind: commands[msg] };
+    var match = /^\/주사위탈락[ \t]+([^\r\n]+)$/.exec(msg);
+    if (match) return { kind: "eliminate", nick: match[1] };
+    if (/^\/(?:주사위(?:참가명단|참가|대진표|시작|탈락|중단|재개|명령어)|ㄹㄷ)(?:\s|$)/.test(msg)) return { kind: "invalid" };
+    return null;
+}
+
+// 대회 표시 숫자를 키캡으로 바꾸되 명령어 입력 예시는 그대로 두는 함수
+function diceTournamentNumber(value) {
+    var caps = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"];
+    return String(value).replace(/\d/g, function (digit) { return caps[Number(digit)]; });
+}
+
+// 조회만으로 저장하지 않는 이번 일회성 대회의 접수 상태를 만드는 함수
+function createDiceTournament() {
+    return { version: 1, id: GLOBAL_CONFIG.diceTournament.id, status: "REGISTERING", room: GLOBAL_CONFIG.diceTournament.publicRoom,
+        roster: [], users: {}, matches: [], cursor: 0, notices: [], nextNotice: 1, pausedAt: 0, winner: null };
+}
+
+// 손상된 대진·준비·확정 숫자·지급 표시를 빈 대회로 대체하지 않고 거절하는 함수
+function requireDiceTournament(state) {
+    if (!state || state.version !== 1 || state.id !== GLOBAL_CONFIG.diceTournament.id || ["REGISTERING", "ACTIVE", "PAUSED", "FINISHED"].indexOf(state.status) < 0 ||
+        typeof state.room !== "string" || !state.users || Array.isArray(state.users) || !Array.isArray(state.roster) || !Array.isArray(state.matches) || !Array.isArray(state.notices) ||
+        !isPointShopSafeCount(state.cursor) || state.cursor > state.matches.length || !isPointShopSafeCount(state.nextNotice) || state.nextNotice < 1 || !isPointShopSafeCount(state.pausedAt)) throw new Error("주사위 대회 저장 형식 오류");
+    for (var i = 0; i < state.roster.length; i++) {
+        var id = state.roster[i], user = state.users["$" + id];
+        if (typeof id !== "string" || !id || state.roster.indexOf(id) !== i || !user) throw new Error("주사위 대회 참가 명단 오류");
+    }
+    for (var key in state.users) if (Object.prototype.hasOwnProperty.call(state.users, key)) {
+        var participant = state.users[key];
+        if (!participant || typeof participant.nick !== "string" || !participant.nick || typeof participant.eliminated !== "boolean" || !isPointShopSafeCount(participant.paid) || participant.paid > 31 || key.charAt(0) !== "$") throw new Error("주사위 대회 참가·보상 기록 오류");
+    }
+    for (var m = 0; m < state.matches.length; m++) {
+        var row = state.matches[m];
+        if (!row || row.id !== m + 1 || !isPointShopSafeCount(row.stage) || row.stage < 2 || Math.pow(2, Math.round(Math.log(row.stage) / Math.LN2)) !== row.stage ||
+            ["READY", "ROLL", "DONE"].indexOf(row.phase) < 0 || !Array.isArray(row.slots) || row.slots.length !== 2 || !Array.isArray(row.from) || row.from.length !== 2 ||
+            !Array.isArray(row.ready) || row.ready.length !== 2 || !Array.isArray(row.rolls) || row.rolls.length !== 4 || !isPointShopSafeCount(row.turn) || row.turn > 4 ||
+            !isPointShopSafeCount(row.dueAt) || !isPointShopSafeCount(row.readyAt) || !isPointShopSafeCount(row.cycle) || typeof row.warned !== "boolean" || typeof row.announced !== "boolean" || typeof row.bye !== "boolean") throw new Error("주사위 대회 경기 상태 오류");
+        for (var side = 0; side < 2; side++) {
+            if (typeof row.ready[side] !== "boolean" || row.slots[side] !== null && !state.users["$" + row.slots[side]] || !isPointShopSafeCount(row.from[side]) || row.from[side] >= row.id) throw new Error("주사위 대회 경기 연결 오류");
+        }
+        for (var r = 0; r < 4; r++) if (!isPointShopSafeCount(row.rolls[r]) || row.rolls[r] > 6) throw new Error("주사위 대회 확정 숫자 오류");
+        if (row.winner !== null && row.slots.indexOf(row.winner) < 0 || row.phase === "ROLL" && (row.turn > 3 || !row.rolls[row.turn] || !row.ready[0] || !row.ready[1]) || row.phase !== "DONE" && m < state.cursor) throw new Error("주사위 대회 경기 확정 오류");
+    }
+    for (var n = 0; n < state.notices.length; n++) {
+        var notice = state.notices[n];
+        if (!notice || !isPointShopSafeCount(notice.id) || notice.id < 1 || typeof notice.text !== "string" || typeof notice.control !== "boolean" || !isPointShopSafeCount(notice.attempts) || notice.attempts > 2 || typeof notice.inFlight !== "boolean") throw new Error("주사위 대회 공지 오류");
+    }
+    if (state.status !== "REGISTERING" && !state.matches.length || state.winner !== null && !state.users["$" + state.winner] || state.status === "PAUSED" && !state.pausedAt) throw new Error("주사위 대회 진행 단계 오류");
+    return state;
+}
+
+// 현재 계정 이름으로 채크랭크를 표시하고 삭제된 계정은 등록 이름을 유지하는 함수
+function diceTournamentName(env, state, id) {
+    var account = env.index[id], user = state.users["$" + id];
+    return "[" + (account ? checkRank(env.data, null, env.guildData, account.user) : user ? user.nick : "참가자 없음") + "]";
+}
+
+// 닉네임 변경 후에도 같은 계정에 각 단계의 보상을 한 번만 합산하는 함수
+function grantDiceTournamentReward(env, state, id, stage) {
+    var keys = ["attendance", "quarter", "semi", "final", "champion"], bit = Math.pow(2, keys.indexOf(stage)); // 단계별 지급 여부를 보관할 비트
+    var user = state.users["$" + id], account = env.index[id], amount = GLOBAL_CONFIG.diceTournament.rewards[stage];
+    if (!user || !amount || keys.indexOf(stage) < 0 || user.eliminated) throw new Error("주사위 대회 보상 대상 오류");
+    if (Math.floor(user.paid / bit) % 2) return 0;
+    if (!account || !isFreeMarketPointBalance(account.member.point) || !isFreeMarketPointBalance(account.member.point + amount)) throw new Error("주사위 대회 보상 계정·잔액 확인 필요");
+    account.member.point += amount; user.paid += bit;
+    return amount;
+}
+
+// 긴 대진표를 줄 단위로 나눠 실제 전체보기와 확정 공지를 보관하는 함수
+function queueDiceTournamentNotice(state, text, control, anchor) {
+    var lines = String(text).split("\n"), chunk = "", parts = [], limit = GLOBAL_CONFIG.diceTournament.chunkChars;
+    for (var i = 0; i < lines.length; i++) {
+        if (chunk.length && chunk.length + lines[i].length + 1 > limit) { parts.push(chunk); chunk = ""; }
+        chunk += (chunk ? "\n" : "") + lines[i];
+    }
+    if (chunk) parts.push(chunk);
+    for (var p = 0; p < parts.length; p++) state.notices.push({ id: state.nextNotice++, text: parts[p], control: !!control, attempts: 0, inFlight: false, anchor: p === parts.length - 1 ? anchor || null : null });
+}
+
+// 참가·경기 공개 조회에서 고정 번호와 참가자별 준비 상태를 출력하는 함수
+function buildDiceTournamentBracket(env, state) {
+    if (!state.matches.length) return "🏆 주사위 대회 전체 대진표\n참가 접수 중입니다. /주사위참가";
+    var text = "🏆 주사위 대회 전체 대진표\n" + (state.status === "PAUSED" ? "⏸️ 일시 중단\n" : ""), previousStage = 0;
+    for (var i = 0; i < state.matches.length; i++) {
+        var match = state.matches[i];
+        if (match.stage !== previousStage) { text += "\n━━ 🎲 " + diceTournamentNumber(match.stage) + "강" + (match.stage === 2 ? " · 결승" : "") + " ━━\n"; previousStage = match.stage; }
+        text += "【" + diceTournamentNumber(match.id) + "경기】\n";
+        for (var side = 0; side < 2; side++) {
+            var id = match.slots[side], source = match.from[side] ? state.matches[match.from[side] - 1] : null;
+            text += id ? diceTournamentName(env, state, id) : source && source.phase !== "DONE" ? diceTournamentNumber(source.id) + "경기 승자 미정" : "부전승 자리";
+            text += side === 0 ? "\n         🆚\n" : "\n";
+        }
+        text += match.phase === "DONE" ? (match.bye ? "🏆 부전승" : "✅ 종료") + (match.winner ? " · " + diceTournamentName(env, state, match.winner) : " · 진출자 없음") : match.phase === "ROLL" ? "🎲 진행 중" : "⏳ 준비 대기";
+        text += "\n";
+    }
+    return text;
+}
+
+// 첫 준비 보상과 자동 경기·중단 원칙을 실제 전체보기 안에 안내하는 함수
+function buildDiceTournamentRules() {
+    return "🎲 각자 6️⃣면 주사위를 2️⃣번씩 번갈아 굴립니다.\n⏳ 굴림마다 3️⃣초 뒤 결과를 공개해요. 합계가 높으면 승리, 동점이면 자동 재경기해요.\n✅ 자기 경기에서 /ㄹㄷ · 다음 경기에서도 다시 준비해 주세요.\n⏰ 준비 대기 2️⃣분 후에는 경고만 하며 MASTER가 불참자를 처리해요.\n👑 3️⃣·4️⃣위전은 없어요.\n\n🎁 누적 보상\n첫 유효 준비: 참가 1️⃣0️⃣0️⃣억\n8️⃣강: 추가 1️⃣0️⃣0️⃣억\n4️⃣강: 추가 2️⃣0️⃣0️⃣억\n결승: 추가 3️⃣0️⃣0️⃣억\n우승: 추가 1️⃣0️⃣0️⃣0️⃣억 · 최대 누적 1️⃣7️⃣0️⃣0️⃣억\n신청·대회 시작만으로 보상을 지급하지 않아요. 처음부터 8️⃣강이면 첫 준비 때 8️⃣강 보상도 받아요.\n부전승도 본인의 /ㄹㄷ 참석 확인이 필요해요. 단계별 보상은 한 번만 지급해요.\n역전승·최대 합계에는 추가 보상이 없어요.\n중단·재시작 후에도 대진·확정 숫자·지급 내역을 유지해요.";
+}
+
+// MASTER에게 아홉 명령의 권한·시점·예시를 언제나 조회로 안내하는 함수
+function buildDiceTournamentHelp() {
+    return "🎲 주사위 대회 명령어 안내 [MASTER]" + allsee + "\n\n👥 참가자·공개 조회 명령어\n\n1️⃣ /주사위참가\n권한: 길드 가입 유저 · 시작 전\n중복 신청·시작 후 추가 참가 불가. 신청만으로 보상은 지급되지 않아요.\n예시: /주사위참가\n\n2️⃣ /주사위참가명단\n권한: 누구나 · 언제나\n현재 참가명단 확인\n예시: /주사위참가명단\n\n3️⃣ /주사위대진표\n권한: 누구나 · 언제나\n전체 대진과 진행 상황 확인\n예시: /주사위대진표\n\n4️⃣ /ㄹㄷ\n권한: 현재 경기 참가자 · 진행방\n첫 유효 참석 확인 때 참가 보상을 지급하고, 두 선수 준비 후 자동 진행해요. 다음 경기에서는 다시 준비해 주세요.\n예시: /ㄹㄷ\n\n🔐 MASTER 운영 명령어\n\n5️⃣ /주사위시작\n권한: MASTER · 접수 중\n자격을 다시 확인하고 최소 8️⃣명부터 무작위 대진으로 시작해요. 시작 보상은 없어요.\n예시: /주사위시작\n\n6️⃣ /주사위탈락 아이디\n권한: MASTER · 중단 중 사용 불가\n장식 없이 등록 닉네임 전체를 정확히 입력해 주세요. 상대의 준비 확인 후 부전승 처리해요.\n예시: /주사위탈락 찰리 남\n\n7️⃣ /주사위중단\n권한: MASTER · 진행 중\n준비 시간과 경기 진행을 멈춰요. 중단 중에는 조회와 재개만 가능해요.\n예시: /주사위중단\n\n8️⃣ /주사위재개\n권한: MASTER · 중단 중\n대진·확정 숫자·지급 내역을 유지하고 이어가요.\n예시: /주사위재개\n\n9️⃣ /주사위명령어\n권한: MASTER · 시작 전/진행/중단/종료 후\n이 전체 도움말을 확인해요. 대회 상태·보상은 바뀌지 않아요.\n예시: /주사위명령어\n\n🏰 길드 가입 안내\n/길드상점 → /길드상점구매 1 1\n/길드목록 → /길드가입 번호\n가입 후 /주사위참가\n\n" + buildDiceTournamentRules();
+}
+
+// 최초 한 번의 무작위 배치로 빈 경기 없이 부전승과 고정 연결을 생성하는 함수
+function startDiceTournament(state, ids, random) {
+    var shuffled = ids.slice(0), width = 1;
+    for (var i = shuffled.length - 1; i > 0; i--) { var swap = Math.floor(random() * (i + 1)), saved = shuffled[i]; shuffled[i] = shuffled[swap]; shuffled[swap] = saved; }
+    while (width < ids.length) width *= 2;
+    var byes = width - ids.length, pairs = [], cursor = 0; // 첫 라운드의 부전승 자리 수
+    for (var b = 0; b < byes; b++) pairs.push([shuffled[cursor++], null]);
+    while (cursor < shuffled.length) pairs.push([shuffled[cursor++], shuffled[cursor++]]);
+    for (var p = pairs.length - 1; p > 0; p--) { var pick = Math.floor(random() * (p + 1)), pair = pairs[p]; pairs[p] = pairs[pick]; pairs[pick] = pair; }
+    var initial = width, previous = [];
+    state.roster = ids.slice(0); state.matches = []; state.cursor = 0; state.status = "ACTIVE";
+    while (width >= 2) {
+        var round = [];
+        for (var m = 0; m < width / 2; m++) {
+            var id = state.matches.length + 1;
+            state.matches.push({ id: id, stage: width, slots: width === initial ? pairs[m] : [null, null], from: width === initial ? [0, 0] : [previous[m * 2], previous[m * 2 + 1]],
+                phase: "READY", ready: [false, false], rolls: [0, 0, 0, 0], turn: 0, cycle: 0, dueAt: 0, readyAt: 0, warned: false, announced: false, bye: false, winner: null });
+            round.push(id);
+        }
+        previous = round; width /= 2;
+    }
+}
+
+// 확정 승자만 다음 고정 자리에 연결하고 탈락자의 미래 자리는 비우는 함수
+function syncDiceTournamentSlots(state) {
+    for (var i = 0; i < state.matches.length; i++) {
+        var match = state.matches[i];
+        if (match.phase === "DONE") continue;
+        for (var side = 0; side < 2; side++) {
+            var source = match.from[side] ? state.matches[match.from[side] - 1] : null;
+            if (source && source.phase === "DONE") match.slots[side] = source.winner;
+            var user = match.slots[side] && state.users["$" + match.slots[side]];
+            if (user && user.eliminated) { match.slots[side] = null; match.ready[side] = false; }
+        }
+    }
+}
+
+// 승자를 확정하고 단계별 보상을 한 번 합산한 뒤 다음 대진으로 연결하는 함수
+function finishDiceTournamentMatch(env, state, match, winner, bye) {
+    match.phase = "DONE"; match.winner = winner; match.bye = !!bye; match.dueAt = 0;
+    state.notices = state.notices.filter(function (notice) { return !notice.anchor || notice.anchor.match !== match.id; });
+    var text = "【" + diceTournamentNumber(match.id) + "경기】";
+    if (!winner) text += " 진출자 없이 종료합니다.";
+    else {
+        var key = match.stage === 16 ? "quarter" : match.stage === 8 ? "semi" : match.stage === 4 ? "final" : match.stage === 2 ? "champion" : null;
+        var amount = key ? grantDiceTournamentReward(env, state, winner, key) : 0;
+        text += "\n🏆 " + diceTournamentName(env, state, winner) + (bye ? " 부전승!" : " 승리!") + "\n" + (match.stage === 2 ? "👑 우승!" : "🎉 " + diceTournamentNumber(match.stage / 2) + "강 진출!");
+        if (amount) text += "\n💰 " + (match.stage === 2 ? "우승" : "진출") + " 보상 " + diceTournamentNumber(amount / 100000000) + "억 포인트 지급!";
+    }
+    queueDiceTournamentNotice(state, text + "\n📋 대진표가 갱신되었습니다!", false);
+    syncDiceTournamentSlots(state);
+}
+
+// 완료 경기는 건너뛰고 다음 한 경기에만 새 준비를 안내하는 함수
+function advanceDiceTournament(env, state) {
+    syncDiceTournamentSlots(state);
+    while (state.cursor < state.matches.length) {
+        var match = state.matches[state.cursor];
+        if (match.phase === "DONE") { state.cursor++; continue; }
+        if (!match.slots[0] && !match.slots[1]) { finishDiceTournamentMatch(env, state, match, null, true); state.cursor++; continue; }
+        if (!match.announced) {
+            match.announced = true;
+            var text = "🎲 " + diceTournamentNumber(match.stage) + "강 【" + diceTournamentNumber(match.id) + "경기】\n";
+            for (var side = 0; side < 2; side++) if (match.slots[side]) text += diceTournamentName(env, state, match.slots[side]) + " ⏳ 준비 대기\n";
+            queueDiceTournamentNotice(state, text + "준비되셨다면 /ㄹㄷ를 입력해 주세요!", false, { kind: "ready", match: match.id, cycle: match.cycle });
+        }
+        return;
+    }
+    state.status = "FINISHED"; state.winner = state.matches[state.matches.length - 1].winner;
+    queueDiceTournamentNotice(state, state.winner ? "🎉 주사위 대회가 종료되었습니다!\n👑 우승: " + diceTournamentName(env, state, state.winner) : "🎲 남은 참가자가 없어 우승자 없이 대회를 종료합니다.", false);
+}
+
+// 마지막 굴림에서 실제로 가능한 승리 숫자와 동점 조건만 안내하는 함수
+function buildDiceTournamentLastChance(env, state, match) {
+    var target = match.rolls[0] + match.rolls[2], current = match.rolls[1]; // 앞 선수의 최종 합계와 뒤 선수의 첫 굴림
+    var tie = target - current, win = tie + 1; // 동점이 되는 숫자와 승리에 필요한 최소 숫자
+    var text = "🔥 " + diceTournamentName(env, state, match.slots[1]) + "님의 마지막 기회!\n현재 누적 " + diceTournamentNumber(current) + "!\n";
+    if (win <= 1) return text + "어떤 숫자가 나와도 승리 조건을 충족합니다!";
+    if (win <= 6) text += diceTournamentNumber(win) + " 이상이면 승리";
+    else text += "이번 굴림으로 역전할 수 없습니다";
+    return text + (tie >= 1 && tie <= 6 ? ", " + diceTournamentNumber(tie) + "이면 동점입니다!" : "!");
+}
+
+// 숫자를 먼저 확정하고 실제 굴림 공지 전송 뒤 공개 시간을 예약하는 함수
+function beginDiceTournamentRoll(env, state, match, random) {
+    match.phase = "ROLL"; match.dueAt = 0;
+    if (!match.rolls[match.turn]) match.rolls[match.turn] = Math.floor(random() * 6) + 1;
+    if (match.turn === 3) queueDiceTournamentNotice(state, buildDiceTournamentLastChance(env, state, match), false, { kind: "hint", match: match.id, cycle: match.cycle });
+    queueDiceTournamentNotice(state, "🎲 " + diceTournamentName(env, state, match.slots[match.turn % 2]) + "님의 주사위가 굴러갑니다!\n\n데구르르르르.. 🎲", false,
+        { kind: "roll", match: match.id, cycle: match.cycle, turn: match.turn });
+}
+
+// 공개 시각이 된 확정 숫자를 표시하고 네 번 굴린 뒤에만 승패를 정하는 함수
+function revealDiceTournamentRoll(env, state, match, random) {
+    var turn = match.turn, side = turn % 2, first = match.rolls[side], second = turn >= 2 ? match.rolls[turn] : 0;
+    var text = "🎲 결과는… 【" + diceTournamentNumber(match.rolls[turn]) + "】!\n\n" + diceTournamentName(env, state, match.slots[side]) + "\n" + diceTournamentNumber(first) + (turn >= 2 ? " + " + diceTournamentNumber(second) : "") + " = 누적 【" + diceTournamentNumber(first + second) + "】";
+    if (turn === 1) text += match.rolls[0] === match.rolls[1] ? "\n🤝 첫 굴림은 동점입니다!" : "\n🔥 현재 우세: " + diceTournamentName(env, state, match.slots[match.rolls[0] > match.rolls[1] ? 0 : 1]);
+    queueDiceTournamentNotice(state, text, false); match.turn++;
+    if (match.turn < 4) { beginDiceTournamentRoll(env, state, match, random); return; }
+    var a = match.rolls[0] + match.rolls[2], b = match.rolls[1] + match.rolls[3]; // 두 선수의 최종 합계
+    var summary = "🎲 최종 누적 주사위\n" + diceTournamentName(env, state, match.slots[0]) + "\n" + diceTournamentNumber(match.rolls[0]) + " + " + diceTournamentNumber(match.rolls[2]) + " = 【" + diceTournamentNumber(a) + "】\n\n" + diceTournamentName(env, state, match.slots[1]) + "\n" + diceTournamentNumber(match.rolls[1]) + " + " + diceTournamentNumber(match.rolls[3]) + " = 【" + diceTournamentNumber(b) + "】\n";
+    if (a === b) {
+        queueDiceTournamentNotice(state, summary + "🤯 합계까지 같습니다! 재경기로 이어집니다!", false);
+        match.rolls = [0, 0, 0, 0]; match.turn = 0; match.cycle++; beginDiceTournamentRoll(env, state, match, random); return;
+    }
+    var winnerSide = a > b ? 0 : 1, reversed = winnerSide === 0 ? match.rolls[0] < match.rolls[1] : match.rolls[1] < match.rolls[0];
+    summary += reversed ? "🔥 역전승입니다아아아아!" : "🛡️ 끝까지 승부를 지켜냈습니다!";
+    if (Math.abs(a - b) === 1) summary += "\n😱 단 1️⃣점 차!";
+    if (a === 12 || b === 12) summary += "\n💥 최대 합계 1️⃣2️⃣! 주사위가 폭발했습니다!";
+    queueDiceTournamentNotice(state, summary, false);
+    finishDiceTournamentMatch(env, state, match, match.slots[winnerSide], false); advanceDiceTournament(env, state);
+}
+
+// 현재 경기의 첫 유효 준비에만 참석 보상을 지급하고 중복 입력은 조회하는 함수
+function readyDiceTournament(env, state, id, random) {
+    var match = state.matches[state.cursor], side = match ? match.slots.indexOf(id) : -1;
+    if (!id || !state.users["$" + id] || side < 0 || state.users["$" + id].eliminated) return { changed: false, text: "현재 경기 참가자만 /ㄹㄷ를 사용할 수 있습니다." };
+    if (match.ready[side]) return { changed: false, text: "✅ 이미 준비 완료했습니다. 경기 진행을 기다려 주세요." };
+    if (match.phase !== "READY") return { changed: false, text: "🎲 현재 경기가 진행 중입니다." };
+    var amount = grantDiceTournamentReward(env, state, id, "attendance");
+    if (match.stage === 8) amount += grantDiceTournamentReward(env, state, id, "quarter");
+    match.ready[side] = true;
+    var text = "✅ " + diceTournamentName(env, state, id) + "님, 준비 완료!";
+    if (amount) text += "\n💰 첫 참석 보상 " + diceTournamentNumber(amount / 100000000) + "억 포인트 지급!";
+    for (var p = 0; p < 2; p++) if (match.slots[p]) text += "\n" + diceTournamentName(env, state, match.slots[p]) + (match.ready[p] ? " ✅ 준비 완료" : " ⏳ 준비 대기 · /ㄹㄷ");
+    if (!match.slots[1 - side]) { finishDiceTournamentMatch(env, state, match, id, true); advanceDiceTournament(env, state); }
+    else if (match.ready[0] && match.ready[1]) {
+        queueDiceTournamentNotice(state, "🔥 두 선수 모두 준비됐습니다!\n" + diceTournamentNumber(match.stage) + "강 【" + diceTournamentNumber(match.id) + "경기】 시작합니다아아아아!", false, { kind: "start", match: match.id, cycle: match.cycle });
+        beginDiceTournamentRoll(env, state, match, random);
+    }
+    return { changed: true, text: text };
+}
+
+// 등록 닉네임 한 명만 정확히 탈락시키고 확정 결과와 지급한 보상은 유지하는 함수
+function eliminateDiceTournament(env, state, nick) {
+    var ids = Object.keys(state.users).filter(function (key) { return state.users[key].nick === nick; });
+    if (ids.length !== 1) return { changed: false, text: "❌ 등록 닉네임 전체가 한 명과 정확히 일치해야 합니다.\n/주사위탈락 찰리 남" };
+    var id = ids[0].substring(1), user = state.users[ids[0]];
+    if (user.eliminated) return { changed: false, text: "이미 탈락 처리된 참가자입니다." };
+    user.eliminated = true;
+    queueDiceTournamentNotice(state, "📢 MASTER의 참가자 탈락 처리\n🚫 " + diceTournamentName(env, state, id) + "님이 탈락 처리되었습니다.", false);
+    if (state.status === "ACTIVE") {
+        var match = state.matches[state.cursor], involved = match.slots.indexOf(id) >= 0;
+        if (involved) state.notices = state.notices.filter(function (notice) { return !notice.anchor || notice.anchor.match !== match.id; });
+        syncDiceTournamentSlots(state);
+        if (involved) {
+            match.phase = "READY"; match.dueAt = 0;
+            var side = match.slots[0] ? 0 : match.slots[1] ? 1 : -1;
+            if (side < 0 || match.ready[side]) { finishDiceTournamentMatch(env, state, match, side < 0 ? null : match.slots[side], true); advanceDiceTournament(env, state); }
+        }
+    }
+    return { changed: true, text: "✅ 등록 닉네임 [" + nick + "] 탈락을 반영했습니다." };
+}
+
+// 대회 명령의 권한·진행방·저장을 진입부에서 처리하고 조회는 저장하지 않는 함수
+function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat, msg, replier, now) {
+    var request = getDiceTournamentRequest(msg), kind = request.kind, config = GLOBAL_CONFIG.diceTournament;
+    var operator = ["start", "pause", "resume", "eliminate", "help"].indexOf(kind) >= 0;
+    if (operator && !isMaster(sender)) { replier.reply("🚫 MASTER 권한만 사용할 수 있는 명령어입니다."); return; }
+    if (kind === "invalid") { replier.reply("명령어를 정확히 입력해 주세요.\n/주사위참가 · /주사위참가명단 · /주사위대진표 · /ㄹㄷ\n/주사위탈락 등록닉네임"); return; }
+    if (kind === "help") { replier.reply(buildDiceTournamentHelp()); return; }
+    var state = data.diceTournament ? requireDiceTournament(data.diceTournament) : createDiceTournament();
+    var env = { data: data, guildData: guildData, index: buildServerRaidAccountIndex(data) }, text = "", changed = false;
+    if (kind === "roster") {
+        text = "🎲 주사위 대회 참가명단[" + diceTournamentNumber(state.roster.length) + "명]" + allsee;
+        for (var p = 0; p < state.roster.length; p++) { var participantId = state.roster[p]; text += "\n" + diceTournamentNumber(p + 1) + ". " + diceTournamentName(env, state, participantId) + (state.users["$" + participantId].eliminated ? " · 탈락" : ""); }
+    } else if (kind === "bracket") text = buildDiceTournamentBracket(env, state);
+    else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다. 조회와 /주사위재개만 가능합니다.";
+    else if (state.status === "FINISHED") text = "🏁 이번 대회는 종료되었습니다. 재시작·재참가·추가 탈락 처리는 할 수 없습니다.\n/주사위대진표";
+    else if (kind === "join" || kind === "ready") {
+        if (!isGroupChat || room !== (ctx.isDev ? testRoom : state.room)) text = "🎲 참가 신청과 /ㄹㄷ는 대회 진행 공개방에서 입력해 주세요.";
+        else if (!data.member[sender]) text = "등록된 계정이 필요합니다. 먼저 게임 가입을 완료해 주세요.";
+        else if (isAccountSuspended(data, sender)) text = "계정정지 상태입니다 호월고객센터로 문의해주세요";
+        else if (kind === "join") {
+            var gid = getMyGuildId(data, sender), guild = gid && guildData.guilds[gid];
+            if (state.status !== "REGISTERING") text = "이미 대회가 시작되어 추가 참가할 수 없습니다.";
+            else if (!guild || !guild.members[sender]) text = "📢 [" + checkRank(data, null, guildData, sender) + "]님!\n주사위 대회는 길드에 가입한 유저만 참가할 수 있습니다.\n\n1️⃣ /길드상점에서 길드가입권🍭을 구매해 주세요.\n👉 /길드상점구매 1 1\n\n2️⃣ /길드목록에서 가입할 길드 번호를 확인해 주세요.\n\n3️⃣ /길드가입 번호 를 입력해 가입해 주세요.\n\n4️⃣ 가입 완료 후 /주사위참가를 다시 입력해 주세요! 🎲";
+            else {
+                var identity = ensureGuildWarAccountId(data, sender), key = "$" + identity.id;
+                if (state.users[key]) text = state.users[key].eliminated ? "탈락 처리된 참가자는 다시 신청할 수 없습니다." : "✅ 이미 참가 신청했습니다.";
+                else {
+                    state.users[key] = { nick: sender, eliminated: false, paid: 0 }; state.roster.push(identity.id); changed = true;
+                    text = "✅ [" + checkRank(data, null, guildData, sender) + "]님, 참가 신청 완료!\n📅 " + diceTournamentNumber(config.eventLabel) + "\n👥 현재 " + diceTournamentNumber(state.roster.length) + "명 · /주사위참가명단\n첫 경기에서 /ㄹㄷ로 참석을 확인하면 보상을 지급해요.";
+                }
+            }
+        } else if (state.status !== "ACTIVE") text = "참가 접수 중입니다. MASTER가 대회를 시작하면 자기 경기에서 /ㄹㄷ를 입력해 주세요.";
+        else {
+            var readyId = getGuildWarAccountId(data, sender), decision = readyDiceTournament(env, state, readyId, Math.random);
+            changed = decision.changed; text = decision.text;
+        }
+    } else if (kind === "start") {
+        if (state.status !== "REGISTERING") text = "이미 시작된 대회입니다. 기존 대진·지급 내역을 유지합니다.";
+        else {
+            var eligible = state.roster.filter(function (id) { var account = env.index[id], gid = account && getMyGuildId(data, account.user), guild = gid && guildData.guilds[gid]; return !state.users["$" + id].eliminated && account && !isAccountSuspended(data, account.user) && guild && guild.members[account.user]; });
+            if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명 · 보상은 지급하지 않았습니다.";
+            else {
+                startDiceTournament(state, eligible, Math.random); changed = true;
+                queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n🎁 첫 유효 /ㄹㄷ 참석 확인 시 참가 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 첫 경기 미참석자는 보상을 받지 못합니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state), false);
+                advanceDiceTournament(env, state); text = "✅ 대회를 시작했습니다. 공개방에 대진과 현재 경기를 안내합니다.";
+            }
+        }
+    } else if (kind === "pause") {
+        if (state.status !== "ACTIVE") text = "진행 중인 대회가 없습니다.";
+        else { state.status = "PAUSED"; state.pausedAt = now; changed = true; text = "⏸️ 대회를 중단했습니다. 준비 시간·경기 진행이 정지되었습니다."; queueDiceTournamentNotice(state, text, true); }
+    } else if (kind === "resume") {
+        if (state.status !== "PAUSED") text = "중단된 대회가 없습니다.";
+        else {
+            var gap = Math.max(0, now - state.pausedAt), current = state.matches[state.cursor];
+            if (current && current.dueAt) current.dueAt += gap;
+            if (current && current.readyAt) current.readyAt += gap;
+            state.status = "ACTIVE"; state.pausedAt = 0;
+            for (var noticeIndex = 0; noticeIndex < state.notices.length; noticeIndex++) { state.notices[noticeIndex].attempts = 0; state.notices[noticeIndex].inFlight = false; }
+            changed = true; text = "▶️ 대회를 재개했습니다. 대진·확정 주사위·지급 내역을 유지합니다.";
+            var oldNotices = state.notices; state.notices = []; queueDiceTournamentNotice(state, text, true); state.notices = state.notices.concat(oldNotices);
+        }
+    } else if (kind === "eliminate") { var elimination = eliminateDiceTournament(env, state, request.nick); changed = elimination.changed; text = elimination.text; }
+    if (changed) {
+        data.diceTournament = requireDiceTournament(state);
+        saveJsonFile(data, filePath); // 포인트와 단계별 지급 표시를 동일 회원 파일에서 원자적으로 확정
+        endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 실패로 확정된 대진·보상을 되돌리지 않는다.
+    }
+    scheduleDiceTournamentWork(ctx, state, now);
+    var output = createDiceTournament(); queueDiceTournamentNotice(output, text, false);
+    for (var part = 0; part < output.notices.length; part++) replier.reply(output.notices[part].text);
+}
+
+// 실제로 전송할 공지나 현재 경기의 다음 시각만 계산하는 함수
+function getDiceTournamentWorkDelay(state, now) {
+    if (!state) return null;
+    if (state.notices.some(function (notice) { return notice.attempts < 2 && (state.status !== "PAUSED" || notice.control); })) return GLOBAL_CONFIG.diceTournament.noticeDelayMs;
+    if (state.status !== "ACTIVE") return null;
+    var match = state.matches[state.cursor];
+    if (!match) return null;
+    if (match.phase === "ROLL" && match.dueAt) return Math.max(1, match.dueAt - now);
+    if (match.phase === "READY" && !match.warned && match.readyAt) return Math.max(1, match.readyAt - now);
+    return null;
+}
+
+// 대기 시간에는 잠금을 풀고 취소된 콜백이 새 대회 작업을 지우지 않도록 예약하는 함수
+function scheduleDiceTournamentWork(ctx, state, now, retryDelay) {
+    var key = ctx.key(), delay = retryDelay === undefined ? getDiceTournamentWorkDelay(state, now) : retryDelay, existing = diceTournamentTimers[key];
+    if (delay === null) { if (existing) { clearTimeout(existing.id); delete diceTournamentTimers[key]; } return; }
+    if (existing && existing.at <= now + delay) return;
+    if (existing) clearTimeout(existing.id);
+    var timer = { at: now + delay, id: null };
+    timer.id = setTimeout(function () {
+        if (diceTournamentTimers[key] !== timer) return;
+        delete diceTournamentTimers[key]; runDiceTournamentWork(ctx);
+    }, delay);
+    diceTournamentTimers[key] = timer;
+}
+
+// 최신 회원 원본으로 한 연출만 확정하고 공지 전송 여부와 공개 시각을 보관하는 진입점
+function runDiceTournamentWork(ctx) {
+    var previous = enterCommandContext(ctx), lock = commandDataFlowLock.writeLock(), data = null, failed = false;
+    lock.lock(); dataTransactionLock.lock(); beginDataSaveTransaction();
+    try {
+        recoverGuildWarPublication(); recoverAdventurePublication(); recoverHowolDramaPending(); recoverPackageGrantPending(); recoverDailyRankingPending(); recoverAdventureRecordPending(false); recoverMemberSplitPublication();
+        data = loadJsonFile(filePath, "bootstrap");
+        var state = data.diceTournament ? requireDiceTournament(data.diceTournament) : null, now = Date.now();
+        if (!state) return;
+        var noticeIndex = -1;
+        for (var i = 0; i < state.notices.length; i++) if (state.notices[i].attempts < 2 && (state.status !== "PAUSED" || state.notices[i].control)) { noticeIndex = i; break; }
+        if (noticeIndex >= 0) {
+            var notice = state.notices[noticeIndex]; notice.attempts++; notice.inFlight = true;
+            saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+            var sent = false;
+            try { sent = Api.replyRoom(ctx.isDev ? testRoom : state.room, ctx.header(notice.text)) !== false; }
+            catch (sendError) { debuggerLog("[주사위 대회 공지 전송 실패] " + sendError); }
+            notice.inFlight = false;
+            if (sent) {
+                var anchor = notice.anchor, match = anchor && state.matches[anchor.match - 1];
+                if (match && match.cycle === anchor.cycle) {
+                    if (anchor.kind === "ready" && match.phase === "READY") match.readyAt = Date.now() + GLOBAL_CONFIG.diceTournament.readyTimeoutMs;
+                    if (anchor.kind === "roll" && match.phase === "ROLL" && match.turn === anchor.turn && !match.dueAt) match.dueAt = Date.now() + GLOBAL_CONFIG.diceTournament.rollDelayMs;
+                }
+                state.notices.splice(noticeIndex, 1);
+            } else if (notice.attempts >= 2 && state.status === "ACTIVE") {
+                state.status = "PAUSED"; state.pausedAt = Date.now(); debuggerLog("[주사위 대회 전송 보류] MASTER /주사위재개 필요");
+            }
+            saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+        } else if (state.status === "ACTIVE") {
+            var current = state.matches[state.cursor], guildData = loadJsonFile(guildPath);
+            var env = { data: data, guildData: guildData, index: buildServerRaidAccountIndex(data) };
+            if (current.phase === "ROLL" && current.dueAt && current.dueAt <= now) revealDiceTournamentRoll(env, state, current, Math.random);
+            else if (current.phase === "READY" && current.readyAt && current.readyAt <= now && !current.warned) {
+                current.warned = true;
+                queueDiceTournamentNotice(state, "⏰ 준비 안내 후 2️⃣분이 지났습니다.\n자동 탈락하지 않습니다. MASTER가 불참 여부를 확인해 주세요.\n/주사위탈락 등록닉네임", false, { kind: "warn", match: current.id, cycle: current.cycle });
+            } else return;
+            requireDiceTournament(state); saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+        }
+    } catch (error) {
+        failed = true; try { rollbackDataSaveTransaction(); } catch (rollbackError) { debuggerLog("[주사위 대회 저장 복구 실패] " + rollbackError); }
+        debuggerLog("[주사위 대회 자동 진행 보류] " + error);
+    } finally {
+        endDataSaveTransaction(); dataTransactionLock.unlock(); lock.unlock();
+        try {
+            if (failed) scheduleDiceTournamentWork(ctx, null, Date.now(), GLOBAL_CONFIG.diceTournament.retryMs);
+            else scheduleDiceTournamentWork(ctx, data && data.diceTournament, Date.now());
+        } finally { exitCommandContext(previous); }
+    }
+}
+
+// 기존 원본 배열과 새 고유번호 참조를 모두 읽고 잘못된 참조는 거절하는 함수
+function getGuildWarRecords(state, gid) {
+    var rows = state.records[gid];
+    if (rows === undefined) return [];
+    if (!Array.isArray(rows)) throw new Error("길드전쟁 기록 목록 오류");
+    return rows.map(function (row) {
+        if (typeof row !== "number") {
+            if (!row || typeof row !== "object" || !isPointShopSafeCount(row.id) || row.id < 1) throw new Error("길드전쟁 기록 원본 오류");
+            return row;
+        }
+        var stored = state.recordStore && state.recordStore[String(row)];
+        if (!isPointShopSafeCount(row) || row < 1 || !stored || stored.id !== row) throw new Error("길드전쟁 기록 참조 누락");
+        return stored;
+    });
+}
+
+// 현재 길드 목록에서 참조하지 않는 새 저장 원본만 제거하는 함수
+function pruneGuildWarRecordStore(state) {
+    if (!state.recordStore) return;
+    var referenced = {};
+    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) {
+        var rows = state.records[gid];
+        for (var i = 0; i < rows.length; i++) if (typeof rows[i] === "number") referenced[String(rows[i])] = true;
+    }
+    for (var id in state.recordStore) if (Object.prototype.hasOwnProperty.call(state.recordStore, id) && !referenced[id]) delete state.recordStore[id];
+}
+
+// 과거 전쟁 원본은 미리보기 또는 명시적인 데이터 정리에서만 통합하는 함수
+function compactGuildWarRecords(state, previewOnly) {
+    var result = { duplicates: 0, savedChars: 0, signature: null };
+    if (state === undefined) return result;
+    requireGuildWarState(state);
+    var pool = {}, texts = {}, refs = {}, count = 0, legacy = false;
+    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) {
+        refs[gid] = [];
+        var rows = getGuildWarRecords(state, gid);
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i], id = String(row.id), text = JSON.stringify(row);
+            if (texts[id] !== undefined && texts[id] !== text) throw new Error("동일 번호의 길드 전쟁 원본이 다릅니다: " + id);
+            if (pool[id]) result.duplicates++;
+            else { pool[id] = row; texts[id] = text; }
+            refs[gid].push(row.id); count++;
+            if (typeof state.records[gid][i] !== "number") legacy = true;
+        }
+    }
+    var before = JSON.stringify({ records: state.records, recordStore: state.recordStore });
+    var after = JSON.stringify({ records: refs, recordStore: pool });
+    result.savedChars = Math.max(0, before.length - after.length);
+    result.signature = getDataCleanupSignature([before]);
+    if (!previewOnly && legacy && count) { state.records = refs; state.recordStore = pool; }
+    if (!legacy) result.duplicates = 0;
+    return result;
+}
+
 // 최근 30건과 미확정 보상 원본을 보관하고 기존 결과 알림을 예약하는 함수
 function recordGuildWar(state, guildData, war) {
     var ids = [war.attackId, war.defenseId], results = [];
     // 양쪽 결과를 먼저 완성해 표시 오류가 완료 기록 일부만 남기지 않게 한다.
     for (var r = 0; r < ids.length; r++) if (ids[r]) results[r] = buildGuildWarResult(war, ids[r]);
+    if (!state.recordStore) state.recordStore = {};
+    if (state.recordStore[String(war.id)] && state.recordStore[String(war.id)] !== war) throw new Error("길드전쟁 고유 기록 중복 오류");
+    state.recordStore[String(war.id)] = war;
     for (var i = 0; i < ids.length; i++) {
         var gid = ids[i];
         if (!gid) continue;
         if (!state.records[gid]) state.records[gid] = [];
-        state.records[gid].unshift(war);
+        state.records[gid].unshift(war.id);
         state.records[gid] = state.records[gid].filter(function (record, index) {
+            if (typeof record === "number") record = state.recordStore[String(record)];
             return index < GLOBAL_CONFIG.guildWar.recordLimit || record.personalRewards && record.personalRewards.pendingUsers && record.personalRewards.pendingUsers.length > 0;
         });
         queueGuildWarNotice(state, guildData, gid, results[i]);
     }
+    pruneGuildWarRecordStore(state);
 }
 
 // 점령 길드가 실제 바뀌는 시각에 새 점령 기간을 시작하는 함수
@@ -68157,9 +68660,17 @@ function getGuildWarItemSourceGuildIds(war) {
     return ids;
 }
 
+// 결산 중 내용이 바뀌지 않는 완료 원본은 복제하지 않고 참조 목록만 보관하는 함수
+function copyGuildWarRecordStore(store) {
+    if (store === undefined) return undefined;
+    var copy = {};
+    for (var id in store) if (Object.prototype.hasOwnProperty.call(store, id)) copy[id] = store[id];
+    return copy;
+}
+
 // 전쟁 한 건이 변경할 점령·아이템·자금·기록만 복구용으로 보관하는 함수
 function snapshotGuildWarSettlement(data, guildData, state, war) {
-    var snapshot = { war: JSON.stringify(war), territory: JSON.stringify(state.territories[String(war.no)]), notices: state.notices.slice(0), bags: [], guilds: {} };
+    var snapshot = { war: JSON.stringify(war), territory: JSON.stringify(state.territories[String(war.no)]), notices: state.notices.slice(0), bags: [], guilds: {}, recordStore: copyGuildWarRecordStore(state.recordStore) };
     var fighters = war.attack.concat(war.defense), ids = [war.attackId, war.defenseId].concat(getGuildWarItemSourceGuildIds(war));
     for (var h = 0; war.matchupHistory && h < war.matchupHistory.length; h++) fighters = fighters.concat(war.matchupHistory[h].attack, war.matchupHistory[h].defense);
     for (var f = 0; f < fighters.length; f++) {
@@ -68184,6 +68695,7 @@ function restoreGuildWarSettlement(data, guildData, state, snapshot) {
     var war = JSON.parse(snapshot.war);
     state.territories[String(war.no)] = JSON.parse(snapshot.territory);
     state.notices = snapshot.notices.slice(0);
+    if (snapshot.recordStore === undefined) delete state.recordStore; else state.recordStore = copyGuildWarRecordStore(snapshot.recordStore);
     state.guilds[war.attackId] = JSON.parse(snapshot.entry);
     for (var f = 0; f < snapshot.bags.length; f++) {
         var savedBag = snapshot.bags[f];
@@ -68372,7 +68884,7 @@ function buildGuildWarMain(data, guildData, gid, now) {
     for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner), status = guild ? getGuildWarAdvance(state, gid, no) : null;
         var icon = status ? status.own ? "🏴" : status.allowed ? "⚔️" : "🔒" : "";
-        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + (guild && status.own ? "우리 길드" : owner ? formatGuildDisplay(owner) : "미점령") + (status && !status.allowed && !status.own && !status.limit ? " · " + status.condition : "") + "\n";
+        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + (guild && status.own ? "우리 길드" : owner ? formatGuildDisplay(owner) : "미점령") + "\n";
         if (no === getGuildWarKingdomNo(state) && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
         if (no === 3 || no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine) text += "              ⬇️\n";
         if (no === GLOBAL_CONFIG.guildWar.siege.fortress) text += "              ↕️\n";
@@ -68986,7 +69498,7 @@ function initializeGuildWarSiege(guildData, now) {
         for (var h = 0; h < history.length; h++) moveRecord(history[h]);
     }
     var rows = state.active.slice(0);
-    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) rows = rows.concat(state.records[gid]);
+    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) rows = rows.concat(getGuildWarRecords(state, gid));
     for (var i = 0; i < rows.length; i++) moveRecord(rows[i]);
     for (var n = 0; n < state.notices.length; n++) {
         state.notices[n].text = state.notices[n].text.split("[" + oldKingdom + "] 호월킹덤").join("[8] 호월킹덤");
