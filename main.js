@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.859"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.860"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1152,7 +1152,7 @@ const GLOBAL_CONFIG = {
     ] },
     storage: { copyBufferBytes: 8192, jsonChunkChars: 4096, nativeLeafMaxKeys: 32, transactionPrefix: ".hoi-memory-", transactionStaleMs: 86400000, pendingHeaderThresholdBytes: 262144, pendingHeaderChars: 512 },
     diceTournament: {
-        id: "2026-11-22", publicRoom: room8, eventLabel: "2026년 11월 22일(일) 저녁 9시 · 한국시간",
+        id: "2026-11-22", publicRoom: "호월고객센터 (게임질문 및 오류신고)", eventLabel: "2026년 11월 22일(일) 저녁 9시 · 한국시간",
         minPlayers: 8, rollDelayMs: 3000, readyTimeoutMs: 120000, retryMs: 5000, noticeDelayMs: 250, chunkChars: 3500,
         rewards: { attendance: 10000000000, quarter: 10000000000, semi: 20000000000, final: 30000000000, champion: 100000000000 }
     },
@@ -66531,7 +66531,7 @@ try {
     if (recoverGuildWarPublication()) initData = loadJsonFile(filePath, "bootstrap");
     startupWork = initializeLegacyStartup(initData);
     initializeGuildWarStartup();
-    if (initData.diceTournament) scheduleDiceTournamentWork(createCommandContext(false, room8), requireDiceTournament(initData.diceTournament), Date.now());
+    if (initData.diceTournament) scheduleDiceTournamentWork(createCommandContext(false, GLOBAL_CONFIG.diceTournament.publicRoom), requireDiceTournament(initData.diceTournament), Date.now());
 }
 finally { initData = null; }
 for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
@@ -68431,7 +68431,8 @@ function eliminateDiceTournament(env, state, nick) {
 function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat, msg, replier, now) {
     var request = getDiceTournamentRequest(msg), kind = request.kind, config = GLOBAL_CONFIG.diceTournament;
     var operator = ["start", "pause", "resume", "eliminate", "help"].indexOf(kind) >= 0;
-    if (operator && !isMaster(sender)) { replier.reply("🚫 MASTER 권한만 사용할 수 있는 명령어입니다."); return; }
+    if (operator && !isMasterIdentity(sender)) { replier.reply("🚫 MASTER 권한만 사용할 수 있는 명령어입니다."); return; }
+    if (kind === "start" && (!isGroupChat || room !== (ctx.isDev ? testRoom : config.publicRoom))) return;
     if (kind === "invalid") { replier.reply("명령어를 정확히 입력해 주세요.\n/주사위참가 · /주사위참가명단 · /주사위대진표 · /ㄹㄷ\n/주사위탈락 등록닉네임"); return; }
     if (kind === "help") { replier.reply(buildDiceTournamentHelp()); return; }
     var state = data.diceTournament ? requireDiceTournament(data.diceTournament) : createDiceTournament();
@@ -68443,8 +68444,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
     else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다. 조회와 /주사위재개만 가능합니다.";
     else if (state.status === "FINISHED") text = "🏁 주사위 대회가 종료되었습니다.";
     else if (kind === "join" || kind === "ready") {
-        if (!isGroupChat || room !== (ctx.isDev ? testRoom : state.room)) text = "🎲 참가 신청과 /ㄹㄷ는 대회 진행 공개방에서 입력해 주세요.";
-        else if (!data.member[sender]) text = "등록된 계정이 필요합니다. 먼저 게임 가입을 완료해 주세요.";
+        if (!data.member[sender]) text = "등록된 계정이 필요합니다. 먼저 게임 가입을 완료해 주세요.";
         else if (isAccountSuspended(data, sender)) text = "계정정지 상태입니다 호월고객센터로 문의해주세요";
         else if (kind === "join") {
             var gid = getMyGuildId(data, sender), guild = gid && guildData.guilds[gid];
@@ -68540,7 +68540,7 @@ function runDiceTournamentWork(ctx) {
             var notice = state.notices[noticeIndex]; notice.attempts++; notice.inFlight = true;
             saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
             var sent = false;
-            try { sent = Api.replyRoom(ctx.isDev ? testRoom : state.room, ctx.header(notice.text)) !== false; }
+            try { sent = Api.replyRoom(ctx.isDev ? testRoom : GLOBAL_CONFIG.diceTournament.publicRoom, ctx.header(notice.text)) !== false; }
             catch (sendError) { debuggerLog("[주사위 대회 공지 전송 실패] " + sendError); }
             notice.inFlight = false;
             if (sent) {
