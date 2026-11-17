@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.860"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.861"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -30334,7 +30334,7 @@ replier.reply(
                     out += "\n[할로윈 가방 사탕 전환]\n";
                     out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
                     out += "\n[레이드·봉인금고 기록 정리]\n레이드 중복 요약 " + memberRecordCleanup.raidUsers + "명 / 금고 개인 희귀 기록 " + memberRecordCleanup.personalRareRecords + "건 / 전체 희귀 기록 " + memberRecordCleanup.globalRareRecords + "건 제거\n";
-                    out += "\n[길드 전쟁 기록 정리]\n중복 원본 " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n최근 30건·상세·공격권·보상 기록은 유지했습니다.\n";
+                    out += "\n[길드 전쟁 기록 정리]\n중복 원본 " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n";
                     out += "\n[보상·교육 기록 정리]\n";
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
@@ -30713,7 +30713,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
         "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
         "• 레이드 중복 요약: " + recordCleanup.raidUsers + "명 제거\n" +
-        "• 길드 전쟁 중복 원본: " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n  길드별 최근 30건·상세·공격권·보상 기록은 유지합니다.\n" +
+        "• 길드 전쟁 중복 원본: " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n" +
         "• 봉인금고 희귀 기록: 개인 " + recordCleanup.personalRareRecords + "건 / 전체 " + recordCleanup.globalRareRecords + "건 제거\n" +
         "  계정·누적 전적·금고 개봉/부스터/확정 진행도는 유지합니다.\n" +
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
@@ -68339,7 +68339,7 @@ function advanceDiceTournament(env, state) {
         return;
     }
     state.status = "FINISHED"; state.winner = state.matches[state.matches.length - 1].winner;
-    queueDiceTournamentNotice(state, state.winner ? "🎉 주사위 대회가 종료되었습니다!\n👑 우승: " + diceTournamentName(env, state, state.winner) : "🎲 남은 참가자가 없어 우승자 없이 대회를 종료합니다.", false);
+    if (!state.winner) queueDiceTournamentNotice(state, "🎲 우승자 없이 종료합니다.", false);
 }
 
 // 마지막 굴림에서 실제로 가능한 승리 숫자와 동점 조건만 안내하는 함수
@@ -68386,7 +68386,7 @@ function revealDiceTournamentRoll(env, state, match, random) {
 function readyDiceTournament(env, state, id, random) {
     var match = state.matches[state.cursor], side = match ? match.slots.indexOf(id) : -1;
     if (!id || !state.users["$" + id] || side < 0 || state.users["$" + id].eliminated) return { changed: false, text: "현재 경기 참가자만 /ㄹㄷ를 사용할 수 있습니다." };
-    if (match.ready[side]) return { changed: false, text: "✅ 이미 준비 완료했습니다. 경기 진행을 기다려 주세요." };
+    if (match.ready[side]) return { changed: false, text: "✅ 준비 완료" };
     if (match.phase !== "READY") return { changed: false, text: "🎲 현재 경기가 진행 중입니다." };
     var attendance = grantDiceTournamentReward(env, state, id, "attendance");
     var quarter = match.stage === 8 ? grantDiceTournamentReward(env, state, id, "quarter") : 0;
@@ -68424,7 +68424,7 @@ function eliminateDiceTournament(env, state, nick) {
         }
     }
     if (!completed) queueDiceTournamentNotice(state, noticeText, false);
-    return { changed: true, text: "✅ [" + nick + "]님이 탈락 처리되었습니다." };
+    return { changed: true, text: "🚫 " + diceTournamentName(env, state, id) + "님이 탈락 처리되었습니다." };
 }
 
 // 대회 명령의 권한·진행방·저장을 진입부에서 처리하고 조회는 저장하지 않는 함수
@@ -68438,13 +68438,13 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
     var state = data.diceTournament ? requireDiceTournament(data.diceTournament) : createDiceTournament();
     var env = { data: data, guildData: guildData, index: buildServerRaidAccountIndex(data) }, text = "", changed = false;
     if (kind === "roster") {
-        text = "🎲 주사위 대회 참가명단[" + diceTournamentNumber(state.roster.length) + "명]" + allsee;
-        for (var p = 0; p < state.roster.length; p++) { var participantId = state.roster[p]; text += "\n" + diceTournamentNumber(p + 1) + ". " + diceTournamentName(env, state, participantId) + (state.users["$" + participantId].eliminated ? " · 탈락" : ""); }
+        text = "🎲 주사위 대회 참가명단[" + diceTournamentNumber(state.roster.length) + "명]";
+        for (var p = 0; p < state.roster.length; p++) { var participantId = state.roster[p]; text += "\n" + diceTournamentNumber(p + 1) + ". " + diceTournamentName(env, state, participantId); }
     } else if (kind === "bracket") text = buildDiceTournamentBracket(env, state);
-    else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다. 조회와 /주사위재개만 가능합니다.";
+    else if (state.status === "PAUSED" && kind !== "resume") text = "⏸️ 대회가 중단되어 있습니다.";
     else if (state.status === "FINISHED") text = "🏁 주사위 대회가 종료되었습니다.";
     else if (kind === "join" || kind === "ready") {
-        if (!data.member[sender]) text = "등록된 계정이 필요합니다. 먼저 게임 가입을 완료해 주세요.";
+        if (!data.member[sender]) text = "등록된 계정이 필요합니다.";
         else if (isAccountSuspended(data, sender)) text = "계정정지 상태입니다 호월고객센터로 문의해주세요";
         else if (kind === "join") {
             var gid = getMyGuildId(data, sender), guild = gid && guildData.guilds[gid];
@@ -68458,7 +68458,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
                     text = "✅ [" + checkRank(data, null, guildData, sender) + "]님, 참가 신청 완료!\n📅 " + diceTournamentNumber(config.eventLabel);
                 }
             }
-        } else if (state.status !== "ACTIVE") text = "참가 접수 중입니다. MASTER가 대회를 시작하면 자기 경기에서 /ㄹㄷ를 입력해 주세요.";
+        } else if (state.status !== "ACTIVE") text = "참가 접수 중입니다.";
         else {
             var readyId = getGuildWarAccountId(data, sender), decision = readyDiceTournament(env, state, readyId, Math.random);
             changed = decision.changed; text = decision.text;
@@ -68467,7 +68467,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
         if (state.status !== "REGISTERING") text = "이미 시작된 대회입니다.";
         else {
             var eligible = state.roster.filter(function (id) { var account = env.index[id], gid = account && getMyGuildId(data, account.user), guild = gid && guildData.guilds[gid]; return !state.users["$" + id].eliminated && account && !isAccountSuspended(data, account.user) && guild && guild.members[account.user]; });
-            if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명 · 보상은 지급하지 않았습니다.";
+            if (eligible.length < config.minPlayers) text = "길드 가입 조건을 충족한 참가자가 최소 " + diceTournamentNumber(config.minPlayers) + "명 필요합니다.\n현재 " + diceTournamentNumber(eligible.length) + "명";
             else {
                 startDiceTournament(state, eligible, Math.random); changed = true;
                 queueDiceTournamentNotice(state, "🎲 주사위 대회!\n금일 개최를 시작합니다아아아아아아아아! 🔥\n\n👥 참가자 " + diceTournamentNumber(eligible.length) + "명\n\n🎁 첫 경기에서 /ㄹㄷ로 참석을 확인하면\n참가 보상 1️⃣0️⃣0️⃣억" + (eligible.length === 8 ? " + 8️⃣강 보상 1️⃣0️⃣0️⃣억" : "") + " 지급!\n🚫 신청만 하고 첫 경기에 미참석하면 보상은 지급되지 않습니다.\n\n📖 경기 규칙" + allsee + "\n" + buildDiceTournamentRules() + "\n\n" + buildDiceTournamentBracket(env, state), false);
@@ -68495,6 +68495,7 @@ function runDiceTournamentEntry(ctx, data, guildData, sender, room, isGroupChat,
         endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 실패로 확정된 대진·보상을 되돌리지 않는다.
     }
     scheduleDiceTournamentWork(ctx, state, now);
+    if (room === (ctx.isDev ? testRoom : config.publicRoom) && state.notices.some(function (notice) { return notice.text === text; })) return; // 같은 방의 중단·재개 안내 중복 방지
     var output = createDiceTournament(); queueDiceTournamentNotice(output, text, false);
     for (var part = 0; part < output.notices.length; part++) replier.reply(output.notices[part].text);
 }
