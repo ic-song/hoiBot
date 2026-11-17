@@ -109,6 +109,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Promote existing hard-coded values to global objects only when the touched logic already needs modification; avoid broad mechanical sweeps for unrelated constants.
 - Keep feature changes and pure structure cleanup in separate commits when practical.
 - Preserve user-facing UI formatting:
+  - original wording and sentence endings
   - line breaks
   - emojis
   - `allsee` formatting
@@ -118,6 +119,15 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Inputs with extra guide text after valid arguments, such as `/명령어 1 해봐`, must not execute command logic unless that command explicitly accepts free-form text.
 - When adding a new helper/function, add a brief one-line purpose comment directly above it, for example `// 현재 날짜 문자열 반환 함수`.
 - When a function declares several derived or summary variables, add short inline comments beside the non-obvious variables explaining what each value calculates, for example `var towerAttempts = ...; // 시련탑 도전 횟수 계산`.
+
+## User-Facing Copy: No Unapproved Wording
+
+- Treat wording and output examples explicitly supplied by the user or selected planning document as a literal contract for game screens, command replies, help, and announcements. Preserve text, sentence endings, punctuation, order, line breaks, emojis, and the actual `allsee` position. Do not summarize, polish, rephrase, or add explanations on the agent's own initiative.
+- Substitute only values required by the specification, such as nicknames, counts, scores, rewards, and round names. Calculate values using the confirmed formula when an example's numbers are wrong; preserve the surrounding wording. Internal implementation freedom does not grant freedom to write UI copy.
+- Do not turn every business or recovery rule into a visible explanation. Do not add unrequested restart, duplicate-processing, storage, account-ID, implementation, restriction, or operational guidance to game output merely because it describes the implementation correctly. Keep internal explanations in code comments or development reports.
+- When a necessary state has no specified wording, reuse an applicable existing user-approved message. If no approved message applies, prepare the minimum proposed wording separately for review; do not expose it in production until the user confirms it or explicitly delegates copywriting. This restriction concerns new public wording, not ordinary internal implementation choices.
+- Before reflecting a copy change, compare the actual generated messages with the applicable source examples, including formatting and dynamic values. Check that no unapproved line or duplicate announcement was added. A helper's presence or a passing syntax check is not proof that the output matches.
+- Report proposed new wording separately from exact source wording. Never describe agent-written copy as if it came from the planning document. Commit/PR descriptions and required developer notes remain subject to their own rules and do not authorize adding the same explanations to game screens.
 
 ## Temporary Verification Artifacts
 
@@ -131,10 +141,11 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 ## Notion READY/HOTFIX Development Workflow
 
 - Treat a Notion planning document as the source of product intent, user-visible behavior, and operational policy, not as implementation authority.
+- Explicit UI wording and output examples are governed by the **User-Facing Copy: No Unapproved Wording** contract above; they are not optional implementation suggestions.
 - Use explicit business formulas, probabilities, reward tables, limits, schedules, command behavior, UI intent, and exception policy as planning evidence. When a worked UI example conflicts with one unambiguous formula, follow the formula and calculate the displayed value correctly in code; update the planning example only when the user explicitly requests a Notion body edit.
 - Treat variable names, helper names, JSON shapes, storage paths, locking primitives, save order, and code structure written in the initial Notion document as non-binding implementation suggestions unless the user explicitly confirms a specific detail as a requirement. Remove those suggestions from the planning content during planning review.
 - Derive implementation names, data structures, persistence locations, transaction boundaries, rollback behavior, and Rhino-compatible syntax from the verified current code and repository rules. Reuse current helpers and save flows where possible.
-- Do not block development merely because an initial Notion implementation suggestion does not match the repository. Block only when product intent is materially ambiguous, such as conflicting formulas, unresolved reward eligibility, user-visible policy, or operational behavior that would change the result.
+- Do not block development merely because an initial Notion implementation suggestion does not match the repository. For implementation-detail mismatches, block only when product intent is materially ambiguous, such as conflicting formulas, unresolved reward eligibility, user-visible policy, or operational behavior that would change the result. New public wording still follows the copy contract above.
 - When the current code establishes a safe precedent for a missing implementation detail, follow that precedent instead of asking the planner to design internal code.
 - When the user says "노션 확인", "노션 확인(핫픽스, ready)", or asks to check Notion HOTFIX/READY without explicitly requesting implementation, treat it as a request to count and list development-needed items in the Notion planning DB where `상태 = 🔥 HOTFIX` or `상태 = 🛠 READY`.
 - For Notion status checks, report counts by status and list matching page titles/links only after verifying the page properties; do not treat title text such as `(READY / date)` as the status source of truth.
