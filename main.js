@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.869"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.870"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1047,7 +1047,15 @@ const GLOBAL_CONFIG = {
             auctionOperators: ["칠가 남", "감자 여", "벨라 여", "티모 여", "진주 여"]
         }
     },
-    diagnostics: { fileName: "mainDiagnostics.jsonl", previousFileName: "mainDiagnostics.previous.jsonl", maxBytes: 262144, slowQueueMs: 5000, slowWorkMs: 1000, noticeIntervalMs: 30000, noticeKeys: 64, maxErrorChars: 1800, maxWriteStates: 8, maxNotices: 32, maxDebugRows: 4, noticeMaxChars: 3000 },
+    diagnostics: {
+        fileName: "mainDiagnostics.jsonl", previousFileName: "mainDiagnostics.previous.jsonl", maxBytes: 262144, slowQueueMs: 5000, slowWorkMs: 1000, noticeIntervalMs: 30000, noticeKeys: 64, maxErrorChars: 1800, maxWriteStates: 8, maxNotices: 32, maxDebugRows: 4, noticeMaxChars: 3000,
+        kinds: {
+            SLOW: { name: "지연", summary: "대기 또는 처리 시간이 기준을 넘었습니다." },
+            ERROR: { name: "오류", summary: "처리 중 오류가 발생했습니다." },
+            STORAGE: { name: "저장 점검", summary: "파일 저장 과정에서 재시도 또는 이상이 감지됐습니다." },
+            RECOVERY: { name: "복구 알림", summary: "데이터 복구 관련 알림입니다." }
+        }
+    },
     howolMystery: { reward: 100000000, sessionLimit: 5000, suspects: ["호월이", "호동이", "봄봄이"], cases: [
         {"id":1,"title":"🍰 사라진 마지막 케이크","difficulty":"쉬움","pages":["[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 1/2\n━━━━━━━━━━━━\n[채크랭크] 님이 카페 냉장고에 넣어 둔 케이크가 사라졌다. 케이크는 불투명한 상자에 담겨 있었다.\n\n🐱 호월이: “서재에서 책을 읽었어. 케이크는 보지도 않았어.”\n🐾 호동이: “부엌에서 생크림을 만들었어. 손에 크림이 묻었지.”\n💕 봄봄이: “딸기 한 알 올린 케이크는 원래 별로 안 좋아해요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n🍰 사라진 마지막 케이크 (쉬움) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 상자를 닫기 직전 올린 딸기 장식은 당신만 봤다.\n② 호동이가 만든 생크림에는 딸기가 들어가지 않았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"봄봄이는 볼 수 없던 딸기 장식을 알고 있었다. 호동이 손의 크림은 별도 요리에서 묻은 것이었다.","ending":"봄봄이는 케이크를 깜짝 파티용으로 옮겼다고 실토하고 새 접시를 꺼냈다."},
         {"id":2,"title":"📸 남아 있지 않은 사진","difficulty":"보통","pages":["[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 1/2\n━━━━━━━━━━━━\n저녁 8시 무렵, [채크랭크] 님의 카메라에서 메모리 카드가 사라졌다. 카메라는 7시 55분에 확인한 뒤 8시 5분에 다시 보니 카드가 없었다.\n\n🐱 호월이: “난 카메라를 만지지 않았어.”\n🐾 호동이: “난 그 시각에 정원에 있었어.”\n💕 봄봄이: “8시에 카메라에서 사진을 골라 봤어요.”\n\n👉 다음 페이지: /추리소설 또는 ㅊㄹ","[채크랭크] 님의 호월 추리소설 🔎\n📸 남아 있지 않은 사진 (보통) · 2/2\n━━━━━━━━━━━━\n🔍 발견된 단서\n① 카메라 배터리는 7시 50분에 완전히 방전됐고 그날 교체하거나 외부 전원을 연결한 기록도 없었다.\n② 저녁 7시 55분부터 8시 5분까지 마당 영상에 호월이와 호동이가 함께 찍혀 있었다. 봄봄이만 카메라가 있던 방에 남았다.\n\n🕵️ 범인은 누구일까?\n1. 🐱 호월이\n2. 🐾 호동이\n3. 💕 봄봄이\n\n👉 범인 선택: /추리선택 번호\n🎁 정답 보상: 1억 포인트\n📅 내일 /추리소설 또는 ㅊㄹ 입력 시\n정답 확인 및 보상 수령!"],"answer":3,"explanation":"8시에 카메라에서 사진을 골라 봤다는 봄봄이의 진술은 방전된 기기의 상태와 맞지 않는다. 카드가 사라진 10분 동안 다른 두 사람은 마당 영상에 있었고 봄봄이만 카메라에 접근할 수 있었다.","ending":"봄봄이는 카드에 담긴 낮 사진을 깜짝 전시하려고 가져갔다고 밝혔다."},
@@ -33275,6 +33283,13 @@ function finishMainDiagnostic(request, ctx, flowStartedAt) {
     } catch (diagnosticError) {} // 상세 진단 오류는 게임 결과와 롤백에 영향을 주지 않음
 }
 
+// 유형 설명 뒤 전체보기를 넣고 기존 상세 JSON을 그대로 배치하는 함수
+function buildMainDiagnosticNotice(row) {
+    var config = GLOBAL_CONFIG.diagnostics, kind = config.kinds[row.kind];
+    var header = "[Main 상세 진단]\n유형: " + (kind ? kind.name + " (" + row.kind + ")\n" + kind.summary : String(row.kind));
+    return header + "\n" + allsee + "\n" + JSON.stringify(row, null, 2).substring(0, config.noticeMaxChars);
+}
+
 // 07 백업에 포함되는 제한 용량 JSONL과 팻 테스트방 전용 비동기 알림을 기록하는 저장 계층 함수
 function emitMainDiagnostic(ctx, row) {
     var lock = getLegacySharedLock("diagnostics", false), notice = null;
@@ -33306,7 +33321,7 @@ function emitMainDiagnostic(ctx, row) {
         if (!prior || now - prior.at >= config.noticeIntervalMs) {
             row.repeatedNotices = prior ? prior.suppressed : 0;
             mainDiagnosticNotices[key] = { at: now, suppressed: 0 };
-            notice = "[Main 상세 진단]\n" + JSON.stringify(row, null, 2).substring(0, config.noticeMaxChars);
+            notice = buildMainDiagnosticNotice(row);
         } else prior.suppressed++;
     } catch (diagnosticError) {} // 로그 파일 문제로 게임 저장을 취소하지 않음
     finally { lock.unlock(); }
