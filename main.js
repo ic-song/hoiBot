@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.870"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.871"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -33286,7 +33286,7 @@ function finishMainDiagnostic(request, ctx, flowStartedAt) {
 // 유형 설명 뒤 전체보기를 넣고 기존 상세 JSON을 그대로 배치하는 함수
 function buildMainDiagnosticNotice(row) {
     var config = GLOBAL_CONFIG.diagnostics, kind = config.kinds[row.kind];
-    var header = "[Main 상세 진단]\n유형: " + (kind ? kind.name + " (" + row.kind + ")\n" + kind.summary : String(row.kind));
+    var header = "[호이봇 처리 알림]\n유형: " + (kind ? kind.name + " (" + row.kind + ")\n" + kind.summary : String(row.kind));
     return header + "\n" + allsee + "\n" + JSON.stringify(row, null, 2).substring(0, config.noticeMaxChars);
 }
 
@@ -33315,6 +33315,7 @@ function emitMainDiagnostic(ctx, row) {
             row.persisted = true;
         } catch (diagnosticWriteError) { row.persisted = false; }
         finally { if (output) { try { output.close(); } catch (closeError) {} } }
+        if (row.kind === "SLOW") return; // 지연은 07 확인용 기록만 유지하고 별도 알림은 보내지 않음
         var key = row.environment + "|" + row.kind + "|" + String(row.error || row.command || (row.writes && row.writes[0] ? row.writes[0].path : "")).substring(0, config.maxErrorChars);
         if (!mainDiagnosticNotices[key] && Object.keys(mainDiagnosticNotices).length >= config.noticeKeys) mainDiagnosticNotices = {};
         var prior = mainDiagnosticNotices[key], now = Date.now();
