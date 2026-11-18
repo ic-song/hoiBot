@@ -33315,6 +33315,7 @@ function emitMainDiagnostic(ctx, row) {
             row.persisted = true;
         } catch (diagnosticWriteError) { row.persisted = false; }
         finally { if (output) { try { output.close(); } catch (closeError) {} } }
+        if (row.kind === "SLOW") return; // 지연은 07 확인용 기록만 유지하고 별도 알림은 보내지 않음
         var key = row.environment + "|" + row.kind + "|" + String(row.error || row.command || (row.writes && row.writes[0] ? row.writes[0].path : "")).substring(0, config.maxErrorChars);
         if (!mainDiagnosticNotices[key] && Object.keys(mainDiagnosticNotices).length >= config.noticeKeys) mainDiagnosticNotices = {};
         var prior = mainDiagnosticNotices[key], now = Date.now();
