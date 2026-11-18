@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.871"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.872"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1026,7 +1026,8 @@ const GLOBAL_CONFIG = {
             {"name":"기습공격권🔥(10%)","legacy":"영지기습공격권🔥(10%)","reward":5000000,"rewardLabel":"500만"},
             {"name":"기습공격권🔥(40%)","legacy":"영지기습공격권🔥(40%)","reward":10000000,"rewardLabel":"1,000만"},
             {"name":"절대방어권🛡(20%)","legacy":"영지절대방어권🛡(20%)","reward":5000000,"rewardLabel":"500만"},
-            {"name":"절대방어권🛡(50%)","legacy":"영지절대방어권🛡(50%)","reward":10000000,"rewardLabel":"1,000만"}
+            {"name":"절대방어권🛡(50%)","legacy":"영지절대방어권🛡(50%)","reward":10000000,"rewardLabel":"1,000만"},
+            {"name":"길드전쟁공격권🎯","cleanupLegacy":"길드전쟁공격권🎯(/전쟁공격사용 숫자)","attackTicket":true,"reward":500000000,"rewardLabel":"5억"}
         ]
     },
     petHomeFloor: { perMode: 75000, maxSafe: 9007199254740991 },
@@ -1174,7 +1175,7 @@ const GLOBAL_CONFIG = {
     "campaign": { "version": 1, "kingdom": 8, "skillMine": 4, "diamondMine": 5, "miniPetMine": 6, "gold": [1, 2, 3], "oldToNew": [0, 6, 1, 2, 3, 4, 5] },
     "siege": { "version": 2, "legacyKingdom": 6, "fortress": 7, "ambushLimit": 1, "ambushSuccessRate": 0.5, "stageNames": ["금광", "핵심 광산", "요새", "킹덤"] },
     "masterSkills": { "commander": "전투형 지휘관", "attack": "기사단 증원", "defense": "징집명령", "attackPercent": 3, "defensePercent": 2 },
-    "attackTicketItem": "길드전쟁공격권🎯(/전쟁공격사용 숫자)",
+    "attackTicketItem": "길드전쟁공격권🎯",
     "kingdomExploreBonus": 5,
     "personalRewards": { "ambush": { "success": 100000000, "failure": 100000000 }, "scout": { "success": 100000000, "failure": 100000000 }, "bomb": { "success": 100000000, "failure": 100000000 }, "fighter": 100000000, "defense": 50000000 },
     "scoutLimit": 2,
@@ -30343,6 +30344,10 @@ replier.reply(
                     var boardCleanupData = loadJsonFile(boardPath);
                     var packageLogCleanupData = loadJsonFile(packageLogPath);
                     var retiredItemListData = loadJsonFile(itemListPath), retiredPackageInfoData = loadJsonFile(packageInfoPath);
+                    var attackTicketCleanup = prepareGuildAttackTicketCleanup(data, { itemListData: retiredItemListData, packageInfoData: retiredPackageInfoData });
+                    applyGuildAttackTicketCleanup(attackTicketCleanup);
+                    retiredItemListData = attackTicketCleanup.catalogs.itemListData;
+                    retiredPackageInfoData = attackTicketCleanup.catalogs.packageInfoData;
                     applyCarrotRetirement(data, Date.now());
                     var retiredCleanupStores = [homeData, placedFurnitureCleanupData, petData, petSkillData, currencyLogData, guildData, memberTitleCleanupData, petTitleCleanupData, miniPetTitleCleanupData, miniPetCollectionCleanupData, trialTowerCleanupData, petHomeCommentsCleanupData, petHomeActivityCleanupData, petExploreCleanupData, attendanceLightCleanupData, punchRankCleanupData, freeMarketCleanupData, boardCleanupData, packageLogCleanupData, retiredItemListData, retiredPackageInfoData];
                     for (var retiredStoreIndex = 0; retiredStoreIndex < retiredCleanupStores.length; retiredStoreIndex++) scrubCarrotLegacy(retiredCleanupStores[retiredStoreIndex], retiredCleanupStores[retiredStoreIndex] === freeMarketCleanupData);
@@ -30801,6 +30806,7 @@ function cleanupUnusedMemberFields(data, previewOnly) {
 
 // 삭제·축소 대상만 읽어 건수와 확인용 목록을 계산하고 원본은 변경하지 않는 함수
 function buildDataCleanupPreview(data, guildData, stores) {
+    var attackTicketCleanup = prepareGuildAttackTicketCleanup(data, stores);
     var required = getDataCleanupStorePaths();
     for (var requiredIndex = 0; requiredIndex < required.length; requiredIndex++) {
         var entry = required[requiredIndex];
@@ -30822,6 +30828,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
     }
     var targets = [["memberRecordCleanup", recordCleanup.targets], ["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var candyMigration = stores.halloweenCandyMigration;
+    targets.push(["guildAttackTicketNames", attackTicketCleanup.targets]);
     targets.push(["guildWarRecords", guildRecordCleanup.signature]);
     if (!candyMigration) throw new Error("할로윈 가방 사탕 전환 대상을 확인할 수 없습니다.");
     targets.push(["halloweenCandy", candyMigration.targets]);
@@ -31458,7 +31465,7 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
     return {
         reply: function (message) {
-            message = normalizeGuildCombatName(message);
+            message = normalizeGuildAttackTicketName(normalizeGuildCombatName(message));
             return replier.reply(ctx.header(formatHalloweenMessage(formatNicknameRankMessage(message), ctx)));
         }
     };
@@ -37277,11 +37284,60 @@ function contributeGuildTerritoryBooster(data, petData, guildData, sender, count
 }
 
 
+// 새 지급·응답의 공격권 이름만 통일하며 기존 보유 자료는 바꾸지 않는 함수
+function normalizeGuildAttackTicketName(value) {
+    if (typeof value !== "string") return value;
+    var item = GLOBAL_CONFIG.guildCombatItems.items[4];
+    return value.split(item.cleanupLegacy).join(item.name);
+}
+
+// 명시적 데이터 정리의 가방 합산·현재 상품 이름 전환을 변경 전에 모두 검증하는 함수
+function prepareGuildAttackTicketCleanup(data, stores) {
+    var item = GLOBAL_CONFIG.guildCombatItems.items[4], bags = [], targets = [], catalogs = {};
+    for (var user in data.member) if (Object.prototype.hasOwnProperty.call(data.member, user)) {
+        var bag = data.member[user].bag;
+        if (!bag || !Object.prototype.hasOwnProperty.call(bag, item.cleanupLegacy)) continue;
+        var oldCount = requireGuildCombatCount(bag[item.cleanupLegacy]);
+        var newCount = Object.prototype.hasOwnProperty.call(bag, item.name) ? requireGuildCombatCount(bag[item.name]) : 0;
+        bags.push({ bag: bag, count: requireGuildCombatCount(oldCount + newCount) });
+        targets.push(["bag", user, oldCount, newCount]);
+    }
+    // 상품 원본은 복사본에서 전환하며 충돌한 키는 임의로 덮어쓰지 않는 함수
+    function convert(value, path) {
+        if (typeof value === "string") {
+            var text = normalizeGuildAttackTicketName(value);
+            if (text !== value) targets.push([path, value]);
+            return text;
+        }
+        if (!value || typeof value !== "object") return value;
+        var result = Array.isArray(value) ? [] : {};
+        for (var key in value) if (Object.prototype.hasOwnProperty.call(value, key)) {
+            var name = normalizeGuildAttackTicketName(key), converted = convert(value[key], path + "/" + key);
+            if (name !== key) targets.push([path, key, value[key]]);
+            if (Object.prototype.hasOwnProperty.call(result, name) && JSON.stringify(result[name]) !== JSON.stringify(converted)) throw new Error("전투 아이템 명칭 전환 충돌");
+            result[name] = converted;
+        }
+        return result;
+    }
+    var keys = ["itemListData", "packageInfoData"];
+    for (var i = 0; i < keys.length; i++) catalogs[keys[i]] = convert(stores[keys[i]], keys[i]);
+    return { bags: bags, catalogs: catalogs, targets: targets };
+}
+
+// 확인된 데이터 정리 계획의 보유 수량만 합산하며 포인트·전쟁 횟수는 지급하지 않는 함수
+function applyGuildAttackTicketCleanup(plan) {
+    var item = GLOBAL_CONFIG.guildCombatItems.items[4];
+    for (var i = 0; i < plan.bags.length; i++) {
+        plan.bags[i].bag[item.name] = plan.bags[i].count;
+        delete plan.bags[i].bag[item.cleanupLegacy];
+    }
+}
+
 // 네 전투 아이템의 구 명칭을 수량·효과 변경 없이 현재 이름으로 바꾸는 함수
 function normalizeGuildCombatName(value) {
     if (typeof value !== "string") return value;
     var items = GLOBAL_CONFIG.guildCombatItems.items;
-    for (var i = 0; i < items.length; i++) value = value.split(items[i].legacy).join(items[i].name);
+    for (var i = 0; i < items.length; i++) if (items[i].legacy) value = value.split(items[i].legacy).join(items[i].name);
     return value;
 }
 // 기존 정수 문자열을 포함해 전투 아이템 수량과 보상 범위를 확인하는 함수
@@ -37295,7 +37351,7 @@ function normalizeGuildCombatBag(bag) {
     if (bag === undefined) return false;
     if (!bag || typeof bag !== "object" || Array.isArray(bag)) { var error = new Error("전투 아이템 보관함 형식 오류"); error.guildCombatItemFailure = true; throw error; }
     var items = GLOBAL_CONFIG.guildCombatItems.items, pending = [], changed = false;
-    for (var i = 0; i < items.length; i++) if (Object.prototype.hasOwnProperty.call(bag, items[i].legacy)) {
+    for (var i = 0; i < items.length; i++) if (items[i].legacy && Object.prototype.hasOwnProperty.call(bag, items[i].legacy)) {
         var oldCount = requireGuildCombatCount(bag[items[i].legacy]);
         var newCount = Object.prototype.hasOwnProperty.call(bag, items[i].name) ? requireGuildCombatCount(bag[items[i].name]) : 0;
         pending.push({ item: items[i], count: requireGuildCombatCount(oldCount + newCount) });
@@ -37338,6 +37394,7 @@ function getGuildCombatInventory(guildData, gid) {
 }
 // 선택한 길드창고의 실제 아이템 잔액만 반환하는 함수
 function getGuildCombatItemCount(guildData, gid, name) {
+    if (name === GLOBAL_CONFIG.guildWar.attackTicketItem) return requireGuildWarExtraTickets(getGuildWarEntry(guildData.war24, gid));
     var inventory = getGuildCombatInventory(guildData, gid);
     name = normalizeGuildCombatName(name);
     return inventory[name] === undefined ? 0 : requireGuildCombatCount(inventory[name]);
@@ -37361,7 +37418,7 @@ function buildGuildCombatWarehouse(guildData, gid) {
     var text = "🧳 길드창고\n━━━━━━━━━━━━\n" + buildGuildResourceDisplay(guild, false).replace(/x/g, "×");
     text += "\n【길드전쟁·길드영지 사용 아이템】";
     for (var i = 0; i < items.length; i++) text += "\n" + (i + 1) + ". " + items[i].name + " ×" + numberWithCommas(getGuildCombatItemCount(guildData, gid, items[i].name)) + " ·🅟" + items[i].rewardLabel;
-    return text + "\n\n※ 기부 보상은 아이템 1개당 지급됩니다.\n※ 길드전쟁·길드영지전에서 보유 아이템을 자동 사용합니다.\n※ 효과 발동 시에만 소모됩니다.\n※ 펫무쌍은 개인 가방의 아이템을 사용합니다.\n\n🎁 기부: /길드기부 번호 수량";
+    return text + "\n\n※ 기부 보상은 아이템 1개당 지급됩니다.\n※ 1~4번 기습·방어권은 길드전쟁·길드영지전에서 자동 사용하며, 효과 발동 시에만 소모됩니다.\n※ 5번 공격권은 기부 즉시 우리 길드의 /길드전쟁 ‘추가’ 횟수에 반영됩니다.\n※ 펫무쌍은 개인 가방의 아이템을 사용합니다.\n\n🎁 기부: /길드기부 번호 수량";
 }
 // 기부 한 건의 차감·적립·보상을 사전 검증하고 같은 접수의 재처리는 보존하는 함수
 function applyGuildCombatDonation(data, guildData, sender, number, count, requestId, nickname) {
@@ -37380,14 +37437,18 @@ function applyGuildCombatDonation(data, guildData, sender, number, count, reques
     var bag = member.bag;
     normalizeGuildCombatBag(bag);
     var held = bag && bag[item.name] !== undefined ? requireGuildCombatCount(bag[item.name]) : 0;
-    if (held < count) throw guildWarInputError("❌ 아이템 수량이 부족합니다.\n보유: " + numberWithCommas(held) + "개");
-    var inventory = getGuildCombatInventory(guildData, gid), stored = getGuildCombatItemCount(guildData, gid, item.name);
-    var after = requireGuildCombatCount(stored + count), reward = requireGuildCombatCount(count * item.reward); // 세 변경을 적용하기 전 수량·개인 보상 범위 확인
+    if (held < count) throw guildWarInputError(item.attackTicket ? item.name + "이 부족합니다. 보유 " + numberWithCommas(held) + "개 / 요청 " + numberWithCommas(count) + "개" : "❌ 아이템 수량이 부족합니다.\n보유: " + numberWithCommas(held) + "개");
+    var inventory = item.attackTicket ? getGuildWarEntry(guildData.war24, gid) : getGuildCombatInventory(guildData, gid);
+    var stored = getGuildCombatItemCount(guildData, gid, item.name); // 5번은 창고 복제 재고 없이 전쟁 공용 추가권을 직접 사용
+    var after = item.attackTicket ? calculateGuildWarExtraTickets(inventory, count) : requireGuildCombatCount(stored + count);
+    var reward = requireGuildCombatCount(count * item.reward); // 차감·적립 전 보상과 개인 잔액 범위 확인
     var point = requireGuildCombatCount(member.point), pointAfter = requireGuildCombatCount(point + reward);
     var text = "[" + nickname + "] 님\n🎁 길드창고 기부 완료!\n━━━━━━━━━━━━\n" + item.name + " ×" + numberWithCommas(count) + "\n\n🎒 내 보유: " + numberWithCommas(held) + " → " + numberWithCommas(held - count) + "개\n🧳 길드 보유: " + numberWithCommas(stored) + " → " + numberWithCommas(after) + "개\n\n💰 기부 보상: 🅟" + numberWithCommas(reward) + "\n\n※ 기부한 아이템은 길드에 귀속됩니다.";
     var accountId = ensureGuildWarAccountId(data, sender).id; // 표시용 이름과 분리된 실제 기부 계정
     bag[item.name] = held - count; if (!bag[item.name]) delete bag[item.name];
-    inventory[item.name] = after; member.point = pointAfter;
+    if (item.attackTicket) inventory.extraTickets = after;
+    else inventory[item.name] = after;
+    member.point = pointAfter;
     if (!receipts) member.guildCombatDonationReceipts = receipts = {};
     receipts["$" + requestId] = { accountId: accountId, number: number, count: count, guildId: gid, reply: text };
     return { changed: true, text: text };
@@ -37400,14 +37461,18 @@ function runGuildCombatEntry(ctx, sender, room, msg, replier, data, request) {
     if (!hasAttendedToday(data, sender) && !isAttendanceFreeCommand(msg, sender)) { replier.reply(buildAttendanceRequiredMessage(data, petData, guildData, sender)); return true; }
     var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
     if (!guild || !guild.members || !guild.members[sender]) { replier.reply("먼저 길드에 가입해주세요."); return true; }
-    if (msg === "/길드창고") { replier.reply(buildGuildCombatWarehouse(guildData, gid)); return true; }
-    var parsed = /^\/길드기부\s+([1-4])\s+([1-9]\d*)$/.exec(msg);
-    if (!parsed) { replier.reply(buildGuildCombatDonationGuide()); return true; }
+    if (msg === "/길드창고") {
+        if (initializeGuildWar(data, guildData, Date.now())) publishGuildWar(data, guildData, true);
+        replier.reply(buildGuildCombatWarehouse(guildData, gid)); return true;
+    }
+    var parsed = /^\/길드기부[ \t]+([1-5])[ \t]+([1-9]\d*)$/.exec(msg);
+    if (!parsed || parsed[0] !== msg) { replier.reply(buildGuildCombatDonationGuide()); return true; }
     if (!request.guildCombatDonationId) request.guildCombatDonationId = request.callbackEvent && !request.callbackEvent.invalid && request.callbackEvent.id ? "event:" + request.callbackEvent.id : "request:" + String(java.util.UUID.randomUUID());
     try {
         if (request.guildCombatDonationAccountId && request.guildCombatDonationAccountId !== getGuildWarAccountId(data, sender)) throw new Error("기부 접수 계정 불일치");
+        var initialized = initializeGuildWar(data, guildData, Date.now());
         var result = applyGuildCombatDonation(data, guildData, sender, Number(parsed[1]), Number(parsed[2]), request.guildCombatDonationId, checkRank(data, petData, guildData, sender));
-        if (result.changed) { initializeGuildWar(data, guildData, Date.now()); publishGuildWar(data, guildData, true); }
+        if (result.changed || initialized) publishGuildWar(data, guildData, true);
         request.guildCombatDonationAccountId = getGuildWarAccountId(data, sender);
         replier.reply(result.text);
     } catch (error) { if (!error.guildWarInput) throw error; replier.reply(error.message); }
@@ -37429,7 +37494,7 @@ function buildGuildResourceDisplay(g, includeGuide) {
         " 💫x" +
         numberWithCommas(g.warehouse.miniPet || 0) +
         " 💎x" +
-        numberWithCommas(g.warehouse.diamond || 0) + "\n" + (includeGuide === false ? "" : "📦 상세 확인: /길드창고\n└ 기습·방어 아이템은 전략 정보로 비공개입니다.\n")
+        numberWithCommas(g.warehouse.diamond || 0) + "\n" + (includeGuide === false ? "" : "📦 상세 확인: /길드창고\n└ 기습·방어·공격권 아이템은 전략 정보로 비공개입니다.\n")
     );
 }
 
@@ -42372,7 +42437,7 @@ function normalizeUniversalCollectionKeyBagItems(bag) {
 // 아이템명 전환 훅
 function normalizePendantTransitionBagItem(bag, itemName) {
     normalizeGuildCombatBag(bag);
-    itemName = normalizeGuildCombatName(normalizePendantTransitionItemName(itemName));
+    itemName = normalizeGuildAttackTicketName(normalizeGuildCombatName(normalizePendantTransitionItemName(itemName)));
     normalizeUniversalCollectionKeyBagItems(bag);
     if (itemName === GLOBAL_CONFIG.petSkill.slots.legacyExpansionItemName) return GLOBAL_CONFIG.petSkill.slots.expansionItemName;
     if (itemName === GLOBAL_CONFIG.universalBox.legacyPetSkillKeyItemName) return GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
