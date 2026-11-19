@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.872"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.873"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1167,13 +1167,14 @@ const GLOBAL_CONFIG = {
     },
     guildWar: {
     "earthName": "지구방위대",
-    "regions": ["동부 금광🪙", "중앙 금광🪙", "서부 금광🪙", "펫스킬 광산📕", "다이아 광산💎", "미강석 광산💫", "루미에르 요새🛡️", "호월킹덤🏰"],
-    "regionLabels": ["동부 금광", "중앙 금광", "서부 금광", "펫스킬 광산", "다이아 광산", "미강석 광산", "루미에르 요새", "호월킹덤"],
+    "map": { "version": 1, "regionKeys": ["gold-east", "gold-central", "gold-west", "gold-north", "skill-mine", "diamond-mine", "stone-mine", "fortress", "kingdom"] },
+    "regions": ["동부 금광🪙", "중앙 금광🪙", "서부 금광🪙", "북부 금광🪙", "펫스킬 광산📕", "다이아 광산💎", "미강석 광산💫", "루미에르 요새🛡️", "호월킹덤🏰"],
+    "regionLabels": ["동부 금광", "중앙 금광", "서부 금광", "북부 금광", "펫스킬 광산", "다이아 광산", "미강석 광산", "루미에르 요새", "호월킹덤"],
     "rewardPolicy": 3,
     "dailyTickets": 5,
     "supply": { "points": 200000000, "ricePerSupport": 1, "ricePerTicket": 100 },
-    "campaign": { "version": 1, "kingdom": 8, "skillMine": 4, "diamondMine": 5, "miniPetMine": 6, "gold": [1, 2, 3], "oldToNew": [0, 6, 1, 2, 3, 4, 5] },
-    "siege": { "version": 2, "legacyKingdom": 6, "fortress": 7, "ambushLimit": 1, "ambushSuccessRate": 0.5, "stageNames": ["금광", "핵심 광산", "요새", "킹덤"] },
+    "campaign": { "version": 1, "kingdom": 9, "skillMine": 5, "diamondMine": 6, "miniPetMine": 7, "gold": [1, 2, 3, 4], "oldToNew": [0, 6, 1, 2, 3, 4, 5] },
+    "siege": { "version": 2, "legacyKingdom": 6, "fortress": 8, "ambushLimit": 1, "ambushSuccessRate": 0.5, "stageNames": ["금광", "핵심 광산", "요새", "킹덤"] },
     "masterSkills": { "commander": "전투형 지휘관", "attack": "기사단 증원", "defense": "징집명령", "attackPercent": 3, "defensePercent": 2 },
     "attackTicketItem": "길드전쟁공격권🎯",
     "kingdomExploreBonus": 5,
@@ -1219,7 +1220,7 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back2.json"
     ],
     "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 8곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 금광\n              ⬇️\n📕 [4] 펫스킬 광산 · 💎 [5] 다이아 광산\n💫 [6] 미강석 광산\n              ⬇️\n🛡️ [7] 루미에르 요새\n              ↕️\n🏰 [8] 호월킹덤\n\n🪙 금광: 세 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 정상 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 🔒는 진격 조건 또는 단계별 점령 한도에 따른 제한입니다.\n└ ⚔️ 표시와 별개로 개인 권한·공격권을 실행 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회 · KST 자정 갱신\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n└ 킹덤 미점령 시 영주 권한·세금 징수 중단\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드명 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드명\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n기존 전쟁은 끝까지 진행합니다. 승리 시 같은 단계가 이미 차 있으면 점령과 길드 점령 보상 없이 전투 결과·개인 참여 보상만 확정합니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 9곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 / [4] 북부 금광\n              ⬇️\n📕 [5] 펫스킬 광산 · 💎 [6] 다이아 광산\n💫 [7] 미강석 광산\n              ⬇️\n🛡️ [8] 루미에르 요새\n              ↕️\n🏰 [9] 호월킹덤\n\n🪙 금광: 네 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 정상 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 🔒는 진격 조건 또는 단계별 점령 한도에 따른 제한입니다.\n└ ⚔️ 표시와 별개로 개인 권한·공격권을 실행 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3·4번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회 · KST 자정 갱신\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n└ 킹덤 미점령 시 영주 권한·세금 징수 중단\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드전쟁번호 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드전쟁번호\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n기존 전쟁은 끝까지 진행합니다. 승리 시 같은 단계가 이미 차 있으면 점령과 길드 점령 보상 없이 전투 결과·개인 참여 보상만 확정합니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -3024,6 +3025,7 @@ blockedNicknameTerms: [
 ]   
  },
     pendant: { // 펜던트 시스템 설정
+        upgrade: {"maxLevel": 40, "confirmMs": 30000, "pendingName": "pendantUpgradePending.json", "snapshotSuffix": ".pendant-upgrade", "guideIntro": "💎 펜던트 가이드 안내\n━━━━━━━━━━━━━\n📚 사용법·강화 수치·확률·비용 전체보기", "guideBeforeTable": "💎 펜던트란?\n━━━━━━━━━━━━━\n장착하면 종합매력과 펫탐험 성공확률이 올라갑니다.\n종합매력은 캐슬⚔️ 50% + 레이드👾 50%로 반영됩니다.\n등급은 총 13개이며, 강화는 최대 +40강입니다.\n\n📌 처음 사용하는 분\n/펜던트오픈 [수량] → 펜던트 획득\n/펜던트가방 → 보유 펜던트 확인\n/펜던트정보 [번호] → 상세 능력치 확인\n/펜던트장착 [번호] → 펜던트 장착\n\n※ 번호는 펜던트가방의 번호입니다.\n※ 정보·강화·복원·승급은 장착 펜던트에 0을 입력합니다.\n\n🔨 펜던트 강화\n━━━━━━━━━━━━━\n/펜던트강화 [펜던트가방번호] [횟수]\n\n예) /펜던트강화 1 → 가방 1번을 1회 시도\n예) /펜던트강화 1 10 → 가방 1번을 최대 10회 시도\n예) /펜던트강화 0 10 → 장착 펜던트를 최대 10회 시도\n\n횟수는 성공 횟수가 아닌 시도 횟수입니다.\n먼저 비용 안내를 확인한 뒤 선택합니다.\n[진행시켜] → 강화 시작\n[쫄았음] → 취소\n\n✅ 성공: 강화 +1 · 다음 단계로 계속 진행\n❌ 실패: 내구도 -1\n⚒️ 내구도 0: 강화 중단 · 펜던트는 파괴되지 않음\n\n포인트와 강화석은 실제 시도한 횟수만큼 소모됩니다.\n성공하면 다음 시도부터 다음 단계의 비용과 확률을 적용합니다.\n요청 횟수 완료·내구도 0·포인트/강화석 부족·+40 도달 시 종료합니다.\n복원석은 자동으로 사용하지 않습니다.\n\n📊 강화 확률·비용\n━━━━━━━━━━━━━\n+1~+6: 100% · 10억\n+7~+10: 33% · 30억\n+11~+14: 10% · 100억\n+15~+20: 5% · 150억\n+21~+23: 3% · 200억\n+24~+40: 2% · 300억\n\n※ 목표 강화 단계 기준이며, 비용은 1회 시도 기준입니다.\n※ 강화석은 목표 단계만큼 필요합니다.\n예) +25 → +26 시도: 300억 + 강화석 26개\n\n📈 1~40강 상세 수치\n━━━━━━━━━━━━━\n표시: 목표 단계 | 성공확률 | 1회 포인트 | 강화석\n매력은 성공 시 추가되는 수치이며, 누적은 강화로 얻는 총합입니다.\n기본 매력과 승급 매력은 아래 누적 수치에 포함하지 않습니다.\n탐험은 강화로 추가되는 누적 성공확률이며 %p 단위입니다.\n\n", "guideAfterTable": "🔷 내구도 복원\n━━━━━━━━━━━━━\n/펜던트복원 [펜던트가방번호]\n장착 펜던트는 0을 입력합니다.\n\n펜던트 복원석🔷으로 내구도를 최대치까지 회복합니다.\n현재 내구도가 남아 있어도 복원할 수 있습니다.\n내구도 0에서도 복원 후 다시 강화할 수 있습니다.\n복원 후 강화 명령을 다시 입력하고 진행 여부를 선택합니다.\n\n예) 고요의 펜던트🌙[최하급][⚒️1/5](+1)\n→ 복원 시 [⚒️5/5](+1)\n※ 강화수치는 그대로 유지됩니다.\n\n⭐ 창조의 펜던트 승급\n━━━━━━━━━━━━━\n/펜던트승급 [펜던트가방번호]\n장착 펜던트는 0을 입력합니다.\n\n창조 → ★1 → ★2 → ★3 → 계속 승급 가능\n승급 성공률: 100%\n승급 1단계마다 종합매력 +500만\n\n★1: 강화석 10개 + 100억\n★2: 강화석 20개 + 200억\n★3: 강화석 30개 + 300억\n이후 단계마다 강화석 10개와 포인트 100억씩 증가합니다.\n\n※ 창조의 펜던트 승급에 적용됩니다.\n※ 강화와 승급은 별도입니다. +40은 강화 상한입니다.\n\n🧩 펜던트 조합\n━━━━━━━━━━━━━\n초월 6개 → 창세 1개\n/펜던트조합창세 [번호] [번호] [번호] [번호] [번호] [번호]\n\n창세 3개 → 창조 1개\n/펜던트조합창조 [번호] [번호] [번호]\n\n성공률 100% · 포인트 소모 없음\n장착 중이거나 강화된 펜던트도 조합 재료로 사용할 수 있습니다.\n\n🎒 장착 해제·판매·정리\n━━━━━━━━━━━━━\n/펜던트해제\n→ 펜던트 귀속해제💎를 사용해 장착 펜던트를 가방으로 이동\n\n/펜던트판매 [번호]\n→ 가방의 펜던트 1개 판매 · 판매 금액 1억\n※ 장착 중인 펜던트는 판매할 수 없습니다.\n\n/펜던트가방정리 [번호~번호]\n→ 입력한 범위의 펜던트를 일괄 판매\n예) /펜던트가방정리 1~10\n\n🎁 관련 아이템\n━━━━━━━━━━━━━\n📿 펜던트 강화석\n→ 강화 시 사용\n→ 미궁 벨카르수호자 탐험·길드영지전에서 획득\n\n🔷 펜던트 복원석\n→ 내구도를 최대치까지 회복\n→ 미궁 벨카르 탐험에서 1% 확률로 획득\n\n💎 펜던트 귀속해제\n→ 장착 펜던트를 해제할 때 사용\n→ 다이아상점에서 획득\n\n💎 펜던트뽑기\n→ /펜던트오픈 [수량]으로 사용\n→ 총 13개 등급의 펜던트 획득\n\n📌 기존 강화 보유자 안내\n━━━━━━━━━━━━━\n이미 강화한 펜던트도 현재 강화 단계에 맞춰 상향 수치가 자동 반영됩니다.\n가방 보관·장착 여부와 관계없이 적용됩니다.\n다시 강화하거나 재장착하지 않아도 됩니다.\n강화수치·내구도·승급 단계는 그대로 유지됩니다."},
         equipConfirmStaleMs: 30000, // 펜던트 교체 확인 대기 만료 시간
         promotionConfirmStaleMs: 30000, // 창조 펜던트 승급 확인 대기 만료 시간
         creationCombinationDuplicateMs: 2000, // 동일 펜던트 조합 요청 중복 처리 방지 시간
@@ -3637,6 +3639,7 @@ USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 
 // 중단된 지급의 회원 원문부터 복구한 뒤 최초 권한·캐시를 읽는다.
+runPendantUpgradeRecoveryEntry();
 recoverGuildWarPublication();
 recoverInterruptedMemberWrite();
 recoverAdventurePublication(); recoverHowolDramaPending();
@@ -4410,6 +4413,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
         var responseRecoveryStartMs = Date.now();
         updateResponseQueueStage(request, "초기 복구 검사");
+        runPendantUpgradeRecoveryEntry();
         recoverGuildWarPublication();
         recoverInterruptedMemberWrite();
         recoverAdventurePublication(); recoverHowolDramaPending();
@@ -21317,14 +21321,7 @@ replier.reply(
                     return;
                 }
                 if (msg === "진행시켜" && getPendantUpgradeState(sender)) {
-                    var pendantConfirmResult = runPendantUpgradeFromState(sender, data, petData, guildData, petSkillData);
-                    clearPendantUpgradeState(sender);
-                    replier.reply(pendantConfirmResult.message);
-                    if (pendantConfirmResult.ok) {
-                        recordAdventureQuestAction(data, sender, 12, "pendantUpgradeAttempt", 0);
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(petData, memberPetPath);
-                    }
+                    runPendantUpgradeBatchEntry(sender, data, petData, guildData, petSkillData, replier, request);
                     return;
                 }
                 if (msg === "생각해볼게" && userState[sender] && userState[sender].pendantEquip) {
@@ -21484,15 +21481,19 @@ replier.reply(
                     }
                     return;
                 }
+                if (msg === "/펜던트가이드") { replier.reply(buildPendantGuideMessage()); return; }
                 if (msg === "/펜던트강화" || /^\/펜던트강화\s+.+$/.test(msg)) {
-                    if (!/^\/펜던트강화\s+\d+$/.test(msg)) {
-                        replier.reply("예) /펜던트강화 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요.");
+                    if (!/^\/펜던트강화[ \t]+\d+(?:[ \t]+[1-9]\d*)?$/.test(msg) || /[\r\n]/.test(msg)) {
+                        replier.reply("/펜던트강화 [펜던트가방번호] [횟수]");
                         return;
                     }
-                    var pendantUpgradeIndex = parseInt(msg.split(/\s+/)[1], 10);
-                    var pendantPreview = buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, pendantUpgradeIndex);
+                    var pendantUpgradeParts = msg.split(/[ \t]+/), pendantUpgradeIndex = Number(pendantUpgradeParts[1]);
+                    var pendantUpgradeCount = pendantUpgradeParts.length > 2 ? Number(pendantUpgradeParts[2]) : 1;
+                    if (!isPointShopSafeCount(pendantUpgradeIndex) || !isPointShopSafeCount(pendantUpgradeCount) || pendantUpgradeCount < 1) { replier.reply("/펜던트강화 [펜던트가방번호] [횟수]"); return; }
+                    if (ensurePendantIdsForUser(petData, sender)) saveJsonFile(petData, memberPetPath);
+                    var pendantPreview = buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, pendantUpgradeIndex, pendantUpgradeCount);
                     replier.reply(pendantPreview.message);
-                    if (pendantPreview.ok) setPendantUpgradeState(sender, pendantUpgradeIndex);
+                    if (pendantPreview.ok) setPendantUpgradeState(sender, pendantPreview.state);
                     return;
                 }
                 if (msg === "/펜던트판매" || /^\/펜던트판매\s+.+$/.test(msg)) {
@@ -30465,7 +30466,10 @@ replier.reply(
                     saveJsonFile(petData, memberPetPath, false, robberyMigrationPending ? robberyMigrationPending.pending[1].text : undefined);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     saveJsonFile(currencyLogData, currencyLogPath);
+                    var guildMapMigration = prepareGuildWarMapMigration(guildData, Date.now());
+                    if (guildMapMigration.changed) guildData.war24 = guildMapMigration.state;
                     saveJsonFile(guildData, guildPath);
+                    if (guildMapMigration.changed) scheduleGuildWarWork(ctx);
                     saveJsonFile(memberTitleCleanupData, memberTitlePath);
                     saveJsonFile(petTitleCleanupData, petTitlePath);
                     saveJsonFile(miniPetTitleCleanupData, miniPetTitlePath);
@@ -30806,6 +30810,7 @@ function cleanupUnusedMemberFields(data, previewOnly) {
 
 // 삭제·축소 대상만 읽어 건수와 확인용 목록을 계산하고 원본은 변경하지 않는 함수
 function buildDataCleanupPreview(data, guildData, stores) {
+    var guildMapMigration = prepareGuildWarMapMigration(guildData, Date.now());
     var attackTicketCleanup = prepareGuildAttackTicketCleanup(data, stores);
     var required = getDataCleanupStorePaths();
     for (var requiredIndex = 0; requiredIndex < required.length; requiredIndex++) {
@@ -30828,6 +30833,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
     }
     var targets = [["memberRecordCleanup", recordCleanup.targets], ["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var candyMigration = stores.halloweenCandyMigration;
+    targets.push(["guildWarMap", guildMapMigration.signature]);
     targets.push(["guildAttackTicketNames", attackTicketCleanup.targets]);
     targets.push(["guildWarRecords", guildRecordCleanup.signature]);
     if (!candyMigration) throw new Error("할로윈 가방 사탕 전환 대상을 확인할 수 없습니다.");
@@ -33531,6 +33537,11 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
         path = resolveActiveDataPath(path);
+        var pendantSaveContext = getCurrentContext();
+        if (!pendantSaveContext.pendantUpgradePublishing && !pendantSaveContext.pendantUpgradeRecovering) {
+            var pendantPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.pendant.upgrade.pendingName);
+            if (new java.io.File(pendantPendingPath).exists() && readPendingJsonStatus(pendantPendingPath).pending !== null || new java.io.File(pendantPendingPath + ".rollback").exists()) throw new Error("펜던트 강화 복구 대기");
+        }
         var autoDailyBatch = getAutoDailyBatchContext();
         if (autoDailyBatch && !autoDailyBatch.committing && autoDailyBatch.managedPaths[path]) {
             autoDailyBatch.files[path] = data;
@@ -60865,36 +60876,286 @@ var PENDANT_GRADE_TABLE = [
 
 var PENDANT_UPGRADE_TABLE = [
     null,
-    { rate: 100, charm: 5000, explore: 0.1, point: 1000000000, stone: 1 },
-    { rate: 100, charm: 10000, explore: 0.2, point: 1000000000, stone: 2 },
-    { rate: 100, charm: 15000, explore: 0.3, point: 1000000000, stone: 3 },
-    { rate: 100, charm: 20000, explore: 0.4, point: 1000000000, stone: 4 },
-    { rate: 100, charm: 25000, explore: 0.5, point: 1000000000, stone: 5 },
-    { rate: 100, charm: 30000, explore: 0.6, point: 1000000000, stone: 6 },
-    { rate: 33, charm: 250000, explore: 0.7, point: 3000000000, stone: 7 },
-    { rate: 33, charm: 375000, explore: 0.8, point: 3000000000, stone: 8 },
-    { rate: 33, charm: 500000, explore: 0.9, point: 3000000000, stone: 9 },
-    { rate: 33, charm: 750000, explore: 1.0, point: 3000000000, stone: 10 },
-    { rate: 10, charm: 1000000, explore: 1.1, point: 10000000000, stone: 11 },
-    { rate: 10, charm: 1250000, explore: 1.2, point: 10000000000, stone: 12 },
-    { rate: 10, charm: 1500000, explore: 1.3, point: 10000000000, stone: 13 },
-    { rate: 10, charm: 2000000, explore: 1.4, point: 10000000000, stone: 14 },
-    { rate: 5, charm: 2500000, explore: 1.5, point: 15000000000, stone: 15 },
-    { rate: 5, charm: 3000000, explore: 1.6, point: 15000000000, stone: 16 },
-    { rate: 5, charm: 3500000, explore: 1.7, point: 15000000000, stone: 17 },
-    { rate: 5, charm: 4000000, explore: 1.8, point: 15000000000, stone: 18 },
-    { rate: 5, charm: 4500000, explore: 1.9, point: 15000000000, stone: 19 },
-    { rate: 5, charm: 5000000, explore: 2.0, point: 15000000000, stone: 20 },
-    { rate: 3, charm: 6000000, explore: 2.1, point: 20000000000, stone: 21 },
-    { rate: 3, charm: 7000000, explore: 2.2, point: 20000000000, stone: 22 },
-    { rate: 3, charm: 8000000, explore: 2.3, point: 20000000000, stone: 23 },
-    { rate: 2, charm: 9000000, explore: 2.4, point: 30000000000, stone: 24 },
-    { rate: 2, charm: 10000000, explore: 2.5, point: 30000000000, stone: 25 },
-    { rate: 1, charm: 12500000, explore: 2.6, point: 100000000000, stone: 26 },
-    { rate: 1, charm: 15000000, explore: 2.7, point: 100000000000, stone: 27 },
-    { rate: 1, charm: 17500000, explore: 2.8, point: 100000000000, stone: 28 },
-    { rate: 1, charm: 25000000, explore: 2.9, point: 100000000000, stone: 29 },
-    { rate: 1, charm: 30000000, explore: 3.0, point: 100000000000, stone: 30 }
+    {
+        "rate": 100,
+        "charm": 50000,
+        "explore": 0.1,
+        "point": 1000000000,
+        "stone": 1
+    },
+    {
+        "rate": 100,
+        "charm": 100000,
+        "explore": 0.2,
+        "point": 1000000000,
+        "stone": 2
+    },
+    {
+        "rate": 100,
+        "charm": 150000,
+        "explore": 0.3,
+        "point": 1000000000,
+        "stone": 3
+    },
+    {
+        "rate": 100,
+        "charm": 200000,
+        "explore": 0.4,
+        "point": 1000000000,
+        "stone": 4
+    },
+    {
+        "rate": 100,
+        "charm": 250000,
+        "explore": 0.5,
+        "point": 1000000000,
+        "stone": 5
+    },
+    {
+        "rate": 100,
+        "charm": 300000,
+        "explore": 0.6,
+        "point": 1000000000,
+        "stone": 6
+    },
+    {
+        "rate": 33,
+        "charm": 500000,
+        "explore": 0.7,
+        "point": 3000000000,
+        "stone": 7
+    },
+    {
+        "rate": 33,
+        "charm": 750000,
+        "explore": 0.8,
+        "point": 3000000000,
+        "stone": 8
+    },
+    {
+        "rate": 33,
+        "charm": 1000000,
+        "explore": 0.9,
+        "point": 3000000000,
+        "stone": 9
+    },
+    {
+        "rate": 33,
+        "charm": 1500000,
+        "explore": 1,
+        "point": 3000000000,
+        "stone": 10
+    },
+    {
+        "rate": 10,
+        "charm": 1500000,
+        "explore": 1.1,
+        "point": 10000000000,
+        "stone": 11
+    },
+    {
+        "rate": 10,
+        "charm": 1750000,
+        "explore": 1.2,
+        "point": 10000000000,
+        "stone": 12
+    },
+    {
+        "rate": 10,
+        "charm": 2000000,
+        "explore": 1.3,
+        "point": 10000000000,
+        "stone": 13
+    },
+    {
+        "rate": 10,
+        "charm": 2500000,
+        "explore": 1.4,
+        "point": 10000000000,
+        "stone": 14
+    },
+    {
+        "rate": 5,
+        "charm": 3000000,
+        "explore": 1.5,
+        "point": 15000000000,
+        "stone": 15
+    },
+    {
+        "rate": 5,
+        "charm": 3500000,
+        "explore": 1.6,
+        "point": 15000000000,
+        "stone": 16
+    },
+    {
+        "rate": 5,
+        "charm": 4000000,
+        "explore": 1.7,
+        "point": 15000000000,
+        "stone": 17
+    },
+    {
+        "rate": 5,
+        "charm": 4500000,
+        "explore": 1.8,
+        "point": 15000000000,
+        "stone": 18
+    },
+    {
+        "rate": 5,
+        "charm": 5000000,
+        "explore": 1.9,
+        "point": 15000000000,
+        "stone": 19
+    },
+    {
+        "rate": 5,
+        "charm": 5500000,
+        "explore": 2,
+        "point": 15000000000,
+        "stone": 20
+    },
+    {
+        "rate": 3,
+        "charm": 6000000,
+        "explore": 2.1,
+        "point": 20000000000,
+        "stone": 21
+    },
+    {
+        "rate": 3,
+        "charm": 7000000,
+        "explore": 2.2,
+        "point": 20000000000,
+        "stone": 22
+    },
+    {
+        "rate": 3,
+        "charm": 8000000,
+        "explore": 2.3,
+        "point": 20000000000,
+        "stone": 23
+    },
+    {
+        "rate": 2,
+        "charm": 9000000,
+        "explore": 2.4,
+        "point": 30000000000,
+        "stone": 24
+    },
+    {
+        "rate": 2,
+        "charm": 10000000,
+        "explore": 2.5,
+        "point": 30000000000,
+        "stone": 25
+    },
+    {
+        "rate": 2,
+        "charm": 12500000,
+        "explore": 2.6,
+        "point": 30000000000,
+        "stone": 26
+    },
+    {
+        "rate": 2,
+        "charm": 15000000,
+        "explore": 2.7,
+        "point": 30000000000,
+        "stone": 27
+    },
+    {
+        "rate": 2,
+        "charm": 17500000,
+        "explore": 2.8,
+        "point": 30000000000,
+        "stone": 28
+    },
+    {
+        "rate": 2,
+        "charm": 25000000,
+        "explore": 2.9,
+        "point": 30000000000,
+        "stone": 29
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3,
+        "point": 30000000000,
+        "stone": 30
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.1,
+        "point": 30000000000,
+        "stone": 31
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.2,
+        "point": 30000000000,
+        "stone": 32
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.3,
+        "point": 30000000000,
+        "stone": 33
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.4,
+        "point": 30000000000,
+        "stone": 34
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.5,
+        "point": 30000000000,
+        "stone": 35
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.6,
+        "point": 30000000000,
+        "stone": 36
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.7,
+        "point": 30000000000,
+        "stone": 37
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.8,
+        "point": 30000000000,
+        "stone": 38
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 3.9,
+        "point": 30000000000,
+        "stone": 39
+    },
+    {
+        "rate": 2,
+        "charm": 30000000,
+        "explore": 4,
+        "point": 30000000000,
+        "stone": 40
+    }
 ];
 
 // 펜던트 유저 데이터 구조 보장
@@ -61152,7 +61413,7 @@ function calculatePendantStats(pendant) {
     var gradeInfo = getPendantGradeInfo(pendant.grade);
     result.baseCharm = gradeInfo.charm || 0;
     result.baseExplore = gradeInfo.explore || 0;
-    var upgrade = Math.max(0, Math.min(30, parseInt(pendant.upgrade || 0, 10)));
+    var upgrade = Math.max(0, Math.min(GLOBAL_CONFIG.pendant.upgrade.maxLevel, parseInt(pendant.upgrade || 0, 10)));
     for (var i = 1; i <= upgrade; i++) {
         if (!PENDANT_UPGRADE_TABLE[i]) continue;
         result.upgradeCharm += PENDANT_UPGRADE_TABLE[i].charm || 0;
@@ -61236,15 +61497,16 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     sortPendantBagByGrade(bag);
     var out = "[" + checkRank(data, petData, guildData, user) + "] 보유 펜던트가방💎[" + bag.length + "/" + getPendantBagLimit() + "]\n";
     out += "━━━━━━━━━━━━━\n";
+    out += "※ 펜던트 가이드: /펜던트가이드\n";
     out += "※ 펜던트 장착: /펜던트장착 [펜던트가방번호]\n";
     out += "※ 펜던트 판매: /펜던트판매 [번호]\n";
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
-    out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
+    out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] [횟수]\n※ 횟수 생략 시 1회 · 장착 펜던트는 0\n※ 펜던트 복원: /펜던트복원 [번호] (장착 펜던트는 0)\n";
     out += "※ 창조 승급: /펜던트승급 [펜던트가방번호] (장착 펜던트는 0)\n";
     out += "※ 창세 조합: /펜던트조합창세 [번호] [번호] [번호] [번호] [번호] [번호]\n";
     out += "※ 창조 조합: /펜던트조합창조 [번호] [번호] [번호]\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
-    out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n";
+    out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n※ [⚒️현재/최대 내구도](+강화수치) · 최대 +40강\n";
     out += "━━━━━━━━━━━━━\n";
     if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
     for (var i = 0; i < bag.length; i++) {
@@ -61486,7 +61748,7 @@ function buildPendantInfoMessage(data, petData, guildData, user, index) {
 // 펜던트 상세 정보 출력 문자열 생성
 function buildPendantInfoDetailMessage(title, pendant) {
     var stats = calculatePendantStats(pendant);
-    var next = Math.min(30, (parseInt(pendant.upgrade || 0, 10) + 1));
+    var next = parseInt(pendant.upgrade || 0, 10) + 1;
     var nextInfo = PENDANT_UPGRADE_TABLE[next];
     var out = title + "\n";
     out += formatPendantDisplay(pendant) + "\n";
@@ -61500,7 +61762,7 @@ function buildPendantInfoDetailMessage(title, pendant) {
     out += "강화 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.upgradeExplore) + "%\n";
     out += "총 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.explore) + "%\n\n";
     out += "남은 내구도⚒️: " + (pendant.durability || 0) + "회\n";
-    if (parseInt(pendant.upgrade || 0, 10) >= 30) {
+    if (parseInt(pendant.upgrade || 0, 10) >= GLOBAL_CONFIG.pendant.upgrade.maxLevel) {
         out += "이미 최대 강화 단계입니다.";
     } else {
         out += "다음 강화성공 확률🎲: " + nextInfo.rate + "%\n";
@@ -61649,17 +61911,184 @@ function restorePendantDurability(data, petData, guildData, sender, index) {
     return { ok: true, message: "펜던트 복원🔷\n━━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + formatPendantDisplay(info.pendant) + "\n의 내구도를 복원하였습니다.\n━━━━━━━━━━━━━\n기존 내구도: " + before + "회\n복원된 내구도: " + maxDurability + "회" };
 }
 
+// 강화 대상·자원이 다음 한 번의 시도를 허용하는지 기존 안내로 반환하는 함수
+function getPendantUpgradeStopReason(data, pendant, sender) {
+    if (!pendant) return "해당 번호의 펜던트가 존재하지 않습니다.";
+    if (Number(pendant.upgrade || 0) >= GLOBAL_CONFIG.pendant.upgrade.maxLevel) return "이미 펜던트 최대 강화 단계에 도달했습니다.";
+    if (!(pendant.durability > 0)) return "해당 펜던트는 내구도가 0이라 강화할 수 없습니다.";
+    var rule = PENDANT_UPGRADE_TABLE[Number(pendant.upgrade || 0) + 1];
+    if ((data.member[sender].point || 0) < rule.point) return "포인트가 부족합니다.";
+    if (!hasItem(data, sender, GLOBAL_CONFIG.items.pendantEnhanceStoneName, rule.stone)) return "펜던트 강화석📿이 부족합니다.";
+    return null;
+}
+
+// 성공·실패의 가능한 경로에서 포인트와 강화석의 최대 소모를 각각 계산하는 함수
+function calculatePendantUpgradeQuote(level, durability, count) {
+    var max = GLOBAL_CONFIG.pendant.upgrade.maxLevel, memo = {};
+    count = Math.min(count, max - level + durability - 1); // 내구도·최대 단계가 허용하는 실제 시도 상한
+    // 불가능한 실패 경로와 종료 뒤 시도를 제외하는 함수
+    function visit(upgrade, remaining, attempts) {
+        if (upgrade >= max || remaining <= 0 || attempts <= 0) return { points: 0, stones: 0 };
+        var key = upgrade + ":" + remaining + ":" + attempts;
+        if (memo[key]) return memo[key];
+        var rule = PENDANT_UPGRADE_TABLE[upgrade + 1], success = visit(upgrade + 1, remaining, attempts - 1);
+        var failure = rule.rate < 100 ? visit(upgrade, remaining - 1, attempts - 1) : success;
+        return memo[key] = { points: rule.point + Math.max(success.points, failure.points), stones: rule.stone + Math.max(success.stones, failure.stones) };
+    }
+    return visit(level, durability, count);
+}
+
+// 기획서의 억·만 단위와 쉼표를 공통 숫자로 생성하는 함수
+function formatPendantGuideAmount(value) {
+    var billions = Math.floor(value / 100000000), tenThousands = Math.floor(value % 100000000 / 10000);
+    if (billions) return numberWithCommas(billions) + "억" + (tenThousands ? " " + numberWithCommas(tenThousands) + "만" : "");
+    return tenThousands ? numberWithCommas(tenThousands) + "만" : numberWithCommas(value);
+}
+
+// 노션 원문 사이의 40단계 표만 실제 강화 데이터로 생성하는 함수
+function buildPendantGuideMessage() {
+    var config = GLOBAL_CONFIG.pendant.upgrade, table = [], cumulative = 0;
+    for (var i = 1; i <= config.maxLevel; i++) {
+        var row = PENDANT_UPGRADE_TABLE[i]; cumulative += row.charm;
+        table.push("+" + i + " | " + row.rate + "% | " + formatPendantGuideAmount(row.point) + " | 📿" + row.stone + "개\n└ 매력 +" + formatPendantGuideAmount(row.charm) + " · 누적 " + formatPendantGuideAmount(cumulative) + " · 탐험 +" + row.explore.toFixed(1) + "%p");
+    }
+    return config.guideIntro + "\n" + allsee + "\n" + config.guideBeforeTable + table.join("\n\n") + "\n\n" + config.guideAfterTable;
+}
+
+// 완료된 시도만 집계해 기획서의 결과 화면을 만드는 함수
+function buildPendantUpgradeBatchResult(data, petData, guildData, sender, state, result, pendant, index) {
+    var stats = calculatePendantStats(pendant), before = result.before, maxDurability = pendant.maxDurability === undefined ? 5 : pendant.maxDurability;
+    var text = "[" + checkRank(data, petData, guildData, sender) + "] 님\n💎 펜던트 연속 강화 결과\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) +
+        "\n\n🔨 진행: " + result.attempts + "/" + numberWithCommas(state.count) + "회\n✅ 성공: " + result.success + "회\n❌ 실패: " + result.failure + "회\n📈 강화: +" + result.level + " → +" + (pendant.upgrade || 0) +
+        "\n⚒️ 내구도: " + result.durability + "/" + maxDurability + " → " + pendant.durability + "/" + maxDurability +
+        "\n💞 종합매력: " + numberWithCommas(before.charm) + " → " + numberWithCommas(stats.charm) + "\n🏕️ 펫탐험 보너스: +" + before.explore.toFixed(1) + "%p → +" + stats.explore.toFixed(1) + "%p" +
+        "\n\n【실제 소모】\n💰 포인트: 🅟" + formatPendantGuideAmount(result.points) + "\n📿 강화석: " + numberWithCommas(result.stones) + "개";
+    if (pendant.durability === 0) text += "\n\n⛔ 내구도가 0이 되어 중단했습니다.";
+    else if (result.reason) text += "\n\n" + result.reason;
+    if (result.attempts < state.count) text += "\n※ 미진행 " + numberWithCommas(state.count - result.attempts) + "회는 비용이 차감되지 않았습니다.";
+    if (pendant.durability === 0) text += "\n※ 펜던트는 파괴되지 않습니다.\n\n🔷 내구도 복원: /펜던트복원 " + index;
+    return text;
+}
+
+// 회원 분리 저장·백업과 펫의 기존 복구 파일 범위를 반환하는 함수
+function getPendantUpgradeRecoveryNames() {
+    return GLOBAL_CONFIG.guildWar.recoveryNames.filter(function (name) { return name.indexOf("guildData") !== 0; }).concat(["member_pet.json", "member_pet_back.json", "member_pet_back2.json"]);
+}
+
+// 미완료한 한 번의 펜던트 강화만 복구하고 앞선 완료 시도는 유지하는 진입점
+function runPendantUpgradeRecoveryEntry() {
+    var ctx = getCurrentContext(), config = GLOBAL_CONFIG.pendant.upgrade, pending = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
+    var readPath = new java.io.File(pending).exists() ? pending : pending + ".rollback";
+    if (!new java.io.File(readPath).exists()) return false;
+    var journal = parseJsonContent(FileStream.read(readPath, "utf-8"), pending), names = getPendantUpgradeRecoveryNames();
+    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal, "pending")) throw new Error("펜던트 강화 복구 기록 오류");
+    var previous = ctx.pendantUpgradeRecovering; ctx.pendantUpgradeRecovering = true;
+    try {
+        if (journal.pending !== null) {
+            if (!Array.isArray(journal.pending) || journal.pending.length !== names.length) throw new Error("펜던트 강화 복구 범위 오류");
+            var references = {};
+            for (var i = 0; i < names.length; i++) {
+                var row = journal.pending[i];
+                if (!row || row.name !== names[i] || typeof row.exists !== "boolean") throw new Error("펜던트 강화 복구 경로 오류");
+                if (!row.exists && (row.name === "member.json" || row.name === "member_pet.json")) throw new Error("펜던트 강화 필수 복구 사본 누락");
+                if (row.exists) {
+                    var snapshot = resolveActiveDataPath(DATA_ROOT_PATH + row.name) + config.snapshotSuffix, check = inspectJsonRecoveryFile(snapshot);
+                    if (check.bytes !== row.bytes || check.hash !== row.hash) throw new Error("펜던트 강화 복구 사본 손상");
+                    references[row.name] = getGuildWarRecoveryReference(row.name, parseManagedJsonContent(FileStream.read(snapshot, "utf-8"), resolveActiveDataPath(DATA_ROOT_PATH + row.name)));
+                }
+            }
+            validateGuildWarRecoveryReferences(references);
+            for (var j = names.length - 1; j >= 0; j--) {
+                var path = resolveActiveDataPath(DATA_ROOT_PATH + names[j]);
+                if (journal.pending[j].exists) writeVerifiedJsonFile(path, FileStream.read(path + config.snapshotSuffix, "utf-8"), true);
+                else if (new java.io.File(path).exists() && !new java.io.File(path).delete()) throw new Error("펜던트 강화 복구 제거 실패");
+            }
+            memberSplitBackupCache = {};
+        }
+        if (journal.pending !== null || readPath !== pending || new java.io.File(pending + ".rollback").exists()) writeVerifiedJsonFile(pending, { version: 1, pending: null }, true);
+        for (var k = 0; k < names.length; k++) {
+            var copy = new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + names[k]) + config.snapshotSuffix);
+            if (copy.exists() && !copy.delete()) throw new Error("펜던트 강화 복구 사본 정리 실패");
+        }
+        if (new java.io.File(pending).exists() && !new java.io.File(pending).delete()) throw new Error("펜던트 강화 복구 사본 정리 실패");
+        return journal.pending !== null;
+    } finally { ctx.pendantUpgradeRecovering = previous; }
+}
+
+// 확인한 펜던트에 실제 시도만 차감·게시하고 완료 시도마다 복구 경계를 확정하는 진입점
+function runPendantUpgradeBatchEntry(sender, data, petData, guildData, petSkillData, replier, request) {
+    var state = getPendantUpgradeState(sender);
+    if (!state || state.processing) return;
+    sortPendantBagByGrade(getPendantBag(petData, sender));
+    var info = getPendantById(petData, sender, state.id);
+    clearPendantUpgradeState(sender); // 같은 확인은 재진입하거나 재실행하지 않음
+    if (!info.pendant || info.source !== state.source || JSON.stringify(info.pendant) !== state.signature) { replier.reply("펜던트 강화 확인 시간이 만료되었습니다."); return; }
+    var result = { attempts: 0, success: 0, failure: 0, points: 0, stones: 0, before: calculatePendantStats(info.pendant), level: Number(info.pendant.upgrade || 0), durability: info.pendant.durability };
+    var config = GLOBAL_CONFIG.pendant.upgrade, ctx = getCurrentContext(), previous = ctx.pendantUpgradePublishing;
+    var resultReplyStarted = false;
+    var maxAttempts = Math.min(state.count, config.maxLevel - result.level + result.durability - 1); // 한 요청이 실제 진행 가능한 유한 횟수만 순차 처리
+    ctx.pendantUpgradePublishing = true;
+    try {
+        for (var attempt = 0; attempt < maxAttempts; attempt++) {
+            result.reason = getPendantUpgradeStopReason(data, info.pendant, sender);
+            if (result.reason) break;
+            var names = getPendantUpgradeRecoveryNames(), rows = [], references = {};
+            for (var n = 0; n < names.length; n++) {
+                var path = resolveActiveDataPath(DATA_ROOT_PATH + names[n]), exists = new java.io.File(path).exists(), row = { name: names[n], exists: exists };
+                if (!exists && (names[n] === "member.json" || names[n] === "member_pet.json")) throw new Error("펜던트 강화 필수 원본 누락");
+                if (exists) {
+                    references[names[n]] = readGuildWarRecoveryReference(names[n], path);
+                    var original = inspectJsonRecoveryFile(path, path + config.snapshotSuffix), copy = inspectJsonRecoveryFile(path + config.snapshotSuffix);
+                    if (original.bytes !== copy.bytes || original.hash !== copy.hash) throw new Error("펜던트 강화 복구 사본 불일치");
+                    row.bytes = original.bytes; row.hash = original.hash;
+                }
+                rows.push(row);
+            }
+            validateGuildWarRecoveryReferences(references);
+            writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName), { version: 1, pending: rows }, true);
+            var step = runPendantUpgradeFromState(sender, data, petData, guildData, petSkillData, state);
+            if (!step.ok) throw new Error("펜던트 강화 시도 상태 변경");
+            recordAdventureQuestAction(data, sender, 12, "pendantUpgradeAttempt", 0);
+            saveJsonFile(data, filePath); saveJsonFile(petData, memberPetPath);
+            writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName), { version: 1, pending: null }, true);
+            result.attempts++; result.success += step.success ? 1 : 0; result.failure += step.success ? 0 : 1;
+            result.points += step.points; result.stones += step.stones;
+            endDataSaveTransaction(); beginDataSaveTransaction(); // 이후 실패가 이미 확정한 앞선 시도를 되돌리지 않음
+        }
+        if (!result.reason && result.attempts < state.count) result.reason = getPendantUpgradeStopReason(data, info.pendant, sender);
+        runPendantUpgradeRecoveryEntry(); // 완료 저널의 복구 사본만 정리
+        var index = info.source === "equipped" ? 0 : info.arrayIndex + 1;
+        resultReplyStarted = true;
+        replier.reply(buildPendantUpgradeBatchResult(data, petData, guildData, sender, state, result, info.pendant, index));
+    } catch (error) {
+        rollbackDataSaveTransaction();
+        runPendantUpgradeRecoveryEntry();
+        endDataSaveTransaction(); beginDataSaveTransaction();
+        if (result.attempts && !resultReplyStarted) {
+            var restoredPets = loadJsonFile(memberPetPath), restored = getPendantById(restoredPets, sender, state.id);
+            if (restored.pendant) replier.reply(buildPendantUpgradeBatchResult(data, restoredPets, guildData, sender, state, result, restored.pendant, restored.source === "equipped" ? 0 : restored.arrayIndex + 1));
+        }
+        throw error;
+    } finally { ctx.pendantUpgradePublishing = previous; }
+}
+
+
 // 펜던트 강화 확인 상태 저장
-function setPendantUpgradeState(sender, index) {
+function setPendantUpgradeState(sender, state) {
     if (!userState[sender]) userState[sender] = {};
-    userState[sender].pendantUpgrade = { index: index, createdAt: new Date().getTime() };
+    state.createdAt = Date.now();
+    var ctx = getCurrentContext();
+    state.scope = JSON.stringify([ctx.rootPath, ctx.permissionRoom]);
+    userState[sender].pendantUpgrade = state;
 }
 
 // 펜던트 강화 확인 상태 반환
 function getPendantUpgradeState(sender) {
     if (!userState[sender] || !userState[sender].pendantUpgrade) return null;
     var state = userState[sender].pendantUpgrade;
-    if (!state.createdAt || new Date().getTime() - state.createdAt > 30000) {
+    var ctx = getCurrentContext();
+    if (state.scope !== JSON.stringify([ctx.rootPath, ctx.permissionRoom])) return null;
+    if (!state.createdAt || new Date().getTime() - state.createdAt > GLOBAL_CONFIG.pendant.upgrade.confirmMs) {
         delete userState[sender].pendantUpgrade;
         return null;
     }
@@ -61686,59 +62115,38 @@ function formatPendantUpgradeRateLine(baseRate, bonusRate) {
 }
 
 // 펜던트 강화 미리보기 생성
-function buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, index) {
-    var info = getPendantByIndex(petData, sender, index);
-    if (!info.pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다.\n━━━━━━━━━━━━━\n예) /펜던트강화 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요." };
-    var upgrade = parseInt(info.pendant.upgrade || 0, 10);
-    if (upgrade >= 30) return { ok: false, message: "이미 펜던트 최대 강화 단계에 도달했습니다.\n━━━━━━━━━━━━━\n현재 강화수치: +30\n최대 강화수치: +30" };
-    if ((info.pendant.durability || 0) <= 0) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n해당 펜던트는 내구도가 0이라 강화할 수 없습니다.\n━━━━━━━━━━━━━\n/펜던트복원 [번호] 명령어로 복원 후 다시 시도해주세요." };
-    var next = upgrade + 1;
-    var nextInfo = PENDANT_UPGRADE_TABLE[next];
-    var pointHave = data.member[sender].point || 0;
-    var stoneHave = data.member[sender].bag && data.member[sender].bag[GLOBAL_CONFIG.items.pendantEnhanceStoneName] ? data.member[sender].bag[GLOBAL_CONFIG.items.pendantEnhanceStoneName] : 0;
-    if (pointHave < nextInfo.point) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n포인트가 부족하여 펜던트 강화를 진행할 수 없습니다.\n━━━━━━━━━━━━━\n필요 포인트💸: 🅟" + numberWithCommas(nextInfo.point) + "\n보유 포인트💸: 🅟" + numberWithCommas(pointHave) };
-    if (stoneHave < nextInfo.stone) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트 강화석📿이 부족합니다.\n━━━━━━━━━━━━━\n필요 강화석📿: " + nextInfo.stone + "개\n보유 강화석📿: " + stoneHave + "개" };
-    var beforeStats = calculatePendantStats(info.pendant);
-    var afterClone = cloneFreeMarketObject(info.pendant);
-    afterClone.upgrade = next;
-    var afterStats = calculatePendantStats(afterClone);
-    var out = "[" + checkRank(data, petData, guildData, sender) + "] 펜던트 강화 시도💎\n━━━━━━━━━━━━━\n";
-    out += formatPendantDisplay(info.pendant) + "\n\n";
-    out += "강화 성공시:\n";
-    out += "종합매력👑: " + numberWithCommas(beforeStats.charm) + "+" + numberWithCommas(afterStats.charm - beforeStats.charm) + "(⬆️)=" + numberWithCommas(afterStats.charm) + "💞\n";
-    out += "펫탐험성공확률⛰️:" + formatPendantPercent(beforeStats.explore) + "%+" + formatPendantPercent(afterStats.explore - beforeStats.explore) + "%(⬆️)=" + formatPendantPercent(afterStats.explore) + "%\n\n";
-    var skillBonusRate = getPendantUpgradePetSkillBonusRate(petSkillData, sender);
-    out += "강화비용💸: 🅟" + numberWithCommas(nextInfo.point) + "\n필요 강화석📿: " + nextInfo.stone + "개\n" + formatPendantUpgradeRateLine(nextInfo.rate, skillBonusRate) + "\n남은 내구도⚒️: " + info.pendant.durability + "회\n━━━━━━━━━━━━━\n펜던트 강화할거임?\n[진행시켜] / [쫄았음]";
-    return { ok: true, message: out };
+function buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, index, count) {
+    count = count === undefined ? 1 : count;
+    var info = getPendantByIndex(petData, sender, index), pendant = info.pendant;
+    if (!pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
+    var reason = getPendantUpgradeStopReason(data, pendant, sender);
+    if (reason) return { ok: false, message: reason };
+    var stats = calculatePendantStats(pendant), next = PENDANT_UPGRADE_TABLE[Number(pendant.upgrade || 0) + 1];
+    var after = cloneFreeMarketObject(pendant); after.upgrade = Number(pendant.upgrade || 0) + 1;
+    var afterStats = calculatePendantStats(after), quote = calculatePendantUpgradeQuote(Number(pendant.upgrade || 0), pendant.durability, count);
+    var rate = Math.min(100, next.rate + getPendantUpgradePetSkillBonusRate(petSkillData, sender));
+    var title = count === 1 ? "펜던트 강화 시도💎" : "💎 펜던트 연속 강화 시도";
+    var text = "[" + checkRank(data, petData, guildData, sender) + "] 님\n" + title + "\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) +
+        "\n\n🔨 요청 횟수: 최대 " + numberWithCommas(count) + "회\n🎯 현재 도전: +" + (pendant.upgrade || 0) + " → +" + after.upgrade + "\n📈 현재 성공률: " + rate + "%" +
+        "\n\n【현재 1회 강화 비용】\n💰 포인트: 🅟" + formatPendantGuideAmount(next.point) + "\n📿 강화석: " + next.stone + "개" +
+        "\n\n【현재 단계 강화 성공 시】\n💞 종합매력: " + numberWithCommas(stats.charm) + " → " + numberWithCommas(afterStats.charm) +
+        "\n🏕️ 펫탐험 보너스: +" + stats.explore.toFixed(1) + "%p → +" + afterStats.explore.toFixed(1) + "%p" +
+        "\n\n【" + numberWithCommas(count) + "회 진행 시 최대 소모】\n💰 포인트: 🅟" + formatPendantGuideAmount(quote.points) + "\n📿 강화석: 최대 " + numberWithCommas(quote.stones) + "개" +
+        "\n\n※ 성공하면 다음 강화 단계로 계속 진행합니다.\n※ 복원석은 자동 사용하지 않습니다.\n\n연속 강화를 진행할까요?\n[진행시켜] / [쫄았음]";
+    return { ok: true, message: text, state: { index: index, count: count, id: pendant.pendantId, source: info.source, signature: JSON.stringify(pendant) } };
 }
 
 // 저장된 확인 상태로 펜던트 강화 실행
-function runPendantUpgradeFromState(sender, data, petData, guildData, petSkillData) {
-    var state = getPendantUpgradeState(sender);
-    if (!state) return { ok: false, message: "펜던트 강화 확인 시간이 만료되었습니다." };
-    var info = getPendantByIndex(petData, sender, parseInt(state.index, 10));
-    if (!info.pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
-    var upgrade = parseInt(info.pendant.upgrade || 0, 10);
-    var next = upgrade + 1;
-    var nextInfo = PENDANT_UPGRADE_TABLE[next];
-    if (!nextInfo) return { ok: false, message: "이미 펜던트 최대 강화 단계에 도달했습니다." };
-    if ((info.pendant.durability || 0) <= 0) return { ok: false, message: "해당 펜던트는 내구도가 0이라 강화할 수 없습니다." };
-    if ((data.member[sender].point || 0) < nextInfo.point) return { ok: false, message: "포인트가 부족합니다." };
-    if (!hasItem(data, sender, GLOBAL_CONFIG.items.pendantEnhanceStoneName, nextInfo.stone)) return { ok: false, message: "펜던트 강화석📿이 부족합니다." };
-    data.member[sender].point -= nextInfo.point;
-    removeItem(data, sender, GLOBAL_CONFIG.items.pendantEnhanceStoneName, nextInfo.stone);
-    var skillBonusRate = getPendantUpgradePetSkillBonusRate(petSkillData, sender);
-    var successRate = Math.min(100, nextInfo.rate + skillBonusRate); // 실제 강화 판정에 사용하는 최종 성공 확률
-    var success = Math.random() * 100 < successRate;
-    if (success) {
-        info.pendant.upgrade = next;
-        var successStats = calculatePendantStats(info.pendant);
-        return { ok: true, message: "[✅][" + checkRank(data, petData, guildData, sender) + "] 님! 영롱하군요🤩🤩\n\n펜던트 강화 성공!\n━━━━━━━━━━━━━\n" + formatPendantDisplay(info.pendant) + "\n종합매력👑: " + numberWithCommas(successStats.charm) + "💞\n펫탐험성공확률⛰️:" + formatPendantPercent(successStats.explore) + "%\n━━━━━━━━━━━━━\n남은 포인트💸: 🅟" + numberWithCommas(data.member[sender].point || 0) + "\n남은 내구도⚒️: " + info.pendant.durability + "회" };
-    }
-    info.pendant.durability = Math.max(0, (info.pendant.durability || 0) - 1);
-    var failMsg = "[❌][" + checkRank(data, petData, guildData, sender) + "] 야야 [😵]실패네? ㅋㅋ\n━━━━━━━━━━━━━\n" + formatPendantDisplay(info.pendant) + "\n\n남은 포인트💸: 🅟" + numberWithCommas(data.member[sender].point || 0) + "\n남은 내구도⚒️: " + info.pendant.durability + "회";
-    if (info.pendant.durability <= 0) failMsg += "\n*복원석으로 수리해보세요.";
-    return { ok: true, message: failMsg };
+function runPendantUpgradeFromState(sender, data, petData, guildData, petSkillData, state, random) {
+    var info = getPendantById(petData, sender, state.id), reason = getPendantUpgradeStopReason(data, info.pendant, sender);
+    if (reason) return { ok: false, message: reason };
+    var pendant = info.pendant, next = Number(pendant.upgrade || 0) + 1, rule = PENDANT_UPGRADE_TABLE[next];
+    data.member[sender].point -= rule.point;
+    removeItem(data, sender, GLOBAL_CONFIG.items.pendantEnhanceStoneName, rule.stone);
+    var success = (random || Math.random)() * 100 < Math.min(100, rule.rate + getPendantUpgradePetSkillBonusRate(petSkillData, sender));
+    if (success) pendant.upgrade = next;
+    else pendant.durability = Math.max(0, pendant.durability - 1);
+    return { ok: true, success: success, points: rule.point, stones: rule.stone };
 }
 
 // 펜던트 단일 판매 처리
@@ -61961,7 +62369,7 @@ function addPendantByAdmin(petData, msg) {
     pendant.grade = grade;
     pendant.durability = Math.max(0, Math.min(5, durability));
     pendant.maxDurability = 5;
-    pendant.upgrade = Math.max(0, Math.min(30, upgrade));
+    pendant.upgrade = Math.max(0, Math.min(GLOBAL_CONFIG.pendant.upgrade.maxLevel, upgrade));
     getPendantBag(petData, user).push(pendant);
     return { ok: true, message: "[MASTER]\n" + user + " 님에게 펜던트를 지급했습니다.\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) };
 }
@@ -61987,7 +62395,7 @@ function editPendantUpgradeByAdmin(petData, msg) {
     if (!petData[user]) return { ok: false, message: "대상 펫 데이터가 없습니다." };
     var info = getPendantByIndex(petData, user, parseInt(m[2], 10));
     if (!info.pendant) return { ok: false, message: "해당 번호의 펜던트가 없습니다." };
-    info.pendant.upgrade = Math.max(0, Math.min(30, parseInt(m[3], 10)));
+    info.pendant.upgrade = Math.max(0, Math.min(GLOBAL_CONFIG.pendant.upgrade.maxLevel, parseInt(m[3], 10)));
     return { ok: true, message: "펜던트 강화수정 완료\n" + formatPendantDisplay(info.pendant) };
 }
 
@@ -66428,7 +66836,7 @@ function buildDailyScheduleMessage(data, petData, guildData, user) {
     else out += "⏰ " + overallTime + " · 종합순위\n⏰ " + miniPetTime + " · 미니펫순위\n";
     out += "⏰ " + getScheduleGuidePayoutTime("guildRank") + " · 길드순위\n";
     out += "⏰ " + getScheduleGuidePayoutTime("tier") + " · 티어순위\n🎁 보상: 각 순위에 따라 차등 지급\n📝 순위 확인: /종합순위 · /미니펫순위\n📝 /길드순위 · /티어순위\n━━━━━━━━━━━━\n";
-    out += "⚔️ 24시간 길드전쟁 [베타테스트]\n⏰ 시간: 24시간 상시 진행\n🎯 길드 공격권: 하루 5회 · 점령 지역: 7곳\n🎁 점령 성공: 길드자금 🅟3억\n⚒️ 방어 성공: 길드자금 🅟1억\n📕 펫스킬 광산 점령·방어: 📙 +1개\n💎 다이아광산 점령·방어: 길드창고 다이아 +1개\n💣 자폭 하루 " + GLOBAL_CONFIG.guildWar.bombLimit + "회 · 성공" + Math.round(GLOBAL_CONFIG.guildWar.bombSuccessRate * 100) + "% · 변경하루" + GLOBAL_CONFIG.guildWar.bomberChangeLimit + "회\n🏳️ 성공 시 미점령 → 즉시 무혈입성·동일 점령 보상\n📝 현황: /길드전쟁\n📝 편성: /전쟁편성\n📝 선포: /전쟁선포 지역번호\n📖 가이드: /길드전쟁가이드\n※ 기존 영지전·영지포인트 순위보상은 휴식 중\n━━━━━━━━━━━━\n";
+    out += "⚔️ 24시간 길드전쟁 [베타테스트]\n⏰ 시간: 24시간 상시 진행\n🎯 길드 공격권: 하루 5회 · 점령 지역: 9곳\n🎁 점령 성공: 길드자금 🅟3억\n⚒️ 방어 성공: 길드자금 🅟1억\n📕 펫스킬 광산 점령·방어: 📙 +1개\n💎 다이아광산 점령·방어: 길드창고 다이아 +1개\n💣 자폭 하루 " + GLOBAL_CONFIG.guildWar.bombLimit + "회 · 성공" + Math.round(GLOBAL_CONFIG.guildWar.bombSuccessRate * 100) + "% · 변경하루" + GLOBAL_CONFIG.guildWar.bomberChangeLimit + "회\n🏳️ 성공 시 미점령 → 즉시 무혈입성·동일 점령 보상\n📝 현황: /길드전쟁\n📝 편성: /전쟁편성\n📝 선포: /전쟁선포 지역번호\n📖 가이드: /길드전쟁가이드\n※ 기존 영지전·영지포인트 순위보상은 휴식 중\n━━━━━━━━━━━━\n";
     out += "👾 서버 레이드대전\n⏰ 시간: " + config.serverRaidStartTime + " 시작 · 준비 " + (raid.timers.preparationMs / 60000) + "분 후 공격 " + (raid.timers.durationMs / 60000) + "분\n";
     out += "🎁 공격 보상: 레이드매력의 " + raid.rewards.attackPercent + "% 포인트\n";
     out += "🏆 서버 순위보상: 🅟" + formatServerRaidPrize(raid.rewards.ranks[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(raid.rewards.ranks[raid.rewards.ranks.length - 1]).replace(/ 포인트$/, "") + "\n";
@@ -67499,7 +67907,7 @@ function initializeGuildWarExpansion(data, guildData, now) {
 }
 // 지역번호 전환 전후 모두 실제 호월킹덤 번호를 찾는 함수
 function getGuildWarKingdomNo(state) {
-    return state && state.siegeVersion === 2 ? GLOBAL_CONFIG.guildWar.campaign.kingdom : state && state.siegeVersion === 1 ? 7 : state && state.campaignVersion === GLOBAL_CONFIG.guildWar.campaign.version ? GLOBAL_CONFIG.guildWar.siege.legacyKingdom : 1;
+    return state && state.mapVersion === GLOBAL_CONFIG.guildWar.map.version ? GLOBAL_CONFIG.guildWar.campaign.kingdom : state && state.siegeVersion === 2 ? 8 : state && state.siegeVersion === 1 ? 7 : state && state.campaignVersion === GLOBAL_CONFIG.guildWar.campaign.version ? GLOBAL_CONFIG.guildWar.siege.legacyKingdom : 1;
 }
 
 // 현재 길드마스터가 장착한 전쟁 전용 스킬 효과를 반환하는 함수
@@ -68143,7 +68551,7 @@ function buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)
         return "[" + checkRank(data, petData, guildData, name) + "]" + (total ? "🎯(" + remaining + "/" + total + ")" : "");
     }
     var text = "🗺️ " + formatGuildDisplay(guild) + " 전쟁편성(" + fighters.concat([entry.scout, entry.bomber]).filter(function (n) { return !!n; }).length + "/8칸)\n" + buildGuildWarTicketLine(entry) + "\n\n👑 길드마스터 " + "[기본 선포권]" + (effects.commander ? " [전투지휘관📙+1회]" : "") + "\n└ " + display(guild.master, "master") + (effects.commander ? " · 지휘관🎯(" + getGuildWarCommanderRightCount(guildData.war24, guild, entry, gid, skills, data) + "/1)" : "") + "\n\n";
-    text += "🔭 정찰병: 🔭(" + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2) · 🔄(" + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/" + GLOBAL_CONFIG.guildWar.scoutChangeLimit + ")\n└ " + display(entry.scout, "scout") + " /정찰 길드이름\n\n";
+    text += "🔭 정찰병: 🔭(" + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2) · 🔄(" + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/" + GLOBAL_CONFIG.guildWar.scoutChangeLimit + ")\n└ " + display(entry.scout, "scout") + " /정찰 길드전쟁번호\n\n";
     text += "💣 자폭병: 💣(" + (GLOBAL_CONFIG.guildWar.bombLimit - entry.bombUsed) + "/2) · 🔄(" + (GLOBAL_CONFIG.guildWar.bomberChangeLimit - entry.bomberChanges) + "/" + GLOBAL_CONFIG.guildWar.bomberChangeLimit + ")\n└ " + (entry.bomber ? "[" + checkRank(data, petData, guildData, entry.bomber) + "]" : "미편성") + " /자폭 번호\n";
     for (var i = 0; i < 6; i++) {
         if (i % 3 === 0) text += "\n" + (i === 0 ? "🎯 공격 진형 🔄(" + (GLOBAL_CONFIG.guildWar.formationChangeLimit - (entry.attackChanges || 0)) + "/" + GLOBAL_CONFIG.guildWar.formationChangeLimit + ")" + (effects.attack ? " [기사단📙+3%]" : "") : "⚒️ 방어 진형 🔄(" + (GLOBAL_CONFIG.guildWar.formationChangeLimit - (entry.defenseChanges || 0)) + "/" + GLOBAL_CONFIG.guildWar.formationChangeLimit + ")" + (effects.defense ? " [징집📙+2%]" : "") + "\n└ ⚔️ 캐슬버프: " + (effects.defense ? "선봉+5% · 중견+12% · 대장+2%" : "선봉+3% · 중견+10%")) + "\n";
@@ -68231,7 +68639,7 @@ function applyGuildWarBomb(data, petData, guildData, gid, sender, no, now, rando
     var state = guildData.war24, entry = getGuildWarEntry(state, gid), territory = state.territories[String(no)];
     if (entry.bomber !== sender) throw guildWarInputError("자폭은 편성된 자폭병만 가능합니다.\n현재 자폭병: [" + (entry.bomber ? checkRank(data, petData, guildData, entry.bomber) : "미편성") + "]\n👉 /전쟁편성");
     if (entry.bombUsed >= GLOBAL_CONFIG.guildWar.bombLimit) throw guildWarInputError("💣 남은 자폭 0/2회 · 편성 변경으로 복구 불가");
-    if (!territory) throw guildWarInputError("/자폭 지역번호 · 지역은 1~8");
+    if (!territory) throw guildWarInputError("/자폭 지역번호 · 지역은 1~9");
     if (!territory.owner || territory.owner === gid) throw guildWarInputError("미점령·자기 점령 지역은 자폭할 수 없습니다.");
     if (state.active.some(function (war) { return war.no === no; })) throw guildWarInputError("해당 지역은 전쟁 중이라 자폭할 수 없습니다.");
     var target = territory.owner, attackName = formatGuildDisplay(guildData.guilds[gid]), defenseName = formatGuildDisplay(getGuildByIdSafe(guildData, target));
@@ -68275,7 +68683,11 @@ function getGuildWarRequest(msg) {
     if (/^\/일괄전쟁편성(?:\s|$)/.test(msg)) return { kind: "invalid", args: [] };
     match = /^\/(전쟁정찰편성|전쟁자폭편성|전쟁선포|자폭)[ \t]+(\d+)$/.exec(msg);
     if (match && match[0] === msg) return { kind: { "전쟁정찰편성": "scoutFormation", "전쟁자폭편성": "bomberFormation", "전쟁선포": "declare", "자폭": "bomb" }[match[1]], args: [Number(match[2])] };
-    match = /^\/(정찰|전쟁톡확인|전쟁톡해제)[ \t]+(\S(?:[^\r\n]*\S)?)$/.exec(msg);
+    if (/^\/길드전쟁(?:\s|$)/.test(msg)) return { kind: "mapInvalid", args: [] };
+    var recon = /^\/정찰[ \t]+([1-9])$/.exec(msg);
+    if (recon && recon[0] === msg) return { kind: "recon", args: [Number(recon[1])] };
+    if (/^\/정찰(?:\s|$)/.test(msg)) return { kind: "reconInvalid", args: [] };
+    match = /^\/(전쟁톡확인|전쟁톡해제)[ \t]+(\S(?:[^\r\n]*\S)?)$/.exec(msg);
     if (match && match[0] === msg) return { kind: match[1] === "정찰" ? "recon" : match[1] === "전쟁톡확인" ? "room" : "unregister", args: [match[2]] };
     if (/^\/(?:길드전쟁(?:가이드|공격초기화)?|전쟁(?:가이드|지도|편성(?:초기화)?|정찰(?:편성)?|자폭편성|공격편성|방어편성|선포|기록|톡등록|톡확인|톡해제)|정찰|자폭|방어)(?:\s|$)/.test(msg)) return { kind: "invalid", args: [] };
     return null;
@@ -68363,6 +68775,7 @@ function requireGuildWarDeclarationReceipt(war) {
 // 길드전쟁 상태의 기본 구조와 주요 수치가 정상인지 검증하는 함수
 function requireGuildWarState(state) {
     if (!state || (state.version !== 1 && state.version !== 2) || !state.territories || !state.guilds || !state.records || !Array.isArray(state.active) || !Array.isArray(state.notices) || typeof state.earth !== "string") throw new Error("길드전쟁 저장 구조 오류");
+    if (state.mapVersion !== undefined && (state.mapVersion !== GLOBAL_CONFIG.guildWar.map.version || state.siegeVersion !== 2 || !isPointShopSafeCount(state.mapChangedAt))) throw new Error("길드전쟁 점령 기록 오류");
     if (state.recordStore !== undefined) {
         if (!state.recordStore || typeof state.recordStore !== "object" || Array.isArray(state.recordStore)) throw new Error("길드전쟁 공통 기록 형식 오류");
         for (var storedId in state.recordStore) if (Object.prototype.hasOwnProperty.call(state.recordStore, storedId)) {
@@ -68373,9 +68786,10 @@ function requireGuildWarState(state) {
     if (state.expansionVersion !== undefined && (state.expansionVersion !== 1 || !isPointShopSafeCount(state.expandedAt))) throw new Error("길드전쟁 확장 정책 기록 오류");
     if (!isPointShopSafeCount(state.nextId) || state.nextId < 1 || !isPointShopSafeCount(state.day)) throw new Error("길드전쟁 회차 오류");
     if (state.version === 2 && (state.rewardPolicy !== GLOBAL_CONFIG.guildWar.rewardPolicy || !isPointShopSafeCount(state.rewardChangedAt))) throw new Error("길드전쟁 정책 기록 누락");
-    for (var no = 1; no <= (state.siegeVersion === 2 ? 8 : state.siegeVersion === 1 ? 7 : state.version === 2 ? state.expansionVersion === 1 ? 6 : 5 : 4); no++) {
+    for (var no = 1; no <= (state.mapVersion === GLOBAL_CONFIG.guildWar.map.version ? 9 : state.siegeVersion === 2 ? 8 : state.siegeVersion === 1 ? 7 : state.version === 2 ? state.expansionVersion === 1 ? 6 : 5 : 4); no++) {
         var territory = state.territories[String(no)];
         if (!territory || (territory.owner !== null && typeof territory.owner !== "string") || !isPointShopSafeCount(territory.since) || !isPointShopSafeCount(territory.incomeAt) || !isPointShopSafeCount(territory.income) || territory.incomeAt < territory.since) throw new Error("길드전쟁 점령 기록 오류");
+        if (state.mapVersion !== undefined && (territory.regionId !== GLOBAL_CONFIG.guildWar.map.regionKeys[no - 1] || !isPointShopSafeCount(territory.ownershipEpoch))) throw new Error("길드전쟁 점령 기록 오류");
     }
     if (state.rewardPolicy !== undefined && ((state.version === 2 ? state.rewardPolicy !== GLOBAL_CONFIG.guildWar.rewardPolicy : state.rewardPolicy !== 2) || !isPointShopSafeCount(state.rewardChangedAt))) throw new Error("길드전쟁 보상 전환 기록 오류");
     if (state.campaignVersion !== undefined && (state.campaignVersion !== GLOBAL_CONFIG.guildWar.campaign.version || state.version !== 2 || state.expansionVersion !== 1 || !isPointShopSafeCount(state.campaignChangedAt))) throw new Error("길드전쟁 진격 정책 기록 오류");
@@ -68383,7 +68797,7 @@ function requireGuildWarState(state) {
     var targets = {}, attackers = {}, previousId = 0;
     for (var i = 0; i < state.active.length; i++) {
         var war = state.active[i];
-        if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.siegeVersion === 2 ? 8 : state.siegeVersion === 1 ? 7 : state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
+        if (!war || !isPointShopSafeCount(war.id) || war.id <= previousId || war.id >= state.nextId || !(war.no >= 1 && war.no <= (state.mapVersion === GLOBAL_CONFIG.guildWar.map.version ? 9 : state.siegeVersion === 2 ? 8 : state.siegeVersion === 1 ? 7 : state.expansionVersion === 1 ? 6 : 5) && isPointShopSafeCount(war.no)) || typeof war.attackId !== "string" || (war.defenseId !== null && typeof war.defenseId !== "string") || targets[war.attackId + ":" + war.no] || !isPointShopSafeCount(war.at) || war.due !== war.at + getGuildWarPrepareMs(war) || !Array.isArray(war.attack) || !Array.isArray(war.defense) || war.attack.length !== 3 || war.defense.length !== 3) throw new Error("길드전쟁 진행 기록 오류");
         if (war.reward !== undefined || war.rewardPolicy !== undefined) throw new Error("이미 정산된 전쟁이 진행 목록에 남아 있습니다.");
         if (war.ticketSource !== undefined && war.ticketSource !== "base" && war.ticketSource !== "extra" && war.ticketSource !== "commander") throw new Error("길드전쟁 소모 공격권 종류 오류");
         if (war.skillSnapshot !== undefined && (!war.skillSnapshot || [0, GLOBAL_CONFIG.guildWar.masterSkills.attackPercent].indexOf(war.skillSnapshot.attack) < 0 || [0, GLOBAL_CONFIG.guildWar.masterSkills.defensePercent].indexOf(war.skillSnapshot.defense) < 0)) throw new Error("길드전쟁 스킬 스냅샷 오류");
@@ -69200,6 +69614,11 @@ function recordGuildWar(state, guildData, war) {
 // 점령 길드가 실제 바뀌는 시각에 새 점령 기간을 시작하는 함수
 function transferGuildWarTerritory(state, no, gid, now) {
     var territory = state.territories[String(no)];
+    if (state.mapVersion === GLOBAL_CONFIG.guildWar.map.version && territory.owner !== gid) {
+        if (!isPointShopSafeCount(territory.ownershipEpoch) || !isPointShopSafeCount(territory.ownershipEpoch + 1)) throw new Error("길드전쟁 점령 기록 오류");
+        territory.ownershipEpoch++;
+        for (var observer in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, observer) && state.guilds[observer].knownTerritories) delete state.guilds[observer].knownTerritories[territory.regionId];
+    }
     territory.owner = gid; territory.since = now; territory.incomeAt = now; territory.income = 0;
 }
 
@@ -69438,9 +69857,9 @@ function buildGuildWarMain(data, guildData, gid, now) {
     for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner), status = guild ? getGuildWarAdvance(state, gid, no) : null;
         var icon = status ? status.own ? "🏴" : status.allowed ? "⚔️" : "🔒" : "";
-        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + (guild && status.own ? "우리 길드" : owner ? formatGuildDisplay(owner) : "미점령") + "\n";
+        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + getGuildWarVisibleOwner(guildData, guild ? gid : null, no) + "\n";
         if (no === getGuildWarKingdomNo(state) && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
-        if (no === 3 || no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine) text += "              ⬇️\n";
+        if (no === GLOBAL_CONFIG.guildWar.campaign.gold.length || no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine) text += "              ⬇️\n";
         if (no === GLOBAL_CONFIG.guildWar.siege.fortress) text += "              ↕️\n";
     }
     text += "━━━━━━━━━━━━\n";
@@ -69677,6 +70096,7 @@ function scheduleGuildWarWork(ctx, retryNotBefore) {
     if (guildWarTimers[key]) { clearTimeout(guildWarTimers[key]); delete guildWarTimers[key]; }
     var guildData = loadJsonFile(guildPath), state = guildData.war24, now = Date.now(), delay = null;
     if (state !== undefined) requireGuildWarState(state);
+    if (state && state.mapVersion !== GLOBAL_CONFIG.guildWar.map.version) return;
     if (!state || state.version !== 2 || state.rewardPolicy !== GLOBAL_CONFIG.guildWar.rewardPolicy) delay = GLOBAL_CONFIG.guildWar.retryMs;
     for (var i = 0; state && i < state.active.length; i++) {
         var dueDelay = Math.max(1, getGuildWarNextDue(state.active[i]) - now);
@@ -69705,10 +70125,75 @@ function scheduleGuildWarWork(ctx, retryNotBefore) {
     }, delay);
 }
 
+// 정찰 공개 기록을 실제 거점과 점령 회차로 확인하는 함수
+function getGuildWarVisibleOwner(guildData, gid, no) {
+    var state = guildData.war24, territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner);
+    if (gid && territory.owner === gid) return "우리 길드";
+    if (!owner) return "미점령";
+    if (no === GLOBAL_CONFIG.guildWar.campaign.kingdom) return formatGuildDisplay(owner);
+    var entry = gid ? state.guilds[gid] : undefined, known = entry ? entry.knownTerritories : undefined;
+    if (known !== undefined && (!known || typeof known !== "object" || Array.isArray(known))) throw new Error("길드전쟁 정찰 기록 오류");
+    var key = GLOBAL_CONFIG.guildWar.map.regionKeys[no - 1], record = known && known[key];
+    if (record !== undefined && (!record || typeof record.owner !== "string" || !isPointShopSafeCount(record.epoch))) throw new Error("길드전쟁 정찰 기록 오류");
+    if (record && record.owner === territory.owner && record.epoch === territory.ownershipEpoch) return formatGuildDisplay(owner);
+    return "???";
+}
+
+// 현재 정찰 성공을 같은 길드의 해당 점령 회차에만 연결하는 함수
+function recordGuildWarTerritoryRecon(state, gid, no) {
+    var entry = getGuildWarEntry(state, gid), territory = state.territories[String(no)];
+    if (entry.knownTerritories === undefined) entry.knownTerritories = {};
+    if (!entry.knownTerritories || typeof entry.knownTerritories !== "object" || Array.isArray(entry.knownTerritories)) throw new Error("길드전쟁 정찰 기록 오류");
+    entry.knownTerritories[GLOBAL_CONFIG.guildWar.map.regionKeys[no - 1]] = { owner: territory.owner, epoch: territory.ownershipEpoch };
+}
+
+// 기존 8개 거점과 진행·과거 기록을 고유 거점 기준으로 한 번만 옮기는 순수 계획 함수
+function prepareGuildWarMapMigration(guildData, now) {
+    var original = guildData.war24, config = GLOBAL_CONFIG.guildWar.map;
+    if (!original || original.mapVersion === config.version) return { changed: false, state: original, signature: null };
+    requireGuildWarState(original);
+    if (original.mapVersion !== undefined || original.siegeVersion !== 2) throw new Error("길드전쟁 이전 진격 정책 확인 필요");
+    var signature = getDataCleanupSignature(["guildWarMap", original]), state = cloneFreeMarketObject(original), territories = {};
+    for (var oldNo = 1; oldNo <= 8; oldNo++) {
+        var newNo = oldNo < 4 ? oldNo : oldNo + 1, territory = state.territories[String(oldNo)];
+        territory.regionId = config.regionKeys[newNo - 1]; territory.ownershipEpoch = 0;
+        territories[String(newNo)] = territory;
+    }
+    territories["4"] = { regionId: config.regionKeys[3], ownershipEpoch: 0, owner: null, since: now, incomeAt: now, income: 0 };
+    state.territories = territories;
+    var visited = [];
+    // 공통 원본과 양쪽 길드 참조로 중복 방문한 같은 기록은 재이동하지 않는 함수
+    function moveRecord(row) {
+        if (!row || visited.indexOf(row) >= 0) return;
+        visited.push(row);
+        if (!isPointShopSafeCount(row.no) || row.no < 1 || row.no > 8) throw new Error("길드전쟁 이전 지역번호 오류");
+        row.no = row.no < 4 ? row.no : row.no + 1;
+        row.regionId = config.regionKeys[row.no - 1];
+        var history = row.matchupHistory || [];
+        for (var h = 0; h < history.length; h++) moveRecord(history[h]);
+    }
+    for (var a = 0; a < state.active.length; a++) moveRecord(state.active[a]);
+    for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) {
+        var records = getGuildWarRecords(state, gid);
+        for (var r = 0; r < records.length; r++) moveRecord(records[r]);
+    }
+    if (state.recordStore) for (var id in state.recordStore) if (Object.prototype.hasOwnProperty.call(state.recordStore, id)) moveRecord(state.recordStore[id]);
+    var oldLabels = ["", "🪙 [1] 동부 금광", "🪙 [2] 중앙 금광", "🪙 [3] 서부 금광", "📕 [4] 펫스킬 광산", "💎 [5] 다이아 광산", "💫 [6] 미강석 광산", "🛡️ [7] 루미에르 요새", "🏰 [8] 호월킹덤"];
+    for (var n = 0; n < state.notices.length; n++) {
+        state.notices[n].text = state.notices[n].text.replace(/(?:📕 \[4\] 펫스킬 광산|💎 \[5\] 다이아 광산|💫 \[6\] 미강석 광산|🛡️ \[7\] 루미에르 요새|🏰 \[8\] 호월킹덤)/g, function (label) { return guildWarRegion(oldLabels.indexOf(label) + 1); });
+    }
+    state.mapVersion = config.version; state.mapChangedAt = now;
+    requireGuildWarState(state);
+    return { changed: true, state: state, signature: signature };
+}
+
+
 // 공개·내부 조회와 등록방 전쟁 실행을 처리하는 진입점
 function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     var request = getGuildWarRequest(msg);
     if (!request) return false;
+    if (request.kind === "mapInvalid") { replier.reply("지도 조회: /길드전쟁"); return true; }
+    if (request.kind === "reconInvalid") { replier.reply("사용법: /정찰 길드전쟁번호 (1~9) · 예: /정찰 2"); return true; }
     var guildData = loadJsonFile(guildPath);
     var directReply = replier;
     var directNickname = data && data.member && data.member[sender] ? checkRank(data, null, guildData, sender) : sender;
@@ -69716,7 +70201,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     if (request.kind === "attackFormationInvalid") { replier.reply("❌ 공격 편성은 길드원 번호 3개만 입력해주세요.\n/전쟁공격편성 번호 번호 번호"); return true; }
     if (request.kind === "supplyInvalid") { replier.reply("❌ 보급 지원은 수량 없이 /길드보급으로 입력해주세요."); return true; }
     if (request.kind === "chargeMissing" || request.kind === "chargeInvalid") { replier.reply("❌ " + (request.kind === "chargeMissing" ? "사용할 수량을 입력해주세요." : "사용 수량은 1 이상의 숫자로 입력해주세요.") + "\n사용: /전쟁공격사용 숫자"); return true; }
-    if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~8예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/기습공격 금광번호 · /전쟁기록 기록번호\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
+    if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~9예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/기습공격 금광번호 · /전쟁기록 기록번호\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
     if (request.kind === "guide") { replier.reply(GLOBAL_CONFIG.guildWar.guide); return true; }
     var initialized = initializeGuildWar(data, guildData, now);
     if (resetGuildWarDay(guildData, now)) initialized = true;
@@ -69809,7 +70294,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
         }
         if (request.kind === "scout") {
             var scout = snapshotGuildWarScout(data, petData, homeData, skills, guildData, guild, entry.scout);
-            replier.reply("🔭 " + formatGuildDisplay(guild) + " 전쟁정찰\n━━━━━━━━━━━━\n🔭 현재 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n🔄 오늘 남은 정찰병 변경: " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2회\n🔎 오늘 남은 단독 정찰: " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회\n🎯 정찰병 전쟁선포권: 잔여 " + getGuildWarScoutRightCount(state, guild, entry, gid, skills, data) + "/1회\n\n👉 정찰병 편성: /전쟁정찰편성 번호\n👉 단독 정찰: /정찰 길드명"); return true;
+            replier.reply("🔭 " + formatGuildDisplay(guild) + " 전쟁정찰\n━━━━━━━━━━━━\n🔭 현재 정찰병: [" + scout.display + "]\n💞 정찰병 종합매력: " + numberWithCommas(scout.charm) + "\n🔄 오늘 남은 정찰병 변경: " + (GLOBAL_CONFIG.guildWar.scoutChangeLimit - entry.scoutChanges) + "/2회\n🔎 오늘 남은 단독 정찰: " + (GLOBAL_CONFIG.guildWar.scoutLimit - entry.scoutUsed) + "/2회\n🎯 정찰병 전쟁선포권: 잔여 " + getGuildWarScoutRightCount(state, guild, entry, gid, skills, data) + "/1회\n\n👉 정찰병 편성: /전쟁정찰편성 번호\n👉 단독 정찰: /정찰 길드전쟁번호"); return true;
         }
         if (request.kind === "attackFormation" || request.kind === "defenseFormation" || request.kind === "scoutFormation" || request.kind === "bomberFormation" || request.kind === "clearFormation" || request.kind === "bulkFormation") {
             if (guildData.territoryWar && guildData.territoryWar.active && guildData.territoryWar.readyGuilds && guildData.territoryWar.readyGuilds[gid] && request.kind === "attackFormation") throw guildWarInputError("기존 길드 영지전 진행 중에는 공격 진형을 변경할 수 없습니다.");
@@ -69819,9 +70304,10 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             publishGuildWar(data, guildData, true); replier.reply(formationMessage + "\n\n" + buildGuildWarFormation(data, petData, guildData, gid, homeData, skills)); return true;
         }
         if (request.kind === "declare" || request.kind === "recon") {
-            var targetNo = request.kind === "declare" ? request.args[0] : null;
+            var targetNo = request.args[0];
             if (targetNo !== null && !state.territories[String(targetNo)]) throw guildWarInputError("대상 지역이 없습니다.");
-            var defenseId = targetNo !== null ? state.territories[String(targetNo)].owner : findGuildIdByNameSafe(guildData, request.args[0]);
+            var defenseId = state.territories[String(targetNo)].owner;
+            if (request.kind === "recon" && entry.scout === sender && getGuildWarVisibleOwner(guildData, gid, targetNo) !== "???") { replier.reply(buildGuildWarMain(data, guildData, gid, now)); return true; }
             var defenderGuild = getGuildByIdSafe(guildData, defenseId);
             if (targetNo !== null && !state.territories[String(targetNo)] || request.kind === "recon" && !defenderGuild) throw guildWarInputError("대상 지역 또는 길드가 없습니다.");
             if (defenseId === gid) throw guildWarInputError("자기 길드가 점령한 지역 또는 자기 길드는 정찰·공격할 수 없습니다.");
@@ -69844,12 +70330,13 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             var success = attackScout.charm > defenseScout.charm;
             var defense = defenseEntry.defense.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, defenderGuild && defenderGuild.members && defenderGuild.members[name] ? name : ""); });
             if (request.kind === "recon") {
-                entry.scoutUsed++; entry.recon = { at: now, target: defenseId, success: success, scout: success ? defenseScout : null, defense: success ? defense : null };
+                entry.scoutUsed++; entry.recon = { at: now, target: defenseId, regionId: GLOBAL_CONFIG.guildWar.map.regionKeys[targetNo - 1], success: success, scout: success ? defenseScout : null, defense: success ? defense : null };
+                if (success) recordGuildWarTerritoryRecon(state, gid, targetNo);
                 if (attackScout.name) entry.recon.reward = claimGuildWarDailyReward(data, attackScout.name, "scout", success, state.day);
             } else {
                 if (state.nextId >= GLOBAL_CONFIG.pointShop.limits.maxSafeNumber) throw guildWarInputError("전쟁 식별자 범위를 확인해주세요.");
                 var ticket = applyGuildWarDeclarationTicket(state, guild, entry, gid, sender, skills, data);
-                var war = { declaredBy: sender, rulesVersion: 2, id: state.nextId++, no: targetNo, attackId: gid, defenseId: defenseId || null, attackName: formatGuildDisplay(guild), defenseName: defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", at: now, day: getVaultRobberyDay(now), due: now + GLOBAL_CONFIG.guildWar.prepareMs, matches: [], wins: 0, right: ticket.right, ticketEpoch: entry.ticketEpoch, attackScout: attackScout, defenseScout: defenseScout, defenseScoutWin: !success, attack: entry.attack.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, name); }), defense: defense };
+                var war = { regionId: GLOBAL_CONFIG.guildWar.map.regionKeys[targetNo - 1], declaredBy: sender, rulesVersion: 2, id: state.nextId++, no: targetNo, attackId: gid, defenseId: defenseId || null, attackName: formatGuildDisplay(guild), defenseName: defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", at: now, day: getVaultRobberyDay(now), due: now + GLOBAL_CONFIG.guildWar.prepareMs, matches: [], wins: 0, right: ticket.right, ticketEpoch: entry.ticketEpoch, attackScout: attackScout, defenseScout: defenseScout, defenseScoutWin: !success, attack: entry.attack.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, name); }), defense: defense };
                 war.ticketSource = ticket.source; war.personalTicket = ticket.personal; war.declaredAccountId = ticket.accountId;
                 if (ticket.source === "extra") { war.extraTicketsBefore = ticket.before; war.extraTicketsAfter = ticket.after; }
                 war.skillSnapshot = { attack: getGuildWarMasterSkills(guild, skills).attack, defense: getGuildWarMasterSkills(defenderGuild, skills).defense };
@@ -69915,7 +70402,7 @@ function buildGuildWarScoutNotice(kind, attackName, defenseName, no, success, at
     var rewardText = kind === "recon" && personalReward !== undefined ? "\n🔎 [" + attackScout.display + "] 님" + buildGuildWarDailyRewardMessage("scout", personalReward) + "\n" : "";
     var detail = "\n🔭 상대 정찰병: [" + defenseScout.display + "]\n💞 상대 정찰매력: " + numberWithCommas(defenseScout.charm) + "\n" + buildGuildWarFormationDetail(defense);
     if (kind === "recon") {
-        var header = "🔭 " + attackName + " 단독 정찰\n━━━━━━━━━━━━\n🎯 정찰 대상: " + defenseName + "\n\n";
+        var header = "🔭 " + attackName + " 단독 정찰\n━━━━━━━━━━━━\n🎯 정찰 대상: " + (success ? defenseName : "???") + "\n\n";
         if (success) return header + "🏆 정찰 성공!\n" + rewardText + "\n🔭 상대 정찰병: [" + defenseScout.display + "]\n💞 상대 정찰매력: " + numberWithCommas(defenseScout.charm) + "\n\n✅ 상대 방어 진형 정보 획득\n📋 오늘 남은 단독 정찰: " + remaining + "/2회\n\n📚 상대 방어 진형 전체보기" + allsee + "\n" + buildGuildWarFormationDetail(defense);
         return header + "❌ 정찰 실패!\n" + rewardText + "\n🛡️ 상대 정찰병: ???\n💞 상대 정찰매력: ???\n\n" + (defenseScout.name ? "🚨 적군에게 정찰 활동이 발각되었습니다!\n⚠️ 우리 정찰 정보가 상대에게 노출됩니다.\n\n" : "") + "📋 오늘 남은 단독 정찰: " + remaining + "/2회";
     }
@@ -70027,8 +70514,11 @@ function getPointShopNumberedItems(data) {
 
 // 과거 재배열을 완료한 상태에 요새와 킹덤 번호 이전을 한 번만 적용하는 함수
 function initializeGuildWar(data, guildData, now) {
+    if (guildData.war24 && guildData.war24.mapVersion !== GLOBAL_CONFIG.guildWar.map.version) throw guildWarDeferredError();
+    var fresh = !guildData.war24;
     var changed = initializeGuildWarLegacy(data, guildData, now);
     if (initializeGuildWarSiege(guildData, now)) changed = true;
+    if (fresh) guildData.war24 = prepareGuildWarMapMigration(guildData, now).state;
     return changed;
 }
 
@@ -70067,13 +70557,13 @@ function initializeGuildWarSiege(guildData, now) {
 
 // 지역 번호에서 같은 점령 한도를 공유하는 단계를 반환하는 함수
 function getGuildWarStage(no) {
-    return no <= 3 ? 0 : no <= GLOBAL_CONFIG.guildWar.campaign.miniPetMine ? 1 : no === GLOBAL_CONFIG.guildWar.siege.fortress ? 2 : 3;
+    return GLOBAL_CONFIG.guildWar.campaign.gold.indexOf(no) >= 0 ? 0 : no <= GLOBAL_CONFIG.guildWar.campaign.miniPetMine ? 1 : no === GLOBAL_CONFIG.guildWar.siege.fortress ? 2 : 3;
 }
 
 // 한 번 읽은 점령 상태에서 전체·단계별 실제 소유 지역을 계산하는 함수
 function getGuildWarOwned(state, gid) {
     var stages = [[], [], [], []], all = [];
-    for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) if (gid && state.territories[String(no)].owner === gid) {
+    for (var no = 1; no <= (state.mapVersion === GLOBAL_CONFIG.guildWar.map.version ? 9 : 8); no++) if (gid && state.territories[String(no)] && state.territories[String(no)].owner === gid) {
         all.push(no); stages[getGuildWarStage(no)].push(no);
     }
     return { all: all, stages: stages };
@@ -70102,9 +70592,9 @@ function getGuildWarAmbushRemaining(entry) {
 function buildGuildWarAmbushView(data, petData, guildData, gid) {
     var state = guildData.war24, entry = getGuildWarEntry(state, gid);
     var text = "🎲 " + formatGuildDisplay(guildData.guilds[gid]) + " 기습공격\n━━━━━━━━━━━━\n🥉 담당: " + (entry.attack[2] ? "[" + checkRank(data, petData, guildData, entry.attack[2]) + "]" : "미편성 · /전쟁편성") + "\n🏴 점령지 없는 길드 전용 · 금광 대상\n🎲 성공률 50% · 오늘 남음 " + getGuildWarAmbushRemaining(entry) + "/1\n";
-    for (var no = 1; no <= 3; no++) {
+    for (var no = 1; no <= GLOBAL_CONFIG.guildWar.campaign.gold.length; no++) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner);
-        text += "\n" + guildWarRegion(no) + " · " + (owner ? formatGuildDisplay(owner) : "미점령 · 무혈입성 가능") + (state.active.some(function (war) { return war.no === no; }) ? " · 전쟁 중" : "");
+        text += "\n" + guildWarRegion(no) + " · " + (owner ? getGuildWarVisibleOwner(guildData, gid, no) : "미점령 · 무혈입성 가능") + (state.active.some(function (war) { return war.no === no; }) ? " · 전쟁 중" : "");
     }
     return text + "\n\n✅ 성공 시 전투 없이 금광 즉시 점령\n👤 하루 첫 기습 개인 🅟1억 · 성공·실패 무관\n👉 /기습공격 번호";
 }
@@ -70127,7 +70617,7 @@ function applyGuildWarAmbush(data, petData, guildData, skills, gid, user, no, no
     if (!entry.attack[2]) throw guildWarInputError("공격 대장이 편성되지 않았습니다. /전쟁편성");
     if (entry.attack[2] !== user) throw guildWarInputError("공격 진형의 대장만 사용할 수 있습니다. 현재 대장: [" + checkRank(data, petData, guildData, entry.attack[2]) + "] · /전쟁편성");
     if (getGuildWarOwned(state, gid).all.length) throw guildWarInputError("점령지가 없는 길드만 사용할 수 있습니다. /길드전쟁");
-    if (GLOBAL_CONFIG.guildWar.campaign.gold.indexOf(no) === -1) throw guildWarInputError("상대가 점령한 금광 1·2·3번에 사용할 수 있습니다.");
+    if (GLOBAL_CONFIG.guildWar.campaign.gold.indexOf(no) === -1) throw guildWarInputError("상대가 점령한 금광 1·2·3·4번에 사용할 수 있습니다.");
     var territory = state.territories[String(no)];
     if (territory.owner === null) throw guildWarInputError("미점령 금광입니다. /전쟁선포 " + no + "로 무혈입성할 수 있습니다.");
     if (territory.owner === gid) throw guildWarInputError("우리 길드가 이미 점령한 지역입니다.");
@@ -70144,7 +70634,7 @@ function applyGuildWarAmbush(data, petData, guildData, skills, gid, user, no, no
     var ticket = applyGuildWarDeclarationTicket(state, guild, entry, gid, user, skills, data);
     var reward = claimGuildWarDailyReward(data, user, "ambush", success, state.day);
     entry.ambushUsed = GLOBAL_CONFIG.guildWar.siege.ambushLimit;
-    var war = { ambush: true, id: state.nextId++, no: no, rulesVersion: 2, day: state.day, at: now, finished: now, declaredAt: now, declaredBy: user, declaredAccountId: ticket.accountId, attackId: gid, defenseId: defenseId, attackName: formatGuildDisplay(guild), defenseName: formatGuildDisplay(defender), occupied: success, wins: success ? 3 : 0, matches: [], ticketEpoch: entry.ticketEpoch, right: ticket.right, ticketSource: ticket.source, personalTicket: ticket.personal, ambushReward: reward, ambushUserDisplay: checkRank(data, petData, guildData, user) };
+    var war = { regionId: GLOBAL_CONFIG.guildWar.map.regionKeys[no - 1], ambush: true, id: state.nextId++, no: no, rulesVersion: 2, day: state.day, at: now, finished: now, declaredAt: now, declaredBy: user, declaredAccountId: ticket.accountId, attackId: gid, defenseId: defenseId, attackName: formatGuildDisplay(guild), defenseName: formatGuildDisplay(defender), occupied: success, wins: success ? 3 : 0, matches: [], ticketEpoch: entry.ticketEpoch, right: ticket.right, ticketSource: ticket.source, personalTicket: ticket.personal, ambushReward: reward, ambushUserDisplay: checkRank(data, petData, guildData, user) };
     if (ticket.source === "extra") { war.extraTicketsBefore = ticket.before; war.extraTicketsAfter = ticket.after; }
     if (success) { occupyGuildWarTerritory(data, guildData, war, now); creditGuildWarVictory(guildData, war); }
     else { war.reward = null; war.rewardPolicy = GLOBAL_CONFIG.guildWar.rewardPolicy; }
