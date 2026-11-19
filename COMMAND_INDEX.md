@@ -2,6 +2,8 @@
 
 Status: PARTIAL
 
+- 2026-11-20, ver_2.875: `Info.js`의 `getPendantUpgradeCharmForInfo`도 현재 메인 강화표의 +1~+40 누적 매력을 사용한다. `calculatePendantItemInfoForInfo`의 기본·승급 매력과 레이드/캐슬 분배는 유지한다. 보유 JSON 변경 없이 조회 시 계산한다.
+
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
