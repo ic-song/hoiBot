@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.876"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.877"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -805,7 +805,7 @@ const towerTips = [
 //room
 const room1 = "😏 30대 반말방｜스치면 친구됨";
 const room2 = "2030 반말 💬 말 놓으면 금방 친해져•월루•보룸";
-const room3 = "🐰 2030, 여기 좀 귀엽다 올래?🍓, 보룸 수다 벙 반말";
+const room3 = "🐰2030,귀엽다 올래?🍓,보룸 수다 벙 반말";
 const testRoom = "팻 테스트방";
 const room5 = "호이월드 커뮤니티[티어 킹 이상 입장가능]";
 const room6 = "💜3040대친목 반말방🐻 24시 보이스룸💜";
@@ -813,7 +813,7 @@ const room7 = "2030 반말방 | 우리는 청춘이라는 별 아래서✨";
 const room8 = "공성전";
 const room10 = "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙";
 const room11 = "🎇3040, 도파민 디스코팡팡🎇";
-const room12 = "🎀30대, 주파수가 맞는 사이🌙, 보룸 수다 벙 반말";
+const room12 = "🎀30대,주파수가 맞는 사이🌙,보룸 수다 벙 반말";
 const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
 const room14 = "🐶30대 반말방💞친목🐩봇,보룸,수다,벙🎤";
 const room15 = "🚨 30대 반말방｜도파민 폭주구역 💣🔥";
@@ -61497,21 +61497,18 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     sortPendantBagByGrade(bag);
     var out = "[" + checkRank(data, petData, guildData, user) + "] 보유 펜던트가방💎[" + bag.length + "/" + getPendantBagLimit() + "]\n";
     out += "━━━━━━━━━━━━━\n";
-    out += "※ 펜던트 가이드: /펜던트가이드\n";
+    out += "💎 펜던트 가이드: /펜던트가이드\n";
     out += "※ 펜던트 장착: /펜던트장착 [펜던트가방번호]\n";
     out += "※ 펜던트 판매: /펜던트판매 [번호]\n";
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
     out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] [횟수]\n※ 횟수 생략 시 1회 · 장착 펜던트는 0\n※ 펜던트 복원: /펜던트복원 [번호] (장착 펜던트는 0)\n";
-    out += "※ 창조 승급: /펜던트승급 [펜던트가방번호] (장착 펜던트는 0)\n";
-    out += "※ 창세 조합: /펜던트조합창세 [번호] [번호] [번호] [번호] [번호] [번호]\n";
-    out += "※ 창조 조합: /펜던트조합창조 [번호] [번호] [번호]\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
-    out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n※ [⚒️현재/최대 내구도](+강화수치) · 최대 +40강\n";
     out += "━━━━━━━━━━━━━\n";
     if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
     for (var i = 0; i < bag.length; i++) {
         if (i === 5 && typeof allsee !== "undefined") out += allsee + "\n";
         out += (i + 1) + ". " + formatPendantDisplay(bag[i]) + "\n";
+        if (i + 1 === Math.min(5, bag.length)) out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n※ [⚒️현재/최대 내구도](+강화수치) · 최대 +40강\n";
     }
     return out.trim();
 }
