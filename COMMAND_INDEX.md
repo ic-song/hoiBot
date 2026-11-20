@@ -2,6 +2,8 @@
 
 Status: PARTIAL
 
+- 2026-11-20, ver_2.876: `prepareGuildWarMapMigration`은 `archiveGuildWarMatchup`이 지역번호 없이 저장한 이전 대진 원문을 그대로 보존한다. 최상위 전쟁 기록은 기존 1~8 지역번호를 필수 검증하며, 지역번호를 가진 이전 대진도 같은 검증과 번호 이동을 적용한다. 실제 전환은 `/데이터정리` 확정에서만 저장한다.
+
 - 2026-11-20, ver_2.875: `Info.js`의 `getPendantUpgradeCharmForInfo`도 현재 메인 강화표의 +1~+40 누적 매력을 사용한다. `calculatePendantItemInfoForInfo`의 기본·승급 매력과 레이드/캐슬 분배는 유지한다. 보유 JSON 변경 없이 조회 시 계산한다.
 
 This document is an AI-oriented navigation index for command and helper exploration.

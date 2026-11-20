@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.875"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.876"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -70163,14 +70163,16 @@ function prepareGuildWarMapMigration(guildData, now) {
     state.territories = territories;
     var visited = [];
     // 공통 원본과 양쪽 길드 참조로 중복 방문한 같은 기록은 재이동하지 않는 함수
-    function moveRecord(row) {
+    function moveRecord(row, isMatchupHistory) {
         if (!row || visited.indexOf(row) >= 0) return;
         visited.push(row);
-        if (!isPointShopSafeCount(row.no) || row.no < 1 || row.no > 8) throw new Error("길드전쟁 이전 지역번호 오류");
-        row.no = row.no < 4 ? row.no : row.no + 1;
-        row.regionId = config.regionKeys[row.no - 1];
+        if (!isMatchupHistory || row.no !== undefined) {
+            if (!isPointShopSafeCount(row.no) || row.no < 1 || row.no > 8) throw new Error("길드전쟁 이전 지역번호 오류");
+            row.no = row.no < 4 ? row.no : row.no + 1;
+            row.regionId = config.regionKeys[row.no - 1];
+        }
         var history = row.matchupHistory || [];
-        for (var h = 0; h < history.length; h++) moveRecord(history[h]);
+        for (var h = 0; h < history.length; h++) moveRecord(history[h], true);
     }
     for (var a = 0; a < state.active.length; a++) moveRecord(state.active[a]);
     for (var gid in state.records) if (Object.prototype.hasOwnProperty.call(state.records, gid)) {
