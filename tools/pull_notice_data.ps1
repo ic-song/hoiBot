@@ -1,7 +1,7 @@
 ﻿param(
     [string]$AdbExe = 'C:\LDPlayer\LDPlayer9\adb.exe',
     [string]$LdConsoleExe = 'C:\LDPlayer\LDPlayer9\ldconsole.exe',
-    [string]$TargetLdIndex = 'auto',
+    [string]$TargetLdIndex = '0',
     [string]$TargetDevice = 'auto',
     [string]$DestinationRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'public\hoiBot-notice-backups')
 )
@@ -16,7 +16,7 @@ try {
     if (-not (Test-Path -LiteralPath $AdbExe -PathType Leaf)) { throw "ADB not found: $AdbExe" }
     [IO.Directory]::CreateDirectory($backup) | Out-Null
     $connection = Join-Path $backup 'connection.txt'
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'connect_legacy_adb.ps1') -AdbExe $AdbExe -LdConsoleExe $LdConsoleExe -TargetFile '/storage/emulated/0/hoiland/hoiland/Bots/main/main.js' -TargetLdIndex $TargetLdIndex -TargetDevice $TargetDevice -ResultFile $connection
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'connect_legacy_adb.ps1') -AdbExe $AdbExe -LdConsoleExe $LdConsoleExe -TargetFile $remote -TargetLdIndex $TargetLdIndex -TargetDevice $TargetDevice -ResultFile $connection
     if ($LASTEXITCODE -ne 0) { throw 'Device selection failed.' }
     $settings = Get-Content -LiteralPath $connection -Encoding UTF8 | ConvertFrom-StringData
     $device = $settings.TARGET_ADB_DEVICE
