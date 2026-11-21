@@ -2457,6 +2457,7 @@ const GLOBAL_CONFIG = {
         platinumPityCount: 149,
         maxAdminItemCount: 1000000000,
         adminLogMax: 100,
+        commandGuide: "🔒 봉인금고 전체 명령어 [MASTER]\n━━━━━━━━━━━━━━━\n🐾 이용자 명령어\n/봉인금고 — 내 금고·열쇠·진행도·이달의 보상\n/봉인금고확률 — 보상별 당첨 확률\n/봉인금고오픈 [횟수] — 1~100회 개봉\n/해방열쇠조합 [수량] — 봉인금고로 해방의 열쇠 조합\n└ 해방열쇠조합 또는 /해방열쇠조합 — 조합 사용법\n\n🛠 운영 명령어\n/해방열쇠지급 [아이디] [수량]\n/해방열쇠회수 [아이디] [수량]\n/봉인금고상태 [아이디] — 회원 진행도 조회\n/봉인금고부스터설정 [아이디] [누적횟수]\n/봉인금고천장설정 [아이디] [미등장횟수]\n\n👑 월간 초대형 보상\n/봉인금고보상설정 — 이번 달 구성과 사용법\n/봉인금고보상설정 [YYYY-MM] — 지정한 달의 구성 조회\n/봉인금고보상설정 [YYYY-MM] 아이템명 수량, 아이템명 수량\n\n📋 /봉인금고명령어 — 전체 명령어 보기",
         generalRewards: [
             { weight: 250, rateText: "25%", type: "item", itemName: "미니펫뽑기🐹(/미니펫오픈)", count: 300 },
             { weight: 250, rateText: "25%", type: "item", itemName: "펫스윗홈인테리어샵🖼️(/샵오픈)", count: 300 },
@@ -3120,6 +3121,7 @@ blockedNicknameTerms: [
         transferFeeMax: 25 // 이체 수수료 최대 설정값
     },
     diamondShop: { // 다이아상점 운영일·시세·구매 집계 설정
+        sponsorUrl: "https://hoi-world.netlify.app/shop#diamond",
         dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, historyPreviewCount: 5, combinePoint: 350000000
     },
     freeMarket: { // 자유시장 설정
@@ -25581,7 +25583,12 @@ replier.reply(
                     return;
                 }
                 if (isSealedVaultCommandMessage(msg)) {
-                    var sealedVaultResult = runSealedVaultCommand(sender, data, petData, guildData, msg);
+                    var sealedVaultItemNames = null;
+                    if (isSealedVaultAdmin(sender) && isSealedVaultRewardSettingWriteMessage(msg) && !/^\/봉인금고보상설정\s+\d{4}-(?:0[1-9]|1[0-2])\s+\d+\s+\d+\s+\d+\s*$/.test(msg)) {
+                        var sealedVaultItems = loadJsonFile(itemListPath), sealedVaultPackages = requirePackageInfoData(loadJsonFile(packageInfoPath));
+                        sealedVaultItemNames = getDiamondShopItemNames(data, sealedVaultItems, sealedVaultPackages);
+                    }
+                    var sealedVaultResult = runSealedVaultCommand(sender, data, petData, guildData, msg, sealedVaultItemNames);
                     if (sealedVaultResult.changed) saveJsonFile(data, filePath);
                     replier.reply(sealedVaultResult.message);
                     for (var sealedVaultNoticeIndex = 0; sealedVaultNoticeIndex < sealedVaultResult.noticeMessages.length; sealedVaultNoticeIndex++) {
@@ -51591,6 +51598,7 @@ function buildDiamondShopView(shop, member, manage, log, livePrice) {
     }
     if (manage) text += "\n━━━━━━━━━━━━\n📊 기준 B 안내\nB = 상품별 하루 정상 판매량 기준\n\nB 1 기준\n📉 0묶음: -5%p\n➖ 1묶음: 유지\n📈 2묶음 이상: +10%p\n\n※ B값에 따라 상승·하락 기준이 달라집니다.\n※ 판매량은 서버 전체 유효 묶음 수 기준입니다.\n※ 표시 가격은 현재까지의 구매량으로 계산한 예상치입니다.\n※ 실제 시세는 매일 00:01 확정됩니다.\n━━━━━━━━━━━━";
     if (!manage && typeof livePrice === "string") text = text.replace("시세는 매일 00:01", "상품 시세는 매일 00:01").replace("\n💎 보유:", "\n💎 보유 다이아:").replace("\n━━━━━━━━━━━━\n구매:", "\n━━━━━━━━━━━━\n📊 실시간 다이아 시세\n💰 조합 가격: 🅟" + numberWithCommas(livePrice) + "\n" + buildDiamondLiveChange(livePrice, String(GLOBAL_CONFIG.diamondShop.combinePoint)) + "\n━━━━━━━━━━━━\n구매:");
+    if (!manage) text = text.replace("\n💎 보유:", "\n💎 보유 다이아:").replace("구매: /다이아구매 번호 갯수\n", "🅱️구매: /다이아구매 번호 갯수\n💎후원방법\n" + GLOBAL_CONFIG.diamondShop.sponsorUrl + "\n").replace("상품 시세는 매일 00:01 갱신 · 운영 설정은 즉시 적용\n", "").replace("시세는 매일 00:01 갱신 · 운영 설정은 즉시 적용\n", "");
     if (!manage && shop.products.length) text += "\n━━━━━━━━━━━━\n📊 변동 범위: -20% ~ +60%\n※ 상품별 시세 ON/OFF가 다릅니다.\n※ 갯수는 상품 묶음의 구매 수량입니다.\n※ 구매 한도는 계정별 하루 기준입니다.";
     return text;
 }
@@ -62456,11 +62464,11 @@ function applyRewardGainItems(data, user, gainItems) {
 function isSealedVaultCommandMessage(msg) {
     var command = String(msg || "");
     if (command === "해방열쇠조합" || command === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(command)) return true;
-    return command === "/봉인금고" || command === "/봉인금고확률" ||
+    return command === "/봉인금고" || command === "/봉인금고확률" || command === "/봉인금고명령어" ||
         /^\/봉인금고오픈(?:\s+.*)?$/.test(command) || /^\/해방열쇠지급(?:\s+.*)?$/.test(command) ||
         /^\/해방열쇠회수(?:\s+.*)?$/.test(command) || /^\/봉인금고상태(?:\s+.*)?$/.test(command) ||
         /^\/봉인금고부스터설정(?:\s+.*)?$/.test(command) || /^\/봉인금고천장설정(?:\s+.*)?$/.test(command) ||
-        /^\/봉인금고보상설정(?:\s+.*)?$/.test(command);
+        command === "/봉인금고보상설정" || /^\/봉인금고보상설정\s+[\s\S]+$/.test(command);
 }
 
 // 봉인금고 데이터가 바뀌는 명령어인지 확인하는 함수
@@ -62470,7 +62478,47 @@ function isSealedVaultMutationCommandMessage(msg) {
     return /^\/봉인금고오픈\s+\d+$/.test(command) || /^\/해방열쇠지급\s+.+\s+\d+$/.test(command) ||
         /^\/해방열쇠회수\s+.+\s+\d+$/.test(command) || /^\/봉인금고부스터설정\s+.+\s+\d+$/.test(command) ||
         /^\/봉인금고천장설정\s+.+\s+\d+$/.test(command) ||
-        /^\/봉인금고보상설정\s+\d{4}-(?:0[1-9]|1[0-2])\s+\d+\s+\d+\s+\d+$/.test(command);
+        isSealedVaultRewardSettingWriteMessage(command);
+}
+
+// 월별 조회를 제외한 보상 설정 입력에 기존 쓰기 잠금을 적용하는 함수
+function isSealedVaultRewardSettingWriteMessage(msg) {
+    return /^\/봉인금고보상설정\s+\S+\s+\S[\s\S]*$/.test(String(msg || "").replace(/\s+$/, ""));
+}
+
+// 보상 목록 전체를 검사하고 유효한 경우에만 새 월별 구성을 반환하는 함수
+function parseSealedVaultRewardSetting(msg, names) {
+    var body = String(msg).replace(/^\/봉인금고보상설정/, "").replace(/^\s+|\s+$/g, "");
+    if (!body) return { kind: "view", month: getSealedVaultMonthKey(), showUsage: true };
+    var header = body.match(/^(\S+)(?:\s+([\s\S]*))?$/), month = header ? header[1] : "";
+    if (!/^(?!0000)\d{4}-(?:0[1-9]|1[0-2])$/.test(month)) return { kind: "error", reason: "month", index: 0 };
+    if (!header[2]) return { kind: "view", month: month, showUsage: false };
+    var input = header[2], legacy = input.match(/^([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)$/), rewards = [], seen = {};
+    var entries = legacy ? legacy.slice(1) : input.split(",");
+    if (!legacy && entries[entries.length - 1].replace(/\s/g, "") === "") entries.pop();
+    for (var i = 0; i < entries.length; i++) {
+        var entry = entries[i].replace(/^\s+|\s+$/g, ""), match = legacy ? null : entry.match(/^(\S[\s\S]*?)\s+(\d+)$/);
+        var position = rewards.length + 1; // 품목명에 포함된 쉼표는 오류 항목 번호에 포함하지 않음
+        if (!entry) return { kind: "error", reason: "empty", index: position };
+        if (!legacy && names && (!match || !Object.prototype.hasOwnProperty.call(names, match[1]))) {
+            var joinedEntry = entries[i];
+            for (var end = i + 1; end < entries.length && entries[end].replace(/\s/g, ""); end++) {
+                joinedEntry += "," + entries[end];
+                var joinedMatch = joinedEntry.replace(/^\s+|\s+$/g, "").match(/^(\S[\s\S]*?)\s+(\d+)$/);
+                if (joinedMatch && Object.prototype.hasOwnProperty.call(names, joinedMatch[1])) { match = joinedMatch; i = end; break; }
+            }
+        }
+        if (!legacy && !match) return { kind: "error", reason: "quantity", index: position };
+        var name = legacy ? ["만능상자🔐(/만능상자오픈 숫자)", "홈뱃지 큐브💟", "다이아상자💎(/다이아상자오픈)"][i] : match[1].replace(/\s+$/, "");
+        var count = Number(legacy ? entry : match[2]);
+        if (legacy && !/^\d+$/.test(entry) || !isPointShopSafeCount(count) || count < (legacy ? 0 : 1) || count > GLOBAL_CONFIG.sealedVault.maxAdminItemCount) return { kind: "error", reason: "quantity", index: position, minimum: legacy ? 0 : 1 };
+        if (!legacy && (!names || !Object.prototype.hasOwnProperty.call(names, name))) return { kind: "error", reason: "unknown", index: position };
+        if (Object.prototype.hasOwnProperty.call(seen, name)) return { kind: "error", reason: "duplicate", index: position };
+        seen[name] = true;
+        rewards.push({ itemName: name, count: count });
+    }
+    if (!rewards.length) return { kind: "error", reason: "empty", index: 1 };
+    return { kind: "set", month: month, rewards: rewards };
 }
 
 // 봉인금고 공통 반환 객체를 생성하는 함수
@@ -62531,10 +62579,17 @@ function getSealedVaultMonthLabel(monthKey) {
 
 // 현재 월에 적용할 초대형 보상 구성을 반환하는 함수
 function getSealedVaultMonthlyRewards(data, monthKey) {
-    var stored = data && data.sealedVault && data.sealedVault.monthlyRewards ? data.sealedVault.monthlyRewards[monthKey] : null;
-    if (stored instanceof Array && stored.length > 0) return stored;
-    var defaults = GLOBAL_CONFIG.sealedVault.monthlyRewards[monthKey];
-    return defaults instanceof Array && defaults.length > 0 ? defaults : null;
+    var monthly = data && data.sealedVault && data.sealedVault.monthlyRewards;
+    var rewards = monthly && Object.prototype.hasOwnProperty.call(monthly, monthKey) ? monthly[monthKey] : GLOBAL_CONFIG.sealedVault.monthlyRewards[monthKey];
+    if (!(rewards instanceof Array) || !rewards.length) return null;
+    var hasReward = false, seen = {}; // 구형 수량 0을 보존하면서 실제 지급할 품목이 있는지 확인
+    for (var i = 0; i < rewards.length; i++) {
+        var row = rewards[i];
+        if (!row || typeof row.itemName !== "string" || !row.itemName.replace(/\s/g, "") || !isPointShopSafeCount(row.count) || row.count > GLOBAL_CONFIG.sealedVault.maxAdminItemCount || Object.prototype.hasOwnProperty.call(seen, row.itemName) || isRetiredCarrotValue(row.itemName) || row.itemName === GLOBAL_CONFIG.spiritRetirement.removedItem) return null;
+        seen[row.itemName] = true;
+        if (row.count > 0) hasReward = true;
+    }
+    return hasReward ? rewards : null;
 }
 
 // 봉인금고 부스터 진행률을 정수 백분율로 반환하는 함수
@@ -62866,15 +62921,29 @@ function buildSealedVaultAdminStateMessage(data, petData, guildData, target) {
 }
 
 // 봉인금고 월간 보상 설정 안내 UI를 생성하는 함수
-function buildSealedVaultRewardSettingMessage(data) {
-    var monthKey = getSealedVaultMonthKey();
+function buildSealedVaultRewardSettingMessage(data, monthKey, showUsage) {
+    monthKey = monthKey || getSealedVaultMonthKey();
     var rewards = getSealedVaultMonthlyRewards(data, monthKey);
     var lines = ["🔒 봉인금고 월간 보상 설정", "━━━━━━━━━━━━━━━", "현재 기준: " + monthKey];
-    lines.push(rewards ? formatSealedVaultRewardLines(rewards) : "설정된 보상 없음");
-    lines.push("");
-    lines.push("설정: /봉인금고보상설정 [YYYY-MM] [만능상자] [홈뱃지큐브] [다이아상자]");
-    lines.push("예시: /봉인금고보상설정 2026-10 5 1000 300");
+    lines.push(rewards ? formatSealedVaultRewardLines(rewards) : "설정된 보상이 없습니다");
+    if (showUsage !== false) {
+        lines.push("");
+        lines.push("조회: /봉인금고보상설정 [YYYY-MM]");
+        lines.push("설정: /봉인금고보상설정 [YYYY-MM] 아이템명 수량, 아이템명 수량");
+        lines.push("기존 형식: /봉인금고보상설정 [YYYY-MM] [만능상자] [홈뱃지큐브] [다이아상자]");
+        lines.push("예시: /봉인금고보상설정 2026-12 만능상자🔐(/만능상자오픈 숫자) 5, 미니펫 강화석💫 3000,");
+    }
     return lines.join("\n");
+}
+
+// 저장하지 않은 보상 입력 오류를 항목 위치와 이유로 안내하는 함수
+function buildSealedVaultRewardSettingError(request) {
+    if (request.reason === "month") return "❌ 월: YYYY-MM 형식의 올바른 월을 입력해주세요.";
+    var prefix = "❌ " + request.index + "번째 항목: ";
+    if (request.reason === "empty") return prefix + "아이템명과 수량을 입력해주세요.";
+    if (request.reason === "unknown") return prefix + "등록되지 않은 아이템입니다.";
+    if (request.reason === "duplicate") return prefix + "같은 아이템이 중복되었습니다.";
+    return prefix + "수량은 " + (request.minimum === 0 ? "0" : "1") + "~" + numberWithCommas(GLOBAL_CONFIG.sealedVault.maxAdminItemCount) + " 사이의 정수로 입력해주세요.";
 }
 
 // 봉인금고를 소모해 요청 수량의 해방의 열쇠를 조합하는 함수
@@ -62907,7 +62976,8 @@ function runSealedVaultKeyCombine(sender, data, petData, guildData, msg) {
 }
 
 // 봉인금고 사용자·관리자 명령을 실행하는 함수
-function runSealedVaultCommand(sender, data, petData, guildData, msg) {
+function runSealedVaultCommand(sender, data, petData, guildData, msg, itemNames) {
+    if (msg === "/봉인금고명령어") return createSealedVaultCommandResult(isMaster(sender) ? GLOBAL_CONFIG.sealedVault.commandGuide : "❌ MASTER 전용 명령어입니다.", false);
     if (msg === "해방열쇠조합" || msg === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(msg)) return runSealedVaultKeyCombine(sender, data, petData, guildData, msg);
     var config = GLOBAL_CONFIG.sealedVault;
     if (msg === "/봉인금고") return createSealedVaultCommandResult(buildSealedVaultStatusMessage(data, petData, guildData, sender), false);
@@ -62915,7 +62985,16 @@ function runSealedVaultCommand(sender, data, petData, guildData, msg) {
     if (/^\/봉인금고오픈(?:\s+.*)?$/.test(msg)) return runSealedVaultOpen(sender, data, petData, guildData, msg);
 
     if (!isSealedVaultAdmin(sender)) return createSealedVaultCommandResult("❌ 해당 명령어를 사용할 권한이 없습니다.", false);
-    if (msg === "/봉인금고보상설정") return createSealedVaultCommandResult(buildSealedVaultRewardSettingMessage(data), false);
+    if (msg === "/봉인금고보상설정" || /^\/봉인금고보상설정\s/.test(msg)) {
+        var rewardRequest = parseSealedVaultRewardSetting(msg, itemNames);
+        if (rewardRequest.kind === "error") return createSealedVaultCommandResult(buildSealedVaultRewardSettingError(rewardRequest), false);
+        if (rewardRequest.kind === "view") return createSealedVaultCommandResult(buildSealedVaultRewardSettingMessage(data, rewardRequest.month, rewardRequest.showUsage), false);
+        var rewardRoot = ensureSealedVaultRootData(data), rewardMonthKey = rewardRequest.month;
+        var previousRewards = Object.prototype.hasOwnProperty.call(rewardRoot.monthlyRewards, rewardMonthKey) ? rewardRoot.monthlyRewards[rewardMonthKey] : getSealedVaultMonthlyRewards(data, rewardMonthKey);
+        rewardRoot.monthlyRewards[rewardMonthKey] = rewardRequest.rewards;
+        appendSealedVaultAdminLog(data, sender, "봉인금고보상설정", rewardMonthKey, previousRewards ? formatSealedVaultRewardLines(previousRewards) : "설정 없음", formatSealedVaultRewardLines(rewardRequest.rewards));
+        return createSealedVaultCommandResult("✅ " + parseInt(rewardMonthKey.substring(0, 4), 10) + "년 " + parseInt(rewardMonthKey.substring(5), 10) + "월 봉인금고 초대형 보상 설정 완료\n━━━━━━━━━━━━━━━\n" + formatSealedVaultRewardLines(rewardRequest.rewards) + "\n━━━━━━━━━━━━━━━\n총 " + rewardRequest.rewards.length + "종 · 초대형 보상 당첨 시 모두 지급", true);
+    }
 
     var grant = parseSealedVaultTargetNumberCommand(msg, "/해방열쇠지급");
     if (grant) {
@@ -62972,28 +63051,6 @@ function runSealedVaultCommand(sender, data, petData, guildData, msg) {
         return createSealedVaultCommandResult("✅ 봉인금고 천장 설정 완료\n대상: " + pity.target + "\n변경: " + pityBefore + " → " + pity.value + "/" + (config.platinumPityCount - 1), true);
     }
     if (/^\/봉인금고천장설정(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult("사용법: /봉인금고천장설정 [아이디] [0~" + (config.platinumPityCount - 1) + "]", false);
-
-    var rewardSetting = String(msg).match(/^\/봉인금고보상설정\s+(\d{4}-(?:0[1-9]|1[0-2]))\s+(\d+)\s+(\d+)\s+(\d+)$/);
-    if (rewardSetting) {
-        var universalBoxCount = parseInt(rewardSetting[2], 10);
-        var homeBadgeCubeCount = parseInt(rewardSetting[3], 10);
-        var diamondBoxCount = parseInt(rewardSetting[4], 10);
-        if (universalBoxCount > config.maxAdminItemCount || homeBadgeCubeCount > config.maxAdminItemCount || diamondBoxCount > config.maxAdminItemCount) {
-            return createSealedVaultCommandResult("❌ 월간 보상 수량은 항목별 " + numberWithCommas(config.maxAdminItemCount) + "개 이하로 설정해 주세요.", false);
-        }
-        var rewardRoot = ensureSealedVaultRootData(data);
-        var rewardMonthKey = rewardSetting[1];
-        var previousRewards = getSealedVaultMonthlyRewards(data, rewardMonthKey);
-        var nextRewards = [
-            { itemName: "만능상자🔐(/만능상자오픈 숫자)", count: universalBoxCount },
-            { itemName: "홈뱃지 큐브💟", count: homeBadgeCubeCount },
-            { itemName: "다이아상자💎(/다이아상자오픈)", count: diamondBoxCount }
-        ];
-        rewardRoot.monthlyRewards[rewardMonthKey] = nextRewards;
-        appendSealedVaultAdminLog(data, sender, "봉인금고보상설정", rewardMonthKey, previousRewards ? formatSealedVaultRewardLines(previousRewards) : "설정 없음", formatSealedVaultRewardLines(nextRewards));
-        return createSealedVaultCommandResult("✅ " + rewardMonthKey + " 봉인금고 초대형 보상 설정 완료\n━━━━━━━━━━━━━━━\n" + formatSealedVaultRewardLines(nextRewards), true);
-    }
-    if (/^\/봉인금고보상설정(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult(buildSealedVaultRewardSettingMessage(data), false);
 
     return createSealedVaultCommandResult("❌ 봉인금고 명령어 형식을 확인해 주세요.", false);
 }
