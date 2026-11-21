@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.878"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.879"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -173,7 +173,7 @@ const PET_SKILL_LIST = [
 
     { name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑" },
     { name: "건물주", grade: "C", rate: 4.4, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
-    { name: "악덕한 영주", grade: "C", rate: 4.0, effect: "호랜캐슬 세금 30% 강제 고정" },
+    { name: "악덕한 영주", grade: "C", rate: 4.0, effect: "호랜캐슬 세금 20% 강제 고정" },
     { name: "오픈런", grade: "C", rate: 4.0, effect: "명령어: ㅊㅊ 1등시 펫먹이🍼1,000개를 획득합니다.\n출석목록 기준 1등" },
     { name: "야수의 본능", grade: "C", rate: 4.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
     { name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +2 획득" },
@@ -1201,6 +1201,7 @@ const GLOBAL_CONFIG = {
     "retryMs": 5000,
     "recordLimit": 30,
     "defaultTaxRate": 12,
+    "lordTaxRate": 20,
     "pendingName": "guildWarPending.json",
     "snapshotSuffix": ".guildwar-rollback",
     "recoveryNames": [
@@ -1220,7 +1221,7 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back2.json"
     ],
     "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 9곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 / [4] 북부 금광\n              ⬇️\n📕 [5] 펫스킬 광산 · 💎 [6] 다이아 광산\n💫 [7] 미강석 광산\n              ⬇️\n🛡️ [8] 루미에르 요새\n              ↕️\n🏰 [9] 호월킹덤\n\n🪙 금광: 네 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 정상 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 🔒는 진격 조건 또는 단계별 점령 한도에 따른 제한입니다.\n└ ⚔️ 표시와 별개로 개인 권한·공격권을 실행 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3·4번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회 · KST 자정 갱신\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n└ 킹덤 미점령 시 영주 권한·세금 징수 중단\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드전쟁번호 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드전쟁번호\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n기존 전쟁은 끝까지 진행합니다. 승리 시 같은 단계가 이미 차 있으면 점령과 길드 점령 보상 없이 전투 결과·개인 참여 보상만 확정합니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 9곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n👑 호월킹덤: 점령 당일 탈환 무제한 · 다음 날 하루 점령 불가\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 / [4] 북부 금광\n              ⬇️\n📕 [5] 펫스킬 광산 · 💎 [6] 다이아 광산\n💫 [7] 미강석 광산\n              ⬇️\n🛡️ [8] 루미에르 요새\n              ↕️\n🏰 [9] 호월킹덤\n\n🪙 금광: 네 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n👑 [9] 호월킹덤 점령·탈환\n⚔️ 점령 당일에는 성을 빼앗겨도 횟수 제한 없이 탈환할 수 있습니다.\n└ 탈환 시 기존 진격 조건과 공격권이 적용됩니다.\n🏳️ 하루가 바뀌면 호월킹덤은 미점령 상태가 됩니다.\n🔒 전날 한 번이라도 점령한 길드는 오늘 하루 킹덤을 점령할 수 없습니다.\n└ 무혈입성하거나 중간에 성을 빼앗긴 길드도 포함됩니다.\n└ 오늘 성이 비어 있어도 제한 중인 길드는 무혈입성할 수 없습니다.\n📅 월요일 A 점령 → B 탈환 → A 재탈환\n└ A와 B 모두 화요일은 제한, 수요일부터 다시 점령 가능\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 계속 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 진격 조건이나 단계별 점령 한도에 걸리면 🔒로 표시합니다.\n└ 전날 킹덤을 점령한 우리 길드에는 ‘내일 가능’이 표시됩니다.\n└ 개인 권한·공격권은 선포 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3·4번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n└ 미점령 상태가 되면 킹덤 탐험 혜택·영주 권한·세금 징수가 종료됩니다.\n📙 악덕한 영주: 호랜캐슬 세금 20% 강제 고정\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드전쟁번호 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n└ 자폭으로 킹덤을 비워도 점령 이력에는 포함되지 않습니다. 이후 무혈입성한 길드에 기록됩니다.\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드전쟁번호\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 계속 진행합니다.\n승리 시 같은 단계가 이미 차 있으면 전투 결과와 개인 참여 보상만 확정합니다.\n🏰 킹덤 전투 중 하루가 바뀌면 최종 결과가 나오기 전인 킹덤 전투는 종료됩니다.\n└ 이 전투에 사용한 선포권·공격권은 원래 종류로 복구됩니다.\n└ 전환 전에 점령이 확정됐다면 해당 날짜의 점령으로 기록됩니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -9248,10 +9249,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
                 if (msg === "/리셋" && (sender == "오픈채팅봇" || sender == "호이 남")) {
-                    initializeGuildWar(data, guildData, Date.now());
-                    resetGuildWarDay(guildData, Date.now());
                     advanceHowolMysteryDay(data, Date.now(), true);
-                    publishGuildWar(data, guildData, true);
                     runHalloweenEntry("dailyReset", { ctx: ctx, now: Date.now() });
                     var resetMarbleText = new java.io.File(marblePath).exists() ? String(FileStream.read(marblePath, "utf-8")) : null;
                     var resetMarbleStore = resetMarbleText === null ? null : requireGuildMarbleStore(JSON.parse(resetMarbleText));
@@ -9278,6 +9276,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         writeVerifiedJsonFile(miniResetPath, miniResetWrite.text);
                     }
                     if (resetMarbleResult && resetMarbleResult.changed) writeVerifiedJsonFile(marblePendingPath, { schemaVersion: marbleConfig.schemaVersion, pending: null }, true);
+                    // 다른 콘텐츠의 리셋 저장이 끝난 뒤 킹덤 전환을 회원·길드 게시 저널로 함께 확정한다.
+                    endDataSaveTransaction(); beginDataSaveTransaction();
+                    var resetWarNow = Date.now();
+                    initializeGuildWar(data, guildData, resetWarNow);
+                    resetGuildWarDay(guildData, resetWarNow, data);
+                    publishGuildWar(data, guildData, true);
+                    scheduleGuildWarWork(ctx);
                     if (miniGameResetWrites.length) scheduleMiniGameWork(ctx, 1);
                     if (resetMarbleResult) replier.reply("🎲 길드마블 정리: 경기 " + resetMarbleResult.closed + "개 종료 · 모집 " + resetMarbleResult.cancelled + "개 취소 · 정산 대기 " + resetMarbleResult.pending + "개");
                     if (ctx.miniGameRecoveryBlocked) replier.reply("⏸️ 미니게임 지급 확인 중이라 미니게임의 일일 초기화는 보류했어요. 기존 기록은 보존했어요.");
@@ -16838,7 +16843,7 @@ replier.reply(
 
                         //   castleInfo += '펫: ' + petInfo.petimg + petInfo.petname + '(' + castleExp + '💕)\n';
                         //   castleInfo += '속성: ' + petInfo.pettype + '\n';
-                        castleInfo += "세율💲: " + data.HoiCastle.taxRate + "%\n";
+                        castleInfo += "세율💲: " + getHoiCastleTaxRate(data, petSkillData) + "%\n";
                         castleInfo += "세금 수익💸: 🅟" + numberWithCommas(data.HoiCastle.earnings) + "";
                         //   castleInfo += '방어 성공횟수: ' + data.HoiCastle.defenseCount + '회';
 
@@ -17561,8 +17566,8 @@ replier.reply(
                                         var medalBasePrice = medalPrice * 1;
 
                                         var medalTaxRate = 0;
-                                        if (data.HoiCastle && data.HoiCastle.taxRate) {
-                                            medalTaxRate = parseInt(data.HoiCastle.taxRate, 10) || 0;
+                                        if (getHoiCastleTaxRate(data, petSkillData) > 0) {
+                                            medalTaxRate = getHoiCastleTaxRate(data, petSkillData);
                                         }
 
                                         var medalTax = Math.round(medalBasePrice * (medalTaxRate / 100));
@@ -17574,7 +17579,7 @@ replier.reply(
                                             addPoint(data, sender, -medalTotalPrice);
 
                                             // 성주 수익 반영
-                                            applyTax(medalBasePrice, data, guildData);
+                                            applyTax(medalBasePrice, data, guildData, undefined, petSkillData);
 
                                             addItem(data, sender, medalItemName, 1);
 
@@ -20036,7 +20041,7 @@ replier.reply(
                                 pointShopSuccessReplier.reply(buildTicketEventCouponUsageMessage(ticketEventCouponPlan));
                             }
                             if (taxAmount > 0) {
-                                applyTax(itemPrice, data, guildData, taxAmount);
+                                applyTax(itemPrice, data, guildData, taxAmount, petSkillData);
                             }
                             addPoint(data, sender, -itemTotalCost); // 상품가격 point 차감
                             if (taxExempt && baseTaxRate > 0) {
@@ -20584,13 +20589,14 @@ replier.reply(
                     let command = msg.split(" ");
                     if (command.length === 2 && command[1].match(/^\d+$/)) {
                         let newTaxRate = parseInt(command[1]); // '/세금 숫자' 형식으로 받음
-                        if (newTaxRate >= 5 && newTaxRate <= 5) {
+                        if (hasPetSkill(petSkillData, sender, "악덕한 영주") && (newTaxRate === 5 || newTaxRate > 10 && newTaxRate <= 30)) {
+                            newTaxRate = GLOBAL_CONFIG.guildWar.lordTaxRate;
+                            hoiCastle.taxRate = newTaxRate.toString();
+                            noticeMsg("[알림] 악덕한 영주✨ [" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 님이 세금을 " + newTaxRate.toString() + "% 강제징수 합니다!");
+                        } else if (newTaxRate >= 5 && newTaxRate <= 5) {
                             let oldTaxRate = hoiCastle.taxRate || 0;
                             hoiCastle.taxRate = newTaxRate.toString(); // 세금 업데이트
                             noticeMsg("[세금💲]\n[" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 영주가 세율을\n[💰" + oldTaxRate + "%]⏩[💰" + newTaxRate + "%]로 조정하였습니다.");
-                        } else if (hasPetSkill(petSkillData, sender, "악덕한 영주") && newTaxRate > 10 && newTaxRate <= 30) {
-                            hoiCastle.taxRate = newTaxRate.toString();
-                            noticeMsg("[알림] 악덕한 영주✨ [" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 님이 세금을 " + newTaxRate.toString() + "% 강제징수 합니다!");
                         } else {
                             // 세금 값이 유효하지 않을 때 처리
                             noticeMsg("세금은 5% 고정만 가능합니다.");
@@ -28173,8 +28179,8 @@ replier.reply(
                         var itemPrice = itemDetails.price || 0;
                         var itemTax = "";
 
-                        if (data.HoiCastle && data.HoiCastle.taxRate) {
-                            var taxRate = parseInt(data.HoiCastle.taxRate, 10) || 0;
+                        if (getHoiCastleTaxRate(data, petSkillData) > 0) {
+                            var taxRate = getHoiCastleTaxRate(data, petSkillData);
                             var taxAmount = itemPrice * (taxRate / 100);
                             itemTax = "\n(세금: 🅟" + numberWithCommas(taxAmount.toFixed(0)) + ")";
                         }
@@ -28194,7 +28200,7 @@ replier.reply(
 
                             var lordGuildInfo = getMyGuildInfo(data, guildData, data.HoiCastle.lord);
                             if (lordGuildInfo && !lordGuildInfo.error && lordGuildInfo.guild) {
-                                taxInfo += "\n점령중인 길드: " + lordGuildInfo.guild.name + "(" + lordGuildInfo.guild.mark + ")" + "\n(세금💲: " + data.HoiCastle.taxRate + "%)";
+                                taxInfo += "\n점령중인 길드: " + lordGuildInfo.guild.name + "(" + lordGuildInfo.guild.mark + ")" + "\n(세금💲: " + getHoiCastleTaxRate(data, petSkillData) + "%)";
                             }
                         }
 
@@ -28272,8 +28278,8 @@ replier.reply(
 
                     // 체크용 세금 계산만 먼저 수행
                     var taxRate = 0;
-                    if (data.HoiCastle && data.HoiCastle.taxRate) {
-                        taxRate = parseInt(data.HoiCastle.taxRate, 10) || 0;
+                    if (getHoiCastleTaxRate(data, petSkillData) > 0) {
+                        taxRate = getHoiCastleTaxRate(data, petSkillData);
                     }
 
                     var tax = Math.round(basePrice * (taxRate / 100));
@@ -28302,7 +28308,7 @@ replier.reply(
                     addPoint(data, sender, -totalPrice);
 
                     // 결제 확정 후 성주 수익 반영
-                    applyTax(basePrice, data, guildData);
+                    applyTax(basePrice, data, guildData, undefined, petSkillData);
 
                     addItem(data, sender, itemName, count);
 
@@ -42360,15 +42366,24 @@ function castleMsg(msg, replier, isGroupChat) {
         // Api.replyRoom(room6, msg);
     }
 }
+// 영주가 없으면 징수를 중단하고 악덕한 영주의 강제 세율을 일관되게 적용하는 함수
+function getHoiCastleTaxRate(data, petSkillData) {
+    var castle = data.HoiCastle;
+    if (!castle || !castle.lord) return 0;
+    return hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : Number(castle.taxRate || 0);
+}
+
+
 /**
  * 세율을 적용하고 성주에게 포인트를 추가하는 함수
  * @param {number} point - 세율이 적용될 포인트
  * @returns {number} - 세금이 적용된 후의 포인트
  */
-function applyTax(point, data, guildData, taxAmountOverride) {
+
+function applyTax(point, data, guildData, taxAmountOverride, petSkillData) {
     // 세율과 성주 정보가 있는지 확인
-    if (data.HoiCastle && data.HoiCastle.taxRate && data.HoiCastle.lord) {
-        var taxRate = data.HoiCastle.taxRate; // 세율
+    if (getHoiCastleTaxRate(data, petSkillData) > 0) {
+        var taxRate = getHoiCastleTaxRate(data, petSkillData); // 현재 영주의 실제 적용 세율
         var lord = data.HoiCastle.lord; // 성주
 
         // 세금 계산
@@ -42912,7 +42927,7 @@ function isPointShopSafeCount(value) {
 // 포인트 상점 세금의 성·길드·재단 적립 결과가 안전한지 변경 전에 확인하는 함수
 function isPointShopTaxSettlementSafe(data, guildData, taxAmount) {
     var castle = data.HoiCastle;
-    if (taxAmount <= 0 || !castle || !castle.taxRate || !castle.lord) return true;
+    if (taxAmount <= 0 || !castle || !castle.lord) return true;
     var guildShare = Math.round(taxAmount * 0.15); // 기존 세금 중 길드 몫
     var foundationShare = taxAmount - guildShare; // 기존 세금 중 재단 몫
     var castleEarnings = typeof castle.earnings === "undefined" ? 0 : castle.earnings;
@@ -42997,7 +43012,7 @@ function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantit
         discountSkill = "쇼핑광";
         itemPrice = itemPrice / 100 * (100 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate * 100);
     }
-    var configuredTaxRate = data.HoiCastle && data.HoiCastle.taxRate ? Number(data.HoiCastle.taxRate) : 0;
+    var configuredTaxRate = getHoiCastleTaxRate(data, petSkillData);
     if (!isPointShopSafeAmount(configuredTaxRate)) return { available: false };
     var baseTaxRate = Math.floor(configuredTaxRate);
     var taxBenefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.taxRelief;
@@ -68120,6 +68135,7 @@ function applyGuildWarAttackTickets(data, guildData, gid, user, count) {
 function getGuildWarAdvance(state, gid, no, bombing) {
     var territory = state.territories[String(no)], config = GLOBAL_CONFIG.guildWar.campaign;
     if (!territory) throw guildWarInputError("대상 지역이 없습니다.");
+    if (!bombing && no === config.kingdom && isGuildWarKingdomBlocked(state, gid)) return { allowed: false, kingdomBlocked: true };
     if (territory.owner === gid) return { allowed: false, own: true, condition: "우리 길드가 이미 점령한 지역입니다" };
     var owned = getGuildWarOwned(state, gid), stage = getGuildWarStage(no), labels = GLOBAL_CONFIG.guildWar.siege.stageNames;
     if (!bombing && owned.stages[stage].length) return { allowed: false, limit: true, owned: owned.stages[stage], condition: labels[stage] + " 한도" };
@@ -68524,6 +68540,7 @@ function occupyGuildWarTerritory(data, guildData, war, now) {
     if (state.siegeVersion !== undefined && getGuildWarOwned(state, war.attackId).stages[getGuildWarStage(war.no)].length && state.territories[String(war.no)].owner !== war.attackId) throw new Error("길드전쟁 단계별 점령 한도 재검사 실패");
     transferGuildWarTerritory(state, war.no, war.attackId, now);
     if (war.no !== getGuildWarKingdomNo(state)) return;
+    if (state.kingdomTerm.captured.indexOf(war.attackId) < 0) state.kingdomTerm.captured.push(war.attackId);
     if (!data.HoiCastle) throw new Error("호월킹덤 영주 원본 확인 필요");
     data.HoiCastle.lord = war.attack[2].name; data.HoiCastle.taxRate = GLOBAL_CONFIG.guildWar.defaultTaxRate;
     data.HoiCastle.earnings = 0; data.HoiCastle.defenseCount = 0;
@@ -68830,6 +68847,7 @@ function requireGuildWarDeclarationReceipt(war) {
 function requireGuildWarState(state) {
     if (!state || (state.version !== 1 && state.version !== 2) || !state.territories || !state.guilds || !state.records || !Array.isArray(state.active) || !Array.isArray(state.notices) || typeof state.earth !== "string") throw new Error("길드전쟁 저장 구조 오류");
     if (state.mapVersion !== undefined && (state.mapVersion !== GLOBAL_CONFIG.guildWar.map.version || state.siegeVersion !== 2 || !isPointShopSafeCount(state.mapChangedAt))) throw new Error("길드전쟁 점령 기록 오류");
+    if (state.kingdomTerm !== undefined) requireGuildWarKingdomTerm(state);
     if (state.recordStore !== undefined) {
         if (!state.recordStore || typeof state.recordStore !== "object" || Array.isArray(state.recordStore)) throw new Error("길드전쟁 공통 기록 형식 오류");
         for (var storedId in state.recordStore) if (Object.prototype.hasOwnProperty.call(state.recordStore, storedId)) {
@@ -69644,7 +69662,7 @@ function compactGuildWarRecords(state, previewOnly) {
 }
 
 // 최근 30건과 미확정 보상 원본을 보관하고 기존 결과 알림을 예약하는 함수
-function recordGuildWar(state, guildData, war) {
+function recordGuildWar(state, guildData, war, silent) {
     var ids = [war.attackId, war.defenseId], results = [];
     // 양쪽 결과를 먼저 완성해 표시 오류가 완료 기록 일부만 남기지 않게 한다.
     for (var r = 0; r < ids.length; r++) if (ids[r]) results[r] = buildGuildWarResult(war, ids[r]);
@@ -69660,7 +69678,7 @@ function recordGuildWar(state, guildData, war) {
             if (typeof record === "number") record = state.recordStore[String(record)];
             return index < GLOBAL_CONFIG.guildWar.recordLimit || record.personalRewards && record.personalRewards.pendingUsers && record.personalRewards.pendingUsers.length > 0;
         });
-        queueGuildWarNotice(state, guildData, gid, results[i]);
+        if (!silent) queueGuildWarNotice(state, guildData, gid, results[i]);
     }
     pruneGuildWarRecordStore(state);
 }
@@ -69710,6 +69728,7 @@ function snapshotGuildWarSettlement(data, guildData, state, war) {
     }
     snapshot.entry = JSON.stringify(getGuildWarEntry(state, war.attackId));
     if (war.no === GLOBAL_CONFIG.guildWar.campaign.kingdom) {
+        snapshot.kingdomTerm = JSON.stringify(state.kingdomTerm);
         snapshot.castle = JSON.stringify(data.HoiCastle);
         var legacy = guildData.territoryWar && guildData.territoryWar.territories;
         snapshot.legacyCastle = legacy ? JSON.stringify(legacy["1"]) : undefined;
@@ -69736,6 +69755,7 @@ function restoreGuildWarSettlement(data, guildData, state, snapshot) {
         if (saved.records === undefined) delete state.records[gid]; else state.records[gid] = saved.records.slice(0);
     }
     if (war.no === GLOBAL_CONFIG.guildWar.campaign.kingdom) {
+        if (snapshot.kingdomTerm === undefined) delete state.kingdomTerm; else state.kingdomTerm = JSON.parse(snapshot.kingdomTerm);
         if (snapshot.castle === undefined) delete data.HoiCastle; else data.HoiCastle = JSON.parse(snapshot.castle);
         var legacy = guildData.territoryWar && guildData.territoryWar.territories;
         if (legacy) { if (snapshot.legacyCastle === undefined) delete legacy["1"]; else legacy["1"] = JSON.parse(snapshot.legacyCastle); }
@@ -69880,11 +69900,59 @@ function detachGuildWarMember(guildData, gid, user, data) {
     }
 }
 
-// 새 날짜에만 독립적인 공격·정찰·자폭·변경 사용량을 복구하는 함수
-function resetGuildWarDay(guildData, now) {
+// 최초 정책 적용 시 현재 점령 길드만 성공 목록에 포함하는 함수
+function initializeGuildWarKingdomTerm(state) {
+    if (state.kingdomTerm !== undefined) { requireGuildWarKingdomTerm(state); return false; }
+    var owner = state.territories[String(GLOBAL_CONFIG.guildWar.campaign.kingdom)].owner;
+    state.kingdomTerm = { version: 1, captured: owner ? [owner] : [], blocked: [] };
+    return true;
+}
+
+// 현재 게임일의 성공·제한 길드 목록이 중복 없이 저장됐는지 검증하는 함수
+function requireGuildWarKingdomTerm(state) {
+    var term = state.kingdomTerm;
+    if (!term || term.version !== 1 || !Array.isArray(term.captured) || !Array.isArray(term.blocked)) throw new Error("호월킹덤 점령 주기 기록 오류");
+    var lists = [term.captured, term.blocked];
+    for (var i = 0; i < lists.length; i++) for (var j = 0; j < lists[i].length; j++) {
+        if (typeof lists[i][j] !== "string" || !lists[i][j] || lists[i].indexOf(lists[i][j]) !== j) throw new Error("호월킹덤 점령 길드 기록 오류");
+    }
+    for (var k = 0; k < term.captured.length; k++) if (term.blocked.indexOf(term.captured[k]) >= 0) throw new Error("호월킹덤 제한 길드 점령 기록 오류");
+    return term;
+}
+
+// 직전 게임일에 한 번이라도 점령한 길드인지 판정하는 함수
+function isGuildWarKingdomBlocked(state, gid) {
+    return !!gid && requireGuildWarKingdomTerm(state).blocked.indexOf(gid) >= 0;
+}
+
+// 일일 권리 초기화 전에 미확정 킹덤 전투를 취소하고 실제 소비 원천으로 복구하는 함수
+function transitionGuildWarKingdomDay(data, guildData, now) {
+    var state = guildData.war24, term = requireGuildWarKingdomTerm(state), no = GLOBAL_CONFIG.guildWar.campaign.kingdom;
+    if (!data || !data.HoiCastle) throw new Error("호월킹덤 영주 원본 확인 필요");
+    for (var i = state.active.length - 1; i >= 0; i--) {
+        var war = state.active[i];
+        if (war.no !== no) continue;
+        war.cancelled = true; war.occupied = false; war.finished = now;
+        war.reason = "🏰 킹덤 전투 중 하루가 바뀌면 최종 결과가 나오기 전인 킹덤 전투는 종료됩니다.";
+        refundGuildWarTicket(state, war);
+        war.ownerName = "미점령";
+        creditGuildWarVictory(guildData, war);
+        recordGuildWar(state, guildData, war, true);
+        state.active.splice(i, 1);
+    }
+    term.blocked = term.captured.slice(0); term.captured = [];
+    transferGuildWarTerritory(state, no, null, now);
+    data.HoiCastle.lord = ""; data.HoiCastle.taxRate = 0;
+    var legacy = guildData.territoryWar && guildData.territoryWar.territories && guildData.territoryWar.territories["1"];
+    if (legacy) { legacy.ownerGuildId = null; legacy.ownerUser = ""; }
+}
+
+// 운영자 리셋으로 새 게임일이 시작될 때만 일일 권리를 복구하는 함수
+function resetGuildWarDay(guildData, now, data) {
     var state = requireGuildWarState(guildData.war24), day = getVaultRobberyDay(now);
     if (day < state.day) throw new Error("길드전쟁 리셋 날짜 역행");
     if (day === state.day) return false;
+    transitionGuildWarKingdomDay(data, guildData, now);
     state.day = day;
     for (var gid in state.guilds) if (Object.prototype.hasOwnProperty.call(state.guilds, gid)) {
         var entry = state.guilds[gid];
@@ -69911,7 +69979,10 @@ function buildGuildWarMain(data, guildData, gid, now) {
     for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner), status = guild ? getGuildWarAdvance(state, gid, no) : null;
         var icon = status ? status.own ? "🏴" : status.allowed ? "⚔️" : "🔒" : "";
-        text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + getGuildWarVisibleOwner(guildData, guild ? gid : null, no) + "\n";
+        if (no === getGuildWarKingdomNo(state) && guild) {
+            var kingdomOwner = territory.owner === gid ? "우리 길드" : territory.owner === null ? "미점령" : "특별(🎁)";
+            text += icon + " " + guildWarRegion(no) + " · " + kingdomOwner + (status.kingdomBlocked ? " · 내일 가능" : status.allowed ? " · 공격 가능" : "") + "\n";
+        } else text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + getGuildWarVisibleOwner(guildData, guild ? gid : null, no) + "\n";
         if (no === getGuildWarKingdomNo(state) && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
         if (no === GLOBAL_CONFIG.guildWar.campaign.gold.length || no === GLOBAL_CONFIG.guildWar.campaign.miniPetMine) text += "              ⬇️\n";
         if (no === GLOBAL_CONFIG.guildWar.siege.fortress) text += "              ↕️\n";
@@ -70260,7 +70331,6 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
     if (request.kind === "invalid") { replier.reply("📌 지역번호는 1~9예요.\n/전쟁선포 지역번호\n/자폭 지역번호\n/전쟁자폭편성 길드원번호\n/기습공격 금광번호 · /전쟁기록 기록번호\n👉 자세한 사용법: /길드전쟁가이드\n🎯 "); return true; }
     if (request.kind === "guide") { replier.reply(GLOBAL_CONFIG.guildWar.guide); return true; }
     var initialized = initializeGuildWar(data, guildData, now);
-    if (resetGuildWarDay(guildData, now)) initialized = true;
     var state = guildData.war24;
     if (initializeGuildWarTicketAccounts(data, guildData)) initialized = true;
     var gid = getMyGuildId(data, sender), guild = getGuildByIdSafe(guildData, gid);
@@ -70295,6 +70365,9 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             return true;
         }
         if (!masterRemote && (!isGuildWarRoomValid(state, guildData, gid) || room !== entry.room)) throw guildWarInputError("유효한 자기 등록 길드톡에서만 사용할 수 있습니다.\n방 이름 = 마크 제외 길드명\n👉 /전쟁톡등록 · /전쟁톡확인");
+        if (request.kind === "declare" && request.args[0] === GLOBAL_CONFIG.guildWar.campaign.kingdom && isGuildWarKingdomBlocked(state, gid)) {
+            replier.reply("🔒 호월킹덤은 내일부터 다시 점령할 수 있습니다."); return true;
+        }
         if (request.kind === "ambushView") { replier.reply(buildGuildWarAmbushView(data, loadJsonFile(memberPetPath), guildData, gid)); return true; }
         if (request.kind === "ambush") {
             var ambushWar = applyGuildWarAmbush(data, loadJsonFile(memberPetPath), guildData, loadJsonFile(petSkillDataPath), gid, sender, request.args[0], now, Math.random);
@@ -70392,7 +70465,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
             } else {
                 if (state.nextId >= GLOBAL_CONFIG.pointShop.limits.maxSafeNumber) throw guildWarInputError("전쟁 식별자 범위를 확인해주세요.");
                 var ticket = applyGuildWarDeclarationTicket(state, guild, entry, gid, sender, skills, data);
-                var war = { regionId: GLOBAL_CONFIG.guildWar.map.regionKeys[targetNo - 1], declaredBy: sender, rulesVersion: 2, id: state.nextId++, no: targetNo, attackId: gid, defenseId: defenseId || null, attackName: formatGuildDisplay(guild), defenseName: defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", at: now, day: getVaultRobberyDay(now), due: now + GLOBAL_CONFIG.guildWar.prepareMs, matches: [], wins: 0, right: ticket.right, ticketEpoch: entry.ticketEpoch, attackScout: attackScout, defenseScout: defenseScout, defenseScoutWin: !success, attack: entry.attack.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, name); }), defense: defense };
+                var war = { regionId: GLOBAL_CONFIG.guildWar.map.regionKeys[targetNo - 1], declaredBy: sender, rulesVersion: 2, id: state.nextId++, no: targetNo, attackId: gid, defenseId: defenseId || null, attackName: formatGuildDisplay(guild), defenseName: defenderGuild ? formatGuildDisplay(defenderGuild) : "미점령", at: now, day: state.day, due: now + GLOBAL_CONFIG.guildWar.prepareMs, matches: [], wins: 0, right: ticket.right, ticketEpoch: entry.ticketEpoch, attackScout: attackScout, defenseScout: defenseScout, defenseScoutWin: !success, attack: entry.attack.map(function (name) { return snapshotGuildWarFighter(data, petData, homeData, skills, guildData, name); }), defense: defense };
                 war.ticketSource = ticket.source; war.personalTicket = ticket.personal; war.declaredAccountId = ticket.accountId;
                 if (ticket.source === "extra") { war.extraTicketsBefore = ticket.before; war.extraTicketsAfter = ticket.after; }
                 war.skillSnapshot = { attack: getGuildWarMasterSkills(guild, skills).attack, defense: getGuildWarMasterSkills(defenderGuild, skills).defense };
@@ -70575,6 +70648,7 @@ function initializeGuildWar(data, guildData, now) {
     var changed = initializeGuildWarLegacy(data, guildData, now);
     if (initializeGuildWarSiege(guildData, now)) changed = true;
     if (fresh) guildData.war24 = prepareGuildWarMapMigration(guildData, now).state;
+    if (initializeGuildWarKingdomTerm(guildData.war24)) changed = true;
     return changed;
 }
 

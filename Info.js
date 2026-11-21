@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    guildWar: { lordTaxRate: 20 },
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
     guildCombatItems: {
         maxSafe: 9007199254740991,
@@ -1265,14 +1266,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply("출석한 유저 목록:\n" + userListText1 + allsee + "\n" + userListText2);
 		}
 		if (msg === "/상점") {
+			var shopPetSkillData = loadJsonFile(petSkillDataPath);
+			var shopTaxRate = getHoiCastleTaxRate(data, shopPetSkillData);
 			let itemList = getPointShopNumberedItems(data).map(function (row) {
                 var itemName = row.name;
 				let itemDetails = data.shop[itemName];
 				let itemPrice = numberWithCommas(itemDetails);
 				let itemTax = ""; //  세금
-				if (data.HoiCastle && data.HoiCastle.taxRate) {
+				if (shopTaxRate > 0) {
 					// 세율이 존재하는 경우, 세금 계산 로직
-					let taxRate = data.HoiCastle.taxRate; // 세율
+					let taxRate = shopTaxRate; // 실제 적용 세율
 					let taxAmount = itemDetails * (taxRate / 100); // 세금 계산
 					itemTax = "\n(세금: 🅟" + numberWithCommas(taxAmount.toFixed(0)) + ")"; // 소수점 이하 버림
 				}
@@ -1293,7 +1296,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				let taxRate = data.HoiCastle ? "\n호월킹덤 영주: 🏰" + data.HoiCastle.lord + lordGuildText + "\n(세금💲: " + data.HoiCastle.taxRate + "%)" : null;
+				let taxRate = data.HoiCastle ? "\n호월킹덤 영주: 🏰" + data.HoiCastle.lord + lordGuildText + "\n(세금💲: " + shopTaxRate + "%)" : null;
 
 				let responseMessage = "🛍호월킹덤 포인트 상점🛍\n" + (taxRate ? taxRate : "") + "\n\n(구매방법:/구매 [번호] [갯수])\n" + "※ 1회 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) + "개 구매 가능\n" + "※ 상품을 보시려면 전체보기를 눌러주세요\n";
 				// ✅ 여기! 아이템 리스트 출력 직전에 allsee 삽입
@@ -3142,6 +3145,13 @@ function getEquippedPetSkillNames(petSkillData, user) {
 		return !!name;
 	});
 }
+// 영주가 없으면 징수를 중단하고 악덕한 영주의 강제 세율을 일관되게 적용하는 함수
+function getHoiCastleTaxRate(data, petSkillData) {
+    var castle = data.HoiCastle;
+    if (!castle || !castle.lord) return 0;
+    return hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : Number(castle.taxRate || 0);
+}
+
 // 특정 스킬이 장착되어 있는지 확인하는 함수
 function hasPetSkill(petSkillData, user, skillName) {
 	skillName = normalizePetSkillName(skillName);
