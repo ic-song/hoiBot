@@ -52,12 +52,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
 
         if (msg === "/알림리셋") {
-            clearNoticeRuntimeSchedule();
             state.content = "";
             state.scheduleActive = false;
             state.scheduleToken = "";
             state.nextRunAt = 0;
             saveNoticeState(state);
+            clearNoticeRuntimeSchedule();
             replier.reply("✅ 전체알림을 초기화했습니다.\n저장된 알림 문구를 삭제하고 반복 예약을 중지했습니다.");
             return;
         }
@@ -181,8 +181,8 @@ function broadcastNotice(content) {
 
     for (var i = 0; i < NOTICE_CONFIG.targetRooms.length; i++) {
         try {
-            Api.replyRoom(NOTICE_CONFIG.targetRooms[i], message);
-            successCount++;
+            if (Api.replyRoom(NOTICE_CONFIG.targetRooms[i], message) === false) failedCount++;
+            else successCount++;
         } catch (error) {
             failedCount++;
         }
@@ -247,11 +247,12 @@ function clearNoticeRuntimeSchedule() {
 
 // 기존 예약을 무효화하고 지금부터 70분 뒤의 단일 예약으로 교체하는 함수
 function replaceNoticeSchedule(state) {
-    clearNoticeRuntimeSchedule();
     state.scheduleActive = true;
     state.scheduleToken = createNoticeScheduleToken();
     state.nextRunAt = Date.now() + NOTICE_CONFIG.intervalMs;
     saveNoticeState(state);
+    // 새 예약 저장이 실패하면 기존 정상 타이머를 유지한다.
+    clearNoticeRuntimeSchedule();
     createNoticeTimeout(state);
 }
 
