@@ -163,7 +163,7 @@ function Find-HoiConnectedBot {
 }
 
 try {
-    if ($TargetFile -notmatch '^/[a-zA-Z0-9_./-]+$') { throw 'Invalid fixed bot file path.' }
+    if ($TargetFile -notmatch '^/[a-zA-Z0-9_./\uAC00-\uD7A3-]+$') { throw 'Invalid fixed bot file path.' }
     $listing = Invoke-HoiConnectionCommand $LdConsoleExe @('list2')
     Write-Host '[INFO] LDPlayer list2:'
     Write-Host $listing.Text
