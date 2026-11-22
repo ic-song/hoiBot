@@ -59,7 +59,7 @@ const GLOBAL_CONFIG = {
     doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자✡️(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
-	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
+	pointShop: { vacantTaxRate: 5, limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 기본 세율·1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
 		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방", "주문기록방"],
 		orderLogRoom: "주문기록방"
@@ -716,6 +716,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
 		}
 		if (getMessageFilterRequest(msg)) return; // 관리 명령은 Main에서만 처리
+		if (msg === "/세율5적용") return; // 1회 세율 보정의 권한·저장·응답은 Main에서만 처리
 		if (ctx.isDev && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(msg)) msg = msg.substring(1);
 		if (msg === "/초기화" || msg === "/댓글초기화" || msg === "/피드초기화" || msg === "1삭제" || msg === "2취소" || /^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)) return;
 		if (msg === "/필터데이터정리" || msg === "/필터리스트") return;
@@ -1267,7 +1268,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg === "/상점") {
 			var shopPetSkillData = loadJsonFile(petSkillDataPath);
-			var shopTaxRate = getHoiCastleTaxRate(data, shopPetSkillData);
+			var shopTaxRate = getPointShopTaxRate(data, shopPetSkillData);
 			let itemList = getPointShopNumberedItems(data).map(function (row) {
                 var itemName = row.name;
 				let itemDetails = data.shop[itemName];
@@ -3150,6 +3151,11 @@ function getHoiCastleTaxRate(data, petSkillData) {
     var castle = data.HoiCastle;
     if (!castle || !castle.lord) return 0;
     return hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : Number(castle.taxRate || 0);
+}
+
+// 미점령 포인트 상점의 기본 과세와 점령 영주의 기존 세율을 구분하는 함수
+function getPointShopTaxRate(data, petSkillData) {
+    return !data.HoiCastle || !data.HoiCastle.lord ? GLOBAL_CONFIG.pointShop.vacantTaxRate : getHoiCastleTaxRate(data, petSkillData);
 }
 
 // 특정 스킬이 장착되어 있는지 확인하는 함수
