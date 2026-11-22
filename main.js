@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.881"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.882"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -16852,7 +16852,7 @@ replier.reply(
 
                         //   castleInfo += '펫: ' + petInfo.petimg + petInfo.petname + '(' + castleExp + '💕)\n';
                         //   castleInfo += '속성: ' + petInfo.pettype + '\n';
-                        castleInfo += "세율💲: " + getHoiCastleTaxRate(data, petSkillData) + "%\n";
+                        castleInfo += "세율💲: " + getPointShopTaxRate(data, petSkillData) + "%\n";
                         castleInfo += "세금 수익💸: 🅟" + numberWithCommas(data.HoiCastle.earnings) + "";
                         //   castleInfo += '방어 성공횟수: ' + data.HoiCastle.defenseCount + '회';
 
