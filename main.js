@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.885"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.886"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -17754,7 +17754,7 @@ replier.reply(
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
                     var packageHomeInfo = loadJsonFile(homeInfoFile), packageKnownItems = loadJsonFile(itemListPath);
-                    var packageDefinitions = { items: Object.keys(getDiamondShopItemNames(data, packageKnownItems, packageInfoData)), mini: miniPetData.miniPet, furniture: packageHomeInfo.furniture };
+                    var packageDefinitions = getPackageActualDefinitions(data, packageKnownItems, packageInfoData, packageHomeInfo, sender);
                     var packageWriting = userState[sender].packageAdd;
                     if (packageWriting.accountId && packageWriting.accountId !== getPackageGrantIdentity(data, sender) || packageWriting.receivedAt && request.receivedAt < packageWriting.receivedAt) { replier.reply("작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요."); return; }
                     var packageWriteEvent = getServerRaidEventId(request.callbackEvent);
@@ -17792,7 +17792,7 @@ replier.reply(
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 빠른 추가용 패키지 목록
                     var packageAddHomeInfo = loadJsonFile(homeInfoFile), packageAddItems = loadJsonFile(itemListPath);
-                    var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData, { items: Object.keys(getDiamondShopItemNames(data, packageAddItems, packageInfoData)), mini: miniPetData.miniPet, furniture: packageAddHomeInfo.furniture });
+                    var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData, getPackageActualDefinitions(data, packageAddItems, packageInfoData, packageAddHomeInfo, sender));
                     if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
                     replier.reply(packageAddResult.message);
                     return;
@@ -17802,7 +17802,7 @@ replier.reply(
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 수정 대상 패키지 목록
                     var packageEditHomeInfo = loadJsonFile(homeInfoFile), packageEditItems = loadJsonFile(itemListPath);
-                    var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData, { items: Object.keys(getDiamondShopItemNames(data, packageEditItems, packageInfoData)), mini: miniPetData.miniPet, furniture: packageEditHomeInfo.furniture });
+                    var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData, getPackageActualDefinitions(data, packageEditItems, packageInfoData, packageEditHomeInfo, sender));
                     if (packageEditResult.ok) saveJsonFile(packageEditResult.packageInfoData, packageInfoPath);
                     replier.reply(packageEditResult.message);
                     return;
@@ -71909,8 +71909,68 @@ function readPackageRewardInput(input) {
     return { text: (text.substring(0, match.index) + text.substring(match.index + match[0].length)).trim(), count: count, invalidCount: !count };
 }
 
+// 이미 읽은 정의와 기존 실물 생성 권한만 패키지 입력에 전달하는 함수
+function getPackageActualDefinitions(data, items, packages, homes, actor) {
+    return { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: miniPetData.miniPet, furniture: homes.furniture,
+        custom: { mini: actor === "호이 남" || isOrderLogRoomBot(actor), furniture: isAdmin(actor) || isMaster(actor), pendant: isMaster(actor) } };
+}
+
+// 권한이 있는 관리자만 명시한 사용자 지정 실물을 만들고 미제공 값은 보완받는 함수
+function resolvePackageCustomRewardInput(text, type, definitions, count, options, allowBare) {
+    if (!definitions.custom || definitions.custom[type] !== true) return null;
+    var match, object, name, fields = [], value, reward;
+    if (type === "mini") {
+        match = /^(.*?)\(\+([\d,]+)(?:💕|💞)\)\[([^\]]+)\](?:\((?:(?:강화)?\+?(\d+)|MAX)(?:💫)?\))?$/.exec(text);
+        if (!match && allowBare && !/[()[\]\r\n]/.test(text)) match = [text, text, null, null, null];
+        if (!match) return null;
+        if (match[3] !== null && GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(match[3]) === -1 && ["엘리트", "마스터"].indexOf(match[3]) === -1) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+        var sameDisplay = options && typeof options.name === "string" && typeof options.emoji === "string" && options.name + options.emoji === match[1].trim();
+        var emoji = sameDisplay ? options.emoji : null;
+        name = sameDisplay ? options.name : match[1].trim(); // 새 이름·외형의 경계는 문자열에서 추측하지 않고 기존 생성 명령처럼 따로 확인
+        value = match[2] === null ? null : parsePackageOptionInteger(match[2]);
+        object = { name: name, emoji: emoji, grade: match[3], price: sameDisplay && options.price !== undefined ? options.price : null, battleExp: value, castleExp: value, raidExp: value, upgrade: /\(MAX(?:💫)?\)$/.test(text) ? getMiniPetUpgradeMaxLevel({ grade: match[3] }) : Number(match[4] || 0) };
+        if (object.grade === null) fields.push("grade");
+        if (value === null) fields.push("charm");
+        if (!sameDisplay && match[2] !== null) fields.push("name");
+        if (emoji === null) fields.push("emoji");
+        else if (!isMiniPetEditValueValid(emoji, { max: emoji.length })) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+        if (object.price === null) fields.push("price");
+        else if (!isPointShopSafeCount(object.price)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
+        if (object.upgrade > getMiniPetUpgradeMaxLevel(object)) return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + getMiniPetUpgradeMaxLevel(object) + "입니다." };
+    } else if (type === "furniture") {
+        match = /^(.*?)\(\+([\d,]+)(?:💕|💞)\)\[([^\]]+)\]$/.exec(text);
+        if (!match && allowBare && !/[()[\]\r\n]/.test(text)) match = [text, text, null, null];
+        if (!match) return null;
+        name = match[1].trim(); value = match[2] === null ? null : parsePackageOptionInteger(match[2]);
+        object = { name: name, exp: value, rate: 0, grade: match[3], display: name + "(+" + numberWithCommas(value) + "💕)[" + match[3] + "]" };
+        if (object.grade === null) fields.push("grade");
+        if (value === null) fields.push("charm");
+    } else if (type === "pendant") {
+        match = /^(.*?)\[([^\]★]+)(?:★(\d+))?\]\[⚒️?(\d+)\/(\d+)\]\(\+(\d+)\)$/.exec(text);
+        if (!match && allowBare && !/[()[\]\r\n]/.test(text)) {
+            reward = { type: type, name: text.trim(), object: { name: text.trim(), icon: null, grade: null, durability: null, maxDurability: 5, upgrade: null, promotionLevel: 0, bound: false }, custom: true, count: count, fields: ["grade", "durability", "upgrade"] };
+            return reward.name ? { draft: reward } : { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+        }
+        if (!match) return null;
+        var info = null;
+        for (var i = 0; i < PENDANT_GRADE_TABLE.length; i++) if (PENDANT_GRADE_TABLE[i].grade === match[2]) info = PENDANT_GRADE_TABLE[i];
+        if (!info) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+        name = match[1].slice(-info.icon.length) === info.icon ? match[1].slice(0, -info.icon.length).trim() : match[1].trim();
+        object = { name: name, icon: info.icon, grade: info.grade, durability: Number(match[4]), maxDurability: Number(match[5]), upgrade: Number(match[6]), promotionLevel: Number(match[3] || 0), bound: false };
+        if (object.durability > object.maxDurability) return { error: "내구도는 최대 내구도를 넘을 수 없어요." };
+        if (object.maxDurability !== 5 || !isPointShopSafeCount(object.upgrade) || object.upgrade > GLOBAL_CONFIG.pendant.upgrade.maxLevel || !isPointShopSafeCount(object.promotionLevel) || object.promotionLevel && info.grade !== "창조") return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + GLOBAL_CONFIG.pendant.upgrade.maxLevel + "입니다." };
+    } else return null;
+    if (!name || /[\r\n]/.test(name)) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+    if (type !== "pendant" && value !== null && !isPointShopSafeCount(value)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
+    reward = { type: type, name: name, object: object, custom: true };
+    if (fields.length) { reward.count = count; reward.fields = fields; return { draft: reward }; }
+    if (!count) return { missingCount: true, reward: reward };
+    reward.count = count;
+    return { reward: reward };
+}
+
 // 현재 정의와 명시된 옵션만 사용해 패키지 한 항목을 실제 보상 규격으로 검증하는 함수
-function resolvePackageRewardInput(input, type, definitions, countOverride) {
+function resolvePackageRewardInput(input, type, definitions, countOverride, customOptions) {
     var parsed = readPackageRewardInput(input), text = parsed.text, count = countOverride || parsed.count, key = normalizePackageLookup(text), choices = [], i;
     if (GLOBAL_CONFIG.package.retiredMiniSet && (text === GLOBAL_CONFIG.package.retiredMiniSet.ticket || text === GLOBAL_CONFIG.package.retiredMiniSet.name)) return { error: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
     if (parsed.invalidCount || countOverride !== undefined && !parsePackagePositiveCount(countOverride)) return { error: "수량은 1 이상의 정수로 입력해주세요." };
@@ -71926,12 +71986,17 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
         if (isRetiredPetSkill(skill.name)) return { error: "등록할 수 없는 펫스킬북입니다.\n" + formatPetSkillName(skill.name) + "은 폐지된 스킬이에요.\n\n다른 보상으로 수정하거나 \"빼기\"를 입력해주세요." };
         choices.push({ type: "skill", name: skill.name });
     }
-    if (!type || type === "item") for (i = 0; i < definitions.items.length; i++) if (normalizePackageLookup(definitions.items[i]) === key) choices.push({ type: "item", name: normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(definitions.items[i])) });
+    if (!type || type === "item") {
+        var exactItem = definitions.items.indexOf(text);
+        for (i = 0; i < definitions.items.length; i++) if (exactItem >= 0 ? i === exactItem : normalizePackageLookup(definitions.items[i]) === key) choices.push({ type: "item", name: normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(definitions.items[i])) });
+    }
     if (!type || type === "mini") {
         var miniMatch = /^(.*?)\(\+([\d,]+)(?:💕|💞)\)\[([^\]]+)\](?:\((?:(?:강화)?\+?(\d+)|MAX)(?:💫)?\))?$/.exec(text);
         var miniName = miniMatch ? miniMatch[1] : text;
+        var exactMiniName = definitions.mini.some(function (row) { return (row.name === miniName || row.name + (row.emoji || "") === miniName) && (!miniMatch || row.grade === miniMatch[3]); });
         for (i = 0; i < definitions.mini.length; i++) {
             var mini = definitions.mini[i], full = mini.name + (mini.emoji || "");
+            if (exactMiniName && full !== miniName && mini.name !== miniName) continue;
             if (normalizePackageLookup(full) !== normalizePackageLookup(miniName) && normalizePackageLookup(mini.name) !== normalizePackageLookup(miniName)) continue;
             if (miniMatch && mini.grade !== miniMatch[3]) continue;
             if (!miniMatch) return { error: "등급·매력을 확인할 수 없어요. 지급할 값을 입력해주세요." };
@@ -71943,8 +72008,10 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
     }
     if (!type || type === "furniture") {
         var furnitureMatch = /^(.*?)\(\+([\d,]+)[💕💞]+\)\[([^\]]+)\]$/.exec(text), furnitureName = furnitureMatch ? furnitureMatch[1] : text;
+        var exactFurnitureName = definitions.furniture.some(function (row) { return row.name + (row.emoji || "") === furnitureName && (!furnitureMatch || row.grade === furnitureMatch[3]); });
         for (i = 0; i < definitions.furniture.length; i++) {
             var furniture = definitions.furniture[i];
+            if (exactFurnitureName && furniture.name + (furniture.emoji || "") !== furnitureName) continue;
             if (normalizePackageLookup(furniture.name + (furniture.emoji || "")) !== normalizePackageLookup(furnitureName)) continue;
             if (furnitureMatch && furniture.grade !== furnitureMatch[3]) continue;
             if (!furnitureMatch) return { error: "등급·매력을 확인할 수 없어요. 지급할 값을 입력해주세요." };
@@ -71981,7 +72048,21 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
     }
     var unique = [], seen = {};
     for (i = 0; i < choices.length; i++) { var identity = JSON.stringify(choices[i]); if (!seen[identity]) { seen[identity] = true; unique.push(choices[i]); } }
-    if (!unique.length) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+    if (!unique.length || !type && unique.every(function (row) { return row.type === "item"; })) {
+        var customResults = [], customTypes = type ? [type] : ["mini", "furniture", "pendant"];
+        for (var c = 0; c < customTypes.length; c++) {
+            var customResult = resolvePackageCustomRewardInput(text, customTypes[c], definitions, count, customOptions, !!type);
+            if (customResult) customResults.push(customResult);
+        }
+        var usableCustom = customResults.filter(function (row) { return !row.error; });
+        if (unique.length && usableCustom.length) return { error: "어떤 보상인지 선택해주세요.", candidates: unique.concat(usableCustom.map(function (row) { return row.reward || row.draft; })) };
+        if (unique.length > 1) return { error: "어떤 보상인지 선택해주세요.", candidates: unique };
+        if (unique.length) { var knownItem = unique[0]; if (!count) return { missingCount: true, reward: knownItem }; knownItem.count = count; return { reward: knownItem }; }
+        if (!usableCustom.length && customResults.length) return customResults[0];
+        if (usableCustom.length === 1) return usableCustom[0];
+        if (usableCustom.length > 1) return { error: "어떤 보상인지 선택해주세요.", candidates: usableCustom.map(function (row) { return row.reward || row.draft; }) };
+        return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+    }
     if (unique.length > 1) return { error: "어떤 보상인지 선택해주세요.", candidates: unique };
     var reward = unique[0];
     if (!count) return { missingCount: true, reward: reward };
@@ -72036,8 +72117,15 @@ function buildPackageBulkReview(state) {
 }
 
 // 실물 입력을 같은 검증기로 처리하고 수량 누락만 별도 단계로 보완하는 함수
-function processPackageActualInput(state, text, definitions) {
-    var result = resolvePackageRewardInput(text, state.rewardType, definitions);
+function processPackageActualInput(state, text, definitions, customOptions) {
+    var current = state.editRewardIndex === undefined ? null : state.rewards[state.editRewardIndex];
+    var result = resolvePackageRewardInput(text, state.rewardType, definitions, undefined, customOptions || current && current.custom && current.object);
+    return applyPackageActualInputResult(state, result, text);
+}
+
+// 종류별 검증 결과를 같은 수량·옵션 보완 단계로 연결하는 함수
+function applyPackageActualInputResult(state, result, text) {
+    if (!result) return { ok: false, message: "⛔ 패키지 관리 권한이 없습니다." };
     if (result.draft) { state.optionDraft = result.draft; state.step = "ACTUAL_OPTION"; return { ok: true, message: buildPackageOptionPrompt(result.draft) }; }
     if (result.candidates) { state.optionCandidates = result.candidates; state.optionCount = readPackageRewardInput(text).count; state.step = "ACTUAL_CANDIDATE"; return { ok: true, message: buildPackageCandidatePrompt(result.candidates) }; }
     if (result.error) { state.pendingRaw = text; return { ok: false, message: result.error + "\n\n수정할 내용을 보내주세요." }; }
@@ -72099,14 +72187,17 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         var candidateNumber = parsePackagePositiveCount(text), candidate = candidateNumber && state.optionCandidates[candidateNumber - 1];
         if (!candidate) return { ok: false, message: buildPackageCandidatePrompt(state.optionCandidates) };
         state.rewardType = candidate.type;
-        return processPackageActualInput(state, formatPackageActualReward(candidate) + (state.optionCount ? " x" + state.optionCount : ""), definitions);
+        return processPackageActualInput(state, formatPackageActualReward(candidate) + (state.optionCount ? " x" + state.optionCount : ""), definitions, candidate.custom ? candidate.object : null);
     }
     if (state.step === "ACTUAL_OPTION") {
+        if (state.optionDraft.custom && (!definitions.custom || definitions.custom[state.optionDraft.type] !== true)) return { ok: false, message: "⛔ 패키지 관리 권한이 없습니다." };
         var optionError = applyPackageOptionAnswer(state.optionDraft, text);
         if (optionError) return { ok: false, message: optionError + "\n\n" + buildPackageOptionPrompt(state.optionDraft) };
         if (state.optionDraft.fields.length) return { ok: true, message: buildPackageOptionPrompt(state.optionDraft) };
-        var completedInput = formatPackageOptionDraft(state.optionDraft); state.optionDraft = null;
-        state.step = "ACTUAL_INPUT"; return processPackageActualInput(state, completedInput, definitions);
+        var completedDraft = state.optionDraft, completedInput = formatPackageOptionDraft(completedDraft); state.optionDraft = null;
+        state.step = "ACTUAL_INPUT";
+        if (completedDraft.custom) return applyPackageActualInputResult(state, resolvePackageCustomRewardInput(formatPackageActualReward(completedDraft), completedDraft.type, definitions, completedDraft.count, completedDraft.object), completedInput);
+        return processPackageActualInput(state, completedInput, definitions);
     }
     if (state.step === "ACTUAL_COUNT") {
         if (text === "옵션 수정") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
@@ -72129,9 +72220,15 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
             else {
                 var current = state.bulk[state.fixIndex], fixed;
                 if (current.draft) {
+                    if (current.draft.custom && (!definitions.custom || definitions.custom[current.draft.type] !== true)) return { ok: false, message: "⛔ 패키지 관리 권한이 없습니다." };
                     var bulkOptionError = applyPackageOptionAnswer(current.draft, text);
                     if (bulkOptionError) return { ok: false, message: bulkOptionError + "\n\n" + buildPackageOptionPrompt(current.draft) };
                     if (current.draft.fields.length) return { ok: true, message: buildPackageOptionPrompt(current.draft) };
+                    if (current.draft.custom) {
+                        fixed = resolvePackageCustomRewardInput(formatPackageActualReward(current.draft), current.draft.type, definitions, current.draft.count, current.draft.object);
+                        state.bulk[state.fixIndex] = makePackageBulkInputRow(current.raw, fixed);
+                        return { ok: true, message: buildPackageBulkReview(state) };
+                    }
                     text = formatPackageOptionDraft(current.draft);
                 } else if (current.missingCount) {
                     var bulkCount = parsePackagePositiveCount(text);
@@ -72142,8 +72239,13 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
                     var bulkCandidateNumber = parsePackagePositiveCount(text), bulkCandidate = bulkCandidateNumber && current.candidates[bulkCandidateNumber - 1];
                     if (!bulkCandidate) return { ok: false, message: buildPackageCandidatePrompt(current.candidates) };
                     text = formatPackageActualReward(bulkCandidate) + (readPackageRewardInput(current.raw).count ? " x" + readPackageRewardInput(current.raw).count : "");
+                    if (bulkCandidate.custom) {
+                        fixed = resolvePackageRewardInput(text, bulkCandidate.type, definitions, undefined, bulkCandidate.object);
+                        state.bulk[state.fixIndex] = makePackageBulkInputRow(current.raw, fixed);
+                        return { ok: true, message: buildPackageBulkReview(state) };
+                    }
                 }
-                fixed = resolvePackageRewardInput(text, null, definitions);
+                fixed = resolvePackageRewardInput(text, current.reward && current.reward.custom ? current.reward.type : null, definitions, undefined, current.reward && current.reward.custom ? current.reward.object : null);
                 state.bulk[state.fixIndex] = makePackageBulkInputRow(text, fixed);
             }
             return { ok: true, message: buildPackageBulkReview(state) };
@@ -72181,7 +72283,7 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         var currentRewards = [], definitionChanged = false; // 작성 뒤 바뀐 정의는 새 미리보기 확인 후에만 등록
         for (var r = 0; r < state.rewards.length; r++) {
             var originalReward = state.rewards[r], currentReward = originalReward;
-            if (originalReward.type !== "point") {
+            if (originalReward.type !== "point" && !originalReward.custom) {
                 var currentInput = resolvePackageRewardInput(formatPackageActualReward(originalReward) + " x" + originalReward.count, originalReward.type, definitions);
                 if (!currentInput.reward) return { ok: false, message: currentInput.error || "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
                 currentReward = currentInput.reward;
@@ -72205,9 +72307,16 @@ function getPackageRewardEditChoices(reward) {
 }
 
 // 등록과 사용 직전에 실제 정의와 모든 수량·옵션을 다시 대조하는 함수
-function validatePackageActualReward(reward, definitions) {
+function validatePackageActualReward(reward, definitions, registered) {
     if (!reward || !isPointShopSafeCount(reward.count) || reward.count < 1) return "수량은 1 이상의 정수로 입력해주세요.";
     if (reward.type === "point") return "";
+    if (reward.custom === true) {
+        if (!registered && (!definitions.custom || definitions.custom[reward.type] !== true)) return "⛔ 패키지 관리 권한이 없습니다.";
+        var customDefinitions = { custom: { mini: true, furniture: true, pendant: true } };
+        var custom = resolvePackageCustomRewardInput(formatPackageActualReward(reward), reward.type, customDefinitions, reward.count, reward.object);
+        if (!custom || !custom.reward || JSON.stringify(custom.reward) !== JSON.stringify(reward)) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
+        return "";
+    }
     var parsed = resolvePackageRewardInput(formatPackageActualReward(reward) + " x" + reward.count, reward.type, definitions);
     if (parsed.error) return parsed.error;
     if (!parsed.reward || JSON.stringify(parsed.reward.object || null) !== JSON.stringify(reward.object || null) || parsed.reward.name !== reward.name) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
@@ -72228,7 +72337,7 @@ function validatePackageActualUse(info, useCount, actual, user) {
         if (!isPointShopSafeCount(count) || count < 1) throw new Error("패키지 구성 확인이 필요해 사용하지 못했어요. 패키지는 차감되지 않았습니다.");
         if (reward.type === "item" || reward.type === "point") continue;
         if (!actual) throw new Error("패키지 구성 확인이 필요해 사용하지 못했어요. 패키지는 차감되지 않았습니다.");
-        var error = validatePackageActualReward(reward, actual.definitions); if (error) throw new Error(error);
+        var error = validatePackageActualReward(reward, actual.definitions, true); if (error) throw new Error(error);
         if (reward.type === "skill") {
             var skillUser = actual.skills[user], bag = skillUser && skillUser.petSkills && skillUser.petSkills.bag || {};
             var previous = skillTotals[reward.name] === undefined ? bag[reward.name] === undefined ? 0 : bag[reward.name] : skillTotals[reward.name];
@@ -72398,8 +72507,9 @@ function buildPackageCandidatePrompt(candidates) {
 
 // 남은 첫 옵션만 문서의 누락 안내로 요청하는 함수
 function buildPackageOptionPrompt(draft) {
-    var labels = { grade: "등급", castle: "캐슬매력", raid: "레이드매력", charm: "매력", durability: "내구도", upgrade: "강화수치" };
-    return labels[draft.fields[0]] + "를 확인할 수 없어요. 지급할 값을 입력해주세요.";
+    var labels = { grade: "등급", castle: "캐슬매력", raid: "레이드매력", charm: "매력", durability: "내구도", upgrade: "강화수치", price: "가격", emoji: "외형", name: "이름" };
+    var label = labels[draft.fields[0]], last = label.charCodeAt(label.length - 1); // 한글 필드명의 받침에 맞는 조사만 선택
+    return label + (last >= 0xAC00 && last <= 0xD7A3 && (last - 0xAC00) % 28 !== 0 ? "을" : "를") + " 확인할 수 없어요. 지급할 값을 입력해주세요.";
 }
 
 // 실제 이름이 확인된 실물만 누락 옵션 입력 대상으로 만드는 함수
@@ -72447,8 +72557,23 @@ function getPackageOptionDraft(text, type, definitions, count) {
 // 누락 옵션 하나를 검증하고 나머지 확인된 옵션은 그대로 유지하는 함수
 function applyPackageOptionAnswer(draft, input) {
     var field = draft.fields[0], value, text = String(input || "").trim();
-    if (field === "grade") {
-        value = null; for (var i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === text.replace("🌌", "")) value = i;
+    if (field === "name") {
+        if (!text || /[\r\n\[\]]/.test(text) || isMiniPetEditOtherCommand(text)) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
+        draft.name = text; value = text;
+    } else if (field === "emoji") {
+        if (!isMiniPetEditValueValid(text, { max: text.length })) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
+        value = text;
+    } else if (field === "grade") {
+        value = null;
+        if (draft.type === "mini") { if (GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(text) !== -1 || ["엘리트", "마스터"].indexOf(text) !== -1) value = text; }
+        else if (draft.type === "furniture") { if (text && !/[\r\n\[\]]/.test(text)) value = text; }
+        else if (draft.type === "pendant") {
+            for (var p = 0; p < PENDANT_GRADE_TABLE.length; p++) if (PENDANT_GRADE_TABLE[p].grade === text) {
+                value = text; draft.object.icon = PENDANT_GRADE_TABLE[p].icon;
+                if (draft.object.name.slice(-draft.object.icon.length) === draft.object.icon) draft.object.name = draft.object.name.slice(0, -draft.object.icon.length).trim();
+                draft.name = draft.object.name;
+            }
+        } else for (var i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === text.replace("🌌", "")) value = i;
         if (value === null) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
     } else {
         var isMan = /만$/.test(text); text = text.replace(/^\+/, "").replace(/만$/, "");
