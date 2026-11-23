@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.886"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.887"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -72187,6 +72187,10 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         var candidateNumber = parsePackagePositiveCount(text), candidate = candidateNumber && state.optionCandidates[candidateNumber - 1];
         if (!candidate) return { ok: false, message: buildPackageCandidatePrompt(state.optionCandidates) };
         state.rewardType = candidate.type;
+        if (candidate.fields && candidate.fields.length) {
+            state.optionDraft = JSON.parse(JSON.stringify(candidate)); state.optionDraft.count = state.optionCount; state.step = "ACTUAL_OPTION";
+            return { ok: true, message: buildPackageOptionPrompt(state.optionDraft) };
+        }
         return processPackageActualInput(state, formatPackageActualReward(candidate) + (state.optionCount ? " x" + state.optionCount : ""), definitions, candidate.custom ? candidate.object : null);
     }
     if (state.step === "ACTUAL_OPTION") {
@@ -72238,6 +72242,11 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
                 } else if (current.candidates) {
                     var bulkCandidateNumber = parsePackagePositiveCount(text), bulkCandidate = bulkCandidateNumber && current.candidates[bulkCandidateNumber - 1];
                     if (!bulkCandidate) return { ok: false, message: buildPackageCandidatePrompt(current.candidates) };
+                    if (bulkCandidate.fields && bulkCandidate.fields.length) {
+                        var candidateDraft = JSON.parse(JSON.stringify(bulkCandidate)); candidateDraft.count = readPackageRewardInput(current.raw).count;
+                        state.bulk[state.fixIndex] = makePackageBulkInputRow(current.raw, { draft: candidateDraft });
+                        return { ok: true, message: buildPackageBulkReview(state) };
+                    }
                     text = formatPackageActualReward(bulkCandidate) + (readPackageRewardInput(current.raw).count ? " x" + readPackageRewardInput(current.raw).count : "");
                     if (bulkCandidate.custom) {
                         fixed = resolvePackageRewardInput(text, bulkCandidate.type, definitions, undefined, bulkCandidate.object);
@@ -72512,7 +72521,7 @@ function buildPackageOptionPrompt(draft) {
     return label + (last >= 0xAC00 && last <= 0xD7A3 && (last - 0xAC00) % 28 !== 0 ? "을" : "를") + " 확인할 수 없어요. 지급할 값을 입력해주세요.";
 }
 
-// 실제 이름이 확인된 실물만 누락 옵션 입력 대상으로 만드는 함수
+// 확인된 실물의 누락 옵션만 보완하고 완성 표기는 같은 등록 검증기로 연결하는 함수
 function getPackageOptionDraft(text, type, definitions, count) {
     var naked = text.replace(/\([^)]*\)|\[[^\]]*\]/g, "").trim(), rows = [], i;
     if ((!type || type === "gem") && /^(?:루비🔴|사파이어🔵|에메랄드🟢)(?:\[|\(|$)/.test(text)) {
@@ -72546,12 +72555,19 @@ function getPackageOptionDraft(text, type, definitions, count) {
     }
     var unique = [], seen = {};
     for (i = 0; i < rows.length; i++) { var key = JSON.stringify(rows[i]); if (!seen[key]) { seen[key] = true; unique.push(rows[i]); } }
-    if (unique.length > 1) return { candidates: unique };
     if (!unique.length) return null;
-    var row = unique[0], missing = [];
-    if (row.type === "mini" || row.type === "furniture") missing.push("charm");
-    if (row.type === "pendant") { if (row.object.durability === null) missing.push("durability"); if (row.object.upgrade === null) missing.push("upgrade"); }
-    return { draft: { type: row.type, name: row.name, object: row.object, count: count, fields: missing } };
+    var exact = unique.filter(function (row) { return row.name === naked || row.name + (row.object.emoji || row.object.icon || "") === naked; });
+    if (exact.length) unique = exact;
+    for (var n = 0; n < unique.length; n++) {
+        var row = unique[n], missing = []; // 후보를 골라도 아직 입력하지 않은 실제 옵션은 유지
+        if (row.type === "mini" || row.type === "furniture") missing.push("charm");
+        if (row.type === "pendant") { if (row.object.durability === null) missing.push("durability"); if (row.object.upgrade === null) missing.push("upgrade"); }
+        row.count = count; row.fields = missing;
+    }
+    if (unique.length > 1) return { candidates: unique };
+    var selected = unique[0];
+    if (!selected.fields.length) return resolvePackageRewardInput(formatPackageActualReward(selected) + (count ? " x" + count : ""), selected.type, definitions);
+    return { draft: selected };
 }
 
 // 누락 옵션 하나를 검증하고 나머지 확인된 옵션은 그대로 유지하는 함수
