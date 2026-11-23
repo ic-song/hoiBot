@@ -7,6 +7,17 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    adventureGem: { // Main과 같은 보석 원본·집계 캐시 검증 설정
+        accountPrefix: "adventureGemAccount_", charmStep: 100000,
+        cachePrefix: "hoiBot.adventureGem.summary.", revisionPrefix: "hoiBot.adventureGem.revision.",
+        grades: [
+            { name: "하급", min: 300000, max: 500000 }, { name: "중급", min: 600000, max: 900000 },
+            { name: "상급", min: 1000000, max: 1500000 }, { name: "최상급", min: 1800000, max: 2800000 },
+            { name: "초월", min: 3500000, max: 5500000 }, { name: "창세", min: 7000000, max: 10000000 },
+            { name: "🌌창조", min: 14000000, max: 20000000 }
+        ]
+    },
+
     guildWar: { lordTaxRate: 20 },
     adventurePublication: { pendingName: "adventureGrowthPending.json" },
     guildCombatItems: {
@@ -215,8 +226,8 @@ const GLOBAL_CONFIG = {
 	},
 	guildContributionCube: { // 길드공헌 큐브 조회 설정
 		options: {
-			"1": { key: "castle", maxUnits: 500 },
-			"2": { key: "raid", maxUnits: 500 }
+			"1": { key: "castle", maxUnits: 700 },
+			"2": { key: "raid", maxUnits: 700 }
 		}
 	},
 	freeMarket: { // 자유시장 설정
@@ -469,6 +480,9 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	for (var i = 0; i < 10; i++) gauge += i < filled ? "■" : "□";
 	var summary = getInfoAdventureLevelSummary(level);
 	var statState = getAdventureStatState(member); // 조회는 최초 소급 잔고도 저장 없이 계산
+	var gemSummary = getAdventureGemSummary(data, user), gemSlots = Math.floor(level / 10) + gemSummary.extraSlots;
+	var gemLine = "🪽 보석 [" + gemSummary.count + "/" + gemSlots + "칸]" + (gemSummary.creation ? " · 🌌창조 " + gemSummary.creation : "") + (gemSummary.hidden ? " · 🟢히든 " + gemSummary.hidden : "") + "\n";
+	if (gemSummary.count) gemLine += "└ ⚔️ +" + (gemSummary.castle / 10000) + "만 · 👾 +" + (gemSummary.raid / 10000) + "만\n";
 	var promotionCount = Math.floor(level / 10); // 대승급을 포함한 전체 10레벨 단위 승급 차수
 	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
 	var nextMajor = (Math.floor(level / 100) + 1) * 100;
@@ -479,6 +493,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		"🌟 Lv." + numberWithCommas(level) + " [" + gauge + "]\n" +
 		"📊 EXP: " + formatInfoAdventureExperience(exp) + " / " + formatInfoAdventureExperience(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
 		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n\n" +
+		gemLine + "\n" +
 		"🌳 모험가 스탯트리\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(statState.points) + "개\n" + buildAdventureStatProgress(statState) + "\n" +
 		(statState.points > 0 ? "✨ 투자 가능한 스탯 포인트가 있습니다!\n" : "") + "👉 스탯트리 정보 /스탯\n\n" +
 		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
@@ -4248,6 +4263,8 @@ function calculateItemInfoAll(memberName, data, petData) {
 	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + pendantInfo.battleExp + bagInfo.battleExp;
 	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + pendantInfo.raidExp + bagInfo.raidExp;
 	returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + pendantInfo.castleExp + bagInfo.castleExp;
+	var gemInfo = getAdventureGemSummary(data, memberName);
+	returnObj.castleExp += gemInfo.castle; returnObj.raidExp += gemInfo.raid;
 	return returnObj;
 }
 
@@ -4996,4 +5013,99 @@ function getPointShopNumberedItems(data) {
 // 종료 콘텐츠는 복구된 보유분에서도 화면에 다시 노출하지 않는 함수
 function isRetiredCarrotValue(value) {
     return typeof value === "string" && (value === GLOBAL_CONFIG.items.carrotName || value === GLOBAL_CONFIG.items.carrotThermometerName || value === "🌡️당근온도기" || GLOBAL_CONFIG.carrotRetirement.itemNames.indexOf(value) !== -1);
+}
+
+
+// 보석의 횟수·슬롯을 기존 숫자 저장 범위 안에서 검증하는 함수
+function isAdventureGemInteger(value, minimum) {
+    return typeof value === "number" && isFinite(value) && Math.floor(value) === value && value >= minimum && value <= 9007199254740991;
+}
+
+
+// 닉네임과 독립적인 실제 계정 ID를 반환하는 함수
+function getAdventureGemAccountId(data, user) {
+    var member = data.member && data.member[user], account = member && member.serverRaidAccount;
+    if (account && typeof account.id === "string" && account.id) return account.id;
+    if (member && member.adventureGemInitialized) throw new Error("보석 계정 식별자 누락");
+    return null;
+}
+
+
+// 계정 ID를 안전한 고정 파일명으로 변환하고 반복 해시를 피하는 함수
+function getAdventureGemFileName(id, receipt) {
+    if (typeof id !== "string" || !id || id.length > 512) throw new Error("보석 계정 식별자 형식 오류");
+    var keys = getAdventureGemFileName.keys || (getAdventureGemFileName.keys = {}), token = keys["$" + id];
+    if (!token) {
+        var digest = java.security.MessageDigest.getInstance("SHA-256").digest(new java.lang.String(id).getBytes("UTF-8")), parts = [];
+        for (var i = 0; i < digest.length; i++) { var hex = (digest[i] & 255).toString(16); parts.push(hex.length === 1 ? "0" + hex : hex); }
+        token = keys["$" + id] = parts.join("");
+    }
+    return (receipt ? GLOBAL_CONFIG.adventureGem.receiptPrefix : GLOBAL_CONFIG.adventureGem.accountPrefix) + token + ".json";
+}
+
+
+// 파일이 없는 미사용 계정의 조회에만 쓰는 메모리 기본 상태를 만드는 함수
+function createAdventureGemState(owner) {
+    return { version: 1, owner: owner || "", extraSlots: 0, pity: 0, hasAcquired: false, gems: [] };
+}
+
+
+// 실제 종류·등급별 범위와 장착 위치·개체 중복을 검증하는 함수
+function requireAdventureGemState(store, owner) {
+    if (!store || store.version !== 1 || typeof owner !== "string" || store.owner !== owner || typeof store.hasAcquired !== "boolean" || store.receiptVersion !== undefined && store.receiptVersion !== 1 || !isAdventureGemInteger(store.extraSlots, 0) || !isAdventureGemInteger(store.pity, 0) || store.pity > 99 || !Array.isArray(store.gems)) throw new Error("보석 저장 형식 오류");
+    var ids = {}, slots = {}, grades = GLOBAL_CONFIG.adventureGem.grades, step = GLOBAL_CONFIG.adventureGem.charmStep;
+    for (var i = 0; i < store.gems.length; i++) {
+        var gem = store.gems[i], grade = gem && grades[gem.grade];
+        if (!gem || typeof gem.id !== "string" || !gem.id || gem.id.length > 128 || ids["$" + gem.id] || !isAdventureGemInteger(gem.grade, 0) || !grade || ["ruby", "sapphire", "emerald"].indexOf(gem.kind) === -1 || !isAdventureGemInteger(gem.slot, 0) || !isAdventureGemInteger(gem.castle, 0) || !isAdventureGemInteger(gem.raid, 0)) throw new Error("보석 개체 형식 오류");
+        var castleValid = gem.castle >= grade.min && gem.castle <= grade.max && gem.castle % step === 0;
+        var raidValid = gem.raid >= grade.min && gem.raid <= grade.max && gem.raid % step === 0;
+        if (gem.kind === "ruby" && (!castleValid || gem.raid !== 0) || gem.kind === "sapphire" && (!raidValid || gem.castle !== 0) || gem.kind === "emerald" && (!castleValid || !raidValid)) throw new Error("보석 매력 범위 오류");
+        if (gem.slot && slots[gem.slot]) throw new Error("보석 장착 슬롯 중복");
+        ids["$" + gem.id] = true;
+        if (gem.slot) slots[gem.slot] = true;
+    }
+    return store;
+}
+
+
+// 장착 개체의 실제 캐슬·레이드 합계와 화면 집계만 계산하는 함수
+function summarizeAdventureGems(store) {
+    var result = { castle: 0, raid: 0, count: 0, creation: 0, hidden: 0, extraSlots: store.extraSlots };
+    for (var i = 0; i < store.gems.length; i++) {
+        var gem = store.gems[i];
+        if (!gem.slot) continue;
+        result.castle += gem.castle; result.raid += gem.raid; result.count++;
+        if (gem.grade === GLOBAL_CONFIG.adventureGem.grades.length - 1) result.creation++;
+        if (gem.kind === "emerald") result.hidden++;
+    }
+    if (!isFinite(result.castle) || !isFinite(result.raid)) throw new Error("보석 합산 수치 표현 범위 오류");
+    return result;
+}
+
+
+// 요청 내 재사용과 파일·게시 세대 검증으로 전체 보석 파일의 반복 읽기를 피하는 함수
+function getAdventureGemSummary(data, user) {
+    var id = getAdventureGemAccountId(data, user);
+    if (!id) return summarizeAdventureGems(createAdventureGemState(""));
+    var config = GLOBAL_CONFIG.adventureGem, path = resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(id));
+    var revision = String(java.lang.System.getProperty(config.revisionPrefix + path, ""));
+    var context = getCurrentContext(), local = context.adventureGemSummaries || (context.adventureGemSummaries = {});
+    if (local[path] && local[path].revision === revision) return local[path].summary;
+    var file = new java.io.File(path), summary;
+    if (!file.exists()) {
+        if (data.member[user].adventureGemInitialized) throw new Error("보석 저장 원본 누락: " + path);
+        summary = summarizeAdventureGems(createAdventureGemState(id));
+    } else {
+        var cacheText = java.lang.System.getProperty(config.cachePrefix + path), cached = null;
+        if (cacheText !== null) { try { cached = JSON.parse(String(cacheText)); } catch (cacheError) { java.lang.System.clearProperty(config.cachePrefix + path); } }
+        var modified = Number(file.lastModified()), bytes = Number(file.length()); // 외부 백업 복원도 파일 지문이 바뀌면 다시 검증
+        if (cached && cached.revision === revision && cached.modified === modified && cached.bytes === bytes) summary = cached.summary;
+        else {
+            var store = requireAdventureGemState(JSON.parse(String(FileStream.read(path, "utf-8")).replace(/^\uFEFF/, "")), id);
+            summary = summarizeAdventureGems(store);
+            java.lang.System.setProperty(config.cachePrefix + path, JSON.stringify({ revision: revision, modified: modified, bytes: bytes, summary: summary }));
+        }
+    }
+    local[path] = { revision: revision, summary: summary };
+    return summary;
 }
