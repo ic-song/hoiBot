@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.887"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.888"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -17728,7 +17728,7 @@ replier.reply(
                 if (msg === "/패키지리스트") {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 패키지 정보 데이터
-                    replyPackageContent(replier, buildPackageListMessage(packageInfoData));
+                    replier.reply(buildPackageListMessage(packageInfoData));
                     return;
                 }
 
@@ -48104,7 +48104,7 @@ function formatPackageRewardSummary(rewards) {
 
 // 관리자용 패키지 리스트 메시지 생성 함수
 function buildPackageListMessage(packageInfoData) {
-    var lines = ["📦 패키지 리스트", ""], displayed = 0, exampleNumber = 0;
+    var lines = ["📦 패키지 리스트" + allsee, ""], displayed = 0, exampleNumber = 0;
     if (packageInfoData.length < 1) {
         lines.push("등록된 패키지가 없습니다.");
     } else {
@@ -70280,7 +70280,7 @@ function buildGuildWarMain(data, guildData, gid, now) {
         var territory = state.territories[String(no)], owner = getGuildByIdSafe(guildData, territory.owner), status = guild ? getGuildWarAdvance(state, gid, no) : null;
         var icon = status ? status.own ? "🏴" : status.allowed ? "⚔️" : "🔒" : "";
         if (no === getGuildWarKingdomNo(state) && guild) {
-            var kingdomOwner = territory.owner === gid ? "우리 길드" : territory.owner === null ? "미점령" : "특별(🎁)";
+            var kingdomOwner = getGuildWarVisibleOwner(guildData, gid, no); // 킹덤은 현재 점령 길드를 정찰 없이 공개
             text += icon + " " + guildWarRegion(no) + " · " + kingdomOwner + (status.kingdomBlocked ? " · 내일 가능" : status.allowed ? " · 공격 가능" : "") + "\n";
         } else text += (icon ? icon + " " : "") + guildWarRegion(no) + " · " + getGuildWarVisibleOwner(guildData, guild ? gid : null, no) + "\n";
         if (no === getGuildWarKingdomNo(state) && owner) text += "└ 👑 영주: " + (data.HoiCastle && data.HoiCastle.lord ? checkRank(data, null, guildData, data.HoiCastle.lord) : "없음") + "\n";
