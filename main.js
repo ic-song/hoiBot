@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.890"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.891"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -4865,6 +4865,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 return;
             }
             ctx.dataCleanupConfirmed = true;
+        var dataCleanupUiSummary = dataCleanupPreview.summary;
         }
         if (msg === "/데이터정리" && !ctx.dataCleanupConfirmed) return;
         var memberStorageMigrationResult = null;
@@ -4966,12 +4967,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     var memberStorageRepairVerified = loadJsonFile(filePath);
                     if (memberStorageRepairVerified.__memberSplitContext.logsText !== data.__memberSplitContext.logsText) throw new Error("잔류 운영 로그 복구 내용 검증 실패");
                     endDataSaveTransaction(); beginDataSaveTransaction();
-                    replier.reply("🧹 /데이터정리: 운영 로그 복구 완료\n\n" +
-                        "✅ 잔류 로그 필드 " + memberStorageResidualFields + "개 정리\n" +
-                        "✅ 잔류 기록 " + numberWithCommas(memberStorageResidualCount) + "건 보존\n" +
-                        "💾 기존 분리 기록과 회원 원본을 함께 보관했습니다.\n" +
-                        "✅ 회원·분리 백업의 버전을 함께 맞췄습니다.\n" +
-                        "진행 중인 대회 상태와 재화는 그대로 유지합니다.");
+                    replier.reply("🧹 기록 보관 완료\n\n기존 처리 기록 " + numberWithCommas(memberStorageResidualCount) + "건을 보존하고 중복 정보를 정리했습니다.\n게임 진행 상태와 재화는 유지했습니다.\n\n나머지 항목을 정리하려면 /데이터정리를 다시 실행해주세요.");
                     return; // 복구 작업으로 만료된 게임 턴을 처리하거나 기존 정리를 함께 실행하지 않음
                 }
                 memberStorageMigrationResult = { changed: false };
@@ -4991,7 +4987,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 Object.defineProperty(data, "__adventureRecordContext", { value: { store: adventureMigration.store, text: null }, configurable: true, enumerable: false });
                 saveJsonFile(data, filePath);
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 별도 이전을 확정한 뒤 일반 정리와 분리
-                replier.reply("🧹 /데이터정리: 퀘스트 기록 분리 완료\n\n✅ 완료 기록 " + numberWithCommas(adventureMigration.records) + "건\n✅ 획득 타이틀 " + numberWithCommas(adventureMigration.titles) + "건\n✅ 기존 기록·보상·진행 상태를 유지했습니다.\n\n다른 데이터도 정리하려면 /데이터정리를 다시 실행해 주세요.");
+                replier.reply("🧹 모험가 퀘스트 기록 보관 완료\n\n완료한 퀘스트 " + numberWithCommas(adventureMigration.records) + "건과 획득 타이틀 " + numberWithCommas(adventureMigration.titles) + "개를 보존했습니다.\n기존 보상과 진행 상태는 유지했습니다.\n\n나머지 항목을 정리하려면 /데이터정리를 다시 실행해주세요.");
                 return;
             }
         }
@@ -30496,7 +30492,6 @@ replier.reply(
 
                     var totalDisplayRemoved = 0;
                     var totalNullRemoved = 0;
-                    var userLogs = [];
 
                     for (var user in homeData) {
                         if (!homeData[user]) continue;
@@ -30536,7 +30531,6 @@ replier.reply(
                         }
 
                         if (displayRemovedCount > 0 || nullRemovedCount > 0) {
-                            userLogs.push(user + " : display " + displayRemovedCount + "개 / null " + nullRemovedCount + "개");
                             totalDisplayRemoved += displayRemovedCount;
                             totalNullRemoved += nullRemovedCount;
                         }
@@ -30562,7 +30556,6 @@ replier.reply(
 
                     var pointFloorUserCount = 0;
                     var pointFloorTotalAmount = 0;
-                    var pointFloorUserLogs = [];
 
                     for (var pointUser in data.member) {
                         if (!data.member.hasOwnProperty(pointUser)) continue;
@@ -30574,7 +30567,6 @@ replier.reply(
                             pointMember.point = afterPoint;
                             pointFloorUserCount++;
                             pointFloorTotalAmount += beforePoint - afterPoint;
-                            pointFloorUserLogs.push(pointUser + " : " + formatPointValue(beforePoint) + " → " + numberWithCommas(afterPoint));
                         }
                     }
 
@@ -30624,60 +30616,25 @@ replier.reply(
                     saveJsonFile(packageLogCleanupData, packageLogPath);
                     if (robberyMigrationPending) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), { pending: null });
 
-                    var out = "🧹 /데이터정리 완료\n";
-                    out += "종료 콘텐츠의 현재 사용 자료를 정리했습니다. 보관 백업·복구본은 변경하지 않았습니다.\n";
-                    out += allsee + "\n";
-                    out += "\n[할로윈 가방 사탕 전환]\n";
-                    out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
-                    out += "\n[레이드·봉인금고 기록 정리]\n레이드 중복 요약 " + memberRecordCleanup.raidUsers + "명 / 금고 개인 희귀 기록 " + memberRecordCleanup.personalRareRecords + "건 / 전체 희귀 기록 " + memberRecordCleanup.globalRareRecords + "건 제거\n";
-                    out += "\n[길드 전쟁 기록 정리]\n중복 원본 " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n";
-                    out += "\n[보상·교육 기록 정리]\n";
-                    out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
-                    out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
-                    out += "퀘스트 준비 기록 " + preparedCleanup.users + "명 압축 / 약 " + numberWithCommas(preparedCleanup.removedChars) + "자 감소\n";
-                    out += "미사용 횟수 " + unusedMemberCleanup.zeroFields + "개 / 가입 완료 보조 정보 " + unusedMemberCleanup.onboardingUsers + "명 정리 · 약 " + numberWithCommas(unusedMemberCleanup.removedChars) + "자 감소\n";
-                    out += "\n[강탈 이력 분리]\n";
-                    out += robberyMigrationPending ? "✅ 전체 기록 보존 · 추가 이전 " + numberWithCommas(robberyMigration.added) + "건 / " + numberWithCommas(robberyMigration.users.length) + "명\n" : "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
-                    if (memberStorageMigrationResult) {
-                        out += "\n[회원 파일 분리]\n";
-                        if (memberStorageMigrationResult.changed) {
-                            out += "✅ 레이드 기록·운영 로그 분리 완료\n";
-                            out += "회원 파일: " + numberWithCommas(memberStorageMigrationResult.beforeBytes) + " → " + numberWithCommas(memberStorageMigrationResult.afterBytes) + "바이트\n";
-                            out += "보존 기록: 레이드 " + memberStorageMigrationResult.rounds + "회 / 처리 기록 " + memberStorageMigrationResult.receipts + "건 / 공지 " + memberStorageMigrationResult.notices + "건\n";
-                        } else out += "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
-                    }
-
-                    out += "[1] 펫홈 데이터 정리\n";
-                    out += "display 삭제 : " + numberWithCommas(totalDisplayRemoved) + "개\n";
-                    out += "null 제거 : " + numberWithCommas(totalNullRemoved) + "개\n";
-
-                    if (userLogs.length > 0) {
-                        out += "\n[펫홈 유저별 정리]\n" + userLogs.join("\n");
-                    } else {
-                        out += "\n펫홈 정리할 데이터 없음\n";
-                    }
-
-                    out += "\n\n[2] 가방 수량 0 항목 정리\n";
-                    out += "가방 수량 0 항목 삭제 : " + numberWithCommas(zeroBagItemRemovedCount) + "개 / " + numberWithCommas(zeroBagItemRemovedUserCount) + "명\n";
-
-                    out += "\n\n[3] 포인트 소수점 정리\n";
-                    out += "정리된 유저 : " + numberWithCommas(pointFloorUserCount) + "명\n";
-                    out += "제거된 소수점 포인트 총합 : 🅟" + formatPointValue(pointFloorTotalAmount);
-
-                    if (pointFloorUserLogs.length > 0) {
-                        out += "\n[포인트 정리 유저]\n" + pointFloorUserLogs.join("\n");
-                    } else {
-                        out += "\n소수점 포인트 없음";
-                    }
-
-                    out += "\n\n[4] 회원 목록 외 잔여 데이터 정리\n";
-                    out += "정리된 잔여 식별자 : " + numberWithCommas(residualAccountNames.length) + "개";
-                    if (residualAccountNames.length > 0) {
-                        out += "\n※ 실제 삭제 계정 수가 아니라 회원 목록에 없는 닉네임 식별자 수입니다.";
-                        out += "\n※ 과거 기록에만 등장한 닉네임은 자동 정리 대상으로 판정하지 않습니다.";
-                    } else {
-                        out += "\n정리할 회원 목록 외 잔여 데이터 없음";
-                    }
+                    var out = buildDataCleanupResultMessage({
+                        retired: dataCleanupUiSummary && dataCleanupUiSummary.retired,
+                        rewardLedger: rewardCleanup.spiritRemoved || rewardCleanup.petSkillRemoved,
+                        raidUsers: memberRecordCleanup.raidUsers, warDuplicates: guildRecordCleanup.duplicates,
+                        rareRecords: memberRecordCleanup.personalRareRecords + memberRecordCleanup.globalRareRecords,
+                        educationUsers: rewardCleanup.educationUsers, questUsers: preparedCleanup.users,
+                        zeroFields: unusedMemberCleanup.zeroFields, onboardingUsers: unusedMemberCleanup.onboardingUsers,
+                        zeroItems: zeroBagItemRemovedCount,
+                        candy: halloweenCandyCleanup.candy, candyInactive: halloweenCandyCleanup.inactive,
+                        pointUsers: pointFloorUserCount, pointFraction: pointFloorTotalAmount,
+                        furniture: totalDisplayRemoved > 0 || totalNullRemoved > 0 || dataCleanupUiSummary && dataCleanupUiSummary.furniture,
+                        residualNames: residualAccountNames,
+                        dollUsers: dataCleanupUiSummary && dataCleanupUiSummary.dollUsers,
+                        guildMap: guildMapMigration.changed, attackNames: attackTicketCleanup.targets.length > 0,
+                        packages: legacyMiniPackageCleanup.targets.length > 0,
+                        packageSets: legacyMiniPackageCleanup.counts.set, packageTickets: legacyMiniPackageCleanup.counts.ticket,
+                        memberMigration: memberStorageMigrationResult && memberStorageMigrationResult.changed,
+                        robberyMigration: !!robberyMigrationPending
+                    });
 
                     replier.reply(out);
                     return;
@@ -31019,37 +30976,75 @@ function buildDataCleanupPreview(data, guildData, stores) {
     for (var petUser in stores.petData) if (Object.prototype.hasOwnProperty.call(stores.petData, petUser) && stores.petData[petUser] && stores.petData[petUser].miniPetRobberyHistory !== undefined) robberyUsers.push(petUser);
     var robberyMigration = migrations[GLOBAL_CONFIG.miniPet.robberyHistory.markerKey] !== true || robberyUsers.length > 0;
     targets.push(["migrations", memberMigration, adventureMigration, robberyMigration, robberyUsers.sort()]);
-    var text = "🧹 데이터 정리 대상\n아직 정리하지 않았습니다.\n━━━━━━━━━━━━\n" +
-        "• 종료 콘텐츠: 당근·온도기·달토끼·황금당근 보유분·설정·거래/정산 이력 정리\n" +
-        "  현재 사용 중인 자료만 정리하며 보관 백업·복구본은 열거나 변경하지 않습니다.\n" +
-        "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
-        "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
-        "• 레이드 중복 요약: " + recordCleanup.raidUsers + "명 제거\n" +
-        "• 길드 전쟁 중복 원본: " + guildRecordCleanup.duplicates + "건 통합 / 약 " + numberWithCommas(guildRecordCleanup.savedChars) + "자 감소\n" +
-        "• 봉인금고 희귀 기록: 개인 " + recordCleanup.personalRareRecords + "건 / 전체 " + recordCleanup.globalRareRecords + "건 제거\n" +
-        "  계정·누적 전적·금고 개봉/부스터/확정 진행도는 유지합니다.\n" +
-        "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
-        "  보상·교육 기록 약 " + numberWithCommas(rewards.removedChars) + "자 감소\n" +
-        "• 퀘스트 준비 기록: " + prepared.users + "명 압축 / 약 " + numberWithCommas(prepared.removedChars) + "자 감소\n" +
-        "• 미사용 일일 횟수: " + unused.zeroFields + "개 / " + unused.zeroUsers + "명\n" +
-        "• 가입 완료 보조 정보: " + unused.onboardingFields + "개 / " + unused.onboardingUsers + "명\n" +
-        "  생성·명명·완료 시각과 초기 펫 이름 사본 정리\n" +
-        "  두 항목 약 " + numberWithCommas(unused.removedChars) + "자 감소 · 진행 중 가입·보상 증거 유지\n" +
-        "• 가방 수량 0 항목: " + zeroCount + "개 / " + zeroUsers + "명\n" +
-        "• 할로윈 가방 사탕: " + candyMigration.users + "명 / " + numberWithCommas(candyMigration.candy) + "개" + (candyMigration.inactive ? " · 이벤트 종료로 전환 보류" : " · 재화로 전환 후 가방에서 제거") + "\n" +
-        "• 포인트 소수점: " + pointUsers + "명 / 합계 " + formatPointValue(pointFraction) + "\n" +
-        "• 가구 표시용 정보: " + displayCount + "개\n" +
-        "• 빈 가구 항목: " + nullCount + "개 / 가구가방 형식 보정 " + bagShapeCount + "명\n" +
-        "• 회원 목록 외 잔여 정보: " + residualNames.length + "개 식별자\n" +
-        "  관련 펫·타이틀·길드·댓글·알림·거래·운영 이력 정리\n" +
-        "• 회원 목록 외 인형 기록: " + dollResidualNames.length + "명\n" +
-        "• 기록 보존·이전: 회원 " + (memberMigration ? "필요" : "완료") + " / 퀘스트 " + (adventureMigration ? "필요" : "완료") + " / 강탈 " + (robberyMigration ? "필요" : "완료") + "\n\n" +
-        "지급된 보상·적용 매력·교육 실적은 유지합니다.\n이전 단계가 필요하면 먼저 처리한 뒤 나머지 정리를 다시 안내합니다.\n" +
-        (legacyMiniPackageCleanup.targets.length ? "\n패키지: " + GLOBAL_CONFIG.package.retiredMiniSet.name + "\n보유 수량: " + numberWithCommas(legacyMiniPackageCleanup.counts.set) + "개\n패키지: " + GLOBAL_CONFIG.package.retiredMiniSet.ticket + "\n보유 수량: " + numberWithCommas(legacyMiniPackageCleanup.counts.ticket) + "개\n" : "") +
-        "━━━━━━━━━━━━\n'확인' or '1': 정리 실행\n'취소' or '2': 취소\n" + (GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs / 1000) + "초 안에 선택해주세요.";
-    if (residualNames.length) text += allsee + "\n[회원 목록 외 잔여 식별자]\n" + residualNames.join("\n") + "\n※ 과거 기록에만 등장한 이름은 자동 삭제 대상으로 보지 않습니다.";
-    return { signature: getDataCleanupSignature(targets), text: text };
+    var summary = {
+        retired: retiredTargets.length > 0, rewardLedger: rewards.spiritRemoved || rewards.petSkillRemoved,
+        raidUsers: recordCleanup.raidUsers, warDuplicates: guildRecordCleanup.duplicates,
+        rareRecords: recordCleanup.personalRareRecords + recordCleanup.globalRareRecords,
+        educationUsers: rewards.educationUsers, questUsers: prepared.users, zeroFields: unused.zeroFields,
+        onboardingUsers: unused.onboardingUsers, zeroItems: zeroCount,
+        candy: candyMigration.candy, candyInactive: candyMigration.inactive,
+        pointUsers: pointUsers, pointFraction: pointFraction,
+        furniture: displayCount > 0 || nullCount > 0 || bagShapeCount > 0,
+        residualNames: residualNames, dollUsers: dollResidualNames.length,
+        guildMap: guildMapMigration.changed, attackNames: attackTicketCleanup.targets.length > 0,
+        packages: legacyMiniPackageCleanup.targets.length > 0,
+        packageSets: legacyMiniPackageCleanup.counts.set, packageTickets: legacyMiniPackageCleanup.counts.ticket,
+        memberMigration: memberMigration, questMigration: adventureMigration, robberyMigration: robberyMigration
+    };
+    return { signature: getDataCleanupSignature(targets), text: buildDataCleanupPreviewMessage(summary), summary: summary };
 }
+
+// 실제 정리 대상 중 변경할 내용만 쉬운 이름으로 나열하는 함수
+function buildDataCleanupSummaryLines(summary) {
+    var lines = [];
+    if (summary.retired) lines.push("• 당근·온도기·달토끼·황금당근의 남은 자료 삭제");
+    if (summary.rewardLedger) lines.push("• 이미 지급한 정령·종료 스킬 보상 기록 삭제");
+    if (summary.raidUsers) lines.push("• 레이드 중복 기록: " + numberWithCommas(summary.raidUsers) + "명분 삭제");
+    if (summary.warDuplicates) lines.push("• 길드전쟁 중복 기록: " + numberWithCommas(summary.warDuplicates) + "건 통합");
+    if (summary.rareRecords) lines.push("• 봉인금고 희귀 획득 기록: " + numberWithCommas(summary.rareRecords) + "건 삭제\n  개봉 횟수와 확정 보상 진행도는 유지합니다.");
+    if (summary.educationUsers) lines.push("• 교육 중복 기록: " + numberWithCommas(summary.educationUsers) + "명");
+    if (summary.questUsers) lines.push("• 퀘스트의 중복 준비 기록: " + numberWithCommas(summary.questUsers) + "명");
+    if (summary.zeroFields) lines.push("• 값이 0인 횟수 기록: " + numberWithCommas(summary.zeroFields) + "개 삭제");
+    if (summary.onboardingUsers) lines.push("• 완료된 가입 안내의 불필요한 정보: " + numberWithCommas(summary.onboardingUsers) + "명분 정리");
+    if (summary.zeroItems) lines.push("• 수량이 0개인 가방 항목: " + numberWithCommas(summary.zeroItems) + "개 삭제");
+    if (summary.candy && !summary.candyInactive) lines.push("• 가방의 할로윈 사탕을 사탕 재화로 합치기: " + numberWithCommas(summary.candy) + "개");
+    if (summary.candy && summary.candyInactive) lines.push("• 할로윈 사탕 " + numberWithCommas(summary.candy) + "개: 이벤트 종료로 전환하지 않습니다.");
+    if (summary.pointUsers) lines.push("• 포인트 소수점 내림: " + numberWithCommas(summary.pointUsers) + "명\n  소수점 이하 총 " + formatPointValue(summary.pointFraction) + "포인트 제거");
+    if (summary.furniture) lines.push("• 펫홈 가구의 중복 표시 정보·빈 항목 정리");
+    if (summary.residualNames && summary.residualNames.length) lines.push("• 회원 목록에 없는 이름의 남은 자료: " + numberWithCommas(summary.residualNames.length) + "건 삭제");
+    if (summary.dollUsers) lines.push("• 회원 목록에 없는 이름의 인형 기록: " + numberWithCommas(summary.dollUsers) + "건 삭제");
+    if (summary.guildMap) lines.push("• 길드전쟁 지역 번호를 현재 지도에 맞추기\n  점령 길드와 전쟁 기록은 유지합니다.");
+    if (summary.attackNames) lines.push("• 길드전쟁 공격권 이름 통일\n  보유 수량은 유지합니다.");
+    if (summary.packages) {
+        lines.push("• 구형 미니펫 세트를 /패키지사용으로 연결");
+        if (summary.packageSets || summary.packageTickets) lines.push("  세트 " + numberWithCommas(summary.packageSets || 0) + "개 · 전용권 " + numberWithCommas(summary.packageTickets || 0) + "개 보유분 유지");
+    }
+    if (summary.memberMigration) lines.push("• 레이드·처리 기록을 별도로 보관");
+    if (summary.questMigration) lines.push("• 완료한 모험가 퀘스트 기록을 별도로 보관");
+    if (summary.robberyMigration) lines.push("• 미니펫 강탈 기록을 별도로 보관");
+    return lines;
+}
+
+// 실행 전 바뀌는 내용과 확인·취소 방법만 보여주는 함수
+function buildDataCleanupPreviewMessage(summary) {
+    var lines = buildDataCleanupSummaryLines(summary);
+    var text = "🧹 데이터 정리 미리보기\n아직 변경된 내용은 없습니다.\n━━━━━━━━━━━━\n" + (lines.length ? lines.join("\n") : "현재 표시할 정리 대상이 없습니다.");
+    text += "\n\n지급된 보상 효과와 누적 매력은 유지합니다.";
+    if (summary.memberMigration || summary.questMigration || summary.robberyMigration) text += "\n기록 보관을 먼저 마치면 /데이터정리를 다시 실행해주세요.";
+    text += "\n━━━━━━━━━━━━\n확인 또는 1: 실행\n취소 또는 2: 취소\n" + (GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs / 1000) + "초 안에 선택해주세요.";
+    if (summary.residualNames && summary.residualNames.length) text += allsee + "\n[정리할 계정 이름]\n" + summary.residualNames.join("\n") + "\n과거 기록에 등장한 이름만으로 삭제하지 않습니다.";
+    return text;
+}
+
+// 완료 결과에서 내부 저장 형식과 반복되는 0건 안내를 줄이는 함수
+function buildDataCleanupResultMessage(summary) {
+    var lines = buildDataCleanupSummaryLines(summary);
+    var text = "🧹 데이터 정리 완료\n정리 결과를 저장했습니다.\n" + allsee + "\n" + (lines.length ? lines.join("\n") : "추가로 안내할 정리 결과가 없습니다.");
+    text += "\n\n지급된 보상 효과와 누적 매력은 유지했습니다.";
+    if (summary.residualNames && summary.residualNames.length) text += "\n\n[정리한 계정 이름]\n" + summary.residualNames.join("\n");
+    return text;
+}
+
 
 // 대기 중에는 원본 목록 대신 정리 대상의 작은 SHA-256 값만 보관하는 함수
 function getDataCleanupSignature(targets) {
@@ -31063,12 +31058,12 @@ function getDataCleanupSignature(targets) {
 function advanceDataCleanupSession(action, key, preview, now) {
     var session = dataCleanupSessions[key];
     if (action === "cancel") { delete dataCleanupSessions[key]; return { execute: false, reply: "데이터 정리를 취소했습니다." }; }
-    if (action === "confirm" && (!session || now >= session.expiresAt)) { delete dataCleanupSessions[key]; return { execute: false, reply: "정리 확인 시간이 만료되었습니다. /데이터정리부터 다시 진행해주세요." }; }
+    if (action === "confirm" && (!session || now >= session.expiresAt)) { delete dataCleanupSessions[key]; return { execute: false, reply: "확인 시간이 지났습니다. /데이터정리로 다시 확인해주세요." }; }
     if (!preview) throw new Error("정리 미리보기가 없습니다.");
     if (action === "confirm" && session.signature === preview.signature) { delete dataCleanupSessions[key]; return { execute: true }; }
     for (var oldKey in dataCleanupSessions) if (Object.prototype.hasOwnProperty.call(dataCleanupSessions, oldKey) && now >= dataCleanupSessions[oldKey].expiresAt) delete dataCleanupSessions[oldKey];
     dataCleanupSessions[key] = { signature: preview.signature, expiresAt: now + GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs };
-    return { execute: false, reply: (action === "confirm" ? "정리 대상이 변경되어 다시 안내합니다. 내용을 확인한 뒤 다시 선택해주세요.\n\n" : "") + preview.text };
+    return { execute: false, reply: (action === "confirm" ? "정리할 내용이 달라졌습니다. 다시 확인하고 선택해주세요.\n\n" : "") + preview.text };
 }
 
 // 통합 메뉴 밖에서 실행하는 운영 일괄 정리 명령을 찾는 함수
