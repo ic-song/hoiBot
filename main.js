@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.882"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.883"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -2893,6 +2893,7 @@ const GLOBAL_CONFIG = {
         batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
     },
     miniPet: { // 미니펫 시스템 설정
+        edit: { nameMax: 4, appearanceMax: 5, cost: 1, nameItem: "미니펫이름변경권🙀(/미니펫이름)", appearanceItem: "미니펫외형변경권😺(/미니펫외형)" },
         robberyHistory: { fileName: "miniPetRobberyHistory.json", pendingName: "miniPetRobberyPending.json", backupName: "miniPetRobberyHistory_legacy.json", markerKey: "miniPetRobberySplit20261014", schemaVersion: 1 },
         openMaxCount: 3000, // 미니펫오픈 1회 최대 수량
         battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
@@ -3978,6 +3979,7 @@ const miniPetData = loadJsonFile(miniPetPath);
 
 //메인채팅응답기능
 var manualResetSessions = {}; // 확인 대기는 컴파일 시 소멸하며 디스크에 저장하지 않음
+var miniPetEditSessions = {}; // 환경·실제 계정별 하나의 이름/외형 변경 대기
 var dataCleanupSessions = {}; // 환경·사용자·방별 데이터 정리 확인 대기만 메모리에 보관
 var messageFilterCaches = {};
 var miniGameTimers = {};
@@ -4006,6 +4008,9 @@ function canUsePlainChatFastPath(data, petData, petSkillData, sender, room, mess
     var onboarding = getAdventureOnboardingMemberState(data, sender);
     if (onboarding && onboarding.stage !== "COMPLETE" || sender.length > 4 && !onboarding) return false;
     if (userState[sender] || worldNewsDraftState[getWorldNewsDraftKey(sender, room)]) return false;
+    var miniPetEditAccount = data.member[sender].serverRaidAccount;
+    var miniPetEdit = miniPetEditAccount && miniPetEditSessions[ctx.key() + ":" + miniPetEditAccount.id];
+    if (miniPetEdit && miniPetEdit.room === room) return false;
     if (!data.petSkillSystem || data.petSkillSystem.version !== PET_SKILL_SYSTEM_VERSION) return false;
     var stored = petSkillData[sender], skills = stored && stored.petSkills; // 공통 스킬 보정이 필요하지 않은 회원만 선택
     if (!stored || Array.isArray(stored) || !skills || Array.isArray(skills) || !Array.isArray(skills.equipped) ||
@@ -22305,6 +22310,7 @@ replier.reply(
                     if (!petData[target].miniPetBag) petData[target].miniPetBag = [];
                     petData[target].miniPetBag.push(petData[target].miniPet);
                     delete petData[target].miniPet;
+                    invalidateMiniPetEditTarget(data, target, "miniPet");
                     // 해제 후 가방 정렬 및 sortIndex 재부여
                     refreshMiniPetSortIndex(petData, target, miniPetData.gradeTable);
                     replier.reply("[" + checkRank(data, petData, guildData, target) + "]님의 장착된 미니펫을 강제로 해제하고 가방으로 이동시켰습니다.");
@@ -22477,6 +22483,7 @@ replier.reply(
                     let prevEquipped = equipRole === "support" ? petData[sender].miniPetSupport : petData[sender].miniPet;
                     if (equipRole === "support") petData[sender].miniPetSupport = selectedPet;
                     else petData[sender].miniPet = selectedPet;
+                    invalidateMiniPetEditTarget(data, sender, equipRole === "support" ? "miniPetSupport" : "miniPet");
                     // 가방에서 제거
                     let removeIndex = bag.indexOf(selectedPet);
                     if (removeIndex !== -1) bag.splice(removeIndex, 1);
@@ -22942,6 +22949,7 @@ replier.reply(
                     if (!member.miniPetBag) member.miniPetBag = [];
                     member.miniPetBag.push(member.miniPet);
                     delete member.miniPet;
+                    invalidateMiniPetEditTarget(data, sender, "miniPet");
                     removeItem(data, sender, unbindItem, 1);
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
                     saveJsonFile(petData, memberPetPath);
@@ -22967,6 +22975,7 @@ replier.reply(
                     if (!supportMember.miniPetBag) supportMember.miniPetBag = [];
                     supportMember.miniPetBag.push(supportMember.miniPetSupport);
                     delete supportMember.miniPetSupport;
+                    invalidateMiniPetEditTarget(data, sender, "miniPetSupport");
                     removeItem(data, sender, supportUnbindItem, 1);
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
                     saveJsonFile(petData, memberPetPath);
@@ -22974,53 +22983,38 @@ replier.reply(
                     replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님의 보조 미니펫을 귀속해제했습니다.\n미니펫가방으로 이동했습니다.\n\n(" + supportUnbindItem + " 1개 사용됨)");
                     return;
                 }
-                if (msg.startsWith("/미니펫이름 ")) {
-                    let newName = msg.split(" ")[1];
-                    if (!newName) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 새로운 미니펫 이름을 입력해주세요.");
-                        return;
+                if (msg === "/길드서버이동" || /^\/길드서버이동\s+[^\r\n]+$/.test(msg)) {
+                    var guildMove = prepareGuildServerMove(data, guildData, sender, msg);
+                    var guildMoveHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
+                    if (guildMove.changed) {
+                        try { saveJsonFile(guildData, guildPath); }
+                        catch (guildMoveError) {
+                            guildMove.guild.server = guildMove.previous;
+                            rollbackDataSaveTransaction();
+                            replier.reply(guildMoveHeader + "🌐 길드 서버 이동\n━━━━━━━━━━━━━\n서버 이동을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.");
+                            return;
+                        }
+                        endDataSaveTransaction(); beginDataSaveTransaction();
                     }
-                    let member = petData[sender];
-                    if (!member || !member.miniPet) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 현재 장착 중인 미니펫이 없습니다.");
-                        return;
-                    }
-                    let itemName = "미니펫이름변경권🙀(/미니펫이름)";
-                    if (hasItem(data, sender, itemName, 1) == false) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님의 [" + itemName + "] 아이템이 없습니다.\n미니펫 이름을 변경하려면 해당 아이템이 1개 필요합니다.");
-                        return;
-                    }
-                    removeItem(data, sender, itemName, 1); // 아이템 사용
-                    if (newName.length > 4) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님의 미니펫 이름은 4자 이내로 설정해주세요.");
-                        return;
-                    }
-                    member.miniPet.name = newName;
-                    replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님의\n미니펫 이름이 [" + newName + "](으)로 변경되었습니다.");
+                    replier.reply(guildMoveHeader + guildMove.message);
+                    return;
                 }
-                if (msg.startsWith("/미니펫외형 ")) {
-                    let newName = msg.split(" ")[1];
-                    if (!newName) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 새로운 미니펫 외형을 입력해주세요.");
-                        return;
+                var miniPetEditMessage = msg;
+                var miniPetEditAccount = data.member[sender] && data.member[sender].serverRaidAccount;
+                var miniPetEditState = miniPetEditAccount && miniPetEditSessions[ctx.key() + ":" + miniPetEditAccount.id];
+                if (ctx.isDev && miniPetEditState && miniPetEditState.room === room && miniPetEditState.isGroupChat === isGroupChat && /^\/(?:\d+|취소)$/.test(msg)) miniPetEditMessage = msg.substring(1);
+                var miniPetEdit = advanceMiniPetEdit(data, petData, sender, room, isGroupChat, miniPetEditMessage, Date.now(), ctx.key());
+                if (miniPetEdit) {
+                    if (/^\/(?:미니펫이름|미니펫외형)(?:\s|$)/.test(msg)) {
+                        var miniPetEditMenuKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
+                        delete manualResetSessions[miniPetEditMenuKey]; delete dataCleanupSessions[miniPetEditMenuKey]; // 같은 숫자가 정리·변경 확인을 함께 실행하지 않음
                     }
-                    let member = petData[sender];
-                    if (!member || !member.miniPet) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 현재 장착 중인 미니펫이 없습니다.");
-                        return;
+                    if (miniPetEdit.changed) {
+                        try { publishAdventureMutation(data, petData); }
+                        catch (miniPetEditError) { delete miniPetEditSessions[miniPetEdit.key]; throw miniPetEditError; }
                     }
-                    let itemName = "미니펫외형변경권😺(/미니펫외형)";
-                    if (hasItem(data, sender, itemName, 1) == false) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님의\n[" + itemName + "] 아이템이 없습니다.\n미니펫 이름을 변경하려면 해당 아이템이 1개 필요합니다.");
-                        return;
-                    }
-                    removeItem(data, sender, itemName, 1); // 아이템 사용
-                    if (newName.length > 5) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님의 미니펫 외형은 5자 이내로 설정해주세요.");
-                        return;
-                    }
-                    member.miniPet.emoji = newName;
-                    replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님의\n미니펫 외형이 [" + newName + "](으)로 변경되었습니다.");
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + miniPetEdit.message);
+                    return;
                 }
                 if (msg.startsWith("/건설수정 ") && (isAdmin(sender) || isMaster(sender))) {
                     let homeInfo = loadJsonFile(homeInfoFile);
@@ -31374,6 +31368,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (getDiceTournamentRequest(command) || getHowolMysteryRequest(command) || isDevCommandMessage(msg) && command === "/ㅊㄹ" || getGuildWarRequest(command) || getHalloweenRequest(command) || getHowolDramaRequest(command)) return true;
     if (/^\/패키지(?:사용|지급)(?:\s|$)/.test(command)) return true;
     if (command === "/리셋") return true; // 전체 경기 환급·미니게임 초기화를 다른 복합 저장과 직렬화
+    if (/^\/(?:길드서버이동|미니펫이름|미니펫외형)(?:\s|$)/.test(command)) return true;
     if (isDevCommandMessage(msg) && command === "/ㅎㅈ") return true;
     if (getManualResetDirectOperation(command)) return true;
     if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
@@ -54070,7 +54065,142 @@ function resetMiniPetState(sender) {
 function getMiniPetState(sender) {
     return userState[sender] && userState[sender].miniPet ? userState[sender].miniPet : null;
 }
-// 상태 설정 함수
+// 길드장 본인의 길드 서버만 변경하고 기존 길드·개인 서버 자료를 보존하는 함수
+function prepareGuildServerMove(data, guildData, sender, message) {
+    var title = "🌐 길드 서버 이동\n━━━━━━━━━━━━━\n";
+    var target = message.substring("/길드서버이동".length).trim();
+    if (!target) return { message: title + "이동할 서버 이름을 입력해주세요.\n\n※ /길드서버이동 서버이름\n└ 예) /길드서버이동 호이서버1[30]" };
+    var member = data.member[sender], guild = member && member.guild && guildData.guilds && guildData.guilds[member.guild.id];
+    if (!guild || !guild.members || !Object.prototype.hasOwnProperty.call(guild.members, sender)) return { message: title + "길드에 가입되어 있지 않습니다." };
+    if (guild.master !== sender) return { message: title + "길드장만 사용할 수 있습니다." };
+    if (GLOBAL_CONFIG.serverRaid.servers.indexOf(target) === -1) return { message: title + "서버 이름을 확인해 주세요." };
+    if (normalizeHoiServerLabel(guild.server) === target) return { message: title + "이미 해당 서버에 소속되어 있습니다." };
+    var previous = guild.server;
+    guild.server = target;
+    return { changed: true, guild: guild, previous: previous, message: "✅ 길드 서버 이동 완료!\n━━━━━━━━━━━━━\n🏰 길드 : [" + guild.name + "]\n🌐 서버 : " + target + "\n━━━━━━━━━━━━━\n서버이동되었습니다." };
+}
+
+// 변경할 필드와 기존 변경권을 선택하는 함수
+function getMiniPetEditConfig(kind) {
+    var config = GLOBAL_CONFIG.miniPet.edit;
+    return kind === "name" ? { field: "name", label: "이름", icon: "🙀", item: config.nameItem, max: config.nameMax } :
+        { field: "emoji", label: "외형", icon: "😺", item: config.appearanceItem, max: config.appearanceMax };
+}
+
+// 단계별 미니펫 화면에서 사용하는 제목을 생성하는 함수
+function miniPetEditTitle(state) {
+    var config = getMiniPetEditConfig(state.kind);
+    return config.icon + " 미니펫 " + config.label + " 변경\n━━━━━━━━━━━━━\n";
+}
+
+// 장착된 실제 개체의 고정 식별값을 반환하는 함수
+function getMiniPetEditId(pet) {
+    return pet && (pet.id || pet.cosmeticId);
+}
+
+// 선택 중인 장착 개체가 다른 명령으로 바뀌면 다시 장착해도 이전 확인을 실행하지 않는 함수
+function invalidateMiniPetEditTarget(data, sender, role) {
+    var account = data.member[sender] && data.member[sender].serverRaidAccount;
+    var state = account && miniPetEditSessions[getCurrentContext().key() + ":" + account.id];
+    if (state && (state.stage === "select" || state.role === role)) state.invalidated = true;
+}
+
+// 대표·보조 선택과 입력·확인 화면을 기획서 문구로 생성하는 함수
+function buildMiniPetEditMessage(state, member) {
+    var config = getMiniPetEditConfig(state.kind), divider = "━━━━━━━━━━━━━", title = miniPetEditTitle(state);
+    var target = state.role ? member[state.role] : null;
+    if (state.stage === "select") return title + "어느 미니펫의 " + config.label + "을 바꿀까요?\n\n[1] 👑 대표｜" + (member.miniPet ? member.miniPet.name + member.miniPet.emoji : "미장착") +
+        "\n[2] 🛡️ 보조｜" + (member.miniPetSupport ? member.miniPetSupport.name + member.miniPetSupport.emoji : "미장착") + "\n" + divider + "\n※ 번호를 입력해주세요.\n└ [0] 취소";
+    var role = state.role === "miniPet" ? "👑 대표" : "🛡️ 보조";
+    if (state.stage === "input") return title + role + "｜" + target.name + target.emoji + "\n\n" + (state.kind === "name" ? "새 이름을 지어주세요!" : "어떤 모습으로 바꿀까요?") +
+        "\n" + divider + (state.kind === "name" ? "\n※ 변경할 이름을 입력해주세요." : "\n※ 변경할 이모지를 입력해주세요.\n└ 예) 🐯") + "\n└ [0] 취소";
+    var nextName = state.kind === "name" ? state.value : target.name, nextEmoji = state.kind === "appearance" ? state.value : target.emoji;
+    if (state.stage === "confirm") return config.icon + (state.kind === "name" ? " 이 이름으로 바꿀까요?" : " 이 모습으로 바꿀까요?") + "\n" + divider + "\n" + role + " 미니펫\n└ " + target.name + target.emoji + " → " + nextName + nextEmoji +
+        "\n\n🎫 필요 : " + config.item + "\n" + divider + "\n[1] 변경하기\n[2] " + config.label + " 다시 입력\n[0] 취소";
+    return "✅ 미니펫 " + config.label + " 변경 완료!\n" + divider + "\n" + role + "｜" + target.name + target.emoji + "\n└ " + state.previous + " → " + state.value + "\n" + divider + "\n※ /미니펫정보에서 확인해주세요.";
+}
+
+// 기존 길이 제한을 확인하며 명령·단축어와 깨진 UTF-16 입력을 제외하는 함수
+function isMiniPetEditValueValid(value, config) {
+    if (!value || value !== value.trim() || /\s/.test(value) || value.length > config.max || isMiniPetEditOtherCommand(value)) return false;
+    for (var i = 0; i < value.length; i++) {
+        var code = value.charCodeAt(i);
+        if (code >= 0xD800 && code <= 0xDBFF) {
+            if (++i >= value.length || value.charCodeAt(i) < 0xDC00 || value.charCodeAt(i) > 0xDFFF) return false;
+        } else if (code >= 0xDC00 && code <= 0xDFFF || code < 32) return false;
+    }
+    return true;
+}
+
+// 기존 단축 명령과 확인 답변이 새 이름·외형으로 저장되지 않도록 구분하는 함수
+function isMiniPetEditOtherCommand(value) {
+    return value.charAt(0) === "/" || /[\r\n]/.test(value) || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(value) || ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(value) !== -1 || GLOBAL_CONFIG.commandQueue.plainInputExceptions.indexOf(value) !== -1;
+}
+
+// 선택한 개체·계정·방을 재검증하며 최종 확인에서만 변경과 차감을 수행하는 함수
+function advanceMiniPetEdit(data, petData, sender, room, isGroupChat, message, now, environment) {
+    var start = message.match(/^\/(미니펫이름|미니펫외형)(?:\s+([^\r\n]+))?$/);
+    var user = data.member[sender], member = petData[sender], account = user && user.serverRaidAccount;
+    var key = account && account.id ? environment + ":" + account.id : null;
+    var state = key && miniPetEditSessions[key];
+    if (!start && (!state || state.room !== room || state.isGroupChat !== isGroupChat || state.sender !== sender)) return null;
+    if (!start && message !== "0" && message !== "취소" && message !== "1" && message !== "2" && isMiniPetEditOtherCommand(message)) return null;
+    if (!user || !member) return null;
+    if (start) {
+        for (var oldKey in miniPetEditSessions) if (Object.prototype.hasOwnProperty.call(miniPetEditSessions, oldKey) && now >= miniPetEditSessions[oldKey].expiresAt) delete miniPetEditSessions[oldKey];
+        state = { kind: start[1] === "미니펫이름" ? "name" : "appearance", stage: "select", sender: sender, room: room, isGroupChat: isGroupChat, expiresAt: now + GLOBAL_CONFIG.miniPetCollection.confirmationTimeoutMs, argument: start[2] ? start[2].trim() : "" };
+        if (!member.miniPet && !member.miniPetSupport) {
+            if (key) delete miniPetEditSessions[key];
+            return { message: miniPetEditTitle(state) + "현재 장착 중인 미니펫이 없습니다." };
+        }
+        var changed = false;
+        if (!account) { account = user.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(user.server), total: null }; changed = true; }
+        if (typeof account.id !== "string" || !account.id) throw new Error("미니펫 변경 계정 ID 오류");
+        key = environment + ":" + account.id;
+        var roles = ["miniPet", "miniPetSupport"];
+        for (var r = 0; r < roles.length; r++) if (member[roles[r]] && !getMiniPetEditId(member[roles[r]])) { member[roles[r]].cosmeticId = String(java.util.UUID.randomUUID()); changed = true; }
+        if (member.miniPet && member.miniPetSupport && getMiniPetEditId(member.miniPet) === getMiniPetEditId(member.miniPetSupport)) throw new Error("미니펫 변경 개체 ID 중복");
+        miniPetEditSessions[key] = state;
+        return { key: key, changed: changed, message: buildMiniPetEditMessage(state, member) };
+    }
+    var config = getMiniPetEditConfig(state.kind), title = miniPetEditTitle(state);
+    if (now >= state.expiresAt || message === "0" || message === "취소") {
+        delete miniPetEditSessions[key];
+        return { message: title + config.label + " 변경을 취소했어요.\n변경권은 사용되지 않았습니다." };
+    }
+    if (state.invalidated || state.role && (!member[state.role] || getMiniPetEditId(member[state.role]) !== state.petId || member[state.role].name !== state.name || member[state.role].emoji !== state.emoji)) {
+        delete miniPetEditSessions[key];
+        return { message: title + "선택한 미니펫이 바뀌었어요. 다시 선택해주세요.\n" + (state.kind === "name" ? "/미니펫이름" : "/미니펫외형") };
+    }
+    if (state.stage === "select") {
+        var role = message === "1" ? "miniPet" : message === "2" ? "miniPetSupport" : null;
+        if (!role || !member[role]) return { message: buildMiniPetEditMessage(state, member) };
+        state.role = role; state.petId = getMiniPetEditId(member[role]); state.name = member[role].name; state.emoji = member[role].emoji; state.stage = "input";
+        if (state.argument) { message = state.argument; delete state.argument; }
+        else return { message: buildMiniPetEditMessage(state, member) };
+    } else if (state.stage === "confirm") {
+        if (message === "2") { state.stage = "input"; delete state.value; return { message: buildMiniPetEditMessage(state, member) }; }
+        if (message !== "1") return { message: buildMiniPetEditMessage(state, member) };
+        if (!isMiniPetEditValueValid(state.value, config) || state.value === member[state.role][config.field]) { state.stage = "input"; return { message: buildMiniPetEditMessage(state, member) }; }
+        if (!hasItem(data, sender, config.item, GLOBAL_CONFIG.miniPet.edit.cost)) {
+            delete miniPetEditSessions[key];
+            return { message: title + "변경권이 부족해요.\n\n🎫 필요 : " + config.item };
+        }
+        state.previous = member[state.role][config.field];
+        member[state.role][config.field] = state.value;
+        removeItem(data, sender, config.item, GLOBAL_CONFIG.miniPet.edit.cost);
+        state.stage = "done";
+        delete miniPetEditSessions[key]; // 저장·응답 재시도와 무관하게 같은 확인은 다시 실행하지 않음
+        return { key: key, changed: true, message: buildMiniPetEditMessage(state, member) };
+    }
+    if (state.stage === "input") {
+        if (!isMiniPetEditValueValid(message, config) || message === member[state.role][config.field]) return { message: buildMiniPetEditMessage(state, member) };
+        state.value = message; state.stage = "confirm";
+    }
+    return { message: buildMiniPetEditMessage(state, member) };
+}
+
+// 미니펫 장착 확인에 선택 번호와 역할을 보관하는 함수
 function setMiniPetEquipState(sender, index, role) {
     if (!userState[sender]) userState[sender] = {};
     userState[sender].miniPet = {
