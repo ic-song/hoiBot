@@ -72508,7 +72508,8 @@ function buildPackageCandidatePrompt(candidates) {
 // 남은 첫 옵션만 문서의 누락 안내로 요청하는 함수
 function buildPackageOptionPrompt(draft) {
     var labels = { grade: "등급", castle: "캐슬매력", raid: "레이드매력", charm: "매력", durability: "내구도", upgrade: "강화수치", price: "가격", emoji: "외형", name: "이름" };
-    return labels[draft.fields[0]] + "를 확인할 수 없어요. 지급할 값을 입력해주세요.";
+    var label = labels[draft.fields[0]], last = label.charCodeAt(label.length - 1); // 한글 필드명의 받침에 맞는 조사만 선택
+    return label + (last >= 0xAC00 && last <= 0xD7A3 && (last - 0xAC00) % 28 !== 0 ? "을" : "를") + " 확인할 수 없어요. 지급할 값을 입력해주세요.";
 }
 
 // 실제 이름이 확인된 실물만 누락 옵션 입력 대상으로 만드는 함수
