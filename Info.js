@@ -483,6 +483,8 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var gemSummary = getAdventureGemSummary(data, user), gemSlots = Math.floor(level / 10) + gemSummary.extraSlots;
 	var gemLine = "🪽 보석 [" + gemSummary.count + "/" + gemSlots + "칸]" + (gemSummary.creation ? " · 🌌창조 " + gemSummary.creation : "") + (gemSummary.hidden ? " · 🟢히든 " + gemSummary.hidden : "") + "\n";
 	if (gemSummary.count) gemLine += "└ ⚔️ +" + (gemSummary.castle / 10000) + "만 · 👾 +" + (gemSummary.raid / 10000) + "만\n";
+	gemLine += "  └ /보석정보 · /보석가방\n";
+	var canInvestStats = statState.points > 0 && GLOBAL_CONFIG.adventureStats.trees.some(function (tree) { return statState[tree.key][0] < GLOBAL_CONFIG.adventureStats.maxStage; }); // 미완성 트리가 있을 때만 투자 안내
 	var promotionCount = Math.floor(level / 10); // 대승급을 포함한 전체 10레벨 단위 승급 차수
 	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
 	var nextMajor = (Math.floor(level / 100) + 1) * 100;
@@ -494,8 +496,8 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		"📊 EXP: " + formatInfoAdventureExperience(exp) + " / " + formatInfoAdventureExperience(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
 		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n\n" +
 		gemLine + "\n" +
-		"🌳 모험가 스탯트리\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(statState.points) + "개\n" + buildAdventureStatProgress(statState) + "\n" +
-		(statState.points > 0 ? "✨ 투자 가능한 스탯 포인트가 있습니다!\n" : "") + "👉 스탯트리 정보 /스탯\n\n" +
+		"🌳 모험가 스탯트리\n🆙 사용 가능한 스탯 포인트: " + numberWithCommas(statState.points) + "개\n" + buildAdventureStatProgress(statState) + "\n└\n" +
+		(canInvestStats ? "✨ 투자 가능한 스탯 포인트가 있습니다!\n" : "") + "👉 스탯트리 정보 /스탯\n\n" +
 		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
 		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음\n" +
 		"━━━━━━━━━━━━\n" +
@@ -3162,11 +3164,11 @@ function getEquippedPetSkillNames(petSkillData, user) {
 		return !!name;
 	});
 }
-// 영주가 없으면 징수를 중단하고 악덕한 영주의 강제 세율을 일관되게 적용하는 함수
+// 영주가 명시한 저장 세율을 조회하고 미점령 징수를 구분하는 함수
 function getHoiCastleTaxRate(data, petSkillData) {
     var castle = data.HoiCastle;
     if (!castle || !castle.lord) return 0;
-    return hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : Number(castle.taxRate || 0);
+    return castle.taxRate === undefined ? (hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : 0) : Number(castle.taxRate || 0);
 }
 
 // 미점령 포인트 상점의 기본 과세와 점령 영주의 기존 세율을 구분하는 함수
