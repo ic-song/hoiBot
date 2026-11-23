@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.888"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.889"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -2303,6 +2303,7 @@ const GLOBAL_CONFIG = {
         ]
     },
     package: {
+        cancelGuide: '취소하려면 "취소" 또는 /패키지추가취소',
         maxUseOnce: 1000,
         retiredMiniSet: { number: 220, name: "미니펫컬렉션 세트🐹", ticket: "미니펫컬렉션 세트🐹(/미니펫컬렉션오픈)", stone: "미니펫 강화석💫", stoneCount: 1000, grades: ["창조", "창세", "태초+", "태초", "초월+", "초월", "신화+", "신화"] }
     },
@@ -17746,17 +17747,18 @@ replier.reply(
 
                 if (msg === "/패키지추가상태") {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    replier.reply(buildPackageAddStateMessage(sender));
+                    replier.reply(appendPackageAddCancelGuide(sender, buildPackageAddStateMessage(sender)));
                     return;
                 }
 
                 if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg) && String(msg).charAt(0) !== "/" && userState[sender].packageAdd.room === ctx.permissionRoom && userState[sender].packageAdd.rootPath === ctx.rootPath) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
+                    var packageWriting = userState[sender].packageAdd;
+                    if (packageWriting.accountId && packageWriting.accountId !== getPackageGrantIdentity(data, sender) || packageWriting.receivedAt && request.receivedAt < packageWriting.receivedAt) { replier.reply("작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요."); return; }
+                    if (String(msg).trim() === "취소") { replier.reply(cancelPackageAddFlow(sender)); return; }
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
                     var packageHomeInfo = loadJsonFile(homeInfoFile), packageKnownItems = loadJsonFile(itemListPath);
                     var packageDefinitions = getPackageActualDefinitions(data, packageKnownItems, packageInfoData, packageHomeInfo, sender);
-                    var packageWriting = userState[sender].packageAdd;
-                    if (packageWriting.accountId && packageWriting.accountId !== getPackageGrantIdentity(data, sender) || packageWriting.receivedAt && request.receivedAt < packageWriting.receivedAt) { replier.reply("작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요."); return; }
                     var packageWriteEvent = getServerRaidEventId(request.callbackEvent);
                     if (!request.packageWriteRequestId) request.packageWriteRequestId = packageWriteEvent || "request:" + String(java.util.UUID.randomUUID());
                     var packageRepeated = null;
@@ -17775,6 +17777,7 @@ replier.reply(
                     }
                     if (packageFlowResult.registered) delete userState[sender].packageAdd;
                     else if (userState[sender] && userState[sender].packageAdd) {
+                        packageFlowResult.message = appendPackageAddCancelGuide(sender, packageFlowResult.message);
                         packageWriting.receipts.push({ id: request.packageWriteRequestId, message: packageFlowResult.message });
                         if (packageWriting.receipts.length > GLOBAL_CONFIG.adventureGem.receiptLimit) packageWriting.receipts.shift();
                     }
@@ -22271,14 +22274,14 @@ replier.reply(
                     saveJsonFile(data, filePath);
                     return;
                 }
-                if ((msg === "/미니펫추가" || /^\/미니펫추가\s+\S+\s+\S+\s+\S+(?:\s+\S+)*\s+\S+\s+(?!\d+(?:\s|$))\S+\s+\d+\s+\d+$/.test(msg)) && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
+                if ((msg === "/미니펫추가" || /^\/미니펫추가\s+\S+\s+\S+\s+\S+(?:\s+\S+)*\s+\S+\s+(?!\d+(?:\s|$))\S+\s+(?:\d+|\d{1,3}(?:,\d{3})+)\s+(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(msg)) && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     let args = msg.replace("/미니펫추가", "").trim().split(/\s+/);
                     if (args.length < 7) {
                         replier.reply("❌ 사용법: /미니펫추가 [아이디(2단어)] [이름] [이모지] [등급] [가격] [매력도]");
                         return;
                     }
-                    let exp = parseInt(args[args.length - 1], 10);
-                    let price = parseInt(args[args.length - 2], 10);
+                    let exp = parsePackageOptionInteger(args[args.length - 1]);
+                    let price = parsePackageOptionInteger(args[args.length - 2]);
                     let grade = args[args.length - 3];
                     let emoji = args[args.length - 4];
                     let name = args.slice(2, args.length - 4).join(" "); // 이름
@@ -48215,8 +48218,14 @@ function startPackageAddFlow(sender, accountId, receivedAt) {
     lines.push("1단계: 패키지 이름을 입력해주세요.");
     lines.push("예: 모험가 응원 패키지🎁");
     lines.push("");
-    lines.push("취소하려면 \"취소\" 또는 /패키지추가취소");
+    lines.push(GLOBAL_CONFIG.package.cancelGuide);
     return lines.join("\n");
+}
+
+// 작성이 계속되는 화면에 기존 취소 방법을 한 번만 붙이는 함수
+function appendPackageAddCancelGuide(sender, message) {
+    var state = userState[sender] && userState[sender].packageAdd, ctx = getCurrentContext(), guide = GLOBAL_CONFIG.package.cancelGuide;
+    return state && state.room === ctx.permissionRoom && state.rootPath === ctx.rootPath && String(message).indexOf(guide) === -1 ? message + "\n\n" + guide : message;
 }
 
 // 패키지 단계별 추가 상태 취소 함수
@@ -61800,12 +61809,12 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
     out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] [횟수]\n※ 횟수 생략 시 1회 · 장착 펜던트는 0\n※ 펜던트 복원: /펜던트복원 [번호] (장착 펜던트는 0)\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
+    out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n※ [⚒️현재/최대 내구도](+강화수치) · 최대 +40강\n";
     out += "━━━━━━━━━━━━━\n";
     if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
     for (var i = 0; i < bag.length; i++) {
         if (i === 5 && typeof allsee !== "undefined") out += allsee + "\n";
         out += (i + 1) + ". " + formatPendantDisplay(bag[i]) + "\n";
-        if (i + 1 === Math.min(5, bag.length)) out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n※ [⚒️현재/최대 내구도](+강화수치) · 최대 +40강\n";
     }
     return out.trim();
 }
@@ -71393,6 +71402,14 @@ function replyAdventureGemBlocks(replier, blocks) {
     if (text) replier.reply(text);
 }
 
+// 개봉 결과와 디버깅 확률표를 한 응답으로 보내고 다른 결과의 전송 정책은 유지하는 함수
+function replyAdventureGemResult(replier, result, nickname) {
+    var blocks = buildAdventureGemResultBlocks(result, nickname);
+    if (result.kind !== "draw") { replyAdventureGemBlocks(replier, blocks); return; }
+    if (isDebuggerFlag) blocks = blocks.concat(buildAdventureGemProbabilityBlocks({ pity: result.pity }, nickname));
+    replier.reply(blocks.join("\n"));
+}
+
 // 보석가방의 안내·현재 순번·5개 뒤 전체보기를 원문 순서로 만드는 함수
 function buildAdventureGemBagBlocks(data, user, store, nickname) {
     var bag = getAdventureGemBag(store), slots = getAdventureGemSlots(data, user, store), summary = summarizeAdventureGems(store), config = GLOBAL_CONFIG.adventureGem;
@@ -71410,14 +71427,14 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
     var nextLevel = (Math.floor(slots.level / GLOBAL_CONFIG.adventureGem.levelsPerSlot) + 1) * GLOBAL_CONFIG.adventureGem.levelsPerSlot;
     var special = (summary.creation ? "🌌창조 " + summary.creation + "개" : "") + (summary.hidden ? (summary.creation ? " · " : "") + "🟢히든 " + summary.hidden + "개" : "");
     var header = "[" + nickname + "] 님의\n🪽 현재 장착 중인 보석 [" + summary.count + "/" + slots.total + "칸]\n━━━━━━━━━━━━━\n🧭 레벨 장착 공간: " + slots.base + "칸 · Lv." + slots.level + "\n" +
-        GLOBAL_CONFIG.adventureGem.slotItemName + ": +" + slots.extra + "칸\n🧩 총 장착 가능 공간: " + slots.total + "칸\n📭 남은 장착 공간: " + Math.max(0, slots.total - summary.count) + "칸\n🔒 다음 슬롯: Lv." + nextLevel + " · " + (nextLevel - slots.level) + "레벨 남음\n━━━━━━━━━━━━━\n";
+        GLOBAL_CONFIG.adventureGem.slotItemName.replace("(/보석슬롯오픈 숫자)", "") + ": +" + slots.extra + "칸\n🧩 총 장착 가능 공간: " + slots.total + "칸\n📭 남은 장착 공간: " + Math.max(0, slots.total - summary.count) + "칸\n🔒 다음 슬롯: Lv." + nextLevel + " · " + (nextLevel - slots.level) + "레벨 남음\n━━━━━━━━━━━━━\n";
     if (special) header += special + "\n";
     header += "⚔️ 캐슬 +" + formatAdventureGemCharm(summary.castle) + " · 👾 레이드 +" + formatAdventureGemCharm(summary.raid) + allsee;
     var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [보석가방번호] [슬롯번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요."];
     for (var e = 0; e < equipped.length; e++) blocks.push(formatAdventureGemSlot(equipped[e].slot) + " " + formatAdventureGem(equipped[e]).replace(/\n└/g, "\n     └"));
     var emptyHeading = false;
-    if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n🔓 빈 슬롯", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
-    else for (var slot = 1; slot <= slots.total; slot++) if (!occupied[slot]) { if (!emptyHeading) { blocks.push("\n🔓 빈 슬롯"); emptyHeading = true; } blocks.push(formatAdventureGemSlot(slot) + " 🔓 빈 슬롯"); }
+    if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n💛 빈 슬롯 목록", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
+    else for (var slot = 1; slot <= slots.total; slot++) if (!occupied[slot]) { if (!emptyHeading) { blocks.push("\n💛 빈 슬롯 목록"); emptyHeading = true; } blocks.push(formatAdventureGemSlot(slot) + " 🔓 빈 슬롯"); }
     var full = summary.count >= slots.total;
     blocks.push("\n🎒 " + (full ? "교체" : "장착") + " 가능한 보석 목록\n※ 아래 번호는 보석가방 번호예요.\n━━━━━━━━━━━━━");
     for (var b = 0; b < bag.length; b++) blocks.push("[" + (b + 1) + "] " + formatAdventureGem(bag[b]));
@@ -71429,7 +71446,7 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
         else for (var empty = 1; empty <= slots.total; empty++) if (!occupied[empty]) blocks.push("👉 " + empty + "번 슬롯: /보석장착 1 " + empty);
     }
     if (!bag.length) blocks.push("입력: /보석오픈 [수량]\n🛒 구매 안내: /다이아상점");
-    if (!slots.total) blocks.push("레벨 10마다 1칸\n모험가 보석슬롯추가🔓(/보석슬롯오픈 숫자)");
+    if (!slots.total) blocks.push("레벨 10마다 1칸\n모험가 보석슬롯추가🔓");
     blocks.push("\n※ 첫 번째 숫자는 보석가방 번호예요.\n※ 두 번째 숫자는 고정 슬롯번호예요.");
     return blocks;
 }
@@ -71681,7 +71698,7 @@ function runAdventureGemEntry(data, petData, guildData, user, action, request, r
     else if (store.receiptVersion === 1) throw new Error("보석 처리 기록 원본 누락");
     for (var r = 0; r < receipts.rows.length; r++) if (receipts.rows[r].id === request.adventureGemRequestId) {
         if (receipts.rows[r].command !== command) throw new Error("보석 접수 식별값 충돌");
-        replyAdventureGemBlocks(replier, buildAdventureGemResultBlocks(receipts.rows[r].result, nickname)); return;
+        replyAdventureGemResult(replier, receipts.rows[r].result, nickname); return;
     }
     var bag = getAdventureGemBag(store), result = null, isConfirm = /Confirm$/.test(action.kind);
     if (isConfirm) {
@@ -71740,7 +71757,7 @@ function runAdventureGemEntry(data, petData, guildData, user, action, request, r
     if (isConfirm) delete userState[key];
     var ctx = getCurrentContext(); if (ctx) ctx.adventureGemSummaries = {};
     if (notices.length) scheduleAdventureGemNotices(ctx, config.noticeDelayMs);
-    replyAdventureGemBlocks(replier, buildAdventureGemResultBlocks(result, nickname));
+    replyAdventureGemResult(replier, result, nickname);
 }
 
 // 실제 뽑기·조합으로 얻은 초월 이상 보석마다 하나의 공지와 방별 전송 상태를 만드는 함수
@@ -71915,6 +71932,11 @@ function getPackageActualDefinitions(data, items, packages, homes, actor) {
         custom: { mini: actor === "호이 남" || isOrderLogRoomBot(actor), furniture: isAdmin(actor) || isMaster(actor), pendant: isMaster(actor) } };
 }
 
+// 기존 미니펫 생성 명령처럼 명시한 비숫자 등급을 확인하는 함수
+function isMiniPetCreationGrade(value) {
+    return typeof value === "string" && /^(?!\d+$)[^\s\[\]]+$/.test(value);
+}
+
 // 권한이 있는 관리자만 명시한 사용자 지정 실물을 만들고 미제공 값은 보완받는 함수
 function resolvePackageCustomRewardInput(text, type, definitions, count, options, allowBare) {
     if (!definitions.custom || definitions.custom[type] !== true) return null;
@@ -71923,7 +71945,7 @@ function resolvePackageCustomRewardInput(text, type, definitions, count, options
         match = /^(.*?)\(\+([\d,]+)(?:💕|💞)\)\[([^\]]+)\](?:\((?:(?:강화)?\+?(\d+)|MAX)(?:💫)?\))?$/.exec(text);
         if (!match && allowBare && !/[()[\]\r\n]/.test(text)) match = [text, text, null, null, null];
         if (!match) return null;
-        if (match[3] !== null && GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(match[3]) === -1 && ["엘리트", "마스터"].indexOf(match[3]) === -1) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+        if (match[3] !== null && !isMiniPetCreationGrade(match[3])) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
         var sameDisplay = options && typeof options.name === "string" && typeof options.emoji === "string" && options.name + options.emoji === match[1].trim();
         var emoji = sameDisplay ? options.emoji : null;
         name = sameDisplay ? options.name : match[1].trim(); // 새 이름·외형의 경계는 문자열에서 추측하지 않고 기존 생성 명령처럼 따로 확인
@@ -72581,7 +72603,7 @@ function applyPackageOptionAnswer(draft, input) {
         value = text;
     } else if (field === "grade") {
         value = null;
-        if (draft.type === "mini") { if (GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(text) !== -1 || ["엘리트", "마스터"].indexOf(text) !== -1) value = text; }
+        if (draft.type === "mini") { if (isMiniPetCreationGrade(text)) value = text; }
         else if (draft.type === "furniture") { if (text && !/[\r\n\[\]]/.test(text)) value = text; }
         else if (draft.type === "pendant") {
             for (var p = 0; p < PENDANT_GRADE_TABLE.length; p++) if (PENDANT_GRADE_TABLE[p].grade === text) {
