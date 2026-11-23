@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.884"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.885"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -17892,7 +17892,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/패키지사용" || /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg)) {
+                if (msg === "/패키지사용" || parsePackageUseCommand(msg) !== null) {
                     if (!data.member || !data.member[sender]) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 사용 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 사용 로그 데이터
@@ -33883,7 +33883,7 @@ function isServerRaidAdditionalCommand(msg) {
         /^\/패키지가방\s+.+$/.test(msg) ||
         isPackageGrantCommand(msg) ||
         /^\/이체\s+[^\r\n]+\s+\d+\s*$/.test(msg) ||
-        /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg);
+        parsePackageUseCommand(msg) !== null;
 }
 
 // 진행 회차의 정상 공격만 읽어 남은 턴을 안내하는 함수
@@ -49398,10 +49398,10 @@ function grantPackageToUser(data, sender, msg, packageInfoData, packageLogData) 
 
 // 패키지 사용 명령어 파싱 함수
 function parsePackageUseCommand(msg) {
-    var match = /^\/패키지사용\s+(\d+)(?:\s+(\d+))?$/.exec(String(msg || "").trim());
+    var match = /^\/패키지사용[ \t]+(\d+)(?:[ \t]+(\d+|[1-9]\d{0,2}(?:,\d{3})+))?$/.exec(String(msg || "").trim());
     if (!match) return null;
     var bagNumber = Number(match[1]); // 패키지가방 표시 번호
-    var count = match[2] === undefined ? 1 : Number(match[2]); // 생략 시 1개 사용
+    var count = match[2] === undefined ? 1 : parsePackagePositiveCount(match[2]); // 생략 시 1개, 쉼표 수량도 같은 규칙으로 검증
     if (!isPointShopSafeCount(bagNumber) || !isPointShopSafeCount(count)) return null;
     return { bagNumber: bagNumber, count: count };
 }
@@ -71867,7 +71867,7 @@ function splitPackageComposition(input) {
         if (ch === ")" || ch === "]") depth--;
         if (depth < 0) return [text];
         if (depth) continue;
-        var comma = ch === "," && !/^\d{3}(?=[,\s]|$)/.test(text.substring(i + 1));
+        var comma = ch === "," && !/^\d{3}(?=[,\s]|$)/.test(text.substring(i + 1)) && readPackageRewardInput(text.substring(start, i)).count !== null;
         var line = (ch === "\n" || ch === "\r") && !/^\s*└/.test(text.substring(i + 1));
         if (comma || line) {
             var part = text.substring(start, i).trim();
@@ -71887,9 +71887,17 @@ function parsePackagePositiveCount(input) {
     return isPointShopSafeCount(count) && count > 0 ? count : null;
 }
 
+// 옵션의 0은 유지하면서 잘못된 천 단위 쉼표를 숫자로 바꾸지 않는 함수
+function parsePackageOptionInteger(input) {
+    var text = String(input).trim();
+    if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(text)) return NaN;
+    var value = Number(text.replace(/,/g, ""));
+    return isPointShopSafeCount(value) ? value : NaN;
+}
+
 // 같은 실제 이름과 공백 없는 별칭을 비교하되 부분 일치는 허용하지 않는 함수
 function normalizePackageLookup(input) {
-    return String(input || "").replace(/[\s,\uFE0F]/g, "");
+    return String(input || "").replace(/[\s\uFE0F]/g, "");
 }
 
 // 한 보상의 명시 수량과 본문을 분리하며 에메랄드 옵션 줄을 유지하는 함수
@@ -71920,14 +71928,15 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
     }
     if (!type || type === "item") for (i = 0; i < definitions.items.length; i++) if (normalizePackageLookup(definitions.items[i]) === key) choices.push({ type: "item", name: normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(definitions.items[i])) });
     if (!type || type === "mini") {
-        var miniMatch = /^(.*?)\(\+([\d,]+)💕\)\[([^\]]+)\](?:\((?:강화)?\+?(\d+)(?:💫)?\))?$/.exec(text);
+        var miniMatch = /^(.*?)\(\+([\d,]+)(?:💕|💞)\)\[([^\]]+)\](?:\((?:(?:강화)?\+?(\d+)|MAX)(?:💫)?\))?$/.exec(text);
         var miniName = miniMatch ? miniMatch[1] : text;
         for (i = 0; i < definitions.mini.length; i++) {
             var mini = definitions.mini[i], full = mini.name + (mini.emoji || "");
             if (normalizePackageLookup(full) !== normalizePackageLookup(miniName) && normalizePackageLookup(mini.name) !== normalizePackageLookup(miniName)) continue;
             if (miniMatch && mini.grade !== miniMatch[3]) continue;
             if (!miniMatch) return { error: "등급·매력을 확인할 수 없어요. 지급할 값을 입력해주세요." };
-            var miniExp = Number(miniMatch[2].replace(/,/g, "")), upgrade = Number(miniMatch[4] || 0);
+            var miniExp = parsePackageOptionInteger(miniMatch[2]), upgrade = /\(MAX(?:💫)?\)$/.test(text) ? getMiniPetUpgradeMaxLevel(mini) : Number(miniMatch[4] || 0);
+            if (!isPointShopSafeCount(miniExp)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
             if (!isPointShopSafeCount(miniExp) || !isPointShopSafeCount(upgrade) || upgrade > getMiniPetUpgradeMaxLevel(mini)) return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + getMiniPetUpgradeMaxLevel(mini) + "입니다." };
             choices.push({ type: "mini", name: mini.name, object: { name: mini.name, emoji: mini.emoji || "", grade: mini.grade, price: Number(mini.price) || 0, battleExp: miniExp, castleExp: miniExp, raidExp: miniExp, upgrade: upgrade } });
         }
@@ -71939,7 +71948,7 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
             if (normalizePackageLookup(furniture.name + (furniture.emoji || "")) !== normalizePackageLookup(furnitureName)) continue;
             if (furnitureMatch && furniture.grade !== furnitureMatch[3]) continue;
             if (!furnitureMatch) return { error: "등급·매력을 확인할 수 없어요. 지급할 값을 입력해주세요." };
-            var furnitureExp = Number(furnitureMatch[2].replace(/,/g, ""));
+            var furnitureExp = parsePackageOptionInteger(furnitureMatch[2]);
             if (!isPointShopSafeCount(furnitureExp)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
             choices.push({ type: "furniture", name: furniture.name, object: { name: furniture.name, exp: furnitureExp, rate: Number(furniture.rate) || 0, grade: furniture.grade, display: furniture.name + "(+" + numberWithCommas(furnitureExp) + "💕)[" + furniture.grade + "]" } });
         }
@@ -71963,7 +71972,8 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
             var gradeName = gemMatch ? gemMatch[3] : emeraldMatch[1], gradeIndex = -1;
             for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (normalizePackageLookup(GLOBAL_CONFIG.adventureGem.grades[i].name) === normalizePackageLookup(gradeName)) gradeIndex = i;
             if (gradeIndex < 0) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
-            var kind = emeraldMatch ? "emerald" : gemMatch[1] === "루비🔴" ? "ruby" : "sapphire", castle = kind === "sapphire" ? 0 : Number((emeraldMatch ? emeraldMatch[2] : gemMatch[2]).replace(/,/g, "")) * 10000, raid = kind === "ruby" ? 0 : Number((emeraldMatch ? emeraldMatch[3] : gemMatch[2]).replace(/,/g, "")) * 10000;
+            var kind = emeraldMatch ? "emerald" : gemMatch[1] === "루비🔴" ? "ruby" : "sapphire", castle = kind === "sapphire" ? 0 : parsePackageOptionInteger(emeraldMatch ? emeraldMatch[2] : gemMatch[2]) * 10000, raid = kind === "ruby" ? 0 : parsePackageOptionInteger(emeraldMatch ? emeraldMatch[3] : gemMatch[2]) * 10000;
+            if (!isPointShopSafeCount(castle) || !isPointShopSafeCount(raid)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
             var gemValidation = createAdventureGemState("package"); gemValidation.gems = [{ id: "package", kind: kind, grade: gradeIndex, castle: castle, raid: raid, slot: 0 }];
             try { requireAdventureGemState(gemValidation, "package"); } catch (invalidGem) { return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + formatAdventureGemCharm(GLOBAL_CONFIG.adventureGem.grades[gradeIndex].min) + "~" + formatAdventureGemCharm(GLOBAL_CONFIG.adventureGem.grades[gradeIndex].max) + "입니다." }; }
             choices.push({ type: "gem", name: kind, object: { kind: kind, grade: gradeIndex, castle: castle, raid: raid } });
@@ -71981,7 +71991,7 @@ function resolvePackageRewardInput(input, type, definitions, countOverride) {
 
 // 확정된 실제 옵션을 기존 화면 표기로 표시하는 함수
 function formatPackageActualReward(reward) {
-    if (reward.type === "mini") return reward.object.name + (reward.object.emoji || "") + "(+" + numberWithCommas(reward.object.battleExp) + "💕)[" + reward.object.grade + "]" + (reward.object.upgrade ? "(강화+" + reward.object.upgrade + ")" : "");
+    if (reward.type === "mini") return reward.object.name + (reward.object.emoji || "") + "(+" + numberWithCommas(reward.object.battleExp) + "💕)[" + reward.object.grade + "]" + (reward.object.upgrade ? "(" + getMiniPetUpgradeDisplay(reward.object) + "💫)" : "");
     if (reward.type === "furniture") return reward.object.display;
     if (reward.type === "pendant") return formatPendantDisplay(reward.object);
     if (reward.type === "gem") return formatAdventureGem(reward.object);
@@ -72107,7 +72117,10 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         if (text === "이전") { state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
         if (state.step === "BULK_CONFIRM") {
             if (text === "추가") { state.rewards = mergePackageActualRewards(state.rewards, state.bulkRewards); var added = state.bulkRewards.length; state.bulk = null; state.bulkRewards = null; state.step = "REWARD_CHOICE"; return { ok: true, message: "✅ 보상 " + added + "개 항목을 담았어요!\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) }; }
-            if (text === "수정") { state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) }; }
+            if (text === "수정") {
+                state.bulk = state.bulkRewards.map(function (reward) { return { raw: formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count), reward: JSON.parse(JSON.stringify(reward)) }; }); // 표시한 합산 항목과 수정 번호를 일치
+                state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) };
+            }
             return { ok: false, message: "추가 / 수정 / 이전" };
         }
         if (state.step === "BULK_PICK_ERROR") { var index = parsePackagePositiveCount(text); if (!index || !state.bulk[index - 1] || state.bulk[index - 1].removed) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.fixIndex = index - 1; state.step = "BULK_FIX"; return { ok: true, message: "수정할 내용을 보내주세요.\n이 보상을 빼려면 \"빼기\"\n돌아가려면 \"이전\"" }; }
@@ -72147,13 +72160,13 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         if (text === "4" || text === "돌아가기") { state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
         return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
     }
-    if (state.step === "EDIT_PICK") { var selected = parsePackagePositiveCount(text); if (!selected || !state.rewards[selected - 1]) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.editRewardIndex = selected - 1; state.step = "EDIT_REWARD"; return { ok: true, message: state.rewards[selected - 1].type === "point" ? "지급액 변경 / 빼기 / 돌아가기" : "수량 변경 / 옵션 수정 / 빼기 / 돌아가기" }; }
+    if (state.step === "EDIT_PICK") { var selected = parsePackagePositiveCount(text); if (!selected || !state.rewards[selected - 1]) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.editRewardIndex = selected - 1; state.step = "EDIT_REWARD"; return { ok: true, message: getPackageRewardEditChoices(state.rewards[selected - 1]) }; }
     if (state.step === "EDIT_REWARD") {
         if (text === "빼기") { state.rewards.splice(state.editRewardIndex, 1); delete state.editRewardIndex; state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
         if (text === "돌아가기") { delete state.editRewardIndex; state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
         state.rewardType = state.rewards[state.editRewardIndex].type;
-        if (text === "수량 변경") { state.pendingReward = JSON.parse(JSON.stringify(state.rewards[state.editRewardIndex])); state.step = "ACTUAL_COUNT"; return { ok: true, message: "몇 개 넣을까요?\n예: 1" }; }
-        if (text === "옵션 수정" || text === "지급액 변경") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
+        if (text === "수량 변경" && state.rewardType !== "point") { state.pendingReward = JSON.parse(JSON.stringify(state.rewards[state.editRewardIndex])); state.step = "ACTUAL_COUNT"; return { ok: true, message: "몇 개 넣을까요?\n예: 1" }; }
+        if (text === "옵션 수정" && ["mini", "furniture", "pendant", "gem"].indexOf(state.rewardType) !== -1 || text === "지급액 변경" && state.rewardType === "point") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
         return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
     }
     if (state.step === "CONFIRM") {
@@ -72165,14 +72178,30 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
             if (packages[n] && packages[n].name === state.name) return { ok: false, message: "같은 이름의 패키지가 있어요. 다른 이름을 입력해주세요." };
         }
         if (!state.rewards.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요." };
+        var currentRewards = [], definitionChanged = false; // 작성 뒤 바뀐 정의는 새 미리보기 확인 후에만 등록
         for (var r = 0; r < state.rewards.length; r++) {
-            var validation = validatePackageActualReward(state.rewards[r], definitions);
+            var originalReward = state.rewards[r], currentReward = originalReward;
+            if (originalReward.type !== "point") {
+                var currentInput = resolvePackageRewardInput(formatPackageActualReward(originalReward) + " x" + originalReward.count, originalReward.type, definitions);
+                if (!currentInput.reward) return { ok: false, message: currentInput.error || "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+                currentReward = currentInput.reward;
+            }
+            var validation = validatePackageActualReward(currentReward, definitions);
             if (validation) return { ok: false, message: validation };
+            if (JSON.stringify(currentReward) !== JSON.stringify(originalReward)) definitionChanged = true;
+            currentRewards.push(currentReward);
         }
+        if (definitionChanged) { state.rewards = currentRewards; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
         var info = createPackageInfoFromState(state, packages); info.registrationId = state.id; packages.push(info);
         return { ok: true, registered: true, packageInfoData: packages, message: "✅ 패키지 추가 완료!\n\n번호: " + packages.length + "\n패키지: " + info.name + "\n설명: " + info.desc + "\n구성: " + formatPackageRewardSummary(info.rewards) };
     }
     return { ok: false, message: "작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요." };
+}
+
+// 보상에 실제로 존재하는 편집 항목만 기획서의 기존 선택 문구로 제공하는 함수
+function getPackageRewardEditChoices(reward) {
+    if (reward.type === "point") return "지급액 변경 / 빼기 / 돌아가기";
+    return ["mini", "furniture", "pendant", "gem"].indexOf(reward.type) !== -1 ? "수량 변경 / 옵션 수정 / 빼기 / 돌아가기" : "수량 변경 / 빼기 / 돌아가기";
 }
 
 // 등록과 사용 직전에 실제 정의와 모든 수량·옵션을 다시 대조하는 함수
@@ -72380,7 +72409,8 @@ function getPackageOptionDraft(text, type, definitions, count) {
         var kind = text.indexOf("루비") === 0 ? "ruby" : text.indexOf("사파이어") === 0 ? "sapphire" : "emerald", g = /\[([^\]]+)\]/.exec(text), grade = null;
         if (g) for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === g[1].replace("🌌", "")) grade = i;
         var charm = /\(\+([\d,]+)만/.exec(text), castle = /⚔️?\s*\+([\d,]+)만/.exec(text), raid = /👾\s*\+([\d,]+)만/.exec(text);
-        var gem = { kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : charm ? Number(charm[1].replace(/,/g, "")) * 10000 : castle ? Number(castle[1].replace(/,/g, "")) * 10000 : null, raid: kind === "ruby" ? 0 : charm ? Number(charm[1].replace(/,/g, "")) * 10000 : raid ? Number(raid[1].replace(/,/g, "")) * 10000 : null };
+        var gem = { kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : charm ? parsePackageOptionInteger(charm[1]) * 10000 : castle ? parsePackageOptionInteger(castle[1]) * 10000 : null, raid: kind === "ruby" ? 0 : charm ? parsePackageOptionInteger(charm[1]) * 10000 : raid ? parsePackageOptionInteger(raid[1]) * 10000 : null };
+        if (gem.castle !== null && !isPointShopSafeCount(gem.castle) || gem.raid !== null && !isPointShopSafeCount(gem.raid)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
         var fields = []; if (grade === null) fields.push("grade"); if (gem.castle === null) fields.push("castle"); if (gem.raid === null) fields.push("raid");
         if (fields.length) return { draft: { type: "gem", object: gem, count: count, fields: fields } };
         return null;
