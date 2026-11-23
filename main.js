@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.883"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.884"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -86,7 +86,16 @@ var guildLevelTable = {
     17: { need: 120000, reward: { fund: 700000000000 } },
     18: { need: 150000, reward: { miniPet: 70000 } },
     19: { need: 180000, reward: { petSkillBook: 1500 } },
-    20: { need: 250000, reward: { fund: 900000000000 } }
+    20: { need: 250000, reward: { fund: 900000000000 } },
+    21: { need: 300000, reward: { miniPet: 80000 } },
+    22: { need: 350000, reward: { pet: 120000 } },
+    23: { need: 400000, reward: { fund: 1000000000000 } },
+    24: { need: 450000, reward: { diamond: 2000 } },
+    25: { need: 500000, reward: { petSkillBook: 1500 } },
+    26: { need: 550000, reward: { petFoodAll: 350000 } },
+    27: { need: 600000, reward: { miniPet: 90000 } },
+    28: { need: 650000, reward: { fund: 1100000000000 } },
+    29: { need: 700000, reward: { diamond: 2000 } }
 };
 
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
@@ -1651,7 +1660,7 @@ const GLOBAL_CONFIG = {
             { title: "펫·친밀도", emoji: "🐾", intro: "함께하는 펫을 확인하고 친밀도를 알아봐요!", learn: ["펫정보에서 펫과 친밀도를 확인해요.", "친밀도와 펫 성장의 관계를 알아봐요.", "아이템은 보유 수량과 설명을 먼저 확인해요."], commands: ["/펫정보", "/가방"], check: "친밀도와 관련 아이템을 확인할 수 있나요?", note: "/냠냠 수량의 대상 아이템과 결과는 기존 게임 안내를 따라요. 재화 사용은 필수가 아니에요." },
             { title: "펫스킬", emoji: "📙", intro: "보유한 스킬과 장착 효과를 확인해요!", learn: ["보유 스킬과 장착 스킬을 구분해요.", "스킬마다 효과가 적용되는 조건을 확인해요.", "장착·해제 시 달라지는 효과를 알아봐요."], commands: ["/펫스킬", "/펫스킬가방", "/펫스킬정보 스킬이름"], check: "내 장착 스킬의 효과를 설명할 수 있나요?", note: "교체할 스킬이 있고 원할 때만 /펫스킬장착 스킬가방번호를 안내해요. 기존 스킬을 임의 해제하지 않아요." },
             { title: "미니펫", emoji: "🐣", intro: "미니펫의 장착과 성장 방법을 알아봐요!", learn: ["주력·보조 장착과 보유 미니펫을 구분해요.", "강화 전 소모 재화와 안내를 먼저 확인해요."], commands: ["/미니펫정보", "/미니펫가방"], check: "장착 상태와 강화 전 확인 사항을 알고 있나요?", note: "선택 실습: /미니펫장착 가방번호, /미니펫보조장착 가방번호. /미니펫강화 0 횟수는 대표, 00 횟수는 보조, 양수는 가방 번호예요. 강화는 필수가 아니에요." },
-            { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
+            { title: "펜던트 · 🪽 보석", emoji: "📿", intro: "펜던트 강화·복원과 보석 장착·교체를 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요.", "루비🔴 · 캐슬매력⚔️ 증가", "사파이어🔵 · 레이드 매력👾 증가", "히든 에메랄드🟢 · 캐슬·레이드 매력 동시 증가", "미장착 보석: 가방 보관·조합·개인 판매·자유시장 거래 가능", "🔗 장착하면 거래·조합할 수 없어요.", "다른 보석으로 교체하면 이 보석은 소멸해요."], commands: ["/펜던트가방", "/펜던트정보 0", "/보석가방", "/보석정보"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?\n보석 교체 시 소멸 여부", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요.\n📚 보석 자세히: /보석가이드" },
             {"title":"펫홈·가구","emoji":"🏡","intro":"내 펫홈과 가구 효과를 한눈에 확인해요!","learn":["보유 가구와 장착 가구를 구분해요.","집 면적·장착칸·가구 효과를 구분해요.","가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.","펫홈 1평당 캐슬매력 +75,000, 레이드매력 +75,000이 증가해요.","평수 매력 보너스는 /가구정보에서 확인해요.","루미에르 빌리지와 별채의 역할을 알아봐요."],"commands":["/펫홈","/가구정보"],"check":"장착 상태와 가구 효과를 어디서 확인하나요?\n펫홈 1평당 캐슬·레이드 매력이 얼마나 증가하나요?","note":"현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요."},
             { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 8개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령5억·방어2.5억, 기타 점령3억·방어1억, 공격 실패1억이에요. 특수광산 승리 시 길드창고에 조각1개·다이아1개·미니펫 강화석5개 중 해당 광산 보상을 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공50%·변경하루2회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
             { title: "거래·이용 수칙", emoji: "🤝", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매상품. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
@@ -2294,7 +2303,8 @@ const GLOBAL_CONFIG = {
         ]
     },
     package: {
-        maxUseOnce: 1000
+        maxUseOnce: 1000,
+        retiredMiniSet: { number: 220, name: "미니펫컬렉션 세트🐹", ticket: "미니펫컬렉션 세트🐹(/미니펫컬렉션오픈)", stone: "미니펫 강화석💫", stoneCount: 1000, grades: ["창조", "창세", "태초+", "태초", "초월+", "초월", "신화+", "신화"] }
     },
     admin: { // 관리자 보상 설정
         dailyPayoutPoint: 300000000
@@ -3141,8 +3151,8 @@ blockedNicknameTerms: [
         furnitureGrades: ["리브", "쁘띠", "부띠끄", "시그니엘", "그랑 루미에르", "로열 루미에르", "아르카나 루미에르"],
         searchGradeAliases: { "로열": "로열 루미에르", "아르카나": "아르카나 루미에르" },
         petSkillSearchAliases: ["펫스킬북", "펫스킬"],
-        searchCategories: { "일반아이템": "bag", "아이템": "bag", "미니펫": "miniPet", "펜던트": "pendant", "가구": "furniture", "펫스킬": "skill", "패키지": "package" },
-        categoryLabels: { bag: "일반 아이템", furniture: "가구", miniPet: "미니펫", package: "패키지", pendant: "펜던트", skill: "펫스킬" },
+        searchCategories: { "일반아이템": "bag", "아이템": "bag", "미니펫": "miniPet", "펜던트": "pendant", "가구": "furniture", "펫스킬": "skill", "패키지": "package", "보석": "gem" },
+        categoryLabels: { bag: "일반 아이템", furniture: "가구", miniPet: "미니펫", package: "패키지", pendant: "펜던트", skill: "펫스킬", gem: "보석" },
         blockedItems: ["자동탐험권🌄", "자동일퀘권📝", "자유시장회원권🏪", "티어 승급티켓🎟", "고급 티어 승급티켓🎫", "펫 친밀도🐾", "다이아상자💎", "1억포인트상자🪙", "럭키박스🍀", "다이아상자💎(소)", "다이아상자💎(중)", "다이아상자💎(대)"],
         blockedCurrencies: ["다이아💎", "포인트🅟", "보유 포인트🅟"]
     },
@@ -3511,14 +3521,31 @@ blockedNicknameTerms: [
         maxAttempts: 100,
         logLimit: 50,
         options: {
-            "1": { key: "castle", emoji: "⚔️", name: "캐슬 매력", cost: 30, maxUnits: 500 },
-            "2": { key: "raid", emoji: "👾", name: "레이드 매력", cost: 30, maxUnits: 500 },
-            "3": { key: "territoryPoint", emoji: "💸", name: "영지 공격 시 포인트 획득", cost: 15, maxUnits: 1000 },
+            "1": { key: "castle", emoji: "⚔️", name: "캐슬매력", cost: 30, maxUnits: 700 },
+            "2": { key: "raid", emoji: "👾", name: "레이드매력", cost: 30, maxUnits: 700 },
+            "3": { key: "territoryPoint", emoji: "💸", name: "영지 공격 시 포인트 획득", cost: 15, maxUnits: 2000 },
             "4": { key: "ambushDefense", emoji: "🛡️", name: "기습방어확률", cost: 40, maxUnits: 250 }
         }
     },
     guild: { // 길드 기본 운영 설정
+        maxLevel: 30,
+        extendedRewardStartLevel: 22,
         noticeMaxLength: 100
+    },
+    adventureGem: { // 운영자 확정값과 보석의 공통 정의
+        bagLimit: 50, maxOpenCount: 100, salePoint: 20000000, levelsPerSlot: 10, charmStep: 100000, pityCount: 100, gaugeSlots: 10,
+        ticketName: "모험가 보석뽑기🪎(/보석오픈 숫자)", slotItemName: "모험가 보석슬롯추가🔓(/보석슬롯오픈 숫자)",
+        accountPrefix: "adventureGemAccount_", receiptPrefix: "adventureGemReceipt_", noticeName: "adventureGemNotices.json",
+        receiptLimit: 20, confirmationMs: 60000, messageLimit: 3500, slotMessageBatch: 100, noticeDelayMs: 1000, noticeRetryMs: 5000, cachePrefix: "hoiBot.adventureGem.summary.", revisionPrefix: "hoiBot.adventureGem.revision.", replyPrefix: "hoiBot.adventureGem.reply.",
+        grades: [
+            { name: "하급", weight: 3000, min: 300000, max: 500000, combinePoint: 100000000 },
+            { name: "중급", weight: 2500, min: 600000, max: 900000, combinePoint: 500000000 },
+            { name: "상급", weight: 2000, min: 1000000, max: 1500000, combinePoint: 1000000000 },
+            { name: "최상급", weight: 1700, min: 1800000, max: 2800000, combinePoint: 5000000000 },
+            { name: "초월", weight: 600, min: 3500000, max: 5500000, combinePoint: 20000000000 },
+            { name: "창세", weight: 180, min: 7000000, max: 10000000, combinePoint: 50000000000 },
+            { name: "🌌창조", weight: 20, min: 14000000, max: 20000000, combinePoint: 100000000000 }
+        ]
     },
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
@@ -4406,6 +4433,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         publishMainDiagnosticOwner(request);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        if (!adventureGemNoticeBootstrapped[ctx.rootPath]) {
+            adventureGemNoticeBootstrapped[ctx.rootPath] = true;
+            scheduleAdventureGemNotices(createCommandContext(ctx.isDev, ctx.permissionRoom), GLOBAL_CONFIG.adventureGem.noticeDelayMs);
+        }
         var diamondPermissionCommand = getServerRaidAdmissionCommand(msg);
         if ((/^\/다이아(?:명령어|기준설정|시세설정|상점(?:추가|삭제|관리|판매기록))(?:\s|$)/.test(diamondPermissionCommand) || /^\/포인트(?:기준설정|다이아통계|통계(?:다이아)?)(?:\s|$)/.test(diamondPermissionCommand)) && !isMaster(sender)) {
             var diamondPermissionData = loadJsonFile(filePath, "bootstrap"), diamondPermissionGuild = loadJsonFile(guildPath);
@@ -7869,7 +7900,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
 
                         for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
                             var sd = PET_SKILL_LIST[ps];
-                            if (sd.grade !== currentGrade || sd.hideFromRateTable === true) continue;
+                            if (sd.grade !== currentGrade || sd.hideFromRateTable === true || isRetiredPetSkill(sd.name)) continue;
 
                             var rate = getPetSkillActualRate(sd);
                             totalPercent += rate;
@@ -8376,12 +8407,24 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         if (!marketPending || marketPending.action !== "buy") { replier.reply("❌ 확인할 구매 요청이 없습니다. 구매번호를 다시 입력해주세요."); return; }
                         msg = msg === "/거래확인 1" ? "자유시장거래" : "자유시장거래취소";
                     }
-                    replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
+                    var marketGemCommand = msg === "자유시장거래" ? (getFreeMarketConfirmState(sender) || {}).command || msg : msg;
+                    var marketGemListing = /^\/(?:자유시장구매|자유시장취소|거래소강제취소)\s+\d+$/.test(marketGemCommand) ? getFreeMarketListingByDisplayNo(marketV2, Number(marketGemCommand.split(/\s+/)[1])) : null;
+                    var marketGemTarget = /^\/보석거래등록(?:\s|$)/.test(marketGemCommand) || marketGemListing && marketGemListing.type === "gem" ? /^\/거래소강제취소\s/.test(marketGemCommand) ? marketGemListing.seller : sender : null;
+                    var marketGemPaths = [];
+                    if (marketGemTarget) {
+                        var marketGemOwner = getAdventureGemAccountId(data, marketGemTarget);
+                        ctx.marketGemState = createAdventureGemState(marketGemOwner || ""); ctx.marketGemUser = marketGemTarget;
+                        ctx.marketGemPath = marketGemOwner ? resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(marketGemOwner, false)) : null;
+                        if (ctx.marketGemPath && new java.io.File(ctx.marketGemPath).exists()) ctx.marketGemState = requireAdventureGemState(loadJsonFile(ctx.marketGemPath), marketGemOwner);
+                        else if (data.member[marketGemTarget].adventureGemInitialized || ctx.marketGemPath && (new java.io.File(ctx.marketGemPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(ctx.marketGemPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(ctx.marketGemPath)).exists())) throw new Error("시장 보석 원본 누락");
+                        if (ctx.marketGemPath) marketGemPaths.push(ctx.marketGemPath);
+                    }
+                    replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier, marketGemPaths);
                 }
 
 
                 if (isFreeMarketV2Command(msg)) {
-                    getCurrentContext().marketRegistrationFingerprint = JSON.stringify([data.member[sender].bag, petData[sender], petSkillData[sender], loadJsonFile(homeDataFile)[sender]]);
+                    getCurrentContext().marketRegistrationFingerprint = JSON.stringify([data.member[sender].bag, petData[sender], petSkillData[sender], loadJsonFile(homeDataFile)[sender], ctx.marketGemState || null]);
                 }
                 var freeMarketConfirmState = null;
                 var isFreeMarketConfirmed = false;
@@ -8742,6 +8785,21 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
+                if (/^\/보석거래등록\s+\d+\s+\d+$/.test(msg)) {
+                    var gemMarketParts = msg.split(/\s+/), gemMarketIndex = Number(gemMarketParts[1]), gemMarketPrice = Number(gemMarketParts[2]), gemMarketStore = ctx.marketGemState;
+                    var gemMarketBag = gemMarketStore ? getAdventureGemBag(gemMarketStore) : [], gemMarketGem = gemMarketBag[gemMarketIndex - 1];
+                    if (!gemMarketGem) { replyAdventureGemBlocks(replier, buildAdventureGemError({ error: "number" }, { action: "/보석장착" }, data, sender, gemMarketStore || createAdventureGemState(""), checkRank(data, petData, guildData, sender))); return; }
+                    if (!isPointShopSafeCount(gemMarketPrice) || gemMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
+                    var gemMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender), gemMarketActive = countFreeMarketActiveListingsBySeller(marketV2, sender);
+                    if (gemMarketActive >= gemMarketLimit) { replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + gemMarketActive + "/" + gemMarketLimit + "건\n요청: +1건"); return; }
+                    if (!isFreeMarketConfirmed) { setFreeMarketConfirmState(sender, "register", msg, 0); replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatAdventureGem(gemMarketGem), 1, gemMarketPrice, 0, "", petSkillData)); return; }
+                    gemMarketStore.gems = gemMarketStore.gems.filter(function (row) { return row.id !== gemMarketGem.id; });
+                    addFreeMarketListing(marketV2, "gem", sender, gemMarketGem.kind === "ruby" ? "루비🔴" : gemMarketGem.kind === "sapphire" ? "사파이어🔵" : "에메랄드🟢", 1, gemMarketPrice, { gems: [cloneFreeMarketObject(gemMarketGem)] }, 0, false);
+                    saveJsonFile(gemMarketStore, ctx.marketGemPath); saveJsonFile(marketV2, freeMarketPath);
+                    clearFreeMarketConfirmState(sender);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatAdventureGem(gemMarketGem) + "] 1개가\n💎" + numberWithCommas(gemMarketPrice) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender, petSkillData)); return;
+                }
+
                 if (isFreeMarketRegisterCommand(msg)) {
                     replier.reply(buildFreeMarketRegisterUsageMessage());
                     return;
@@ -8768,6 +8826,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (cancelListing.type === "pendant") saveJsonFile(petData, memberPetPath);
                     if (cancelListing.type === "furniture") saveJsonFile(cancelHomeData, homeDataFile, false, cancelHomeDataRollbackText);
                     if (cancelListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+                    if (cancelListing.type === "gem") saveJsonFile(ctx.marketGemState, ctx.marketGemPath);
                     saveJsonFile(freeMarketCancelData, freeMarketPath, false, freeMarketRollbackText);
                     replier.reply(
                         "🏪 자유시장 등록 취소\n" +
@@ -8799,6 +8858,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (forceListing.type === "pendant") saveJsonFile(petData, memberPetPath);
                     if (forceListing.type === "furniture") saveJsonFile(forceHomeData, homeDataFile, false, forceHomeDataRollbackText);
                     if (forceListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+                    if (forceListing.type === "gem") saveJsonFile(ctx.marketGemState, ctx.marketGemPath);
                     saveJsonFile(freeMarketForceData, freeMarketPath, false, freeMarketRollbackText);
                     replier.reply(
                         "🛠 자유시장 강제취소 완료\n" +
@@ -8906,6 +8966,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (buyListing.type === "pendant") saveJsonFile(petData, memberPetPath);
                     if (buyListing.type === "furniture") saveJsonFile(buyHomeData, homeDataFile, false, buyHomeDataRollbackText);
                     if (buyListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+                    if (buyListing.type === "gem") saveJsonFile(ctx.marketGemState, ctx.marketGemPath);
                     saveJsonFile(freeMarketBuyData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
@@ -17516,6 +17577,7 @@ replier.reply(
                             if (!castleSiegeFlag) {
                                 if (data.member && data.member[sender]) {
                                     let resultMsg = runOpenAll(sender, data, petData, replier, guildData);
+                                    if (ctx.guildProgressDirty) { publishOperationalRows(buildGuildProgressPublicationRows(data, petData, guildData)); ctx.guildProgressDirty = false; }
                                     replier.reply(resultMsg);
                                 }
                             }
@@ -17541,6 +17603,7 @@ replier.reply(
                                 resultMsg += "\n━━━━━━━━━━━━━━━\n";
                                 // 🎁 전체 오픈
                                 let openResult = runOpenAll(sender, data, petData, replier, guildData);
+                                if (ctx.guildProgressDirty) { publishOperationalRows(buildGuildProgressPublicationRows(data, petData, guildData)); ctx.guildProgressDirty = false; }
                                 resultMsg += "🎁 [전체 오픈 결과]\n" + openResult + "\n\n";
                                 resultMsg += "\n━━━━━━━━━━━━━━━\n";
                                 // 🛠️ 전체 조합
@@ -17656,16 +17719,22 @@ replier.reply(
                     return;
                 }
 
+                var adventureGemRequest = getAdventureGemRequest(msg);
+                if (adventureGemRequest) {
+                    runAdventureGemEntry(data, petData, guildData, sender, adventureGemRequest, request, replier);
+                    return;
+                }
+
                 if (msg === "/패키지리스트") {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 패키지 정보 데이터
-                    replier.reply(buildPackageListMessage(packageInfoData));
+                    replyPackageContent(replier, buildPackageListMessage(packageInfoData));
                     return;
                 }
 
                 if (msg === "/패키지추가시작") {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
-                    replier.reply(startPackageAddFlow(sender));
+                    replier.reply(startPackageAddFlow(sender, getPackageGrantIdentity(data, sender), request.receivedAt));
                     return;
                 }
 
@@ -17681,12 +17750,35 @@ replier.reply(
                     return;
                 }
 
-                if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg)) {
+                if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg) && String(msg).charAt(0) !== "/" && userState[sender].packageAdd.room === ctx.permissionRoom && userState[sender].packageAdd.rootPath === ctx.rootPath) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
-                    var packageFlowResult = handlePackageAddFlowMessage(sender, msg, packageInfoData);
-                    if (packageFlowResult.ok && packageFlowResult.packageInfoData) saveJsonFile(packageFlowResult.packageInfoData, packageInfoPath);
-                    replier.reply(packageFlowResult.message);
+                    var packageHomeInfo = loadJsonFile(homeInfoFile), packageKnownItems = loadJsonFile(itemListPath);
+                    var packageDefinitions = { items: Object.keys(getDiamondShopItemNames(data, packageKnownItems, packageInfoData)), mini: miniPetData.miniPet, furniture: packageHomeInfo.furniture };
+                    var packageWriting = userState[sender].packageAdd;
+                    if (packageWriting.accountId && packageWriting.accountId !== getPackageGrantIdentity(data, sender) || packageWriting.receivedAt && request.receivedAt < packageWriting.receivedAt) { replier.reply("작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요."); return; }
+                    var packageWriteEvent = getServerRaidEventId(request.callbackEvent);
+                    if (!request.packageWriteRequestId) request.packageWriteRequestId = packageWriteEvent || "request:" + String(java.util.UUID.randomUUID());
+                    var packageRepeated = null;
+                    for (var pkgEvent = 0; pkgEvent < packageWriting.receipts.length; pkgEvent++) if (packageWriting.receipts[pkgEvent].id === request.packageWriteRequestId) packageRepeated = packageWriting.receipts[pkgEvent];
+                    if (packageRepeated) { replier.reply(packageRepeated.message); return; }
+                    var packageFlowResult = handlePackageActualFlowMessage(sender, msg, packageInfoData, packageDefinitions);
+                    if (packageFlowResult.ok && packageFlowResult.packageInfoData) {
+                        try { saveJsonFile(packageFlowResult.packageInfoData, packageInfoPath); endDataSaveTransaction(); beginDataSaveTransaction(); }
+                        catch (packageWriteError) {
+                            var packagePersisted = requirePackageInfoData(loadJsonFile(packageInfoPath)), packagePersistedEntry = null;
+                            for (var pp = 0; pp < packagePersisted.length; pp++) if (packagePersisted[pp] && packagePersisted[pp].registrationId === packageWriting.id) packagePersistedEntry = packagePersisted[pp];
+                            if (!packagePersistedEntry) { replier.reply("❌ 저장하지 못했어요. 입력 내용은 유지했으니 다시 등록해주세요."); return; }
+                            if (packagePersistedEntry.name !== packageWriting.name || JSON.stringify(packagePersistedEntry.rewards) !== JSON.stringify(packageWriting.rewards)) throw new Error("패키지 등록 저장 결과 불일치");
+                            endDataSaveTransaction(); beginDataSaveTransaction();
+                        }
+                    }
+                    if (packageFlowResult.registered) delete userState[sender].packageAdd;
+                    else if (userState[sender] && userState[sender].packageAdd) {
+                        packageWriting.receipts.push({ id: request.packageWriteRequestId, message: packageFlowResult.message });
+                        if (packageWriting.receipts.length > GLOBAL_CONFIG.adventureGem.receiptLimit) packageWriting.receipts.shift();
+                    }
+                    replyPackageContent(replier, packageFlowResult.message);
                     return;
                 }
 
@@ -17699,7 +17791,8 @@ replier.reply(
                 if (/^\/패키지추가\s+.+\|.+\|.+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 빠른 추가용 패키지 목록
-                    var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData);
+                    var packageAddHomeInfo = loadJsonFile(homeInfoFile), packageAddItems = loadJsonFile(itemListPath);
+                    var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData, { items: Object.keys(getDiamondShopItemNames(data, packageAddItems, packageInfoData)), mini: miniPetData.miniPet, furniture: packageAddHomeInfo.furniture });
                     if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
                     replier.reply(packageAddResult.message);
                     return;
@@ -17708,7 +17801,8 @@ replier.reply(
                 if (/^\/패키지수정\s+\d+\s+.+$/.test(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 수정 대상 패키지 목록
-                    var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData);
+                    var packageEditHomeInfo = loadJsonFile(homeInfoFile), packageEditItems = loadJsonFile(itemListPath);
+                    var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData, { items: Object.keys(getDiamondShopItemNames(data, packageEditItems, packageInfoData)), mini: miniPetData.miniPet, furniture: packageEditHomeInfo.furniture });
                     if (packageEditResult.ok) saveJsonFile(packageEditResult.packageInfoData, packageInfoPath);
                     replier.reply(packageEditResult.message);
                     return;
@@ -17802,20 +17896,7 @@ replier.reply(
                     if (!data.member || !data.member[sender]) return;
                     var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 사용 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 사용 로그 데이터
-                    var halloweenPackageUse = parsePackageUseCommand(msg);
-                    var halloweenPackageBag = getUserPackageBagList(data, sender, packageInfoData);
-                    var halloweenPackageRow = halloweenPackageUse && halloweenPackageBag[halloweenPackageUse.bagNumber - 1];
-                    if (halloweenPackageRow && hasHalloweenPackageReward(halloweenPackageRow.packageInfo)) {
-                        var halloweenUseResult = runHalloweenEntry("packageUse", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent });
-                        replier.reply(halloweenUseResult.message);
-                        return;
-                    }
-                    var packageUseResult = usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData);
-                    if (packageUseResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(packageUseResult.packageLogData, packageLogPath);
-                    }
-                    replier.reply(packageUseResult.message);
+                    runPackageActualUseEntry(data, petData, petSkillData, guildData, sender, msg, packageInfoData, packageLogData, request, replier);
                     return;
                 }
 
@@ -21575,10 +21656,28 @@ replier.reply(
                         replier.reply("❌ 가구·미니펫 정리 수량이 일치하지 않아 저장을 중단했습니다. 관리자 로그를 확인해주세요.");
                         return;
                     }
+                    var textGemResult = { ok: false, totalRemovedCount: 0, userLogLines: [] }, textCleanupRows = [], textGemOwners = {};
+                    for (var textGemUser in data.member) if (Object.prototype.hasOwnProperty.call(data.member, textGemUser)) {
+                        var textGemOwner = getAdventureGemAccountId(data, textGemUser);
+                        if (!textGemOwner) continue;
+                        if (textGemOwners[textGemOwner]) throw new Error("보석 정리 계정 ID 중복");
+                        textGemOwners[textGemOwner] = true;
+                        var textGemName = getAdventureGemFileName(textGemOwner, false), textGemPath = resolveActiveDataPath(DATA_ROOT_PATH + textGemName);
+                        if (!new java.io.File(textGemPath).exists()) { if (data.member[textGemUser].adventureGemInitialized) throw new Error("보석 정리 원본 누락"); continue; }
+                        var textGemState = requireAdventureGemState(loadJsonFile(textGemPath), textGemOwner), textGemBag = getAdventureGemBag(textGemState);
+                        if (textGemBag.length <= GLOBAL_CONFIG.adventureGem.bagLimit) continue;
+                        var textGemRemoved = textGemBag.slice(GLOBAL_CONFIG.adventureGem.bagLimit), textGemIds = {};
+                        for (var tg = 0; tg < textGemRemoved.length; tg++) textGemIds[textGemRemoved[tg].id] = true;
+                        textGemState.gems = textGemState.gems.filter(function (gem) { return !textGemIds[gem.id]; });
+                        textCleanupRows.push({ name: textGemName, text: JSON.stringify(textGemState) });
+                        textGemResult.totalRemovedCount += textGemRemoved.length; textGemResult.ok = true;
+                        textGemResult.userLogLines.push("- [" + checkRank(data, petData, guildData, textGemUser) + "] " + textGemRemoved.length + "개 삭제");
+                    }
                     var shouldSaveTextCleanPetData = miniCleanAllResult.ok || pendantCleanAllResultForText.ok; // 미니펫·펜던트 정리 결과 저장 여부
-                    if (shouldSaveTextCleanPetData) saveJsonFile(petData, memberPetPath);
-                    if (furnitureCleanAllResult.ok) saveJsonFile(textCleanHomeData, homeDataFile);
-                    replier.reply(buildTextLengthCleanupMessage(miniCleanAllResult, furnitureCleanAllResult, pendantCleanAllResultForText));
+                    if (shouldSaveTextCleanPetData) textCleanupRows.push({ name: "member_pet.json", text: JSON.stringify(petData) });
+                    if (furnitureCleanAllResult.ok) textCleanupRows.push({ name: "petSweetHomeData.json", text: JSON.stringify(textCleanHomeData) });
+                    if (textCleanupRows.length) publishOperationalRows(textCleanupRows);
+                    replier.reply(buildTextLengthCleanupMessage(miniCleanAllResult, furnitureCleanAllResult, pendantCleanAllResultForText, textGemResult));
                     return;
                 }
 
@@ -22396,6 +22495,7 @@ replier.reply(
                     let message =
                         "🐹[" + nickName + "] 님이 미니펫을 오픈합니다!\n" +
                         "확률정보: 채팅창에 '/미니펫확률'를 적어보세요\n" +
+                        "※ 미니펫 정리: /미니펫가방정리 [매력]\n" +
                         "━━━━━━━━━━━━━━━\n" +
                         "✅️ 사용: " + numberWithCommas(openedPets.length) + "개\n" +
                         "🐹 남은 미뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
@@ -24930,6 +25030,7 @@ replier.reply(
                         nickName +
                         "] 님이 인테리어샵을 오픈합니다!\n" +
                         "확률정보: 채팅창에 '/가구등급확률'을 적어보세요\n" +
+                        "※ 가구 정리: /가구가방정리 숫자[이하 판매]\n" +
                         "━━━━━━━━━━━━━━━\n" +
                         "✅️ 사용: " +
                         numberWithCommas(results.length) +
@@ -26577,6 +26678,11 @@ replier.reply(
                         return;
                     }
 
+                    if (guildCubeGuild.master !== sender) {
+                        replier.reply(guildCubeActorHeader + "길드장만 사용할 수 있습니다.");
+                        return;
+                    }
+
                     if (msg === "/길드큐브") {
                         replier.reply(guildCubeActorHeader + "사용법: /길드큐브 [길드옵션번호] [시도횟수]");
                         return;
@@ -26647,6 +26753,7 @@ replier.reply(
                         guildCubeData.logs.splice(GLOBAL_CONFIG.guildContributionCube.logLimit);
                     }
                     saveJsonFile(guildData, guildPath);
+                    endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 전송 실패가 완료된 큐브 시도를 되돌리지 않음
 
                     var guildCubeResult = (guildCubeGuild.name || "") + "(" + (guildCubeGuild.mark || "") + ") 길드의 공헌 큐브 결과\n";
                     guildCubeResult += "확률정보: 채팅창에 '/길드큐브확률'을 적어보세요\n\n";
@@ -27541,8 +27648,8 @@ replier.reply(
                     addItem(data, sender, "미니펫뽑기🐹(/미니펫오픈)", n * 3);
                     addItem(data, sender, "펫스윗홈인테리어샵🖼️(/샵오픈)", n * 2);
 
-                    saveJsonFile(guildData, guildPath);
-                    saveJsonFile(data, filePath);
+                    publishOperationalRows(buildGuildProgressPublicationRows(data, petData, guildData));
+                    ctx.guildProgressDirty = false;
 
                     var out = "";
                     out += "🌟[" + checkRank(data, petData, guildData, sender) + "] 님\n";
@@ -27652,8 +27759,8 @@ replier.reply(
                     // 레벨업 체크
                     var levelInfo = checkGuildLevelUp(data, guildData, g);
 
-                    saveJsonFile(guildData, guildPath);
-                    saveJsonFile(data, filePath);
+                    publishOperationalRows(buildGuildProgressPublicationRows(data, petData, guildData));
+                    ctx.guildProgressDirty = false;
 
                     var out = "";
                     out += "✅ 길드 공헌도가 추가되었습니다.\n";
@@ -30361,6 +30468,8 @@ replier.reply(
                     var boardCleanupData = loadJsonFile(boardPath);
                     var packageLogCleanupData = loadJsonFile(packageLogPath);
                     var retiredItemListData = loadJsonFile(itemListPath), retiredPackageInfoData = loadJsonFile(packageInfoPath);
+                    var legacyMiniPackageCleanup = prepareLegacyMiniPackageMigration(data, retiredPackageInfoData, freeMarketCleanupData);
+                    retiredPackageInfoData = legacyMiniPackageCleanup.packages;
                     var attackTicketCleanup = prepareGuildAttackTicketCleanup(data, { itemListData: retiredItemListData, packageInfoData: retiredPackageInfoData });
                     applyGuildAttackTicketCleanup(attackTicketCleanup);
                     retiredItemListData = attackTicketCleanup.catalogs.itemListData;
@@ -30826,6 +30935,7 @@ function cleanupUnusedMemberFields(data, previewOnly) {
 
 // 삭제·축소 대상만 읽어 건수와 확인용 목록을 계산하고 원본은 변경하지 않는 함수
 function buildDataCleanupPreview(data, guildData, stores) {
+    var legacyMiniPackageCleanup = prepareLegacyMiniPackageMigration(data, stores.packageInfoData, stores.freeMarketData);
     var guildMapMigration = prepareGuildWarMapMigration(guildData, Date.now());
     var attackTicketCleanup = prepareGuildAttackTicketCleanup(data, stores);
     var required = getDataCleanupStorePaths();
@@ -30848,6 +30958,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         if (storeTargets.length) retiredTargets.push([retiredKey, storeTargets]);
     }
     var targets = [["memberRecordCleanup", recordCleanup.targets], ["retiredContent", retiredTargets], ["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    targets.push(["legacyMiniPackages", legacyMiniPackageCleanup.targets]);
     var candyMigration = stores.halloweenCandyMigration;
     targets.push(["guildWarMap", guildMapMigration.signature]);
     targets.push(["guildAttackTicketNames", attackTicketCleanup.targets]);
@@ -30920,6 +31031,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 회원 목록 외 인형 기록: " + dollResidualNames.length + "명\n" +
         "• 기록 보존·이전: 회원 " + (memberMigration ? "필요" : "완료") + " / 퀘스트 " + (adventureMigration ? "필요" : "완료") + " / 강탈 " + (robberyMigration ? "필요" : "완료") + "\n\n" +
         "지급된 보상·적용 매력·교육 실적은 유지합니다.\n이전 단계가 필요하면 먼저 처리한 뒤 나머지 정리를 다시 안내합니다.\n" +
+        (legacyMiniPackageCleanup.targets.length ? "\n패키지: " + GLOBAL_CONFIG.package.retiredMiniSet.name + "\n보유 수량: " + numberWithCommas(legacyMiniPackageCleanup.counts.set) + "개\n패키지: " + GLOBAL_CONFIG.package.retiredMiniSet.ticket + "\n보유 수량: " + numberWithCommas(legacyMiniPackageCleanup.counts.ticket) + "개\n" : "") +
         "━━━━━━━━━━━━\n'확인' or '1': 정리 실행\n'취소' or '2': 취소\n" + (GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs / 1000) + "초 안에 선택해주세요.";
     if (residualNames.length) text += allsee + "\n[회원 목록 외 잔여 식별자]\n" + residualNames.join("\n") + "\n※ 과거 기록에만 등장한 이름은 자동 삭제 대상으로 보지 않습니다.";
     return { signature: getDataCleanupSignature(targets), text: text };
@@ -31365,6 +31477,9 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
+    if (getAdventureGemRequest(command)) return true;
+    if (isFreeMarketRegisterCommand(command) || command === "자유시장거래" || /^\/(?:거래확인|자유시장구매|자유시장취소|거래소강제취소)(?:\s|$)/.test(command)) return true;
+    if (/^\/길드공헌(?:추가)?(?:\s|$)/.test(command) || command === "/전체오픈" || command === "/정리" || command === "ㅇㅇㅇ") return true;
     if (getDiceTournamentRequest(command) || getHowolMysteryRequest(command) || isDevCommandMessage(msg) && command === "/ㅊㄹ" || getGuildWarRequest(command) || getHalloweenRequest(command) || getHowolDramaRequest(command)) return true;
     if (/^\/패키지(?:사용|지급)(?:\s|$)/.test(command)) return true;
     if (command === "/리셋") return true; // 전체 경기 환급·미니게임 초기화를 다른 복합 저장과 직렬화
@@ -32896,6 +33011,7 @@ function getManagedJsonBackupPath(path) {
     if (fileName === "dailyRankingPayout.json") backupFileName = "dailyRankingPayout_back.json";
     if (fileName === "howolDrama.json") backupFileName = "howolDrama_back.json";
     if (fileName === "guildData.json") backupFileName = "guildData_back.json";
+    if (/^(?:adventureGemAccount|adventureGemReceipt)_[a-f0-9]{64}\.json$/.test(fileName) || fileName === "adventureGemNotices.json") backupFileName = fileName.replace(/\.json$/, "_back.json");
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -32914,6 +33030,7 @@ function getManagedJsonSecondaryBackupPath(path) {
     if (fileName === "dailyRankingPayout.json") backupFileName = "dailyRankingPayout_back2.json";
     if (fileName === "howolDrama.json") backupFileName = "howolDrama_back2.json";
     if (fileName === "guildData.json") backupFileName = "guildData_back2.json";
+    if (/^(?:adventureGemAccount|adventureGemReceipt)_[a-f0-9]{64}\.json$/.test(fileName) || fileName === "adventureGemNotices.json") backupFileName = fileName.replace(/\.json$/, "_back2.json");
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -33070,6 +33187,16 @@ function parseManagedJsonContent(jsonText, path) {
 // 이미 읽은 객체에도 기존 파일별 필수 구조 검증을 동일하게 적용하는 함수
 function validateManagedJsonValue(parsedData, path) {
     var splitFileName = String(new java.io.File(path).getName());
+    var gemFileName = splitFileName.replace(/_back2?(?=\.json$)/, "");
+    if (/^adventureGemAccount_[a-f0-9]{64}\.json$/.test(gemFileName)) {
+        requireAdventureGemState(parsedData, parsedData.owner);
+        if (getAdventureGemFileName(parsedData.owner, false) !== gemFileName) throw new Error("보석 저장 소유자 불일치");
+    }
+    if (/^adventureGemReceipt_[a-f0-9]{64}\.json$/.test(gemFileName)) {
+        requireAdventureGemReceipts(parsedData, parsedData.owner);
+        if (getAdventureGemFileName(parsedData.owner, true) !== gemFileName) throw new Error("보석 처리 기록 소유자 불일치");
+    }
+    if (gemFileName === GLOBAL_CONFIG.adventureGem.noticeName) requireAdventureGemNotices(parsedData);
     if (/^guildData(?:_back2?)?\.json$/.test(splitFileName) && parsedData.war24 !== undefined) requireGuildWarState(parsedData.war24);
     if (/^dailyRankingPayout(?:_back2?)?\.json$/.test(splitFileName)) return requireDailyRankingStore(parsedData);
     if (splitFileName === "dailyRankingPayoutPending.json") { validateDailyRankingPending(parsedData); return parsedData; }
@@ -33512,6 +33639,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
             if (renameRetry) renameRetry.retried = true;
         }
         if (typeof serverRaidNoticeMemberRevisions !== "undefined" && path === resolveActiveDataPath(filePath)) serverRaidNoticeMemberRevisions[path] = (serverRaidNoticeMemberRevisions[path] || 0) + 1;
+        if (/^adventureGemAccount_[a-f0-9]{64}\.json$/.test(String(targetFile.getName()))) java.lang.System.setProperty(GLOBAL_CONFIG.adventureGem.revisionPrefix + path, String(java.util.UUID.randomUUID()));
         var publishedTransaction = getDataSaveTransaction();
         if (publishedTransaction && !publishedTransaction.rollingBack && publishedTransaction.entries[path]) publishedTransaction.entries[path].saved = true; // 교체 직후 등록해 후속 정리 실패도 원본 복구 대상에 포함
         if (raidAdmissionState !== null) serverRaidAdmissionStates.put(String(path), raidAdmissionState);
@@ -33753,7 +33881,7 @@ function isServerRaidAdditionalCommand(msg) {
         /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
         /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
         /^\/패키지가방\s+.+$/.test(msg) ||
-        /^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg) ||
+        isPackageGrantCommand(msg) ||
         /^\/이체\s+[^\r\n]+\s+\d+\s*$/.test(msg) ||
         /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg);
 }
@@ -47903,7 +48031,8 @@ function assertPackageLogData(packageLogData) {
 function getPackageByListNumber(packageInfoData, listNumber) {
     var index = parseInt(listNumber, 10) - 1; // 패키지리스트 표시 번호를 배열 인덱스로 변환
     if (isNaN(index) || index < 0 || index >= packageInfoData.length) return null;
-    return isRetiredCarrotValue(getPackageBagItemName(packageInfoData[index])) ? null : packageInfoData[index];
+    var selected = packageInfoData[index];
+    return index === GLOBAL_CONFIG.package.retiredMiniSet.number - 1 || !selected || selected.hidden === true || selected.legacyEntitlement || isRetiredCarrotValue(getPackageBagItemName(selected)) ? null : selected;
 }
 
 // 패키지가 bag에 저장될 때 사용하는 이름 반환 함수
@@ -47918,6 +48047,7 @@ function getUserPackageBagList(data, user, packageInfoData) {
     var list = []; // 패키지가방 표시 목록
     for (var i = 0; i < packageInfoData.length; i++) {
         var packageInfo = packageInfoData[i]; // packageInfo.json 기준 패키지 항목
+        if (i === GLOBAL_CONFIG.package.retiredMiniSet.number - 1 && packageInfo && packageInfo.name === GLOBAL_CONFIG.package.retiredMiniSet.name) packageInfo = createLegacyMiniEntitlementPackage("set", packageInfo);
         var packageBagItemName = getPackageBagItemName(packageInfo); // bag에서 조회할 패키지명
         if (!packageBagItemName || isRetiredCarrotValue(packageBagItemName)) continue;
         var count = parseInt(bag[packageBagItemName], 10) || 0; // 유저가 보유한 패키지 수량
@@ -47929,6 +48059,8 @@ function getUserPackageBagList(data, user, packageInfoData) {
             });
         }
     }
+    var ticket = GLOBAL_CONFIG.package.retiredMiniSet.ticket;
+    if (bag[ticket] > 0 && !list.some(function (row) { return getPackageBagItemName(row.packageInfo) === ticket; })) list.push({ listNumber: 0, packageInfo: createLegacyMiniEntitlementPackage("ticket"), count: bag[ticket] });
     return list;
 }
 
@@ -47964,7 +48096,7 @@ function formatPackageRewardSummary(rewards) {
         if (reward.type === "point") {
             parts.push("포인트 x" + numberWithCommas(reward.count || 0));
         } else {
-            parts.push(normalizeMiniPetRewardBoxItemName(reward.name || reward.type || "보상") + " x" + numberWithCommas(reward.count || 0));
+            parts.push(formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count || 0));
         }
     }
     return parts.join(", ");
@@ -47972,13 +48104,16 @@ function formatPackageRewardSummary(rewards) {
 
 // 관리자용 패키지 리스트 메시지 생성 함수
 function buildPackageListMessage(packageInfoData) {
-    var lines = ["📦 패키지 리스트", ""];
+    var lines = ["📦 패키지 리스트", ""], displayed = 0, exampleNumber = 0;
     if (packageInfoData.length < 1) {
         lines.push("등록된 패키지가 없습니다.");
     } else {
         for (var i = 0; i < packageInfoData.length; i++) {
             var packageInfo = packageInfoData[i]; // 리스트에 표시할 패키지 정보
+            if (i === GLOBAL_CONFIG.package.retiredMiniSet.number - 1 || !packageInfo || packageInfo.hidden === true || packageInfo.legacyEntitlement) continue;
             if (isRetiredCarrotValue(getPackageBagItemName(packageInfo))) continue;
+            displayed++;
+            if (!exampleNumber && packageInfo.enabled !== false) exampleNumber = i + 1;
             var enabledText = packageInfo.enabled === false ? " [비활성]" : "";
             lines.push(i + 1 + ". " + (packageInfo.name || getPackageBagItemName(packageInfo) || "이름없음") + enabledText);
             lines.push("설명: " + (packageInfo.desc || "-"));
@@ -47986,16 +48121,16 @@ function buildPackageListMessage(packageInfoData) {
             lines.push("");
         }
     }
+    if (packageInfoData.length && !displayed) lines.push("등록된 패키지가 없습니다.");
     lines.push("지급 방법:");
     lines.push("/패키지지급 이름 리스트번호 갯수");
+    lines.push("");
     lines.push("추가/제거 방법:");
     lines.push("/패키지추가방법");
     lines.push("/패키지제거 리스트번호");
     lines.push("/패키지리스트제거 리스트번호");
     lines.push("/패키지활성 리스트번호");
-    lines.push("");
-    lines.push("예시:");
-    lines.push("/패키지지급 거품 남 1 3");
+    if (exampleNumber) { lines.push(""); lines.push("예시:"); lines.push("/패키지지급 거품 남 " + exampleNumber + " 1"); }
     return lines.join("\n");
 }
 
@@ -48055,25 +48190,31 @@ function isPackageAddStartCommand(msg) {
 }
 
 // 패키지 단계별 추가 상태 초기화 함수
-function startPackageAddFlow(sender) {
+function startPackageAddFlow(sender, accountId, receivedAt) {
     if (!userState[sender]) userState[sender] = {};
+    if (userState[sender].packageAdd && Date.now() > userState[sender].packageAdd.expiresAt) delete userState[sender].packageAdd;
+    if (userState[sender].packageAdd) return "📦 작성 중인 패키지가 있어요. 이어서 작성하거나, 취소 후 다시 시작해주세요.";
     userState[sender].packageAdd = {
         step: "NAME",
         name: "",
         desc: "",
         rewards: [],
         pendingReward: null,
-        startedAt: formatDateTime(new Date())
+        startedAt: formatDateTime(new Date()),
+        id: String(java.util.UUID.randomUUID()),
+        accountId: accountId || null,
+        receivedAt: receivedAt || Date.now(),
+        room: getCurrentContext().permissionRoom,
+        rootPath: getCurrentContext().rootPath,
+        expiresAt: Date.now() + GLOBAL_CONFIG.manualReset.timeoutMs,
+        receipts: []
     };
     var lines = [];
     lines.push("📦 패키지 추가를 시작합니다.");
     lines.push("");
     lines.push("1단계: 패키지 이름을 입력해주세요.");
+    lines.push("예: 모험가 응원 패키지🎁");
     lines.push("");
-    lines.push("예:");
-    lines.push("이벤트패키지🎁");
-    lines.push("");
-    lines.push("※ 별도 가방 아이템명은 사용하지 않고 패키지 이름으로 저장됩니다.");
     lines.push("취소하려면 \"취소\" 또는 /패키지추가취소");
     return lines.join("\n");
 }
@@ -48081,8 +48222,10 @@ function startPackageAddFlow(sender) {
 // 패키지 단계별 추가 상태 취소 함수
 function cancelPackageAddFlow(sender) {
     if (userState[sender] && userState[sender].packageAdd) {
+        var state = userState[sender].packageAdd, ctx = getCurrentContext();
+        if (state.room !== ctx.permissionRoom || state.rootPath !== ctx.rootPath) return "ℹ️ 진행 중인 패키지 추가가 없습니다.";
         delete userState[sender].packageAdd;
-        return "✅ 패키지 추가가 취소되었습니다.";
+        return "📦 패키지 추가를 취소했어요. 등록된 내용은 없습니다.";
     }
     return "ℹ️ 진행 중인 패키지 추가가 없습니다.";
 }
@@ -48104,9 +48247,15 @@ function buildPackageAddStateMessage(sender) {
 function normalizePackageRewardChoice(input) {
     var text = String(input || "").trim(); // 보상 선택 원문
     if (text === "1" || text === "포인트") return "POINT";
-    if (text === "2" || text === "아이템") return "ITEM";
+    if (text === "2" || text === "아이템" || text === "가방아이템") return "ITEM";
     if (text === "3" || text === "완료") return "DONE";
     if (text === "4" || text === "취소") return "CANCEL";
+    if (text === "5" || text === "미니펫") return "MINI";
+    if (text === "6" || text === "가구") return "FURNITURE";
+    if (text === "7" || text === "펜던트") return "PENDANT";
+    if (text === "8" || text === "일괄 등록") return "BULK";
+    if (text === "9" || text === "펫스킬북") return "SKILL";
+    if (text === "10" || text === "보석") return "GEM";
     return "";
 }
 
@@ -48116,11 +48265,13 @@ function formatPackageRewardLines(rewards) {
     var lines = [];
     for (var i = 0; i < rewards.length; i++) {
         var reward = normalizeLegacyPackageReward(rewards[i]); // 출력할 보상 항목
-        if (reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem) continue;
+        if (!reward || reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem) continue;
         if (reward.type === "point") {
             lines.push("- 포인트 🅟" + numberWithCommas(reward.count));
         } else if (reward.type === "item") {
             lines.push("- " + reward.name + " x" + numberWithCommas(reward.count));
+        } else {
+            lines.push("- " + formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count));
         }
     }
     return lines.join("\n");
@@ -48132,12 +48283,17 @@ function buildPackageRewardChoiceMessage(state) {
     lines.push("3단계: 무엇을 추가할까요?");
     lines.push("");
     lines.push("1. 포인트");
-    lines.push("2. 아이템");
+    lines.push("2. 가방아이템");
     lines.push("3. 완료");
     lines.push("4. 취소");
+    lines.push("5. 미니펫");
+    lines.push("6. 가구");
+    lines.push("7. 펜던트");
+    lines.push("8. 일괄 등록");
+    lines.push("9. 펫스킬북");
+    lines.push("10. 보석");
     lines.push("");
-    lines.push("숫자 또는 이름으로 입력할 수 있습니다.");
-    lines.push("예: 1 또는 포인트");
+    lines.push("숫자 또는 이름으로 입력해주세요.");
     if (state && state.rewards && state.rewards.length > 0) {
         lines.push("");
         lines.push("현재 보상:");
@@ -48148,23 +48304,12 @@ function buildPackageRewardChoiceMessage(state) {
 
 // 패키지 추가 미리보기 메시지 생성 함수
 function buildPackageAddPreviewMessage(state) {
-    var lines = [];
-    lines.push("📦 패키지 추가 미리보기");
-    lines.push("");
-    lines.push("패키지: " + state.name);
-    lines.push("설명: " + state.desc);
-    lines.push("");
-    lines.push("보상:");
-    lines.push(formatPackageRewardLines(state.rewards));
-    lines.push("");
-    lines.push("등록하려면 \"등록\"");
-    lines.push("보상을 더 추가하려면 \"수정\"");
-    lines.push("취소하려면 \"취소\"");
-    return lines.join("\n");
+    return "📦 패키지 추가 미리보기\n\n패키지: " + state.name + "\n설명: " + state.desc + "\n구성: " + formatPackageRewardSummary(state.rewards) + "\n\n등록 / 수정 / 더 넣기 / 취소";
 }
 
 // 패키지 추가 상태를 실제 packageInfo 항목으로 변환하는 함수
 function createPackageInfoFromState(state, packageInfoData) {
+    reserveRetiredMiniPackageNumber(packageInfoData);
     return {
         id: createPackageIdFromName(state.name, packageInfoData),
         name: state.name,
@@ -48175,105 +48320,6 @@ function createPackageInfoFromState(state, packageInfoData) {
     };
 }
 
-// 패키지 단계별 추가 메시지 처리 함수
-function handlePackageAddFlowMessage(sender, msg, packageInfoData) {
-    var text = String(msg || "").trim(); // 단계별 입력 원문
-    var state = userState[sender].packageAdd; // 관리자별 패키지 추가 상태
-    if (!text) return { ok: false, message: "❌ 값을 입력해주세요." };
-    if (text === "취소") return { ok: true, message: cancelPackageAddFlow(sender) };
-
-    if (state.step === "NAME") {
-        for (var n = 0; n < packageInfoData.length; n++) {
-            if (packageInfoData[n] && packageInfoData[n].name === text) {
-                return { ok: false, message: "❌ 같은 패키지명이 이미 등록되어 있습니다." };
-            }
-        }
-        state.name = text;
-        state.step = "DESC";
-        return { ok: true, message: "✅ 1단계 입력 완료\n\n패키지 이름:\n" + state.name + "\n\n2단계: 패키지 설명을 입력해주세요." };
-    }
-
-    if (state.step === "DESC") {
-        state.desc = text;
-        state.step = "REWARD_CHOICE";
-        return { ok: true, message: "✅ 2단계 입력 완료\n\n" + buildPackageRewardChoiceMessage(state) };
-    }
-
-    if (state.step === "REWARD_CHOICE") {
-        var choice = normalizePackageRewardChoice(text); // 포인트/아이템/완료/취소 선택값
-        if (choice === "POINT") {
-            state.step = "POINT_COUNT";
-            return { ok: true, message: "포인트 수량을 입력해주세요.\n예: 10000000" };
-        }
-        if (choice === "ITEM") {
-            state.step = "ITEM_NAME";
-            return { ok: true, message: "아이템명을 입력해주세요.\n예: 펫 강화석⭐" };
-        }
-        if (choice === "DONE") {
-            if (!state.rewards || state.rewards.length < 1) return { ok: false, message: "❌ 보상을 1개 이상 추가해야 합니다." };
-            state.step = "CONFIRM";
-            return { ok: true, message: buildPackageAddPreviewMessage(state) };
-        }
-        if (choice === "CANCEL") return { ok: true, message: cancelPackageAddFlow(sender) };
-        return { ok: false, message: "❌ 1/포인트, 2/아이템, 3/완료, 4/취소 중 하나를 입력해주세요." };
-    }
-
-    if (state.step === "POINT_COUNT") {
-        var pointCount = parseInt(text, 10); // 추가할 포인트 수량
-        if (isNaN(pointCount) || pointCount < 1) return { ok: false, message: "❌ 포인트 수량은 1 이상 숫자로 입력해주세요." };
-        state.rewards.push({ type: "point", count: pointCount });
-        state.step = "REWARD_CHOICE";
-        return { ok: true, message: "✅ 보상 추가 완료\n- 포인트 🅟" + numberWithCommas(pointCount) + "\n\n" + buildPackageRewardChoiceMessage(state) };
-    }
-
-    if (state.step === "ITEM_NAME") {
-        state.pendingReward = { type: "item", name: text };
-        state.step = "ITEM_COUNT";
-        return { ok: true, message: "수량을 입력해주세요.\n예: 10" };
-    }
-
-    if (state.step === "ITEM_COUNT") {
-        var itemCount = parseInt(text, 10); // 추가할 아이템 수량
-        if (isNaN(itemCount) || itemCount < 1) return { ok: false, message: "❌ 아이템 수량은 1 이상 숫자로 입력해주세요." };
-        var itemName = normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(state.pendingReward ? state.pendingReward.name : "")); // 기존 등급 확정 이름도 신규 이름으로 등록
-        if (!itemName) {
-            state.step = "ITEM_NAME";
-            return { ok: false, message: "❌ 아이템명이 없습니다. 아이템명을 다시 입력해주세요." };
-        }
-        state.rewards.push({ type: "item", name: itemName, count: itemCount });
-        state.pendingReward = null;
-        state.step = "REWARD_CHOICE";
-        return { ok: true, message: "✅ 보상 추가 완료\n- " + itemName + " x" + numberWithCommas(itemCount) + "\n\n" + buildPackageRewardChoiceMessage(state) };
-    }
-
-    if (state.step === "CONFIRM") {
-        if (text === "등록") {
-            for (var i = 0; i < packageInfoData.length; i++) {
-                if (packageInfoData[i] && packageInfoData[i].name === state.name) {
-                    return { ok: false, message: "❌ 같은 패키지명이 이미 등록되어 있습니다." };
-                }
-            }
-            var newPackage = createPackageInfoFromState(state, packageInfoData);
-            packageInfoData.push(newPackage);
-            delete userState[sender].packageAdd;
-            var lines = [];
-            lines.push("✅ 패키지 추가 완료");
-            lines.push("");
-            lines.push("번호: " + packageInfoData.length);
-            lines.push("패키지: " + newPackage.name);
-            lines.push("구성: " + formatPackageRewardSummary(newPackage.rewards));
-            return { ok: true, message: lines.join("\n"), packageInfoData: packageInfoData };
-        }
-        if (text === "수정") {
-            state.step = "REWARD_CHOICE";
-            return { ok: true, message: buildPackageRewardChoiceMessage(state) };
-        }
-        if (text === "취소") return { ok: true, message: cancelPackageAddFlow(sender) };
-        return { ok: false, message: "❌ 등록, 수정, 취소 중 하나를 입력해주세요." };
-    }
-
-    return { ok: false, message: "❌ 패키지 추가 상태가 올바르지 않습니다. /패키지추가취소 후 다시 진행해주세요." };
-}
 
 // 패키지 id 후보 문자열 생성 함수
 function createPackageIdFromName(name, packageInfoData) {
@@ -48322,7 +48368,19 @@ function parsePackageNaturalItemRewardSpec(rewardSpec) {
 }
 
 // 패키지 보상 입력 문자열 파싱 함수
-function parsePackageRewardSpec(rewardSpec) {
+function parsePackageRewardSpec(rewardSpec, definitions) {
+    if (definitions) {
+        var composition = splitPackageComposition(rewardSpec), verified = [];
+        for (var v = 0; v < composition.length; v++) {
+            var part = composition[v], explicitType = null, point = /^point:(.*)$/.exec(part), item = /^item:(.*):([^:]+)$/.exec(part);
+            if (point) { part = point[1]; explicitType = "point"; }
+            if (item) { part = item[1].trim() + " x" + item[2].trim(); explicitType = "item"; }
+            var parsed = resolvePackageRewardInput(part, explicitType, definitions);
+            if (parsed.error || parsed.draft || parsed.candidates || parsed.missingCount) return { error: parsed.error || (parsed.draft ? buildPackageOptionPrompt(parsed.draft) : parsed.candidates ? buildPackageCandidatePrompt(parsed.candidates) : "몇 개 넣을까요? 예: 1") };
+            verified.push(parsed.reward);
+        }
+        return verified.length ? { rewards: mergePackageActualRewards([], verified) } : { error: "🎁 보상을 하나 이상 넣어주세요." };
+    }
     if (/\s+x\s*\d/.test(String(rewardSpec || ""))) {
         return parsePackageNaturalItemRewardSpec(rewardSpec);
     }
@@ -48354,7 +48412,7 @@ function parsePackageRewardSpec(rewardSpec) {
 }
 
 // 관리자 패키지 추가 명령어 처리 함수
-function addPackageInfoByCommand(sender, msg, packageInfoData) {
+function addPackageInfoByCommand(sender, msg, packageInfoData, definitions) {
     var body = String(msg || "").replace(/^\/패키지추가\s+/, "").trim(); // 명령어를 제거한 패키지 추가 본문
     var parts = body.split("|").map(function (part) {
         return part.trim();
@@ -48364,8 +48422,9 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
     }
 
     var packageName = parts[0]; // /패키지리스트 표시명 및 member bag 저장명
+    if (packageName === GLOBAL_CONFIG.package.retiredMiniSet.name || packageName === GLOBAL_CONFIG.package.retiredMiniSet.ticket) return { ok: false, message: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
     var desc = parts[1]; // 패키지 설명
-    var rewardParseResult = parsePackageRewardSpec(parts[2]); // 보상목록 파싱 결과
+    var rewardParseResult = parsePackageRewardSpec(parts[2], definitions); // 보상목록 파싱 결과
     if (!packageName || !desc) return { ok: false, message: "❌ 패키지명, 설명은 비울 수 없습니다." };
     if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
 
@@ -48376,6 +48435,7 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
         }
     }
 
+    reserveRetiredMiniPackageNumber(packageInfoData);
     var newPackage = {
         id: createPackageIdFromName(packageName, packageInfoData),
         name: packageName,
@@ -48400,7 +48460,7 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
 }
 
 // 관리자 패키지 수정 명령어 처리 함수
-function editPackageInfoByCommand(sender, msg, packageInfoData) {
+function editPackageInfoByCommand(sender, msg, packageInfoData, definitions) {
     var body = String(msg || "").replace(/^\/패키지수정\s+/, "").trim(); // 명령어를 제거한 패키지 수정 본문
     var match = body.match(/^(\d+)\s+(.+)$/); // 리스트 번호와 수정할 보상목록 분리
     if (!match) {
@@ -48409,7 +48469,7 @@ function editPackageInfoByCommand(sender, msg, packageInfoData) {
 
     var listNumber = parseInt(match[1], 10); // 패키지리스트 기준 수정 대상 번호
     var rewardSpecText = match[2].replace(/^\s*[|:：]\s*/, ""); // 번호 뒤 구분자를 실수로 넣은 경우 제거
-    var rewardParseResult = parsePackageRewardSpec(rewardSpecText); // 수정 후 보상목록 파싱 결과
+    var rewardParseResult = parsePackageRewardSpec(rewardSpecText, definitions); // 수정 후 보상목록 파싱 결과
     var packageInfo = getPackageByListNumber(packageInfoData, listNumber); // 수정 대상 패키지
     if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
     if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
@@ -49077,7 +49137,7 @@ function buildUserPackageBagMessage(data, petData, petSkillData, guildData, send
 
 // 공백 포함 이름과 마지막 두 양의 정수 인자만 지급 명령으로 허용하는 함수
 function isPackageGrantCommand(msg) {
-    return /^\/패키지지급[ \t]+[^\r\n]+[ \t]+\d+[ \t]+\d+$/.test(String(msg));
+    return /^\/패키지지급[ \t]+[^\r\n]+[ \t]+\d+[ \t]+(?:\d+|[1-9]\d{0,2}(?:,\d{3})+)$/.test(String(msg));
 }
 
 // 패키지 지급 명령어 파싱 함수
@@ -49086,10 +49146,10 @@ function parsePackageGrantCommand(msg) {
     var body = String(msg || "").replace(/^\/패키지지급\s+/, "").trim(); // 명령어를 제거한 입력 본문
     var parts = body.split(/\s+/); // 뒤에서부터 번호/갯수를 파싱하기 위한 토큰 배열
     if (parts.length < 3) return null;
-    var count = parseInt(parts.pop(), 10); // 지급 수량
+    var count = parsePackagePositiveCount(parts.pop()); // 천 단위 쉼표도 검증한 실제 지급 수량
     var listNumber = parseInt(parts.pop(), 10); // 패키지리스트 번호
     var target = parts.join(" "); // 공백 포함 유저 이름
-    if (!target || isNaN(listNumber) || isNaN(count)) return null;
+    if (!target || !isPointShopSafeCount(listNumber) || listNumber < 1 || count === null) return null;
     return {
         target: target,
         listNumber: listNumber,
@@ -49304,6 +49364,7 @@ function recoverPackageGrantPending() {
 function grantPackageToUser(data, sender, msg, packageInfoData, packageLogData) {
     var parsed = parsePackageGrantCommand(msg); // 지급 명령어 파싱 결과
     if (!parsed) return { ok: false, message: "❌ 사용법: /패키지지급 이름 리스트번호 갯수" };
+    if (parsed.listNumber === GLOBAL_CONFIG.package.retiredMiniSet.number) return { ok: false, message: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
     if (parsed.count < 1 || parsed.count > 10000) return { ok: false, message: "❌ 지급 수량은 1 이상 10000 이하만 가능합니다." };
 
     var packageInfo = getPackageByListNumber(packageInfoData, parsed.listNumber); // 지급 대상 패키지 정보
@@ -49357,7 +49418,7 @@ function validatePackageUse(packageInfo, useCount, halloween) {
     var rewards = packageInfo.rewards || []; // 사용 시 지급할 보상 목록
     for (var i = 0; i < rewards.length; i++) {
         var reward = normalizeLegacyPackageReward(rewards[i]); // 사전 검사 대상 보상 항목
-        if (!reward || (reward.type !== "item" && reward.type !== "point")) {
+        if (!reward || ["item", "point", "mini", "furniture", "pendant", "skill", "gem"].indexOf(reward.type) === -1) {
             return "아직 지원하지 않는 보상 타입이 포함되어 있습니다: " + (reward && reward.type ? reward.type : "unknown");
         }
         var rewardCount = parseInt(reward.count, 10) || 0; // 보상 기본 수량
@@ -49368,7 +49429,7 @@ function validatePackageUse(packageInfo, useCount, halloween) {
 }
 
 // 패키지 보상 지급 함수
-function applyPackageRewards(data, user, packageInfo, useCount, halloween) {
+function applyPackageRewards(data, user, packageInfo, useCount, halloween, actual) {
     getPackagePointAward(packageInfo, useCount, data.member[user].point);
     var rewards = packageInfo.rewards || []; // 패키지 보상 목록
     var rewardLines = []; // 지급 결과 메시지 라인
@@ -49389,7 +49450,10 @@ function applyPackageRewards(data, user, packageInfo, useCount, halloween) {
         } else if (reward.type === "point") {
             if (typeof data.member[user].point !== "number") data.member[user].point = 0;
             addPoint(data, user, totalCount);
-            rewardLines.push("포인트 🅟" + numberWithCommas(totalCount));
+            rewardLines.push("포인트 x" + numberWithCommas(totalCount));
+        } else {
+            grantPackageActualReward(actual, user, reward, totalCount);
+            rewardLines.push(formatPackageActualReward(reward) + " x" + numberWithCommas(totalCount));
         }
     }
     return rewardLines;
@@ -49419,7 +49483,7 @@ function validatePackageRewardStock(data, user, packageInfo, useCount) {
 }
 
 // 유저 패키지 사용 처리 함수
-function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData, halloween) {
+function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData, halloween, actual) {
     var parsed = parsePackageUseCommand(msg); // 사용 명령어 파싱 결과
     if (!parsed) return { ok: false, message: "❌ 사용법: /패키지사용 가방번호 갯수" };
     var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저 패키지가방 목록
@@ -49440,6 +49504,7 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
         validatePackageRewardStock(data, sender, packageInfo, parsed.count);
         validatePassDurationPackageStock(data, sender, packageInfo, parsed.count);
         getPackagePointAward(packageInfo, parsed.count, data.member[sender].point);
+        validatePackageActualUse(packageInfo, parsed.count, actual, sender);
     } catch (pointError) { return { ok: false, message: "❌ " + pointError.message }; }
     var afterCount = beforeCount - parsed.count; // 사용 후 보유 수량
     if (afterCount > 0) {
@@ -49447,7 +49512,7 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
     } else {
         delete data.member[sender].bag[packageBagItemName];
     }
-    var rewardLines = applyPackageRewards(data, sender, packageInfo, parsed.count, halloween); // 패키지 보상 지급 결과
+    var rewardLines = applyPackageRewards(data, sender, packageInfo, parsed.count, halloween, actual); // 패키지 보상 지급 결과
     packageLogData = appendPackageLog(packageLogData, "USE", packageInfo, sender, parsed.count, sender, beforeCount, afterCount);
     var lines = [];
     lines.push("🎁 패키지 사용 완료!");
@@ -49457,11 +49522,14 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
     lines.push("사용 수량: " + numberWithCommas(parsed.count) + "개");
     lines.push("");
     lines.push("획득 보상:");
-    lines.push(rewardLines.join("\n"));
+    lines.push(rewardLines.join(", "));
+    lines.push("");
+    lines.push("남은 패키지: " + numberWithCommas(afterCount) + "개");
     return {
         ok: true,
         message: lines.join("\n"),
-        packageLogData: packageLogData
+        packageLogData: packageLogData,
+        receipt: { name: packageInfo.name || packageBagItemName, count: parsed.count, remaining: afterCount, rewards: rewardLines }
     };
 }
 
@@ -50121,6 +50189,8 @@ function calculateItemInfoAll(memberName, data, petData) {
     returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + pendantInfo.battleExp + bagInfo.battleExp;
     returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + pendantInfo.raidExp + bagInfo.raidExp;
     returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + pendantInfo.castleExp + bagInfo.castleExp;
+    var gemInfo = getAdventureGemSummary(data, memberName);
+    returnObj.castleExp += gemInfo.castle; returnObj.raidExp += gemInfo.raid;
     return returnObj;
 }
 function calculateItemInfo(type, memberName, data, petData) {
@@ -51431,7 +51501,7 @@ function getDiamondShopDailyTotals(log, day) {
 }
 // 검색어를 입력하지 않은 시장 검색에서 종류·이름·좁히기 예시를 안내하는 함수
 function buildFreeMarketSearchGuide() {
-    return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지\n\n🔎 이름 검색\n/자유시장검색 카오스\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.\n\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북 / 펫 스킬북 / 펫스킬\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n\n입력: /자유시장검색 검색어";
+    return "🔎 자유시장 검색 안내\n━━━━━━━━━━━━" + allsee + "\n원하는 상품 이름을 입력해 보세요!\n/자유시장검색 검색어\n\n📦 종류 검색\n미니펫 · 펜던트 · 가구 · 펫스킬 · 아이템 · 패키지 · 보석\n\n🔎 이름 검색\n/자유시장검색 카오스\n\n🎯 종류 안에서 찾기\n/자유시장검색 미니펫 카오스\n/자유시장검색 아이템 펜던트 강화석\n\n※ 검색어만 입력해도 관련 상품이 표시됩니다. 검색 결과의 실제 거래번호로 구매해주세요.\n\n✅ 띄어쓰기 없이 검색 가능\n예시: 펫강화석 / 펫 강화석\n\n📚 통합 검색: 펫스킬북 / 펫 스킬북 / 펫스킬\n⭐ 등급 검색: 창조 / 창세 / 로열 / 아르카나\n🐹 복합 검색: 미니펫 창조\n💎 복합 검색: 펜던트 창조\n🏡 복합 검색: 가구 로열\n🪽 복합 검색: 에메랄드 창조\n\n입력: /자유시장검색 검색어";
 }
 // 안전 정수 가격의 정수 퍼센트 수수료를 곱셈 오차 없이 기존 반올림 규칙대로 계산하는 함수
 function calculateFreeMarketTradeFee(price, rate) {
@@ -51537,10 +51607,15 @@ function getDiamondShopItemNames(data, items, packages) {
     var names = {}, key, lists = [items.nonItems || [], items.untradableList || []];
     for (key in data.shop) if (Object.prototype.hasOwnProperty.call(data.shop, key)) names[key] = true;
     for (var i = 0; i < lists.length; i++) for (var j = 0; j < lists[i].length; j++) names[lists[i][j]] = true;
-    for (var p = 0; p < packages.length; p++) names[getPackageBagItemName(packages[p])] = true;
+    for (var p = 0; p < packages.length; p++) {
+        var packageName = getPackageBagItemName(packages[p]);
+        if (packageName && p !== GLOBAL_CONFIG.package.retiredMiniSet.number - 1 && !packages[p].hidden && !packages[p].legacyEntitlement) names[packageName] = true;
+    }
     var aliases = GLOBAL_CONFIG.petHomeActivity.shopAliases;
     names[aliases.gacha1] = true; names[aliases.gacha2] = true; names[aliases.gacha3] = true; names[aliases.cube50] = true;
     names[GLOBAL_CONFIG.peperoTitle.itemName] = true;
+    names[GLOBAL_CONFIG.adventureGem.ticketName] = true;
+    names[GLOBAL_CONFIG.adventureGem.slotItemName] = true;
     for (key in names) if (Object.prototype.hasOwnProperty.call(names, key) && isRetiredCarrotValue(key)) delete names[key]; delete names[GLOBAL_CONFIG.spiritRetirement.removedItem];
     return names;
 }
@@ -51807,10 +51882,15 @@ function requireFreeMarketSource(market) {
     for (var i = 0; i < market.listings.length; i++) {
         var row = market.listings[i];
         if (!row || row.status !== "SELLING") continue;
-        if (!isPointShopSafeCount(row.id) || row.id < 1 || row.id >= market.nextId || seen[row.id] || typeof row.seller !== "string" || typeof row.itemName !== "string" || !row.itemName || ["bag", "miniPet", "furniture", "skill", "pendant"].indexOf(row.type) === -1 || !isPointShopSafeCount(row.quantity) || row.quantity < 1) throw new Error("자유시장 판매 원본 확인 필요");
+        if (!isPointShopSafeCount(row.id) || row.id < 1 || row.id >= market.nextId || seen[row.id] || typeof row.seller !== "string" || typeof row.itemName !== "string" || !row.itemName || ["bag", "miniPet", "furniture", "skill", "pendant", "gem"].indexOf(row.type) === -1 || !isPointShopSafeCount(row.quantity) || row.quantity < 1) throw new Error("자유시장 판매 원본 확인 필요");
         seen[row.id] = true;
         if (market.version === 2 && (row.currency !== "DIAMOND" || !isPointShopSafeCount(row.price) || row.price < GLOBAL_CONFIG.freeMarket.legacyMinPrice)) throw new Error("다이아 판매 가격·통화 원본 확인 필요: " + row.id);
         var payload = row.type === "miniPet" ? row.payload && row.payload.pets : row.type === "furniture" ? row.payload && row.payload.furnitures : row.type === "pendant" ? row.payload && row.payload.pendants : null;
+        if (row.type === "gem") {
+            var gemStore = createAdventureGemState("market"); gemStore.gems = row.payload && row.payload.gems;
+            requireAdventureGemState(gemStore, "market");
+            if (row.quantity !== 1 || gemStore.gems.length !== 1 || gemStore.gems[0].slot !== 0) throw new Error("시장 보석 원본 형식 오류");
+        }
         if (["miniPet", "furniture", "pendant"].indexOf(row.type) !== -1 && (!Array.isArray(payload) || payload.length !== row.quantity || payload.some(function (item) { return !item || typeof item !== "object" || Array.isArray(item); }))) throw new Error("자유시장 보관 개체 원본 확인 필요: " + row.id);
     }
     return market;
@@ -51818,7 +51898,7 @@ function requireFreeMarketSource(market) {
 
 // 자유시장 2.0 대상 명령을 실행 경계로 구분하는 함수
 function isFreeMarketV2Command(msg) {
-    return msg === "/자유시장판매가이드" || msg === "/내판매상품" || msg === "/내판매기록" || /^(?:\/자유시장(?:구매|취소|거래현황|검색|가격수정|정보|전환|생성)?|\/가방거래등록|\/미니펫거래등록|\/가구거래등록|\/스킬거래등록|\/펜던트거래등록|\/펜던트거래정보|\/거래소강제취소|\/거래확인)(?:\s|$)/.test(msg) || msg === "ㅈㅈ" || msg === "ㅅㅅ" || msg === "자유시장 판매가이드" || msg === "자유시장거래" || msg === "자유시장거래취소";
+    return msg === "/자유시장판매가이드" || msg === "/내판매상품" || msg === "/내판매기록" || /^(?:\/자유시장(?:구매|취소|거래현황|검색|가격수정|정보|전환|생성)?|\/가방거래등록|\/미니펫거래등록|\/가구거래등록|\/스킬거래등록|\/펜던트거래등록|\/보석거래등록|\/펜던트거래정보|\/거래소강제취소|\/거래확인)(?:\s|$)/.test(msg) || msg === "ㅈㅈ" || msg === "ㅅㅅ" || msg === "자유시장 판매가이드" || msg === "자유시장거래" || msg === "자유시장거래취소";
 }
 // 종료된 당근 개인 이전·직접 지급 명령을 판별하는 함수
 function isRetiredCarrotCommand(msg) {
@@ -51836,8 +51916,9 @@ function getFreeMarketCategory(listing) {
 }
 // 종류별 등급·실제 강화·매력 값을 기존 판매 보관 정보에서 읽는 함수
 function getFreeMarketSortValues(listing) {
-    var payload = listing.payload || {}, row = (payload.pets || payload.furnitures || payload.pendants || [])[0] || {};
+    var payload = listing.payload || {}, row = (payload.pets || payload.furnitures || payload.pendants || payload.gems || [])[0] || {};
     var grade = null, index;
+    if (listing.type === "gem") return { grade: row.grade, power: row.castle + row.raid, unit: listing.price };
     if (listing.type === "miniPet") { index = getMiniPetGradeIndex(miniPetData.gradeTable, row.grade); if (index >= 0) grade = index; }
     if (listing.type === "pendant") { index = getPendantGradeSortRank(row.grade); if (index < 13) grade = 13 - index; }
     if (listing.type === "furniture") { index = GLOBAL_CONFIG.freeMarket.furnitureGrades.indexOf(row.grade); if (index >= 0) grade = index; }
@@ -51852,7 +51933,8 @@ function normalizeFreeMarketSearchText(value) {
 }
 // 판매 보관 원본 또는 실제 펫스킬 정의에서 검색용 등급을 읽는 함수
 function getFreeMarketSearchGrade(listing) {
-    var payload = listing.payload || {}, row = (payload.pets || payload.furnitures || payload.pendants || [])[0] || {};
+    var payload = listing.payload || {}, row = (payload.pets || payload.furnitures || payload.pendants || payload.gems || [])[0] || {};
+    if (listing.type === "gem") return GLOBAL_CONFIG.adventureGem.grades[row.grade].name.replace("🌌", "");
     var skill = listing.type === "skill" ? getPetSkillData(listing.itemName) : null;
     return normalizeFreeMarketSearchText(skill ? skill.grade : row.grade);
 }
@@ -51901,6 +51983,7 @@ function matchesFreeMarketFullName(listing, search, grade) {
 // 해당 거래 유형에 실제로 존재하는 등급과 가구 등급 약칭인지 확인하는 함수
 function isFreeMarketSearchGradeForCategory(word, category) {
     var grade = GLOBAL_CONFIG.freeMarket.searchGradeAliases[word] || word;
+    if (category === "gem") return GLOBAL_CONFIG.adventureGem.grades.some(function (entry) { return entry.name.replace("🌌", "") === grade; });
     var grades = category === "miniPet" ? getFreeMarketMiniPetSearchGrades() : category === "pendant" ? PENDANT_GRADE_TABLE : category === "furniture" ? GLOBAL_CONFIG.freeMarket.furnitureGrades : category === "skill" ? GLOBAL_CONFIG.petSkillCollection.gradeOrder : [];
     return grades.some(function (entry) {
         return normalizeFreeMarketSearchText(typeof entry === "string" ? entry : entry.grade) === normalizeFreeMarketSearchText(grade);
@@ -52047,6 +52130,9 @@ function buildFreeMarketV2Guide(data, user, petSkillData) {
         "",
         "💎 펜던트 등록",
         "/펜던트거래등록 [펜던트가방번호] [판매금액]",
+        "",
+        "🪽 보석 등록",
+        "/보석거래등록 [보석가방번호] [판매금액]",
         "",
         "💎 펜던트 자유시장 거래정보 확인",
         "/펜던트거래정보 [자유시장번호]",
@@ -52231,7 +52317,7 @@ function countFreeMarketActiveListingsBySeller(freeMarketData, seller) {
 }
 
 function isFreeMarketRegisterCommand(msg) {
-    return /^\/(가방거래등록|미니펫거래등록|가구거래등록|스킬거래등록|펜던트거래등록)(\s|$)/.test(msg);
+    return /^\/(가방거래등록|미니펫거래등록|가구거래등록|스킬거래등록|펜던트거래등록|보석거래등록)(\s|$)/.test(msg);
 }
 
 function canRegisterFreeMarketByTier(data, user) {
@@ -52312,6 +52398,7 @@ function buildFreeMarketRegisterUsageMessage() {
 
 
 function getFreeMarketTypeLabel(type) {
+    if (type === "gem") return "보석";
     if (type === "bag") return "가방";
     if (type === "miniPet") return "미니펫";
     if (type === "furniture") return "가구";
@@ -52360,6 +52447,7 @@ function formatFreeMarketDisplayTime(timeText, timeMs) {
 function getFreeMarketItemText(listing) {
     if (!listing) return "";
     var itemName = listing.type === "skill" ? formatPetSkillName(listing.itemName) : listing.itemName;
+    if (listing.type === "gem") itemName = formatAdventureGem(listing.payload.gems[0]);
     if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
         itemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
     }
@@ -52450,6 +52538,7 @@ function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive
     freeMarketData = ensureFreeMarketData(freeMarketData);
     var appliedFeeRate = Number(feeRate);
     var completedItemName = listing.itemName;
+    if (listing.type === "gem") completedItemName = formatAdventureGem(listing.payload.gems[0]);
     if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
         completedItemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
     }
@@ -52577,6 +52666,16 @@ function validateFreeMarketBagMergeCounts(bag) {
 // 반환 대상 보관소·이름 병합·합산 수량을 실제 변경 전에 검증하는 함수
 function validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, listing, owner) {
     var type = listing.type;
+    if (type === "gem") {
+        var ctx = getCurrentContext(), gemStore = ctx.marketGemState;
+        if (!gemStore || ctx.marketGemUser !== owner) throw new Error("시장 보석 반환 대상 불일치");
+        requireAdventureGemState(gemStore, getAdventureGemAccountId(data, owner) || "");
+        if (!listing.payload || !Array.isArray(listing.payload.gems) || listing.payload.gems.length !== 1 || listing.quantity !== 1) throw new Error("시장 보석 보관 원본 오류");
+        if (findAdventureGem(gemStore, listing.payload.gems[0].id)) throw new Error("시장 보석 개체 중복");
+        var validation = createAdventureGemState("market"); validation.gems = listing.payload.gems; requireAdventureGemState(validation, "market");
+        if (validation.gems[0].slot !== 0) throw new Error("시장 장착 보석 반환 차단");
+        return;
+    }
     var store = type === "bag" ? data.member : type === "skill" ? petSkillData : type === "furniture" ? homeData : petData;
     if (!store || typeof store !== "object" || Array.isArray(store)) throw new Error("시장 반환 저장소 형식 확인 필요: " + listing.id);
     var record = store[owner]; // 반환을 받을 사용자의 기존 저장 항목
@@ -52609,6 +52708,12 @@ function validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, 
 // 시장에 보관된 상품을 실제 보관 정보와 수량 그대로 수령자에게 반환하는 함수
 function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, listing, owner) {
     validateFreeMarketReturnStorage(data, petData, petSkillData, homeData, listing, owner);
+    if (listing.type === "gem") {
+        getCurrentContext().marketGemState.gems.push(cloneFreeMarketObject(listing.payload.gems[0]));
+        getCurrentContext().marketGemState.hasAcquired = true;
+        data.member[owner].adventureGemInitialized = true;
+        return;
+    }
     if (listing.type === "bag") {
         addItem(data, owner, listing.itemName, listing.quantity);
         return;
@@ -53090,11 +53195,23 @@ function validateAdventurePublication(journal) {
     var seen = {};
     for (var i = 0; i < journal.pending.length; i++) {
         var row = journal.pending[i];
-        if (!row || typeof row.name !== "string" || !/^(?:diamondLiveBaseline|member|member_title|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
+        if (!row || typeof row.name !== "string" || !/^(?:diamondLiveBaseline|adventureGemAccount_[a-f0-9]{64}|adventureGemReceipt_[a-f0-9]{64}|adventureGemNotices|guildData|member|member_title|member_pet|petSweetHomeData|petHomeActivityData|petExploreData|petSkillData|freeMarket|currencyLog|packageLog|halloweenEvent|halloweenAccount_[A-Za-z0-9_-]{1,128}|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("모험가 성장 복구 대상 오류");
         seen[row.name] = true;
         var parsed = parseJsonContent(row.text, row.name);
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("모험가 성장 원본 형식 오류");
         if ((row.name === "member.json" || row.name === "member_title.json") && (!parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("모험가 성장 회원 원본 오류");
+        if (/^adventureGemAccount_/.test(row.name)) {
+            requireAdventureGemState(parsed, parsed.owner);
+            if (getAdventureGemFileName(parsed.owner, false) !== row.name) throw new Error("보석 게시 소유자 불일치");
+        }
+        if (/^adventureGemReceipt_/.test(row.name)) {
+            requireAdventureGemReceipts(parsed, parsed.owner);
+            if (getAdventureGemFileName(parsed.owner, true) !== row.name) throw new Error("보석 기록 소유자 불일치");
+        }
+        if (row.name === GLOBAL_CONFIG.adventureGem.noticeName) requireAdventureGemNotices(parsed);
+        if (row.name === "packageLog.json") assertPackageLogData(parsed);
+        if (/^halloweenAccount_/.test(row.name)) requireHalloweenAccount(parsed, parsed.id);
+        if (row.name === GLOBAL_CONFIG.halloween.stateName) requireHalloweenState(parsed);
         if (/^(serverRaidData|memberOperationLogs)/.test(row.name)) requireMemberSplitStore(parsed, row.name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
     }
     if (!journal.pending.length) throw new Error("확정 게시 원본 누락");
@@ -53123,6 +53240,7 @@ function recoverAdventurePublication() {
         for (var i = 0; i < journal.pending.length; i++) {
             var target = resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name);
             if (!new java.io.File(target).exists() || String(FileStream.read(target, "utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(target, journal.pending[i].text, false);
+            if (/^adventureGemAccount_[a-f0-9]{64}\.json$/.test(journal.pending[i].name)) java.lang.System.setProperty(GLOBAL_CONFIG.adventureGem.revisionPrefix + target, String(java.util.UUID.randomUUID()));
         }
         writeVerifiedJsonFile(path, { version: 1, pending: null }, true);
         memberSplitBackupCache = {};
@@ -53137,7 +53255,7 @@ function recoverAdventurePublication() {
 
 // 집 확장 확정 자료의 검증·복구를 처리하는 함수
 function assertAdventurePublicationReady(path) {
-    if ([resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.diamondLive.baselineFile), resolveActiveDataPath(filePath), resolveActiveDataPath(memberTitlePath), resolveActiveDataPath(memberPetPath), resolveActiveDataPath(homeDataFile), resolveActiveDataPath(petSkillDataPath), resolveActiveDataPath(freeMarketPath), resolveActiveDataPath(currencyLogPath)].indexOf(resolveActiveDataPath(path)) === -1) return;
+    if (!/^(?:adventureGemAccount|adventureGemReceipt)_[a-f0-9]{64}\.json$|^adventureGemNotices\.json$|^halloween(?:Event|Account_[A-Za-z0-9_-]{1,128})\.json$/.test(String(new java.io.File(resolveActiveDataPath(path)).getName())) && [resolveActiveDataPath(guildPath), resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.diamondLive.baselineFile), resolveActiveDataPath(filePath), resolveActiveDataPath(memberTitlePath), resolveActiveDataPath(memberPetPath), resolveActiveDataPath(homeDataFile), resolveActiveDataPath(petSkillDataPath), resolveActiveDataPath(freeMarketPath), resolveActiveDataPath(currencyLogPath), resolveActiveDataPath(packageLogPath)].indexOf(resolveActiveDataPath(path)) === -1) return;
     if (adventurePublishingThread.get()) return;
     var pending = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventurePublication.pendingName);
     if (!new java.io.File(pending).exists() && new java.io.File(pending + ".rollback").exists()) throw new Error("모험가 성장 복구 대기");
@@ -61979,6 +62097,7 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
     var openedPendants = [];
     var out = "💎[" + checkRank(data, petData, guildData, sender) + "] 님이 펜던트를 오픈합니다!\n";
     out += "확률정보: 채팅창에 '/펜던트확률'를 적어보세요\n";
+    out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
     out += "━━━━━━━━━━━━━━━\n";
     out += "✅️ 사용: " + openCount + "개\n";
     removeItem(data, sender, ticketName, openCount);
@@ -62480,13 +62599,15 @@ function cleanAllPendantBags(data, petData, guildData) {
 }
 
 // 글자수 전체 정리 결과 메시지 생성
-function buildTextLengthCleanupMessage(miniResult, furnitureResult, pendantResult) {
+function buildTextLengthCleanupMessage(miniResult, furnitureResult, pendantResult, gemResult) {
+    gemResult = gemResult || { ok: false, totalRemovedCount: 0, userLogLines: [] };
     var msg = "[관리자 정리 시스템🧹]\n글자수 전체 정리가 완료되었습니다.\n\n";
     msg += "정리 결과\n";
     msg += "- 미니펫 정리: " + numberWithCommas(miniResult.totalRemovedCount || 0) + "마리 삭제\n";
     msg += "- 가구 정리: " + numberWithCommas(furnitureResult.totalRemovedCount || 0) + "개 삭제\n";
     msg += "- 펜던트 정리: " + numberWithCommas(pendantResult.totalRemovedCount || 0) + "개 삭제\n";
-    if (!miniResult.ok && !furnitureResult.ok && !pendantResult.ok) {
+    msg += "- 보석 정리: " + numberWithCommas(gemResult.totalRemovedCount || 0) + "개 삭제\n";
+    if (!miniResult.ok && !furnitureResult.ok && !pendantResult.ok && !gemResult.ok) {
         msg += "\n정리할 초과 데이터가 없습니다.";
         return msg;
     }
@@ -62495,6 +62616,7 @@ function buildTextLengthCleanupMessage(miniResult, furnitureResult, pendantResul
     msg += "[미니펫]\n" + (miniResult.userLogLines && miniResult.userLogLines.length ? miniResult.userLogLines.join("\n") : "정리 대상 없음") + "\n\n";
     msg += "[가구]\n" + (furnitureResult.userLogLines && furnitureResult.userLogLines.length ? furnitureResult.userLogLines.join("\n") : "정리 대상 없음") + "\n\n";
     msg += "[펜던트]\n" + (pendantResult.userLogLines && pendantResult.userLogLines.length ? pendantResult.userLogLines.join("\n") : "정리 대상 없음");
+    msg += "\n\n[보석]\n" + (gemResult.userLogLines.length ? gemResult.userLogLines.join("\n") : "정리 대상 없음");
     return msg;
 }
 
@@ -64768,6 +64890,7 @@ function getMyGuildInfo(data, guildData, sender) {
 
 // 길드 레벨업 체크 및 보상 지급
 function checkGuildLevelUp(data, guildData, g) {
+    getCurrentContext().guildProgressDirty = true; // 같은 요청에서 회원 보상과 길드 진행을 함께 게시
     var oldLevel = g.level || 1;
     var level = oldLevel;
     var levelUps = [];
@@ -64776,9 +64899,16 @@ function checkGuildLevelUp(data, guildData, g) {
     if (!g.maxMember) g.maxMember = 5;
     ensureGuildWarehouseObj(g);
 
-    while (guildLevelTable[level] && g.exp >= guildLevelTable[level].need) {
+    while (level < GLOBAL_CONFIG.guild.maxLevel && guildLevelTable[level] && g.exp >= guildLevelTable[level].need) {
         var reward = guildLevelTable[level].reward;
         var nextLevel = level + 1;
+
+        if (nextLevel >= GLOBAL_CONFIG.guild.extendedRewardStartLevel) {
+            if (g.levelRewards === undefined) g.levelRewards = {};
+            if (!g.levelRewards || typeof g.levelRewards !== "object" || Array.isArray(g.levelRewards)) throw new Error("길드 레벨 보상 기록 형식 오류");
+            if (g.levelRewards[String(nextLevel)] === true) { levelUps.push({ from: level, to: nextLevel }); level = nextLevel; continue; }
+            g.levelRewards[String(nextLevel)] = true; // 고유 길드 ID 아래 레벨별 완료 표시, 회원 보상 원문과 한 번에 확정
+        }
 
         // 인원 증가
         if (reward.maxMember) {
@@ -64808,10 +64938,16 @@ function checkGuildLevelUp(data, guildData, g) {
             rewardTexts.push("펫 강화석⭐️ " + numberWithCommas(reward.pet) + "개");
         }
 
+        if (reward.diamond) {
+            g.warehouse.diamond += reward.diamond;
+            rewardTexts.push("다이아💎 " + numberWithCommas(reward.diamond) + "개");
+        }
+
         // 길드원 전체 보상
         if (reward.petFoodAll) {
             for (var m in g.members) {
                 if (!g.members.hasOwnProperty(m)) continue;
+                if (nextLevel >= GLOBAL_CONFIG.guild.extendedRewardStartLevel && (!data.member[m] || !data.member[m].guild || guildData.guilds[data.member[m].guild.id] !== g)) throw new Error("길드 레벨 보상 대상 소속 오류");
                 if (!data.member[m]) continue;
                 addItem(data, m, "펫먹이🍼", reward.petFoodAll);
             }
@@ -64846,6 +64982,14 @@ function checkGuildLevelUp(data, guildData, g) {
         nextNeed: nextNeed,
         remain: remain
     };
+}
+// 누적 공헌·레벨·창고와 달성 당시 회원 보상을 같은 확정 게시 원문으로 묶는 함수
+function buildGuildProgressPublicationRows(data, petData, guildData) {
+    var rows = [{ name: "guildData.json", text: JSON.stringify(guildData) }, { name: "member_pet.json", text: JSON.stringify(petData) }];
+    var plan = buildMemberSplitSavePlan(data);
+    if (plan) for (var i = 0; i < plan.writes.length; i++) rows.push({ name: String(new java.io.File(plan.writes[i].path).getName()), text: typeof plan.writes[i].text === "string" ? plan.writes[i].text : JSON.stringify(plan.writes[i].text) });
+    rows.push({ name: "member.json", text: JSON.stringify(plan ? plan.member : data) });
+    return rows;
 }
 // 현재 길드의 다음 레벨 진행도 정보 반환
 function getGuildNextLevelInfo(g) {
@@ -67610,7 +67754,7 @@ function runHalloweenEntry(mode, args) {
         if (!account) return { message: actor + "님\n❌ 등록된 계정을 확인할 수 없습니다." };
         if (mode === "packageUse" && !state.active) return { message: actor + "님\n현재 할로윈 이벤트가 진행 중이 아닙니다. 패키지는 소모하지 않았습니다." };
         refreshHalloweenAccount(state, account, now);
-        if (mode === "packageUse") result = usePackageFromBag(data, args.petData, args.guildData, sender, args.message, args.packageInfo, args.packageLog, { state: state, account: account, at: now, txId: context.txId });
+        if (mode === "packageUse") result = usePackageFromBag(data, args.petData, args.guildData, sender, args.message, args.packageInfo, args.packageLog, { state: state, account: account, at: now, txId: context.txId }, args.actual);
         else result = grantPackageToUser(data, sender, args.message, args.packageInfo, args.packageLog);
         result.changed = result.ok === true; result.memberChanged = result.ok === true;
         result.message = actor + "님\n" + result.message;
@@ -67624,7 +67768,7 @@ function runHalloweenEntry(mode, args) {
     if (!result.changed && !result.stateChanged) return result;
     result.memberChanged = result.memberChanged || accountMemberChanged;
     var snapshots = [], accountChanged = result.changed && accountName !== null;
-    if (mode === "packageGrant" && args.deferPackageGrant && result.ok) {
+    if ((mode === "packageGrant" && args.deferPackageGrant || mode === "packageUse" && args.deferPackageUse) && result.ok) {
         requireHalloweenAccount(account,account.id);
         result.packageGrantFiles = [{ name: accountName, text: JSON.stringify(account) }];
         if (result.stateChanged) { requireHalloweenState(state); result.packageGrantFiles.push({ name: config.stateName, text: JSON.stringify(state) }); }
@@ -71007,4 +71151,1356 @@ function applyCarrotRetirement(data, now) {
     if (data.catalogPolicy) data.catalogPolicy.shopNumbers = order;
     if (!data.catalogPolicy) { data.catalogPolicy = { version: 1, at: now, shopNumbers: order, cleaned: false }; changed = true; }
     return changed;
+}
+
+// 보석의 횟수·슬롯을 기존 숫자 저장 범위 안에서 검증하는 함수
+function isAdventureGemInteger(value, minimum) {
+    return typeof value === "number" && isFinite(value) && Math.floor(value) === value && value >= minimum && value <= 9007199254740991;
+}
+
+// 닉네임과 독립적인 실제 계정 ID를 반환하는 함수
+function getAdventureGemAccountId(data, user) {
+    var member = data.member && data.member[user], account = member && member.serverRaidAccount;
+    if (account && typeof account.id === "string" && account.id) return account.id;
+    if (member && member.adventureGemInitialized) throw new Error("보석 계정 식별자 누락");
+    return null;
+}
+
+// 계정 ID를 안전한 고정 파일명으로 변환하고 반복 해시를 피하는 함수
+function getAdventureGemFileName(id, receipt) {
+    if (typeof id !== "string" || !id || id.length > 512) throw new Error("보석 계정 식별자 형식 오류");
+    var keys = getAdventureGemFileName.keys || (getAdventureGemFileName.keys = {}), token = keys["$" + id];
+    if (!token) {
+        var digest = java.security.MessageDigest.getInstance("SHA-256").digest(new java.lang.String(id).getBytes("UTF-8")), parts = [];
+        for (var i = 0; i < digest.length; i++) { var hex = (digest[i] & 255).toString(16); parts.push(hex.length === 1 ? "0" + hex : hex); }
+        token = keys["$" + id] = parts.join("");
+    }
+    return (receipt ? GLOBAL_CONFIG.adventureGem.receiptPrefix : GLOBAL_CONFIG.adventureGem.accountPrefix) + token + ".json";
+}
+
+// 파일이 없는 미사용 계정의 조회에만 쓰는 메모리 기본 상태를 만드는 함수
+function createAdventureGemState(owner) {
+    return { version: 1, owner: owner || "", extraSlots: 0, pity: 0, hasAcquired: false, gems: [] };
+}
+
+// 실제 종류·등급별 범위와 장착 위치·개체 중복을 검증하는 함수
+function requireAdventureGemState(store, owner) {
+    if (!store || store.version !== 1 || typeof owner !== "string" || store.owner !== owner || typeof store.hasAcquired !== "boolean" || store.receiptVersion !== undefined && store.receiptVersion !== 1 || !isAdventureGemInteger(store.extraSlots, 0) || !isAdventureGemInteger(store.pity, 0) || store.pity > 99 || !Array.isArray(store.gems)) throw new Error("보석 저장 형식 오류");
+    var ids = {}, slots = {}, grades = GLOBAL_CONFIG.adventureGem.grades, step = GLOBAL_CONFIG.adventureGem.charmStep;
+    for (var i = 0; i < store.gems.length; i++) {
+        var gem = store.gems[i], grade = gem && grades[gem.grade];
+        if (!gem || typeof gem.id !== "string" || !gem.id || gem.id.length > 128 || ids["$" + gem.id] || !isAdventureGemInteger(gem.grade, 0) || !grade || ["ruby", "sapphire", "emerald"].indexOf(gem.kind) === -1 || !isAdventureGemInteger(gem.slot, 0) || !isAdventureGemInteger(gem.castle, 0) || !isAdventureGemInteger(gem.raid, 0)) throw new Error("보석 개체 형식 오류");
+        var castleValid = gem.castle >= grade.min && gem.castle <= grade.max && gem.castle % step === 0;
+        var raidValid = gem.raid >= grade.min && gem.raid <= grade.max && gem.raid % step === 0;
+        if (gem.kind === "ruby" && (!castleValid || gem.raid !== 0) || gem.kind === "sapphire" && (!raidValid || gem.castle !== 0) || gem.kind === "emerald" && (!castleValid || !raidValid)) throw new Error("보석 매력 범위 오류");
+        if (gem.slot && slots[gem.slot]) throw new Error("보석 장착 슬롯 중복");
+        ids["$" + gem.id] = true;
+        if (gem.slot) slots[gem.slot] = true;
+    }
+    return store;
+}
+
+// 장착 개체의 실제 캐슬·레이드 합계와 화면 집계만 계산하는 함수
+function summarizeAdventureGems(store) {
+    var result = { castle: 0, raid: 0, count: 0, creation: 0, hidden: 0, extraSlots: store.extraSlots };
+    for (var i = 0; i < store.gems.length; i++) {
+        var gem = store.gems[i];
+        if (!gem.slot) continue;
+        result.castle += gem.castle; result.raid += gem.raid; result.count++;
+        if (gem.grade === GLOBAL_CONFIG.adventureGem.grades.length - 1) result.creation++;
+        if (gem.kind === "emerald") result.hidden++;
+    }
+    if (!isFinite(result.castle) || !isFinite(result.raid)) throw new Error("보석 합산 수치 표현 범위 오류");
+    return result;
+}
+
+// 요청 내 재사용과 파일·게시 세대 검증으로 전체 보석 파일의 반복 읽기를 피하는 함수
+function getAdventureGemSummary(data, user) {
+    var id = getAdventureGemAccountId(data, user);
+    if (!id) return summarizeAdventureGems(createAdventureGemState(""));
+    var config = GLOBAL_CONFIG.adventureGem, path = resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(id));
+    var revision = String(java.lang.System.getProperty(config.revisionPrefix + path, ""));
+    var context = getCurrentContext(), local = context.adventureGemSummaries || (context.adventureGemSummaries = {});
+    if (local[path] && local[path].revision === revision) return local[path].summary;
+    var file = new java.io.File(path), summary;
+    if (!file.exists()) {
+        if (data.member[user].adventureGemInitialized) throw new Error("보석 저장 원본 누락: " + path);
+        summary = summarizeAdventureGems(createAdventureGemState(id));
+    } else {
+        var cacheText = java.lang.System.getProperty(config.cachePrefix + path), cached = null;
+        if (cacheText !== null) { try { cached = JSON.parse(String(cacheText)); } catch (cacheError) { java.lang.System.clearProperty(config.cachePrefix + path); } }
+        var modified = Number(file.lastModified()), bytes = Number(file.length()); // 외부 백업 복원도 파일 지문이 바뀌면 다시 검증
+        if (cached && cached.revision === revision && cached.modified === modified && cached.bytes === bytes) summary = cached.summary;
+        else {
+            var store = requireAdventureGemState(JSON.parse(String(FileStream.read(path, "utf-8")).replace(/^\uFEFF/, "")), id);
+            summary = summarizeAdventureGems(store);
+            java.lang.System.setProperty(config.cachePrefix + path, JSON.stringify({ revision: revision, modified: modified, bytes: bytes, summary: summary }));
+        }
+    }
+    local[path] = { revision: revision, summary: summary };
+    return summary;
+}
+
+// 조회 순번과 독립적인 ID를 유지하며 보석가방의 현재 순서를 만드는 함수
+function getAdventureGemBag(store) {
+    return store.gems.filter(function (gem) { return gem.slot === 0; }).sort(function (a, b) { return b.grade - a.grade || b.castle + b.raid - a.castle - a.raid || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
+}
+
+// 캐슬·레이드 보석 매력을 기획서의 만 단위로 표시하는 함수
+function formatAdventureGemCharm(value) {
+    return String(value / 10000) + "만";
+}
+
+// 종류별 기존 보석 표기와 에메랄드의 두 능력치 줄을 만드는 함수
+function formatAdventureGem(gem) {
+    var grade = GLOBAL_CONFIG.adventureGem.grades[gem.grade].name;
+    if (gem.kind === "emerald") return "에메랄드🟢[" + grade + "]\n└ ⚔️ +" + formatAdventureGemCharm(gem.castle) + " · 👾 +" + formatAdventureGemCharm(gem.raid);
+    return gem.kind === "ruby" ? "루비🔴(+" + formatAdventureGemCharm(gem.castle) + "⚔️)[" + grade + "]" : "사파이어🔵(+" + formatAdventureGemCharm(gem.raid) + "👾)[" + grade + "]";
+}
+
+// 현재 모험가 레벨과 영구 추가칸으로 고정 슬롯 범위를 계산하는 함수
+function getAdventureGemSlots(data, user, store) {
+    var level = Math.max(1, parseInt(data.member[user].lv, 10) || 1), base = Math.floor(level / GLOBAL_CONFIG.adventureGem.levelsPerSlot), total = base + store.extraSlots;
+    if (!isAdventureGemInteger(total, 0)) throw new Error("보석 슬롯 수치 표현 범위 오류");
+    return { level: level, base: base, extra: store.extraSlots, total: total };
+}
+
+// 확정 옵션만으로 미장착 보석 한 개를 만들고 원본 규격을 검증하는 함수
+function createAdventureGem(kind, grade, castle, raid) {
+    var gem = { id: String(java.util.UUID.randomUUID()), kind: kind, grade: grade, castle: castle, raid: raid, slot: 0 };
+    requireAdventureGemState({ version: 1, owner: "validation", extraSlots: 0, pity: 0, hasAcquired: false, gems: [gem] }, "validation");
+    return gem;
+}
+
+// 실제 장착 상태나 다른 보석의 순번에 의존하지 않고 개체를 찾는 함수
+function findAdventureGem(store, id) {
+    for (var i = 0; i < store.gems.length; i++) if (store.gems[i].id === id) return store.gems[i];
+    return null;
+}
+
+// 현재 계정이 가진 보석 소모품 수량을 변경 없이 읽는 함수
+function getAdventureGemItemCount(data, user, name) {
+    var bag = data.member[user].bag, value = bag && bag[name];
+    if (value === undefined) return 0;
+    if (!isAdventureGemInteger(value, 0)) throw new Error("보석 소모품 수량 형식 오류");
+    return value;
+}
+
+// 순차 추첨의 100회 보장과 초기화를 적용하고 실제 결과를 한 번만 생성하는 함수
+function applyAdventureGemDraw(data, user, store, count, random) {
+    var config = GLOBAL_CONFIG.adventureGem, bag = getAdventureGemBag(store), held = getAdventureGemItemCount(data, user, config.ticketName);
+    if (!isAdventureGemInteger(count, 1)) return { error: "quantity" };
+    if (count > config.maxOpenCount) return { error: "maximum" };
+    if (held < count) return { error: "ticket", held: held };
+    if (bag.length >= config.bagLimit) return { error: "full", bagCount: bag.length };
+    var results = [], totalWeight = 0, previous = bag.length; // 시작 시에만 정원을 확인하고 도중 초과는 전부 보관
+    var first = !store.hasAcquired && store.gems.length === 0;
+    for (var g = 0; g < config.grades.length; g++) totalWeight += config.grades[g].weight;
+    for (var i = 0; i < count; i++) {
+        var guaranteed = store.pity === config.pityCount - 1, grade = config.grades.length - 1, roll = random() * totalWeight;
+        if (guaranteed) grade = roll < totalWeight - config.grades[grade].weight ? grade - 1 : grade;
+        else for (var n = 0; n < config.grades.length; n++) { roll -= config.grades[n].weight; if (roll < 0) { grade = n; break; } }
+        var definition = config.grades[grade], kind = random() < 0.5 ? "ruby" : "sapphire";
+        var charm = definition.min + Math.floor(random() * ((definition.max - definition.min) / config.charmStep + 1)) * config.charmStep;
+        var gem = createAdventureGem(kind, grade, kind === "ruby" ? charm : 0, kind === "sapphire" ? charm : 0);
+        store.gems.push(gem);
+        store.pity = grade >= config.grades.length - 2 ? 0 : store.pity + 1;
+        results.push({ gem: JSON.parse(JSON.stringify(gem)), guaranteed: guaranteed, rate: guaranteed ? (grade === config.grades.length - 1 ? config.grades[grade].weight : totalWeight - config.grades[config.grades.length - 1].weight) * 100 / totalWeight : definition.weight * 100 / totalWeight });
+    }
+    removeItem(data, user, config.ticketName, count);
+    store.hasAcquired = true;
+    return { changed: true, kind: "draw", results: results, count: count, remaining: held - count, beforeBag: previous, afterBag: previous + count, pity: store.pity, first: first };
+}
+
+// 슬롯추가 아이템과 영구 추가칸을 같은 상태 변경으로 계산하는 함수
+function applyAdventureGemSlotExpansion(data, user, store, count) {
+    var config = GLOBAL_CONFIG.adventureGem, held = getAdventureGemItemCount(data, user, config.slotItemName), before = getAdventureGemSlots(data, user, store);
+    if (!isAdventureGemInteger(count, 1)) return { error: "quantity" };
+    if (held < count) return { error: "slotItem", held: held, count: count };
+    if (!isAdventureGemInteger(before.total + count, 0)) throw new Error("보석 추가 슬롯 수치 표현 범위 오류");
+    removeItem(data, user, config.slotItemName, count);
+    store.extraSlots += count;
+    return { changed: true, kind: "slot", count: count, remaining: held - count, before: before, after: getAdventureGemSlots(data, user, store) };
+}
+
+// 확인한 실제 개체와 슬롯 서명을 다시 확인한 뒤 장착·교체를 계산하는 함수
+function applyAdventureGemEquip(data, user, store, confirmation) {
+    var gem = findAdventureGem(store, confirmation.gemId), old = null, slots = getAdventureGemSlots(data, user, store);
+    for (var i = 0; i < store.gems.length; i++) if (store.gems[i].slot === confirmation.slot) old = store.gems[i];
+    if (!gem || gem.slot !== 0 || JSON.stringify(gem) !== confirmation.gemText || !isAdventureGemInteger(confirmation.slot, 1) || confirmation.slot > slots.total || (old ? JSON.stringify(old) : null) !== confirmation.oldText) return { error: "changed" };
+    var before = summarizeAdventureGems(store), beforeBag = getAdventureGemBag(store).length;
+    if (old) store.gems = store.gems.filter(function (row) { return row.id !== old.id; });
+    gem.slot = confirmation.slot;
+    return { changed: true, kind: old ? "replace" : "equip", gem: JSON.parse(JSON.stringify(gem)), old: old, before: before, after: summarizeAdventureGems(store), beforeBag: beforeBag, afterBag: beforeBag - 1, slots: slots };
+}
+
+// 확인한 두 재료의 매력을 그대로 계승하고 조합비와 함께 소모하는 함수
+function applyAdventureGemCombine(data, user, store, confirmation) {
+    var ruby = findAdventureGem(store, confirmation.rubyId), sapphire = findAdventureGem(store, confirmation.sapphireId);
+    if (!ruby || !sapphire || ruby.slot || sapphire.slot || JSON.stringify(ruby) !== confirmation.rubyText || JSON.stringify(sapphire) !== confirmation.sapphireText) return { error: "changed" };
+    if (ruby.id === sapphire.id) return { error: "same" };
+    if (ruby.kind !== "ruby" || sapphire.kind !== "sapphire") return { error: "materials" };
+    if (ruby.grade !== sapphire.grade) return { error: "grade" };
+    var cost = GLOBAL_CONFIG.adventureGem.grades[ruby.grade].combinePoint, beforePoint = Number(data.member[user].point) || 0;
+    var deduction = calculatePendantPromotionPointDeduction(beforePoint, cost);
+    if (!deduction.ok && deduction.reason === "insufficient") return { error: "points", cost: cost, point: beforePoint };
+    if (!deduction.ok) throw new Error("보석 조합비 차감 수치 오류");
+    var beforeBag = getAdventureGemBag(store).length, gem = createAdventureGem("emerald", ruby.grade, ruby.castle, sapphire.raid);
+    store.gems = store.gems.filter(function (row) { return row.id !== ruby.id && row.id !== sapphire.id; });
+    store.gems.push(gem); data.member[user].point = deduction.nextPoint;
+    return { changed: true, kind: "combine", gem: gem, cost: cost, point: deduction.nextPoint, beforeBag: beforeBag, afterBag: beforeBag - 1 };
+}
+
+// 현재 가방 순서로 대상을 모두 확정하고 판매와 포인트 지급을 함께 계산하는 함수
+function applyAdventureGemSale(data, user, store, start, end, range) {
+    var bag = getAdventureGemBag(store);
+    if (!isAdventureGemInteger(start, 1) || !isAdventureGemInteger(end, 1) || start > end || end > bag.length) return { error: "range", bagCount: bag.length };
+    var selected = bag.slice(start - 1, end), ids = {}, price = selected.length * GLOBAL_CONFIG.adventureGem.salePoint;
+    if (!isSafePointSaleCredit(data.member[user], price)) throw new Error("보석 판매 대금 수치 오류");
+    for (var i = 0; i < selected.length; i++) ids["$" + selected[i].id] = true;
+    store.gems = store.gems.filter(function (row) { return !ids["$" + row.id]; });
+    data.member[user].point = (Number(data.member[user].point) || 0) + price;
+    return { changed: true, kind: range ? "saleRange" : "sale", start: start, end: end, gems: selected, price: price, beforeBag: bag.length, afterBag: bag.length - selected.length };
+}
+
+// 고정 슬롯번호의 앞자리 0을 표시하는 함수
+function formatAdventureGemSlot(slot) {
+    return "[" + (slot < 10 ? "0" : "") + slot + "]";
+}
+
+// 조합비·잔액을 기존 억 단위와 정수 포맷으로 표시하는 함수
+function formatAdventureGemPoint(point) {
+    return point && point % 100000000 === 0 ? String(point / 100000000) + "억" : numberWithCommas(point);
+}
+
+// 마지막 추첨까지 반영한 실제 연속 미획득 횟수와 10칸 게이지를 만드는 함수
+function buildAdventureGemPity(pity) {
+    var config = GLOBAL_CONFIG.adventureGem, filled = Math.floor(pity * config.gaugeSlots / config.pityCount), gauge = "";
+    for (var i = 0; i < config.gaugeSlots; i++) gauge += i < filled ? "■" : "□";
+    return (pity === config.pityCount - 1 ? "🎯 다음 1회 창세 이상 확정!" : "🎯 다음 창세 이상 보장까지 " + (config.pityCount - pity) + "회") +
+        "\n[" + gauge + "] " + pity + "/" + config.pityCount + (pity === config.pityCount - 1 ? "\n└ 창세 99.8% · 🌌창조 0.2%" : "");
+}
+
+// 에메랄드 두 줄을 나누지 않고 기존 전송 한도 안에서 화면 블록을 이어 보내는 함수
+function replyAdventureGemBlocks(replier, blocks) {
+    if (blocks.some(function (block) { return typeof block === "object" && block.slotRows; })) { replyAdventureGemSlotStream(replier, blocks); return; }
+    var text = "", limit = GLOBAL_CONFIG.adventureGem.messageLimit;
+    for (var i = 0; i < blocks.length; i++) {
+        var next = String(blocks[i]);
+        if (text && text.length + next.length + 1 > limit) { replier.reply(text); text = ""; }
+        text += (text ? "\n" : "") + next;
+    }
+    if (text) replier.reply(text);
+}
+
+// 보석가방의 안내·현재 순번·5개 뒤 전체보기를 원문 순서로 만드는 함수
+function buildAdventureGemBagBlocks(data, user, store, nickname) {
+    var bag = getAdventureGemBag(store), slots = getAdventureGemSlots(data, user, store), summary = summarizeAdventureGems(store), config = GLOBAL_CONFIG.adventureGem;
+    var blocks = ["[" + nickname + "] 님의 보유 보석가방🪽[" + bag.length + "/" + config.bagLimit + "]\n🧭 Lv." + slots.level + " · 보석 장착 [" + summary.count + "/" + slots.total + "칸]\n━━━━━━━━━━━━━\n" +
+        "🪽 보석 가이드: /보석가이드\n※ 보석 장착: /보석장착 [가방번호] [슬롯번호]\n※ 슬롯번호 생략 시 장착 위치 선택\n※ 장착 정보: /보석정보\n※ 보석 조합: /보석조합 [루비 가방번호] [사파이어 가방번호]\n※ 조합 성공률 100% · 재료의 매력을 그대로 계승\n※ 조합 입력 후 재료·조합비를 확인하고 확정\n※ 보석 판매: /보석판매 [가방번호]\n※ 보석 정리: /보석가방정리 [번호~번호]\n※ 슬롯 확장: /보석슬롯오픈 [수량]\n※ 장착하면 거래·조합 불가 · 교체 시 기존 보석 소멸\n━━━━━━━━━━━━━"];
+    for (var i = 0; i < bag.length; i++) blocks.push((i + 1) + ". " + formatAdventureGem(bag[i]) + (i === 4 ? allsee : ""));
+    return blocks;
+}
+
+// 장착 보석은 강함순으로 표시하면서 실제 고정 슬롯번호와 모든 빈칸을 유지하는 함수
+function buildAdventureGemInfoBlocks(data, user, store, nickname) {
+    var slots = getAdventureGemSlots(data, user, store), summary = summarizeAdventureGems(store), bag = getAdventureGemBag(store), occupied = {}, equipped = [];
+    for (var i = 0; i < store.gems.length; i++) if (store.gems[i].slot) { occupied[store.gems[i].slot] = store.gems[i]; equipped.push(store.gems[i]); }
+    equipped.sort(function (a, b) { return b.castle + b.raid - a.castle - a.raid || a.slot - b.slot; });
+    var nextLevel = (Math.floor(slots.level / GLOBAL_CONFIG.adventureGem.levelsPerSlot) + 1) * GLOBAL_CONFIG.adventureGem.levelsPerSlot;
+    var special = (summary.creation ? "🌌창조 " + summary.creation + "개" : "") + (summary.hidden ? (summary.creation ? " · " : "") + "🟢히든 " + summary.hidden + "개" : "");
+    var header = "[" + nickname + "] 님의\n🪽 현재 장착 중인 보석 [" + summary.count + "/" + slots.total + "칸]\n━━━━━━━━━━━━━\n🧭 레벨 장착 공간: " + slots.base + "칸 · Lv." + slots.level + "\n" +
+        GLOBAL_CONFIG.adventureGem.slotItemName + ": +" + slots.extra + "칸\n🧩 총 장착 가능 공간: " + slots.total + "칸\n📭 남은 장착 공간: " + Math.max(0, slots.total - summary.count) + "칸\n🔒 다음 슬롯: Lv." + nextLevel + " · " + (nextLevel - slots.level) + "레벨 남음\n━━━━━━━━━━━━━\n";
+    if (special) header += special + "\n";
+    header += "⚔️ 캐슬 +" + formatAdventureGemCharm(summary.castle) + " · 👾 레이드 +" + formatAdventureGemCharm(summary.raid) + allsee;
+    var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [보석가방번호] [슬롯번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요."];
+    for (var e = 0; e < equipped.length; e++) blocks.push(formatAdventureGemSlot(equipped[e].slot) + " " + formatAdventureGem(equipped[e]).replace(/\n└/g, "\n     └"));
+    var emptyHeading = false;
+    if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n🔓 빈 슬롯", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
+    else for (var slot = 1; slot <= slots.total; slot++) if (!occupied[slot]) { if (!emptyHeading) { blocks.push("\n🔓 빈 슬롯"); emptyHeading = true; } blocks.push(formatAdventureGemSlot(slot) + " 🔓 빈 슬롯"); }
+    var full = summary.count >= slots.total;
+    blocks.push("\n🎒 " + (full ? "교체" : "장착") + " 가능한 보석 목록\n※ 아래 번호는 보석가방 번호예요.\n━━━━━━━━━━━━━");
+    for (var b = 0; b < bag.length; b++) blocks.push("[" + (b + 1) + "] " + formatAdventureGem(bag[b]));
+    blocks.push("━━━━━━━━━━━━━");
+    if (full && slots.total) blocks.push("⚠️ 기존 보석은 소멸하며 복구할 수 없어요.");
+    if (bag.length && slots.total && !full) {
+        blocks.push("🔓 빈 슬롯 장착 예시\n가방 1번 보석을 장착하려면");
+        if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch) blocks.push({ slotRows: "example", from: 1, to: slots.total, occupied: occupied });
+        else for (var empty = 1; empty <= slots.total; empty++) if (!occupied[empty]) blocks.push("👉 " + empty + "번 슬롯: /보석장착 1 " + empty);
+    }
+    if (!bag.length) blocks.push("입력: /보석오픈 [수량]\n🛒 구매 안내: /다이아상점");
+    if (!slots.total) blocks.push("레벨 10마다 1칸\n모험가 보석슬롯추가🔓(/보석슬롯오픈 숫자)");
+    blocks.push("\n※ 첫 번째 숫자는 보석가방 번호예요.\n※ 두 번째 숫자는 고정 슬롯번호예요.");
+    return blocks;
+}
+
+// 저장된 결과를 재추첨 없이 같은 완료·획득 화면으로 표현하는 함수
+function buildAdventureGemResultBlocks(result, nickname) {
+    var config = GLOBAL_CONFIG.adventureGem, divider = "━━━━━━━━━━━━━", header = "[" + nickname + "] 님\n", blocks = [], text;
+    if (result.kind === "draw") {
+        text = "🪽[" + nickname + "] 님이 모험가 보석을 오픈합니다!\n확률정보: 채팅창에 '/보석확률'을 적어보세요\n※ 보석 정리: /보석가방정리 [번호~번호]\n━━━━━━━━━━━━━━━\n✅️ 사용: " + result.count + "개\n🪎 남은 보석뽑기권: " + numberWithCommas(result.remaining) + "개\n🎒 보석 가방: " + result.afterBag + "/" + config.bagLimit + "\n━━━━━━━━━━━━━━━";
+        var guaranteed = [], ordinary = [];
+        for (var i = 0; i < result.results.length; i++) {
+            if (result.results[i].guaranteed) guaranteed.push(result.results[i]);
+            else if (result.results[i].gem.grade >= config.grades.length - 2) ordinary.push(result.results[i]);
+        }
+        blocks.push(text);
+        if (guaranteed.length) {
+            blocks.push("🎯 천장시스템 발동! · " + guaranteed.length + "회");
+            for (var g = 0; g < guaranteed.length; g++) blocks.push(formatAdventureGem(guaranteed[g].gem));
+            blocks.push((result.afterBag > config.bagLimit ? "✅ 가방 정원을 초과해도 천장 보석은 정상 지급됐어요!" : "✅ 보장 보석을 보석가방에 지급했어요!") + "\n🔄 천장 누적 초기화\n━━━━━━━━━━━━━━━");
+        }
+        if (ordinary.length) {
+            blocks.push("✨ 창세 이상 획득!");
+            for (var o = 0; o < ordinary.length; o++) blocks.push(formatAdventureGem(ordinary[o].gem));
+            blocks.push((result.afterBag > config.bagLimit ? "✅ 가방 초과 상태에서도 정상 지급됐어요!" : "✅ 획득 보석을 보석가방에 지급했어요!") + "\n🔄 천장 누적이 초기화됐어요.\n━━━━━━━━━━━━━━━");
+        }
+        if (result.first) blocks.push("👉 장착하려면 /보석가방");
+        blocks.push(buildAdventureGemPity(result.pity) + "\n━━━━━━━━━━━━━━━");
+        var sorted = result.results.slice().sort(function (a, b) { return b.gem.grade - a.gem.grade || b.gem.castle + b.gem.raid - a.gem.castle - a.gem.raid || (a.gem.id < b.gem.id ? -1 : a.gem.id > b.gem.id ? 1 : 0); });
+        for (var r = 0; r < sorted.length; r++) blocks.push(formatAdventureGem(sorted[r].gem) + " (" + (sorted[r].guaranteed ? "천장 등급 확률:" : "등급 확률:") + sorted[r].rate + "%)" + (r === 4 ? allsee : ""));
+        return blocks;
+    }
+    if (result.kind === "slot") {
+        text = header + "✅ 보석 슬롯 확장 완료!\n" + divider + "\n🔓 사용한 슬롯추가 아이템: " + result.count + "개\n📦 남은 슬롯추가 아이템: " + numberWithCommas(result.remaining) + "개\n\n🧭 레벨 장착 공간: " + result.after.base + "칸 · Lv." + result.after.level + "\n🔓 아이템 추가 공간: " + result.before.extra + "칸 → " + result.after.extra + "칸\n🧩 총 장착 가능 공간: " + result.before.total + "칸 → " + result.after.total + "칸\n🆕 새 슬롯: ";
+        var line = "";
+        if (result.count > config.slotMessageBatch) return [text, { slotRows: "labels", from: result.before.total + 1, to: result.after.total, occupied: {} }, divider + "\n👉 장착 현황: /보석정보"];
+        for (var slot = result.before.total + 1; slot <= result.after.total; slot++) { var label = (line ? " · " : "") + formatAdventureGemSlot(slot); if (line.length + label.length > config.messageLimit / 2) { blocks.push(text + line); text = ""; line = ""; label = formatAdventureGemSlot(slot); } line += label; }
+        blocks.push(text + line + "\n" + divider + "\n👉 장착 현황: /보석정보"); return blocks;
+    }
+    if (result.kind === "equip" || result.kind === "replace") {
+        var replace = result.kind === "replace";
+        text = header + (replace ? "✅ 보석 교체 완료!" : "✅ 보석 장착 완료!") + "\n" + divider + "\n" + (replace ? "교체 위치: " : "장착 위치: ") + formatAdventureGemSlot(result.gem.slot) + " 슬롯\n";
+        if (replace) text += "🗑️ 소멸: " + formatAdventureGem(result.old) + "\n🪽 장착: ";
+        text += formatAdventureGem(result.gem) + "\n\n";
+        var countLine = "🪽 장착 보석 [" + result.after.count + "/" + result.slots.total + "칸]";
+        var statsLines = "⚔️ 보석 캐슬 합계 +" + (replace ? formatAdventureGemCharm(result.before.castle) + " → +" : "") + formatAdventureGemCharm(result.after.castle) + "\n👾 보석 레이드 합계 +" + (replace ? formatAdventureGemCharm(result.before.raid) + " → +" : "") + formatAdventureGemCharm(result.after.raid);
+        text += (replace ? statsLines + "\n" + countLine : countLine + "\n" + statsLines) + "\n🎒 보석가방: " + result.beforeBag + "개 → " + result.afterBag + "개\n" + divider + "\n👉 장착 현황: /보석정보";
+        return [text];
+    }
+    if (result.kind === "combine") return [header + "✅ 히든 에메랄드 조합 완료!\n" + divider + "\n" + formatAdventureGem(result.gem) + "\n\n🪽 재료 보석: 2개 소모\n💰 사용 포인트: 🅟" + formatAdventureGemPoint(result.cost) + "\n👛 남은 포인트: 🅟" + formatAdventureGemPoint(result.point) + "\n🎒 보석가방: " + result.beforeBag + "/" + config.bagLimit + " → " + result.afterBag + "/" + config.bagLimit + "\n" + divider + "\n👉 보석 확인: /보석가방"];
+    if (result.kind === "sale" || result.kind === "saleRange") {
+        var range = result.kind === "saleRange";
+        text = header + (range ? "✅ 보석가방 정리 완료!" : "✅ 보석 판매 완료!") + "\n" + divider + "\n";
+        text += range ? "판매 범위: 보석가방 " + result.start + "번~" + result.end + "번\n🪽 판매한 보석: " + result.gems.length + "개\n" : "판매: 가방 " + result.start + "번\n" + formatAdventureGem(result.gems[0]) + "\n";
+        text += "💰 받은 포인트: 🅟" + numberWithCommas(result.price) + "\n🎒 보석가방: " + result.beforeBag + (range ? "/" + config.bagLimit : "개") + " → " + result.afterBag + (range ? "/" + config.bagLimit : "개") + "\n" + divider + "\n" + (range ? "👉 남은 보석 확인: /보석가방" : "👉 보석 확인: /보석가방");
+        return [text];
+    }
+    throw new Error("보석 결과 종류 오류");
+}
+
+// 실행 명령은 전체 입력을 검증하고 잘못된 뒷말은 안내 대상으로만 구분하는 함수
+function getAdventureGemRequest(message) {
+    var plain = { "/보석가방": "bag", "/보석정보": "info", "/장착보석": "info", "/보석확률": "probability", "/보석취소": "cancel", "/보석장착확인": "equipConfirm", "/보석교체확인": "replaceConfirm", "/보석조합확인": "combineConfirm", "/보석가이드": "guide" };
+    if (Object.prototype.hasOwnProperty.call(plain, message)) return { kind: plain[message], action: message };
+    var match = message.match(/^\/(보석오픈|보석슬롯오픈)(?:\s+(\d+))?$/);
+    if (match) return { kind: match[1] === "보석오픈" ? "draw" : "slot", count: match[2] ? Number(match[2]) : match[1] === "보석오픈" ? 1 : NaN, action: "/" + match[1] };
+    match = message.match(/^\/보석장착\s+(\d+)(?:\s+(\d+))?$/);
+    if (match) return { kind: "equip", index: Number(match[1]), slot: match[2] ? Number(match[2]) : null, action: "/보석장착" };
+    match = message.match(/^\/보석조합\s+(\d+)\s+(\d+)$/);
+    if (match) return { kind: "combine", ruby: Number(match[1]), sapphire: Number(match[2]), action: "/보석조합" };
+    match = message.match(/^\/보석판매\s+(\d+)$/);
+    if (match) return { kind: "sale", start: Number(match[1]), end: Number(match[1]), action: "/보석판매" };
+    match = message.match(/^\/보석가방정리\s+(\d+)~(\d+)$/);
+    if (match) return { kind: "saleRange", start: Number(match[1]), end: Number(match[2]), action: "/보석가방정리" };
+    match = message.match(/^\/보석가이드\s+(\d+)$/);
+    if (match) return { kind: "guide", page: Number(match[1]), action: "/보석가이드" };
+    match = message.match(/^\/(보석오픈|보석슬롯오픈|보석장착|보석조합|보석판매|보석가방정리|보석가이드|보석장착확인|보석교체확인|보석조합확인|보석취소|보석가방|보석정보|장착보석|보석확률)(?:\s|$)/);
+    return match ? { kind: "invalid", action: "/" + match[1] } : null;
+}
+
+// 실제 상태에 맞는 원문 오류와 입력 안내만 반환하는 함수
+function buildAdventureGemError(error, request, data, user, store, nickname) {
+    var text = "[" + nickname + "] 님\n", config = GLOBAL_CONFIG.adventureGem, action = request.action, bag = getAdventureGemBag(store), divider = "━━━━━━━━━━━━━";
+    var usage = action + " [수량]", tail = "📊 확률정보: /보석확률";
+    if (action === "/보석장착") { usage = action + " [보석가방번호]"; tail = "🎒 보석 번호 확인: /보석가방"; }
+    if (action === "/보석조합") { usage = action + " [루비 가방번호] [사파이어 가방번호]"; tail = "🎒 재료 확인: /보석가방"; }
+    if (action === "/보석가방정리") { usage = action + " [시작번호~끝번호]"; tail = "🎒 판매할 번호 확인: /보석가방"; }
+    if (action === "/보석판매") { usage = action + " [가방번호]"; tail = "🎒 보석 번호 확인: /보석가방"; }
+    if (action === "/보석슬롯오픈") tail = "🛒 구매 안내: /다이아상점";
+    var reason = "❌ 보석 번호를 올바르게 입력해 주세요.", example = "";
+    if (error.error === "quantity") { reason = "❌ 수량은 1 이상의 정수로 입력해 주세요."; if (action === "/보석오픈" && getAdventureGemItemCount(data, user, config.ticketName)) example = "예시: /보석오픈 " + Math.min(10, getAdventureGemItemCount(data, user, config.ticketName)); }
+    if (error.error === "syntax") { reason = "❌ 올바른 명령어를 입력해 주세요."; if (["/보석가방", "/보석정보", "/장착보석", "/보석확률", "/보석취소", "/보석장착확인", "/보석교체확인", "/보석조합확인"].indexOf(action) !== -1) usage = action; }
+    if (error.error === "maximum") reason = "❌ 한 번에 최대 " + config.maxOpenCount + "개까지 보석 뽑기 가능합니다.";
+    if (error.error === "ticket") reason = "❌ [" + config.ticketName + "] 아이템이 부족합니다. (보유: " + error.held + ")";
+    if (error.error === "slotItem") { reason = "❌ " + config.slotItemName + "가 부족해요.\n필요: " + error.count + "개 · 보유: " + error.held + "개"; if (error.held) example = "현재 사용 가능: /보석슬롯오픈 " + error.held; }
+    if (error.error === "full") return [text + "❌ 보석가방이 가득 차 있어 뽑을 수 없어요.\n🎒 보석가방: " + error.bagCount + "/" + config.bagLimit + "\n" + divider + "\n보석을 판매·조합·장착해 공간을 확보해 주세요.\n🎒 보석 확인: /보석가방\n📚 정리 방법: /보석가이드 5"];
+    if (error.error === "changed") reason = "❌ 선택한 보석이나 슬롯 상태가 변경되어 진행할 수 없어요. 다시 선택해 주세요.";
+    if (error.error === "slot") { reason = "❌ 사용할 수 없는 슬롯이에요."; usage = "/보석장착 [보석가방번호] [슬롯번호]"; tail = "👉 장착 현황: /보석정보"; }
+    if (error.error === "same") reason = "❌ 서로 다른 보석 2개를 선택해 주세요.";
+    if (error.error === "materials") reason = "❌ 루비 1개와 사파이어 1개를 선택해 주세요.";
+    if (error.error === "grade") reason = "❌ 두 보석의 등급이 달라 조합할 수 없어요.\n같은 등급의 루비 1개와 사파이어 1개가 필요해요.";
+    if (error.error === "equipped") { reason = "❌ 장착 중인 보석은 조합할 수 없어요.\n같은 등급의 미장착 루비와 사파이어를 선택해 주세요."; tail += "\n📚 조합 안내: /보석가이드 4"; }
+    if (error.error === "points") reason = "❌ 조합에 필요한 포인트가 부족해요.\n필요: 🅟" + formatAdventureGemPoint(error.cost) + " · 보유: 🅟" + formatAdventureGemPoint(error.point);
+    if (error.error === "range") reason = "❌ 판매 범위가 보석가방 번호를 벗어났어요." + (bag.length ? "\n현재 보석가방 번호: 1번~" + bag.length + "번" : "");
+    if (error.error === "guide") { reason = "❌ 가이드 번호는 1~5 중에서 입력해 주세요."; usage = "/보석가이드 [번호]"; example = "예시: /보석가이드 4"; tail = "📚 전체 목차: /보석가이드"; }
+    if (error.error === "expired") reason = "❌ 확인 요청이 만료됐어요. 보석을 다시 선택해 주세요.";
+    if (error.error === "request") {
+        reason = request.kind === "equipConfirm" ? "❌ 확인할 보석 장착 요청이 없어요.\n장착할 보석을 먼저 선택해 주세요." : "❌ 확인할 요청이 없어요.";
+        usage = request.kind === "combineConfirm" ? "/보석조합 [루비 가방번호] [사파이어 가방번호]" : "/보석장착 [보석가방번호]";
+        tail = "🎒 보석 번호 확인: /보석가방";
+        if (bag.length && request.kind !== "combineConfirm") example = "예시: /보석장착 1";
+    }
+    if (error.error === "number" && action === "/보석장착" && bag.length) example = "예시: /보석장착 1";
+    var spacing = ["quantity", "number", "request"].indexOf(error.error) !== -1 ? "\n\n" : "\n";
+    return [text + reason + "\n" + divider + "\n입력: " + usage + (example ? "\n" + example : "") + spacing + tail];
+}
+
+// 확인 대상을 고정하고 뒤늦은 요청으로 다른 대상을 소모하지 않게 표시하는 함수
+function buildAdventureGemConfirmation(state, nickname) {
+    var header = "[" + nickname + "] 님\n", divider = "━━━━━━━━━━━━━";
+    if (state.kind === "combine") return [header + "🟢 히든 에메랄드 조합\n" + divider + "\n재료 ① " + formatAdventureGem(state.ruby) + "\n재료 ② " + formatAdventureGem(state.sapphire) + "\n             ↓\n" + formatAdventureGem({ kind: "emerald", grade: state.ruby.grade, castle: state.ruby.castle, raid: state.sapphire.raid }) +
+        "\n\n💰 조합비: 🅟" + formatAdventureGemPoint(state.cost) + "\n👛 내 포인트: 🅟" + formatAdventureGemPoint(state.point) + " → 🅟" + formatAdventureGemPoint(state.point - state.cost) + "\n" + divider + "\n⚠️ 확정하면 재료 2개와 조합비가 소모돼요.\n✅ 조합: /보석조합확인\n❎ 취소: /보석취소"];
+    if (state.old) {
+        var castle = state.gem.castle - state.old.castle, raid = state.gem.raid - state.old.raid;
+        return [header + "⚠️ 보석 교체 확인\n" + divider + "\n🗑️ 소멸할 보석\n" + formatAdventureGem(state.old) + "\n\n🪽 새로 장착할 보석\n" + formatAdventureGem(state.gem) + "\n\n교체 후 변화\n⚔️ 캐슬 " + (castle >= 0 ? "+" : "") + formatAdventureGemCharm(castle) + "\n👾 레이드 " + (raid >= 0 ? "+" : "") + formatAdventureGemCharm(raid) + "\n" + divider + "\n⚠️ 기존 보석은 소멸하며 복구할 수 없어요.\n✅ 교체: /보석교체확인\n❎ 취소: /보석취소"];
+    }
+    return [header + "🪽 보석 장착 확인\n" + divider + "\n장착 위치: " + formatAdventureGemSlot(state.slot) + " 🔓 빈 슬롯\n" + formatAdventureGem(state.gem) + "\n\n🔗 장착하면 거래·조합할 수 없어요.\n다른 보석으로 교체하면 이 보석은 소멸해요.\n" + divider + "\n✅ 장착: /보석장착확인\n❎ 취소: /보석취소"];
+}
+
+// 공통 7등급 확률·매력 범위와 개인 보장 상태를 같은 설정으로 표시하는 함수
+function buildAdventureGemProbabilityBlocks(store, nickname) {
+    var config = GLOBAL_CONFIG.adventureGem, text = "[" + nickname + "] 님\n📊 확률정보: /보석확률\n━━━━━━━━━━━━━\n루비 50% · 사파이어 50%\n", total = 0;
+    for (var i = 0; i < config.grades.length; i++) total += config.grades[i].weight;
+    for (var n = 0; n < config.grades.length; n++) { var grade = config.grades[n]; text += grade.name + " " + grade.weight * 100 / total + "% · +" + formatAdventureGemCharm(grade.min) + "~" + formatAdventureGemCharm(grade.max) + "\n"; }
+    text += "━━━━━━━━━━━━━\n보장 회차 등급 확률: 창세 99.8% · 창조 0.2%\n일반 회차의 특정 색·등급·수치 획득 확률 = 등급 확률 × 50% ÷ 해당 등급의 수치 경우의 수.\n" +
+        "정확히 +1780만인 창조 루비는 기본 회차에서 약 0.00163934%.\n" + buildAdventureGemPity(store.pity) + allsee;
+    return [text];
+}
+
+// 기획서의 보석 목차·종류·성장·조합·시장 안내를 같은 운영값으로 표시하는 함수
+function buildAdventureGemGuideBlocks(store, nickname, page) {
+    var config = GLOBAL_CONFIG.adventureGem, header = "[" + nickname + "] 님\n📚 보석 가이드\n━━━━━━━━━━━━━\n";
+    var titles = ["🪽 보석 종류와 매력", "🪎 보석뽑기·확률·100회 보장", "🔓 슬롯·장착·교체", "🟢 에메랄드 조합과 비용", "🏪 판매·가방정리·자유시장"];
+    if (!page) {
+        for (var i = 0; i < titles.length; i++) header += (i + 1) + ". " + titles[i] + "\n";
+        return [header + "━━━━━━━━━━━━━\n※ 조회: /보석가이드 [번호]\n예시: /보석가이드 4"];
+    }
+    if (page === 2) return buildAdventureGemProbabilityBlocks(store, nickname).concat([config.ticketName + "\n입력: /보석오픈 [수량]\n뽑기권 1개당 보석 1개\n100회 보장 · 창세 이상 획득 시 누적 초기화\n가방 정원 이상이면 뽑기 불가"]);
+    var text = header + titles[page - 1] + "\n━━━━━━━━━━━━━\n";
+    if (page === 1) text += "루비🔴 · 캐슬매력⚔️ 증가\n사파이어🔵 · 레이드 매력👾 증가\n히든 에메랄드🟢 · 캐슬·레이드 매력 동시 증가\n\n같은 종류 중복 장착: 가능\n보석 매력 상한: 없음. 장착 효과 전부 합산";
+    if (page === 3) text += "모험가 레벨 10마다 1칸\n추가 슬롯: 슬롯추가 아이템 1개당 영구 +1칸. Lv.10 이전에도 사용·장착 가능\n계정당 추가 슬롯 제한: 없음\n\n/보석장착 [보석가방번호]\n/보석장착 [보석가방번호] [슬롯번호]\n/보석슬롯오픈 [수량]\n\n※ 첫 번째 숫자는 보석가방 번호예요.\n※ 두 번째 숫자는 고정 슬롯번호예요.\n🔗 장착하면 거래·조합할 수 없어요.\n다른 보석으로 교체하면 이 보석은 소멸해요.\n가방 정원과 무관하게 장착·교체할 수 있다.\n별도 보석 제거: 제공하지 않음. 교체 확정 시에만 기존 장착 보석 소멸";
+    if (page === 4) {
+        text += "같은 등급의 미장착 루비 1개 + 사파이어 1개\n성공률은 전 등급 100%다.\n루비의 캐슬매력과 사파이어의 레이드 매력을 각각 100% 계승하고, 두 효과를 슬롯 1칸에 적용한다.\n\n";
+        for (var g = 0; g < config.grades.length; g++) text += config.grades[g].name + " · 🅟" + formatAdventureGemPoint(config.grades[g].combinePoint) + "\n";
+        text += "\n가방 초과 중에도 조합 가능\n입력: /보석조합 [루비 가방번호] [사파이어 가방번호]\n🎒 재료 확인: /보석가방";
+    }
+    if (page === 5) text += "※ 보석 판매: /보석판매 [가방번호]\n※ 보석 정리: /보석가방정리 [번호~번호]\n\n숫자는 보석가방 목록의 번호다. 장착 슬롯번호나 판매할 개수가 아니다.\n/보석가방정리 1~10은 현재 가방 1번부터 10번까지 총 10개 판매\n\n시스템 판매가\n루비🔴 · 사파이어🔵 · 에메랄드🟢\n🅟" + numberWithCommas(config.salePoint) + "\n\n🪽 보석 등록\n/보석거래등록 [보석가방번호] [판매금액]\n/자유시장판매가이드\n\n장착하면 거래·조합 불가 · 교체 시 기존 보석 소멸";
+    return [text];
+}
+
+// 계정·환경·방별 확인 상태를 기존 메모리 세션 안에서 분리하는 함수
+function getAdventureGemSessionKey(owner, user) {
+    var ctx = getCurrentContext();
+    return "adventureGem:" + JSON.stringify([ctx.rootPath, ctx.permissionRoom, owner || user]);
+}
+
+// 같은 접수만 재사용하는 최소 결과 영수증의 소유자·식별값을 검사하는 함수
+function requireAdventureGemReceipts(store, owner) {
+    if (!store || store.version !== 1 || store.owner !== owner || !Array.isArray(store.rows) || store.rows.length > GLOBAL_CONFIG.adventureGem.receiptLimit) throw new Error("보석 처리 기록 형식 오류");
+    var seen = {};
+    for (var i = 0; i < store.rows.length; i++) {
+        var row = store.rows[i];
+        if (!row || typeof row.id !== "string" || !row.id || seen["$" + row.id] || typeof row.command !== "string" || !isAdventureGemInteger(row.at, 0) || !row.result || row.result.changed !== true) throw new Error("보석 처리 기록 항목 오류");
+        seen["$" + row.id] = true;
+    }
+    return store;
+}
+
+// 장착 선택 화면에 고정 슬롯번호와 현재 대상에 맞는 입력 예시를 만드는 함수
+function buildAdventureGemSelectionBlocks(data, user, store, state, nickname) {
+    var blocks = ["[" + nickname + "] 님\n🪽 보석 장착 위치 선택\n━━━━━━━━━━━━━\n선택: " + formatAdventureGem(state.gem) + "\n"], slots = getAdventureGemSlots(data, user, store), bySlot = {}, empty = 0, occupied = 0;
+    for (var n = 0; n < store.gems.length; n++) if (store.gems[n].slot) bySlot[store.gems[n].slot] = store.gems[n];
+    if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch) {
+        while (bySlot[empty + 1] && empty < slots.total) empty++;
+        empty = empty < slots.total ? empty + 1 : 0;
+        var occupiedKeys = Object.keys(bySlot).map(Number).sort(function (a, b) { return a - b; }); occupied = occupiedKeys.length ? occupiedKeys[0] : 0;
+        blocks.push({ slotRows: "select", from: 1, to: slots.total, occupied: bySlot });
+    } else for (var i = 1; i <= slots.total; i++) {
+        var gem = bySlot[i];
+        if (!gem && !empty) empty = i;
+        if (gem && !occupied) occupied = i;
+        blocks.push(formatAdventureGemSlot(i) + " " + (gem ? formatAdventureGem(gem) : "🔓 빈 슬롯"));
+    }
+    var tail = "━━━━━━━━━━━━━\n";
+    if (empty) tail += "👉 빈 " + empty + "번 슬롯에 장착: /보석장착 " + state.index + " " + empty + "\n";
+    if (occupied) tail += "👉 " + occupied + "번 교체: /보석장착 " + state.index + " " + occupied + "\n";
+    blocks.push(tail + "❎ 취소: /보석취소");
+    return blocks;
+}
+
+// 새 요청이 기존 확인 대상을 덮지 않도록 같은 상태의 확인 화면만 재표시하는 함수
+function buildAdventureGemPendingBlocks(data, user, store, state, nickname) {
+    return state.kind === "select" ? buildAdventureGemSelectionBlocks(data, user, store, state, nickname) : buildAdventureGemConfirmation(state, nickname);
+}
+
+// 회원 분리 원문과 보석·접수 결과를 한 확정 게시에 넣는 순수 계획 함수
+function buildAdventureGemPublicationRows(data, store, receipts, extras) {
+    var plan = buildMemberSplitSavePlan(data) || { member: data, writes: [] }, rows = [], owner = store.owner;
+    requireAdventureGemState(store, owner); requireAdventureGemReceipts(receipts, owner);
+    for (var i = 0; i < plan.writes.length; i++) rows.push({ name: String(new java.io.File(plan.writes[i].path).getName()), text: typeof plan.writes[i].text === "string" ? plan.writes[i].text : JSON.stringify(plan.writes[i].text) });
+    rows.push({ name: "member.json", text: JSON.stringify(plan.member) });
+    rows.push({ name: getAdventureGemFileName(owner, false), text: JSON.stringify(store) });
+    rows.push({ name: getAdventureGemFileName(owner, true), text: JSON.stringify(receipts) });
+    for (var n = 0; extras && n < extras.length; n++) rows.push(extras[n]);
+    return rows;
+}
+
+// 기존 공통 제한을 통과한 명령에서 해당 계정의 원본만 읽고 변경 결과를 원자 게시하는 진입 함수
+function runAdventureGemEntry(data, petData, guildData, user, action, request, replier) {
+    var member = data.member && data.member[user];
+    if (!member) return;
+    var config = GLOBAL_CONFIG.adventureGem, owner = getAdventureGemAccountId(data, user), store = createAdventureGemState(owner), accountPath = owner ? resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(owner, false)) : null;
+    var replyKey = getAdventureGemSessionKey(owner, user); getCurrentContext().adventureGemReplyKey = replyKey;
+    setAdventureGemReplyToken(replyKey, null);
+    if (accountPath && new java.io.File(accountPath).exists()) store = requireAdventureGemState(loadJsonFile(accountPath), owner);
+    else if (member.adventureGemInitialized) throw new Error("보석 계정 원본 누락");
+    else if (accountPath && (new java.io.File(accountPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(accountPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(accountPath)).exists())) throw new Error("보석 계정 원본 누락");
+    var nickname = checkRank(data, petData, guildData, user), key = getAdventureGemSessionKey(owner, user), pending = userState[key], now = Date.now();
+    var expired = pending && now > pending.expiresAt;
+    if (expired) { delete userState[key]; pending = null; }
+    if (action.kind === "bag") { replyAdventureGemBlocks(replier, buildAdventureGemBagBlocks(data, user, store, nickname)); return; }
+    if (action.kind === "info") { replyAdventureGemBlocks(replier, buildAdventureGemInfoBlocks(data, user, store, nickname)); return; }
+    if (action.kind === "probability") { replyAdventureGemBlocks(replier, buildAdventureGemProbabilityBlocks(store, nickname)); return; }
+    if (action.kind === "guide") {
+        if (action.page !== undefined && (!isAdventureGemInteger(action.page, 1) || action.page > 5)) replyAdventureGemBlocks(replier, buildAdventureGemError({ error: "guide" }, action, data, user, store, nickname));
+        else replyAdventureGemBlocks(replier, buildAdventureGemGuideBlocks(store, nickname, action.page));
+        return;
+    }
+    if (action.kind === "invalid") { replyAdventureGemBlocks(replier, buildAdventureGemError({ error: action.action === "/보석가이드" ? "guide" : "syntax" }, action, data, user, store, nickname)); return; }
+    if (action.kind === "cancel") {
+        delete userState[key];
+        if (pending) replier.reply("[" + nickname + "] 님\n✅ 진행 중인 보석 확인 요청을 취소했어요.");
+        else replyAdventureGemBlocks(replier, buildAdventureGemError({ error: "request" }, action, data, user, store, nickname));
+        return;
+    }
+    var command = String(request.msg || request.message || action.action), eventId = getServerRaidEventId(request.callbackEvent);
+    if (!request.adventureGemRequestId) request.adventureGemRequestId = eventId || "request:" + String(java.util.UUID.randomUUID());
+    var receiptPath = owner ? resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(owner, true)) : null, receipts = { version: 1, owner: owner, rows: [] };
+    if (receiptPath && new java.io.File(receiptPath).exists()) receipts = requireAdventureGemReceipts(loadJsonFile(receiptPath), owner);
+    else if (store.receiptVersion === 1) throw new Error("보석 처리 기록 원본 누락");
+    for (var r = 0; r < receipts.rows.length; r++) if (receipts.rows[r].id === request.adventureGemRequestId) {
+        if (receipts.rows[r].command !== command) throw new Error("보석 접수 식별값 충돌");
+        replyAdventureGemBlocks(replier, buildAdventureGemResultBlocks(receipts.rows[r].result, nickname)); return;
+    }
+    var bag = getAdventureGemBag(store), result = null, isConfirm = /Confirm$/.test(action.kind);
+    if (isConfirm) {
+        if (!pending || request.receivedAt < pending.receivedAt) result = { error: expired ? "expired" : "request" };
+        else if (action.kind === "combineConfirm" && pending.kind === "combine") result = applyAdventureGemCombine(data, user, store, pending);
+        else if (action.kind === "equipConfirm" && pending.kind === "equip" || action.kind === "replaceConfirm" && pending.kind === "replace") result = applyAdventureGemEquip(data, user, store, pending);
+        else result = { error: "request" };
+    } else if (action.kind === "equip" || action.kind === "combine") {
+        if (pending && !(pending.kind === "select" && action.kind === "equip" && action.slot !== null && action.index === pending.index && bag[action.index - 1] && JSON.stringify(bag[action.index - 1]) === pending.gemText)) {
+            replyAdventureGemBlocks(replier, buildAdventureGemPendingBlocks(data, user, store, pending, nickname)); return;
+        }
+        var next = { receivedAt: request.receivedAt, expiresAt: now + config.confirmationMs }, slots = getAdventureGemSlots(data, user, store);
+        if (action.kind === "equip") {
+            var gem = bag[action.index - 1], old = null;
+            if (!gem) result = { error: "number" };
+            else if (!slots.total || action.slot !== null && (!isAdventureGemInteger(action.slot, 1) || action.slot > slots.total)) result = { error: "slot", slots: slots.total };
+            else {
+                next.index = action.index; next.gem = JSON.parse(JSON.stringify(gem)); next.gemId = gem.id; next.gemText = JSON.stringify(gem); next.slot = action.slot;
+                for (var g = 0; g < store.gems.length; g++) if (action.slot !== null && store.gems[g].slot === action.slot) old = store.gems[g];
+                next.old = old; next.oldText = old ? JSON.stringify(old) : null; next.kind = action.slot === null ? "select" : old ? "replace" : "equip";
+            }
+        } else {
+            var ruby = bag[action.ruby - 1], sapphire = bag[action.sapphire - 1];
+            if (!ruby || !sapphire) result = { error: "number" };
+            else if (ruby.id === sapphire.id) result = { error: "same" };
+            else if (ruby.kind !== "ruby" || sapphire.kind !== "sapphire") result = { error: "materials" };
+            else if (ruby.grade !== sapphire.grade) result = { error: "grade" };
+            else if (Number(member.point) < config.grades[ruby.grade].combinePoint) result = { error: "points", cost: config.grades[ruby.grade].combinePoint, point: Number(member.point) };
+            else { next.kind = "combine"; next.cost = config.grades[ruby.grade].combinePoint; next.point = Number(member.point); next.ruby = JSON.parse(JSON.stringify(ruby)); next.sapphire = JSON.parse(JSON.stringify(sapphire)); next.rubyId = ruby.id; next.sapphireId = sapphire.id; next.rubyText = JSON.stringify(ruby); next.sapphireText = JSON.stringify(sapphire); }
+        }
+        if (!result) { userState[key] = next; replyAdventureGemBlocks(replier, buildAdventureGemPendingBlocks(data, user, store, next, nickname)); return; }
+    } else if (action.kind === "draw") result = applyAdventureGemDraw(data, user, store, action.count, Math.random);
+    else if (action.kind === "slot") result = applyAdventureGemSlotExpansion(data, user, store, action.count);
+    else if (action.kind === "sale" || action.kind === "saleRange") result = applyAdventureGemSale(data, user, store, action.start, action.end, action.kind === "saleRange");
+    if (!result || result.error) { replyAdventureGemBlocks(replier, buildAdventureGemError(result || { error: "request" }, action, data, user, store, nickname)); return; }
+    if (!owner) {
+        member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), total: null };
+        owner = member.serverRaidAccount.id; store.owner = owner; receipts.owner = owner;
+        getCurrentContext().adventureGemReplyKey = getAdventureGemSessionKey(owner, user);
+    }
+    member.adventureGemInitialized = true; store.receiptVersion = 1;
+    receipts.rows.push({ id: request.adventureGemRequestId, command: command, at: now, result: result });
+    if (receipts.rows.length > config.receiptLimit) receipts.rows.splice(0, receipts.rows.length - config.receiptLimit);
+    var notices = buildAdventureGemNotices(result, nickname, getNoticeTargetRooms(getCurrentContext())), extraRows = [];
+    if (notices.length) {
+        var noticePath = resolveActiveDataPath(DATA_ROOT_PATH + config.noticeName), noticeStore;
+        if (new java.io.File(noticePath).exists()) noticeStore = requireAdventureGemNotices(loadJsonFile(noticePath));
+        else {
+            if (new java.io.File(noticePath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(noticePath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(noticePath)).exists()) throw new Error("보석 알림 원본 누락");
+            noticeStore = { version: 1, rows: [] };
+        }
+        for (var nn = 0; nn < notices.length; nn++) noticeStore.rows.push(notices[nn]);
+        extraRows.push({ name: config.noticeName, text: JSON.stringify(requireAdventureGemNotices(noticeStore)) });
+    }
+    publishOperationalRows(buildAdventureGemPublicationRows(data, store, receipts, extraRows));
+    if (isConfirm) delete userState[key];
+    var ctx = getCurrentContext(); if (ctx) ctx.adventureGemSummaries = {};
+    if (notices.length) scheduleAdventureGemNotices(ctx, config.noticeDelayMs);
+    replyAdventureGemBlocks(replier, buildAdventureGemResultBlocks(result, nickname));
+}
+
+// 실제 뽑기·조합으로 얻은 초월 이상 보석마다 하나의 공지와 방별 전송 상태를 만드는 함수
+function buildAdventureGemNotices(result, nickname, rooms) {
+    var rows = [], results = result.kind === "draw" ? result.results : result.kind === "combine" ? [{ gem: result.gem }] : [];
+    for (var i = 0; i < results.length; i++) {
+        var value = results[i], gem = value.gem;
+        if (gem.grade < 4) continue;
+        var row = { id: String(java.util.UUID.randomUUID()), kind: result.kind, gem: gem, nickname: nickname, guaranteed: value.guaranteed === true, rate: value.rate || 0, deliveries: [] };
+        for (var j = 0; j < rooms.length; j++) if (!row.deliveries.some(function (d) { return d.room === rooms[j]; })) row.deliveries.push({ room: rooms[j], status: "pending" });
+        if (row.deliveries.length) rows.push(row);
+    }
+    return rows;
+}
+
+// 미전송 알림 원문과 방별 상태를 검증하는 함수
+function requireAdventureGemNotices(store) {
+    if (!store || store.version !== 1 || !Array.isArray(store.rows)) throw new Error("보석 알림 형식 오류");
+    var ids = {};
+    for (var i = 0; i < store.rows.length; i++) {
+        var row = store.rows[i];
+        if (!row || typeof row.id !== "string" || !row.id || ids[row.id] || (row.kind !== "draw" && row.kind !== "combine") || typeof row.nickname !== "string" || !row.nickname || typeof row.guaranteed !== "boolean" || !isFinite(row.rate) || row.rate < 0 || row.rate > 100 || !Array.isArray(row.deliveries)) throw new Error("보석 알림 항목 오류");
+        ids[row.id] = true;
+        var validation = createAdventureGemState("notice"); validation.gems = [row.gem]; requireAdventureGemState(validation, "notice");
+        var rooms = {};
+        for (var j = 0; j < row.deliveries.length; j++) {
+            var d = row.deliveries[j];
+            if (!d || typeof d.room !== "string" || !d.room || rooms[d.room] || ["pending", "sending", "sent", "uncertain"].indexOf(d.status) === -1) throw new Error("보석 알림 전송 상태 오류");
+            rooms[d.room] = true;
+        }
+    }
+    return store;
+}
+
+// 저장된 개체와 실제 확률을 기획서 전체알림 문구로만 만드는 함수
+function formatAdventureGemNotice(row) {
+    var header = "🪽[전체알림]🎉\n\n";
+    if (row.kind === "combine") {
+        var lines = formatAdventureGem(row.gem).split("\n");
+        return header + "[" + row.nickname + "]님이 " + lines[0] + " 조합에 성공했습니다!\n" + lines[1] + "\n(조합 성공률:100%)";
+    }
+    return header + (row.guaranteed ? "🎯 천장시스템 발동!\n" : "") + "[" + row.nickname + "]님이 " + formatAdventureGem(row.gem) + "(을)를 뽑았습니다!\n(" + (row.guaranteed ? "천장 등급 확률:" : "등급 확률:") + row.rate + "%)";
+}
+
+var adventureGemNoticeWorkers = {};
+var adventureGemNoticeBootstrapped = {};
+
+// 알림을 별도 Java 스레드로 보내 명령 MQ와 전송 대기를 분리하는 함수
+function scheduleAdventureGemNotices(ctx, delayMs) {
+    var key = ctx.rootPath;
+    dataTransactionLock.lock();
+    try {
+        if (adventureGemNoticeWorkers[key]) return;
+        var worker = { timer: null }; adventureGemNoticeWorkers[key] = worker;
+        worker.timer = setTimeout(function () {
+            try {
+                var thread = new java.lang.Thread(new java.lang.Runnable({ run: function () { runAdventureGemNoticeEntry(ctx, worker); } }));
+                thread.setDaemon(true); thread.start();
+            } catch (threadError) {
+                dataTransactionLock.lock();
+                try { if (adventureGemNoticeWorkers[key] === worker) delete adventureGemNoticeWorkers[key]; }
+                finally { dataTransactionLock.unlock(); }
+                debuggerLog("[AdventureGem notice thread] " + threadError);
+                setTimeout(function () { scheduleAdventureGemNotices(ctx, 0); }, GLOBAL_CONFIG.adventureGem.noticeRetryMs);
+            }
+        }, delayMs);
+    } finally { dataTransactionLock.unlock(); }
+}
+
+// 전송 직전 상태를 기록하고 성공한 방만 확정하며 불확실한 전송은 자동 반복하지 않는 진입 함수
+function runAdventureGemNoticeEntry(ctx, worker) {
+    var previous = enterCommandContext(ctx), key = ctx.rootPath, retry = false, path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureGem.noticeName);
+    try {
+        for (var attempt = 0; attempt < GLOBAL_CONFIG.adventureGem.maxOpenCount; attempt++) {
+            var selected = null;
+            dataTransactionLock.lock(); beginDataSaveTransaction();
+            try {
+                recoverAdventurePublication();
+                if (!new java.io.File(path).exists()) {
+                    if (new java.io.File(path + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(path)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(path)).exists()) throw new Error("보석 알림 원본 누락");
+                    break;
+                }
+                var store = requireAdventureGemNotices(loadJsonFile(path)), changed = false;
+                for (var i = 0; i < store.rows.length; i++) {
+                    var row = store.rows[i];
+                    for (var j = 0; j < row.deliveries.length; j++) {
+                        var delivery = row.deliveries[j];
+                        if (delivery.status === "sending") { delivery.status = "uncertain"; changed = true; debuggerLog("[AdventureGem notice uncertain] " + row.id + " " + delivery.room); }
+                        if (!selected && delivery.status === "pending") { delivery.status = "sending"; changed = true; selected = { id: row.id, room: delivery.room, text: formatAdventureGemNotice(row) }; }
+                    }
+                }
+                if (changed) saveJsonFile(store, path);
+            } finally { endDataSaveTransaction(); dataTransactionLock.unlock(); }
+            if (!selected) break;
+            var status = "uncertain";
+            try { status = noticeMsg(selected.text, [selected.room]) === false ? "pending" : "sent"; }
+            catch (sendError) { debuggerLog("[AdventureGem notice send] " + selected.id + " " + sendError); }
+            dataTransactionLock.lock(); beginDataSaveTransaction();
+            try {
+                var latest = requireAdventureGemNotices(loadJsonFile(path));
+                for (var n = 0; n < latest.rows.length; n++) if (latest.rows[n].id === selected.id) for (var d = 0; d < latest.rows[n].deliveries.length; d++) if (latest.rows[n].deliveries[d].room === selected.room) latest.rows[n].deliveries[d].status = status;
+                latest.rows = latest.rows.filter(function (r) { return r.deliveries.some(function (v) { return v.status !== "sent"; }); });
+                saveJsonFile(latest, path);
+                retry = latest.rows.some(function (r) { return r.deliveries.some(function (v) { return v.status === "pending"; }); });
+            } finally { endDataSaveTransaction(); dataTransactionLock.unlock(); }
+            if (status === "pending") break;
+        }
+    } catch (error) { retry = true; debuggerLog("[AdventureGem notice] " + error); }
+    finally {
+        dataTransactionLock.lock();
+        try { if (adventureGemNoticeWorkers[key] === worker) delete adventureGemNoticeWorkers[key]; }
+        finally { dataTransactionLock.unlock(); }
+        exitCommandContext(previous);
+        if (retry) scheduleAdventureGemNotices(ctx, GLOBAL_CONFIG.adventureGem.noticeRetryMs);
+    }
+}
+
+// 천 단위 쉼표·옵션 괄호·에메랄드 보조 줄을 보존하며 복사한 구성품을 나누는 함수
+function splitPackageComposition(input) {
+    var text = String(input || "").replace(/^\s*구성\s*:\s*/, "").trim(), parts = [], start = 0, depth = 0;
+    for (var i = 0; i < text.length; i++) {
+        var ch = text.charAt(i);
+        if (ch === "(" || ch === "[") depth++;
+        if (ch === ")" || ch === "]") depth--;
+        if (depth < 0) return [text];
+        if (depth) continue;
+        var comma = ch === "," && !/^\d{3}(?=[,\s]|$)/.test(text.substring(i + 1));
+        var line = (ch === "\n" || ch === "\r") && !/^\s*└/.test(text.substring(i + 1));
+        if (comma || line) {
+            var part = text.substring(start, i).trim();
+            if (part) parts.push(part);
+            start = i + 1;
+        }
+    }
+    var last = text.substring(start).trim(); if (last) parts.push(last);
+    return parts;
+}
+
+// 천 단위 쉼표 형식을 검증한 양의 안전 정수를 반환하는 함수
+function parsePackagePositiveCount(input) {
+    var text = String(input || "").trim();
+    if (!/^(?:[1-9]\d*|[1-9]\d{0,2}(?:,\d{3})+)$/.test(text)) return null;
+    var count = Number(text.replace(/,/g, ""));
+    return isPointShopSafeCount(count) && count > 0 ? count : null;
+}
+
+// 같은 실제 이름과 공백 없는 별칭을 비교하되 부분 일치는 허용하지 않는 함수
+function normalizePackageLookup(input) {
+    return String(input || "").replace(/[\s,\uFE0F]/g, "");
+}
+
+// 한 보상의 명시 수량과 본문을 분리하며 에메랄드 옵션 줄을 유지하는 함수
+function readPackageRewardInput(input) {
+    var text = String(input || "").trim(), match = /\s*[x×]\s*((?:\d{1,3}(?:,\d{3})+|\d+))\s*(?:개)?(?=\s*(?:\n\s*└|$))/.exec(text);
+    if (!match) match = /\s+((?:\d{1,3}(?:,\d{3})+|\d+))\s*개$/.exec(text);
+    if (!match) return { text: text, count: null };
+    var count = parsePackagePositiveCount(match[1]);
+    return { text: (text.substring(0, match.index) + text.substring(match.index + match[0].length)).trim(), count: count, invalidCount: !count };
+}
+
+// 현재 정의와 명시된 옵션만 사용해 패키지 한 항목을 실제 보상 규격으로 검증하는 함수
+function resolvePackageRewardInput(input, type, definitions, countOverride) {
+    var parsed = readPackageRewardInput(input), text = parsed.text, count = countOverride || parsed.count, key = normalizePackageLookup(text), choices = [], i;
+    if (GLOBAL_CONFIG.package.retiredMiniSet && (text === GLOBAL_CONFIG.package.retiredMiniSet.ticket || text === GLOBAL_CONFIG.package.retiredMiniSet.name)) return { error: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
+    if (parsed.invalidCount || countOverride !== undefined && !parsePackagePositiveCount(countOverride)) return { error: "수량은 1 이상의 정수로 입력해주세요." };
+    var optionDraft = getPackageOptionDraft(text, type, definitions, count);
+    if (optionDraft) return optionDraft;
+    if (type === "point" || /^(?:포인트|point)$/i.test(text)) {
+        var point = type === "point" ? parsePackagePositiveCount(text.replace(/^포인트\s*[x×]?\s*/, "")) || count : count;
+        return point ? { reward: { type: "point", count: point } } : { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
+    }
+    var skillName = text.replace(/📙$/, "").trim(), skill = findPetSkillInfoData(skillName);
+    if (skill && isRetiredPetSkill(skill.name)) return { error: "등록할 수 없는 펫스킬북입니다.\n" + formatPetSkillName(skill.name) + "은 폐지된 스킬이에요.\n\n다른 보상으로 수정하거나 \"빼기\"를 입력해주세요." };
+    if ((!type || type === "skill") && skill && normalizePackageLookup(formatPetSkillName(skill.name)) === normalizePackageLookup(text.indexOf("📙") < 0 ? text + "📙" : text)) {
+        if (isRetiredPetSkill(skill.name)) return { error: "등록할 수 없는 펫스킬북입니다.\n" + formatPetSkillName(skill.name) + "은 폐지된 스킬이에요.\n\n다른 보상으로 수정하거나 \"빼기\"를 입력해주세요." };
+        choices.push({ type: "skill", name: skill.name });
+    }
+    if (!type || type === "item") for (i = 0; i < definitions.items.length; i++) if (normalizePackageLookup(definitions.items[i]) === key) choices.push({ type: "item", name: normalizePassDurationItemName(normalizeMiniPetRewardBoxItemName(definitions.items[i])) });
+    if (!type || type === "mini") {
+        var miniMatch = /^(.*?)\(\+([\d,]+)💕\)\[([^\]]+)\](?:\((?:강화)?\+?(\d+)(?:💫)?\))?$/.exec(text);
+        var miniName = miniMatch ? miniMatch[1] : text;
+        for (i = 0; i < definitions.mini.length; i++) {
+            var mini = definitions.mini[i], full = mini.name + (mini.emoji || "");
+            if (normalizePackageLookup(full) !== normalizePackageLookup(miniName) && normalizePackageLookup(mini.name) !== normalizePackageLookup(miniName)) continue;
+            if (miniMatch && mini.grade !== miniMatch[3]) continue;
+            if (!miniMatch) return { error: "등급·매력을 확인할 수 없어요. 지급할 값을 입력해주세요." };
+            var miniExp = Number(miniMatch[2].replace(/,/g, "")), upgrade = Number(miniMatch[4] || 0);
+            if (!isPointShopSafeCount(miniExp) || !isPointShopSafeCount(upgrade) || upgrade > getMiniPetUpgradeMaxLevel(mini)) return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + getMiniPetUpgradeMaxLevel(mini) + "입니다." };
+            choices.push({ type: "mini", name: mini.name, object: { name: mini.name, emoji: mini.emoji || "", grade: mini.grade, price: Number(mini.price) || 0, battleExp: miniExp, castleExp: miniExp, raidExp: miniExp, upgrade: upgrade } });
+        }
+    }
+    if (!type || type === "furniture") {
+        var furnitureMatch = /^(.*?)\(\+([\d,]+)[💕💞]+\)\[([^\]]+)\]$/.exec(text), furnitureName = furnitureMatch ? furnitureMatch[1] : text;
+        for (i = 0; i < definitions.furniture.length; i++) {
+            var furniture = definitions.furniture[i];
+            if (normalizePackageLookup(furniture.name + (furniture.emoji || "")) !== normalizePackageLookup(furnitureName)) continue;
+            if (furnitureMatch && furniture.grade !== furnitureMatch[3]) continue;
+            if (!furnitureMatch) return { error: "등급·매력을 확인할 수 없어요. 지급할 값을 입력해주세요." };
+            var furnitureExp = Number(furnitureMatch[2].replace(/,/g, ""));
+            if (!isPointShopSafeCount(furnitureExp)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
+            choices.push({ type: "furniture", name: furniture.name, object: { name: furniture.name, exp: furnitureExp, rate: Number(furniture.rate) || 0, grade: furniture.grade, display: furniture.name + "(+" + numberWithCommas(furnitureExp) + "💕)[" + furniture.grade + "]" } });
+        }
+    }
+    if (!type || type === "pendant") {
+        var pendantMatch = /^(.*?)\[([^\]★]+)(?:★(\d+))?\]\[⚒️?(\d+)\/(\d+)\]\(\+(\d+)\)$/.exec(text);
+        for (i = 0; i < PENDANT_GRADE_TABLE.length; i++) {
+            var pendant = PENDANT_GRADE_TABLE[i], pendantName = pendantMatch ? pendantMatch[1] : text;
+            if (normalizePackageLookup(pendant.name + pendant.icon) !== normalizePackageLookup(pendantName) && normalizePackageLookup(pendant.name) !== normalizePackageLookup(pendantName)) continue;
+            if (pendantMatch && pendantMatch[2] !== pendant.grade) continue;
+            if (!pendantMatch) return { error: "등급·내구도·강화를 확인할 수 없어요. 지급할 값을 입력해주세요." };
+            var durability = Number(pendantMatch[4]), maxDurability = Number(pendantMatch[5]), enhancement = Number(pendantMatch[6]), promotion = Number(pendantMatch[3] || 0);
+            if (durability > maxDurability) return { error: "내구도는 최대 내구도를 넘을 수 없어요." };
+            if (maxDurability !== 5 || !isPointShopSafeCount(enhancement) || !isPointShopSafeCount(promotion) || enhancement > GLOBAL_CONFIG.pendant.upgrade.maxLevel || promotion && pendant.grade !== "창조") return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + GLOBAL_CONFIG.pendant.upgrade.maxLevel + "입니다." };
+            choices.push({ type: "pendant", name: pendant.name, object: { name: pendant.name, icon: pendant.icon, grade: pendant.grade, durability: durability, maxDurability: maxDurability, upgrade: enhancement, promotionLevel: promotion, bound: false } });
+        }
+    }
+    if (!type || type === "gem") {
+        var gemMatch = /^(루비🔴|사파이어🔵)\(\+([\d,]+)만[⚔️👾]+\)\[([^\]]+)\]$/.exec(text), emeraldMatch = /^에메랄드🟢\[([^\]]+)\]\s*└\s*⚔️?\s*\+([\d,]+)만\s*·\s*👾\s*\+([\d,]+)만$/.exec(text);
+        if (gemMatch || emeraldMatch) {
+            var gradeName = gemMatch ? gemMatch[3] : emeraldMatch[1], gradeIndex = -1;
+            for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (normalizePackageLookup(GLOBAL_CONFIG.adventureGem.grades[i].name) === normalizePackageLookup(gradeName)) gradeIndex = i;
+            if (gradeIndex < 0) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+            var kind = emeraldMatch ? "emerald" : gemMatch[1] === "루비🔴" ? "ruby" : "sapphire", castle = kind === "sapphire" ? 0 : Number((emeraldMatch ? emeraldMatch[2] : gemMatch[2]).replace(/,/g, "")) * 10000, raid = kind === "ruby" ? 0 : Number((emeraldMatch ? emeraldMatch[3] : gemMatch[2]).replace(/,/g, "")) * 10000;
+            var gemValidation = createAdventureGemState("package"); gemValidation.gems = [{ id: "package", kind: kind, grade: gradeIndex, castle: castle, raid: raid, slot: 0 }];
+            try { requireAdventureGemState(gemValidation, "package"); } catch (invalidGem) { return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + formatAdventureGemCharm(GLOBAL_CONFIG.adventureGem.grades[gradeIndex].min) + "~" + formatAdventureGemCharm(GLOBAL_CONFIG.adventureGem.grades[gradeIndex].max) + "입니다." }; }
+            choices.push({ type: "gem", name: kind, object: { kind: kind, grade: gradeIndex, castle: castle, raid: raid } });
+        }
+    }
+    var unique = [], seen = {};
+    for (i = 0; i < choices.length; i++) { var identity = JSON.stringify(choices[i]); if (!seen[identity]) { seen[identity] = true; unique.push(choices[i]); } }
+    if (!unique.length) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
+    if (unique.length > 1) return { error: "어떤 보상인지 선택해주세요.", candidates: unique };
+    var reward = unique[0];
+    if (!count) return { missingCount: true, reward: reward };
+    reward.count = count;
+    return { reward: reward };
+}
+
+// 확정된 실제 옵션을 기존 화면 표기로 표시하는 함수
+function formatPackageActualReward(reward) {
+    if (reward.type === "mini") return reward.object.name + (reward.object.emoji || "") + "(+" + numberWithCommas(reward.object.battleExp) + "💕)[" + reward.object.grade + "]" + (reward.object.upgrade ? "(강화+" + reward.object.upgrade + ")" : "");
+    if (reward.type === "furniture") return reward.object.display;
+    if (reward.type === "pendant") return formatPendantDisplay(reward.object);
+    if (reward.type === "gem") return formatAdventureGem(reward.object);
+    if (reward.type === "skill") return formatPetSkillName(reward.name);
+    return reward.type === "point" ? "포인트" : reward.name;
+}
+
+// 같은 종류·대상·옵션의 수량만 합산하고 다른 옵션은 순서대로 보존하는 함수
+function mergePackageActualRewards(target, additions) {
+    var result = JSON.parse(JSON.stringify(target)), keys = {};
+    for (var i = 0; i < result.length; i++) { var original = JSON.parse(JSON.stringify(result[i])); delete original.count; keys[JSON.stringify(original)] = i; }
+    for (var n = 0; n < additions.length; n++) {
+        var row = JSON.parse(JSON.stringify(additions[n])), count = row.count; delete row.count;
+        var key = JSON.stringify(row), existing = keys[key];
+        if (existing !== undefined) { if (!isPointShopSafeCount(result[existing].count + count)) throw new Error("패키지 보상 수량 범위 초과"); result[existing].count += count; }
+        else { row.count = count; keys[key] = result.length; result.push(row); }
+    }
+    return result;
+}
+
+// 원문에 있는 종류별 첫 입력 안내를 반환하는 함수
+function getPackageActualPrompt(type) {
+    var messages = { point: "💰 패키지 1개당 지급할 포인트를 입력해주세요. 예: 300000 또는 300,000", item: "🎒 넣을 가방아이템 이름을 입력해주세요.", mini: "🐹 어떤 미니펫을 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", furniture: "🏡 어떤 가구를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", pendant: "📿 어떤 펜던트를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", skill: "📙 넣을 펫스킬북 이름을 입력해주세요. 예: 삼성전자📙", gem: "🪽 넣을 보석의 이름·등급·매력을 입력해주세요. 기존 보석 표기를 붙여넣어도 돼요." };
+    return messages[type];
+}
+
+// 일괄 입력의 정상 항목도 보관하면서 첫 미해결 항목만 수정하도록 안내하는 함수
+function buildPackageBulkReview(state) {
+    var errors = [], rewards = [];
+    for (var i = 0; i < state.bulk.length; i++) {
+        var row = state.bulk[i]; if (row.removed) continue;
+        if (row.error) errors.push({ index: i, row: row }); else rewards.push(row.reward);
+    }
+    if (errors.length) {
+        state.step = errors.length > 1 ? "BULK_PICK_ERROR" : "BULK_FIX"; state.fixIndex = errors[0].index;
+        var message = "";
+        for (var n = 0; n < errors.length; n++) message += (n ? "\n\n" : "") + "🔎 " + (errors[n].index + 1) + "번 보상을 확인해주세요.\n\n입력: " + errors[n].row.raw + "\n" + errors[n].row.error;
+        return message + (errors.length > 1 ? "\n\n수정할 번호를 입력해주세요." : "\n\n수정할 내용을 보내주세요.") + "\n이 보상을 빼려면 \"빼기\"\n돌아가려면 \"이전\"\n\n나머지 입력은 보관하고 있어요.";
+    }
+    state.bulkRewards = mergePackageActualRewards([], rewards); state.step = "BULK_CONFIRM";
+    return "📦 이렇게 담을게요!\n\n구성: " + formatPackageRewardSummary(state.bulkRewards) + "\n\n추가 / 수정 / 이전";
+}
+
+// 실물 입력을 같은 검증기로 처리하고 수량 누락만 별도 단계로 보완하는 함수
+function processPackageActualInput(state, text, definitions) {
+    var result = resolvePackageRewardInput(text, state.rewardType, definitions);
+    if (result.draft) { state.optionDraft = result.draft; state.step = "ACTUAL_OPTION"; return { ok: true, message: buildPackageOptionPrompt(result.draft) }; }
+    if (result.candidates) { state.optionCandidates = result.candidates; state.optionCount = readPackageRewardInput(text).count; state.step = "ACTUAL_CANDIDATE"; return { ok: true, message: buildPackageCandidatePrompt(result.candidates) }; }
+    if (result.error) { state.pendingRaw = text; return { ok: false, message: result.error + "\n\n수정할 내용을 보내주세요." }; }
+    if (result.missingCount) { state.pendingReward = result.reward; state.step = "ACTUAL_COUNT"; return { ok: true, message: formatPackageActualReward(result.reward) + "\n\n몇 개 넣을까요?\n예: 1\n\n옵션을 바꾸려면 \"옵션 수정\"" }; }
+    return completePackageActualInput(state, result.reward);
+}
+
+// 검증한 보상 하나를 추가 또는 수정하고 작성 화면으로 돌아가는 함수
+function completePackageActualInput(state, reward) {
+    if (state.editRewardIndex !== undefined) { state.rewards[state.editRewardIndex] = reward; delete state.editRewardIndex; }
+    else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
+    state.pendingReward = null; state.pendingRaw = null; state.step = "REWARD_CHOICE";
+    return { ok: true, message: "✅ 보상에 담았어요!\n\n" + formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count) + "\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
+}
+
+// 작성 중 보상의 편집 대상만 기존 표기로 나열하는 함수
+function buildPackageActualEditList(state) {
+    var text = "✏️ 수정할 보상을 골라주세요.\n\n";
+    for (var i = 0; i < state.rewards.length; i++) text += (i + 1) + ". " + formatPackageActualReward(state.rewards[i]) + " x" + numberWithCommas(state.rewards[i].count) + "\n";
+    return text + "\n번호를 입력해주세요.";
+}
+
+// 개별·일괄·수정·최종 등록에서 같은 보상 정의와 원문을 사용하는 작성 상태 처리 함수
+function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
+    var state = userState[sender].packageAdd, text = String(msg || "").trim(), duplicate = null;
+    if (state.room !== getCurrentContext().permissionRoom || state.rootPath !== getCurrentContext().rootPath) return { ok: false, message: "📦 작성 중인 패키지가 있어요. 이어서 작성하거나, 취소 후 다시 시작해주세요." };
+    if (Date.now() > state.expiresAt) { delete userState[sender].packageAdd; return { ok: false, message: "작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요." }; }
+    state.expiresAt = Date.now() + GLOBAL_CONFIG.manualReset.timeoutMs;
+    if (!text) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
+    if (text === "취소") return { ok: true, message: cancelPackageAddFlow(sender) };
+    if (state.step === "NAME" || state.step === "EDIT_NAME") {
+        if (text === GLOBAL_CONFIG.package.retiredMiniSet.name || text === GLOBAL_CONFIG.package.retiredMiniSet.ticket) return { ok: false, message: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
+        for (var p = 0; p < packages.length; p++) if (packages[p] && packages[p].name === text) duplicate = packages[p];
+        if (duplicate) return { ok: false, message: "같은 이름의 패키지가 있어요. 다른 이름을 입력해주세요." };
+        state.name = text;
+        if (state.step === "EDIT_NAME") { state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
+        state.step = "DESC";
+        return { ok: true, message: "✅ 이름을 정했어요!\n\n패키지: " + state.name + "\n\n2단계: 패키지 설명을 입력해주세요." };
+    }
+    if (state.step === "DESC" || state.step === "EDIT_DESC") {
+        state.desc = text;
+        if (state.step === "EDIT_DESC") { state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
+        state.step = "REWARD_CHOICE"; return { ok: true, message: "✅ 설명을 넣었어요!\n\n" + buildPackageRewardChoiceMessage(state) };
+    }
+    if (state.step === "REWARD_CHOICE") {
+        var choice = normalizePackageRewardChoice(text);
+        if (choice === "CANCEL") return { ok: true, message: cancelPackageAddFlow(sender) };
+        if (choice === "DONE") {
+            if (!state.rewards.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
+            state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) };
+        }
+        if (choice === "BULK") { state.step = "BULK"; return { ok: true, message: "📦 구성품을 그대로 붙여넣어주세요!\n\n예:\n삼성전자📙 x1, 경제사범📙 x1, 미니펫 강화석💫 x1,000\n\n여러 종류를 섞어도 돼요.\n기존 패키지의 \"구성:\" 줄을 복사해도 돼요.\n숫자는 쉼표가 있어도 없어도 돼요.\n\n돌아가려면 \"이전\"" }; }
+        if (!choice) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
+        state.rewardType = choice.toLowerCase(); state.step = "ACTUAL_INPUT";
+        return { ok: true, message: getPackageActualPrompt(state.rewardType) };
+    }
+    if (state.step === "ACTUAL_INPUT") return processPackageActualInput(state, text, definitions);
+    if (state.step === "ACTUAL_CANDIDATE") {
+        var candidateNumber = parsePackagePositiveCount(text), candidate = candidateNumber && state.optionCandidates[candidateNumber - 1];
+        if (!candidate) return { ok: false, message: buildPackageCandidatePrompt(state.optionCandidates) };
+        state.rewardType = candidate.type;
+        return processPackageActualInput(state, formatPackageActualReward(candidate) + (state.optionCount ? " x" + state.optionCount : ""), definitions);
+    }
+    if (state.step === "ACTUAL_OPTION") {
+        var optionError = applyPackageOptionAnswer(state.optionDraft, text);
+        if (optionError) return { ok: false, message: optionError + "\n\n" + buildPackageOptionPrompt(state.optionDraft) };
+        if (state.optionDraft.fields.length) return { ok: true, message: buildPackageOptionPrompt(state.optionDraft) };
+        var completedInput = formatPackageOptionDraft(state.optionDraft); state.optionDraft = null;
+        state.step = "ACTUAL_INPUT"; return processPackageActualInput(state, completedInput, definitions);
+    }
+    if (state.step === "ACTUAL_COUNT") {
+        if (text === "옵션 수정") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
+        var count = parsePackagePositiveCount(text); if (!count) return { ok: false, message: "수량은 1 이상의 정수로 입력해주세요." };
+        state.pendingReward.count = count; return completePackageActualInput(state, state.pendingReward);
+    }
+    if (/^BULK/.test(state.step)) {
+        if (text === "이전") { state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
+        if (state.step === "BULK_CONFIRM") {
+            if (text === "추가") { state.rewards = mergePackageActualRewards(state.rewards, state.bulkRewards); var added = state.bulkRewards.length; state.bulk = null; state.bulkRewards = null; state.step = "REWARD_CHOICE"; return { ok: true, message: "✅ 보상 " + added + "개 항목을 담았어요!\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) }; }
+            if (text === "수정") { state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) }; }
+            return { ok: false, message: "추가 / 수정 / 이전" };
+        }
+        if (state.step === "BULK_PICK_ERROR") { var index = parsePackagePositiveCount(text); if (!index || !state.bulk[index - 1] || state.bulk[index - 1].removed) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.fixIndex = index - 1; state.step = "BULK_FIX"; return { ok: true, message: "수정할 내용을 보내주세요.\n이 보상을 빼려면 \"빼기\"\n돌아가려면 \"이전\"" }; }
+        if (state.step === "BULK_FIX") {
+            if (text === "빼기") state.bulk[state.fixIndex].removed = true;
+            else {
+                var current = state.bulk[state.fixIndex], fixed;
+                if (current.draft) {
+                    var bulkOptionError = applyPackageOptionAnswer(current.draft, text);
+                    if (bulkOptionError) return { ok: false, message: bulkOptionError + "\n\n" + buildPackageOptionPrompt(current.draft) };
+                    if (current.draft.fields.length) return { ok: true, message: buildPackageOptionPrompt(current.draft) };
+                    text = formatPackageOptionDraft(current.draft);
+                } else if (current.missingCount) {
+                    var bulkCount = parsePackagePositiveCount(text);
+                    if (!bulkCount) return { ok: false, message: "수량은 1 이상의 정수로 입력해주세요." };
+                    current.reward.count = bulkCount; current.error = null; current.missingCount = false;
+                    return { ok: true, message: buildPackageBulkReview(state) };
+                } else if (current.candidates) {
+                    var bulkCandidateNumber = parsePackagePositiveCount(text), bulkCandidate = bulkCandidateNumber && current.candidates[bulkCandidateNumber - 1];
+                    if (!bulkCandidate) return { ok: false, message: buildPackageCandidatePrompt(current.candidates) };
+                    text = formatPackageActualReward(bulkCandidate) + (readPackageRewardInput(current.raw).count ? " x" + readPackageRewardInput(current.raw).count : "");
+                }
+                fixed = resolvePackageRewardInput(text, null, definitions);
+                state.bulk[state.fixIndex] = makePackageBulkInputRow(text, fixed);
+            }
+            return { ok: true, message: buildPackageBulkReview(state) };
+        }
+        var parts = splitPackageComposition(text); if (!parts.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요." };
+        state.bulk = [];
+        for (var b = 0; b < parts.length; b++) { var parsed = resolvePackageRewardInput(parts[b], null, definitions); state.bulk.push(makePackageBulkInputRow(parts[b], parsed)); }
+        return { ok: true, message: buildPackageBulkReview(state) };
+    }
+    if (state.step === "EDIT_MENU") {
+        if (text === "1") { state.step = "EDIT_NAME"; return { ok: true, message: "패키지 이름을 입력해주세요." }; }
+        if (text === "2") { state.step = "EDIT_DESC"; return { ok: true, message: "2단계: 패키지 설명을 입력해주세요." }; }
+        if (text === "3") { state.step = "EDIT_PICK"; return { ok: true, message: buildPackageActualEditList(state) }; }
+        if (text === "4" || text === "돌아가기") { state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
+        return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
+    }
+    if (state.step === "EDIT_PICK") { var selected = parsePackagePositiveCount(text); if (!selected || !state.rewards[selected - 1]) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.editRewardIndex = selected - 1; state.step = "EDIT_REWARD"; return { ok: true, message: state.rewards[selected - 1].type === "point" ? "지급액 변경 / 빼기 / 돌아가기" : "수량 변경 / 옵션 수정 / 빼기 / 돌아가기" }; }
+    if (state.step === "EDIT_REWARD") {
+        if (text === "빼기") { state.rewards.splice(state.editRewardIndex, 1); delete state.editRewardIndex; state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
+        if (text === "돌아가기") { delete state.editRewardIndex; state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
+        state.rewardType = state.rewards[state.editRewardIndex].type;
+        if (text === "수량 변경") { state.pendingReward = JSON.parse(JSON.stringify(state.rewards[state.editRewardIndex])); state.step = "ACTUAL_COUNT"; return { ok: true, message: "몇 개 넣을까요?\n예: 1" }; }
+        if (text === "옵션 수정" || text === "지급액 변경") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
+        return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
+    }
+    if (state.step === "CONFIRM") {
+        if (text === "수정") { state.step = "EDIT_MENU"; return { ok: true, message: "✏️ 무엇을 수정할까요?\n\n1. 패키지 이름\n2. 설명\n3. 보상\n4. 돌아가기" }; }
+        if (text === "더 넣기") { state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
+        if (text !== "등록") return { ok: false, message: "등록, 수정, 더 넣기, 취소 중 하나를 입력해주세요." };
+        for (var n = 0; n < packages.length; n++) {
+            if (packages[n] && packages[n].registrationId === state.id) return { ok: true, registered: true, message: "이미 등록된 패키지입니다. 번호: " + (n + 1) };
+            if (packages[n] && packages[n].name === state.name) return { ok: false, message: "같은 이름의 패키지가 있어요. 다른 이름을 입력해주세요." };
+        }
+        if (!state.rewards.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요." };
+        for (var r = 0; r < state.rewards.length; r++) {
+            var validation = validatePackageActualReward(state.rewards[r], definitions);
+            if (validation) return { ok: false, message: validation };
+        }
+        var info = createPackageInfoFromState(state, packages); info.registrationId = state.id; packages.push(info);
+        return { ok: true, registered: true, packageInfoData: packages, message: "✅ 패키지 추가 완료!\n\n번호: " + packages.length + "\n패키지: " + info.name + "\n설명: " + info.desc + "\n구성: " + formatPackageRewardSummary(info.rewards) };
+    }
+    return { ok: false, message: "작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요." };
+}
+
+// 등록과 사용 직전에 실제 정의와 모든 수량·옵션을 다시 대조하는 함수
+function validatePackageActualReward(reward, definitions) {
+    if (!reward || !isPointShopSafeCount(reward.count) || reward.count < 1) return "수량은 1 이상의 정수로 입력해주세요.";
+    if (reward.type === "point") return "";
+    var parsed = resolvePackageRewardInput(formatPackageActualReward(reward) + " x" + reward.count, reward.type, definitions);
+    if (parsed.error) return parsed.error;
+    if (!parsed.reward || JSON.stringify(parsed.reward.object || null) !== JSON.stringify(reward.object || null) || parsed.reward.name !== reward.name) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
+    return "";
+}
+
+// 실물 구성 전체를 차감 전에 검사하고 가방 정원은 검사하지 않는 함수
+function validatePackageActualUse(info, useCount, actual, user) {
+    var rewards = info.rewards || [], skillTotals = {};
+    if (info.legacyEntitlement) {
+        var expected = createLegacyMiniEntitlementPackage(info.legacyEntitlement);
+        if (JSON.stringify(info.rewards) !== JSON.stringify(expected.rewards)) throw new Error("기존 미니펫 패키지 보상 권리 불일치");
+        if (!actual || !actual.pets) throw new Error("기존 미니펫 보상 저장소 누락");
+        return;
+    }
+    for (var i = 0; i < rewards.length; i++) {
+        var reward = rewards[i], count = Number(reward.count) * useCount;
+        if (!isPointShopSafeCount(count) || count < 1) throw new Error("패키지 구성 확인이 필요해 사용하지 못했어요. 패키지는 차감되지 않았습니다.");
+        if (reward.type === "item" || reward.type === "point") continue;
+        if (!actual) throw new Error("패키지 구성 확인이 필요해 사용하지 못했어요. 패키지는 차감되지 않았습니다.");
+        var error = validatePackageActualReward(reward, actual.definitions); if (error) throw new Error(error);
+        if (reward.type === "skill") {
+            var skillUser = actual.skills[user], bag = skillUser && skillUser.petSkills && skillUser.petSkills.bag || {};
+            var previous = skillTotals[reward.name] === undefined ? bag[reward.name] === undefined ? 0 : bag[reward.name] : skillTotals[reward.name];
+            if (!isPointShopSafeCount(previous) || !isPointShopSafeCount(previous + count)) throw new Error("패키지 구성품 수량을 확인해주세요.");
+            skillTotals[reward.name] = previous + count;
+        }
+        if (reward.type === "gem" && !actual.gems) throw new Error("보석 기능 연결 전이라 사용할 수 없어요. 패키지는 차감되지 않았습니다.");
+    }
+}
+
+// 신규 등록이 종료 상품 번호를 재사용하지 않도록 빈 번호만 예약하는 함수
+function reserveRetiredMiniPackageNumber(packages) {
+    if (packages.length === GLOBAL_CONFIG.package.retiredMiniSet.number - 1) packages.push(null);
+}
+
+// 구 패키지와 이미 받은 전용권의 서로 다른 보상 권리만 공통 패키지로 표현하는 함수
+function createLegacyMiniEntitlementPackage(kind, original) {
+    var config = GLOBAL_CONFIG.package.retiredMiniSet;
+    if (kind !== "set" && kind !== "ticket") throw new Error("기존 미니펫 패키지 권리 종류 오류");
+    if (original) {
+        var rows = original.rewards, foundTicket = 0, foundStone = 0;
+        if (original.name !== config.name || !Array.isArray(rows) || rows.length !== 2) throw new Error("구 220번 패키지 원본 구성 확인 필요");
+        for (var n = 0; n < rows.length; n++) {
+            var reward = rows[n];
+            if (!reward || reward.type !== "item") throw new Error("구 220번 패키지 원본 보상 종류 확인 필요");
+            if (reward.name === config.ticket && Number(reward.count) === 1) foundTicket++;
+            else if (normalizePackageLookup(reward.name) === normalizePackageLookup(config.stone) && Number(reward.count) === config.stoneCount) foundStone++;
+            else throw new Error("구 220번 패키지 원본 보상 권리 확인 필요");
+        }
+        if (foundTicket !== 1 || foundStone !== 1) throw new Error("구 220번 패키지 원본 보상 중복 확인 필요");
+    }
+    var rewards = [];
+    for (var i = 0; i < config.grades.length; i++) rewards.push({ type: "mini", name: "컬렉션" + config.grades[i], count: 1, object: { name: "컬렉션" + config.grades[i], emoji: "🐹", grade: config.grades[i], price: 0, battleExp: 1, castleExp: 1, raidExp: 1, upgrade: 0 } });
+    if (kind === "set") rewards.push({ type: "item", name: config.stone, count: config.stoneCount });
+    return { id: original && original.id || "legacy_mini_collection_" + kind, name: kind === "set" ? config.name : config.ticket, itemName: kind === "set" ? config.name : config.ticket, desc: original && original.desc || "", enabled: true, hidden: true, legacyEntitlement: kind, maxUseOnce: GLOBAL_CONFIG.package.maxUseOnce, rewards: rewards };
+}
+
+// 실제 보유 수량을 확인하고 기존 가방 수량을 그대로 유지한 채 공통 사용 정의만 전환하는 함수
+function prepareLegacyMiniPackageMigration(data, packages, market) {
+    requirePackageInfoData(packages);
+    var config = GLOBAL_CONFIG.package.retiredMiniSet, original = packages[config.number - 1], plan = JSON.parse(JSON.stringify(packages)), targets = [], counts = { set: 0, ticket: 0 }, holders = [];
+    var entitlementSet = original && original.name === config.name ? createLegacyMiniEntitlementPackage("set", original) : null;
+    if (original && original.name !== config.name) throw new Error("구 220번 패키지 이름 확인 필요");
+    for (var user in data.member) if (Object.prototype.hasOwnProperty.call(data.member, user)) {
+        var bag = data.member[user].bag || {};
+        for (var kind in counts) {
+            var name = kind === "set" ? config.name : config.ticket, count = bag[name];
+            if (count === undefined || count === 0) continue;
+            if (!isPointShopSafeCount(count) || !isPointShopSafeCount(counts[kind] + count)) throw new Error("기존 미니펫 패키지 보유 수량 확인 필요");
+            counts[kind] += count; holders.push([user, kind, count]);
+        }
+    }
+    if (market) {
+        var listings = getFreeMarketActiveListings(requireFreeMarketSource(market));
+        for (var m = 0; m < listings.length; m++) {
+            var listing = listings[m], marketKind = listing.itemName === config.name ? "set" : listing.itemName === config.ticket ? "ticket" : null;
+            if (!marketKind || listing.type !== "bag") continue;
+            if (!isPointShopSafeCount(listing.quantity) || !isPointShopSafeCount(counts[marketKind] + listing.quantity)) throw new Error("기존 미니펫 시장 보관 수량 확인 필요");
+            counts[marketKind] += listing.quantity; holders.push(["market", listing.id, marketKind, listing.quantity]);
+        }
+    }
+    if (original) { plan[config.number - 1] = null; targets.push(["catalog", original]); }
+    for (var type in counts) if (counts[type] > 0) {
+        var existing = plan.filter(function (row) { return row && row.legacyEntitlement === type; });
+        if (existing.length > 1) throw new Error("기존 미니펫 공통 패키지 정의 중복");
+        if (!existing.length) {
+            var info = type === "set" ? entitlementSet : createLegacyMiniEntitlementPackage("ticket");
+            if (!info) throw new Error("기존 미사용 220번 보상 원본 확인 필요");
+            reserveRetiredMiniPackageNumber(plan); plan.push(info); targets.push(["entitlement", type]);
+        }
+    }
+    if (targets.length) targets.push(["holders", holders]);
+    return { packages: plan, counts: counts, targets: targets };
+}
+
+// 실제 콘텐츠 개체를 새 식별자로 생성하며 자동 장착·컬렉션·뽑기를 실행하지 않는 함수
+function grantPackageActualReward(actual, user, reward, count) {
+    if (reward.type === "skill") {
+        if (isRetiredPetSkill(reward.name)) throw new Error("폐지된 패키지 펫스킬 지급 차단");
+        var skills = initPetSkillUser(actual.skills, user); skills.bag[reward.name] = (skills.bag[reward.name] || 0) + count; actual.skillChanged = true; return;
+    }
+    for (var i = 0; i < count; i++) {
+        var object = JSON.parse(JSON.stringify(reward.object));
+        if (reward.type === "mini") {
+            if (!actual.pets[user]) actual.pets[user] = {};
+            if (!actual.pets[user].miniPetBag) actual.pets[user].miniPetBag = [];
+            object.id = String(java.util.UUID.randomUUID()); actual.pets[user].miniPetBag.push(object); actual.petChanged = true;
+        } else if (reward.type === "pendant") {
+            object.pendantId = "PND-" + String(java.util.UUID.randomUUID()); object.bound = false; getPendantBag(actual.pets, user).push(object); actual.petChanged = true;
+        } else if (reward.type === "furniture") {
+            if (!actual.homes[user]) actual.homes[user] = {};
+            if (!actual.homes[user].furnitureBag) actual.homes[user].furnitureBag = [];
+            object.id = createCuId(); actual.homes[user].furnitureBag.push(object); actual.homeChanged = true;
+        } else if (reward.type === "gem") {
+            actual.gems.gems.push(createAdventureGem(object.kind, object.grade, object.castle, object.raid)); actual.gems.hasAcquired = true; actual.gemChanged = true;
+        } else throw new Error("패키지 실물 보상 종류 오류");
+    }
+}
+
+// 기존 로그에 저장한 확정 사용 결과를 다시 표시하는 함수
+function formatPackageUseReceipt(receipt, user) {
+    return "🎁 패키지 사용 완료!\n\n사용자: " + user + "\n사용 패키지: " + receipt.name + "\n사용 수량: " + numberWithCommas(receipt.count) + "개\n\n획득 보상:\n" + receipt.rewards.join(", ") + "\n\n남은 패키지: " + numberWithCommas(receipt.remaining) + "개";
+}
+
+// 패키지 차감·각 실제 가방·기존 로그를 동일 원문으로 확정 게시하는 진입 함수
+function runPackageActualUseEntry(data, pets, skills, guilds, user, message, packages, logs, request, replier) {
+    var member = data.member[user], owner = getAdventureGemAccountId(data, user), parsed = parsePackageUseCommand(message), list = getUserPackageBagList(data, user, packages), selected = parsed && list[parsed.bagNumber - 1];
+    var nativeId = getServerRaidEventId(request.callbackEvent);
+    if (!request.packageUseRequestId) request.packageUseRequestId = nativeId || "request:" + String(java.util.UUID.randomUUID());
+    assertPackageLogData(logs);
+    for (var l = 0; l < logs.logs.length; l++) {
+        var log = logs.logs[l];
+        if (log.type === "USE" && log.requestId === request.packageUseRequestId) {
+            if (log.owner !== owner || log.command !== message || !log.receipt) throw new Error("패키지 사용 접수 식별값 충돌");
+            replyPackageContent(replier, formatPackageUseReceipt(log.receipt, user)); return;
+        }
+    }
+    if (!selected) { var invalid = usePackageFromBag(data, pets, guilds, user, message, packages, logs); replier.reply(invalid.message); return; }
+    var rewards = selected.packageInfo.rewards || [], needs = {};
+    for (var i = 0; i < rewards.length; i++) needs[rewards[i].type] = true;
+    var actual = { pets: pets, skills: skills, homes: null, gems: null, definitions: null };
+    if (needs.mini || needs.furniture || needs.pendant || needs.skill || needs.gem) {
+        var homeInfo = loadJsonFile(homeInfoFile), items = loadJsonFile(itemListPath);
+        actual.definitions = { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: miniPetData.miniPet, furniture: homeInfo.furniture };
+    }
+    if (needs.furniture) actual.homes = loadJsonFile(homeDataFile);
+    if (needs.gem) {
+        var gemPath = owner ? resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(owner, false)) : null;
+        if (gemPath && new java.io.File(gemPath).exists()) actual.gems = requireAdventureGemState(loadJsonFile(gemPath), owner);
+        else {
+            if (member.adventureGemInitialized || gemPath && (new java.io.File(gemPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(gemPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(gemPath)).exists())) throw new Error("패키지 보석 원본 누락");
+            actual.gems = createAdventureGemState(owner);
+        }
+    }
+    var result, ctx = getCurrentContext();
+    if (hasHalloweenPackageReward(selected.packageInfo)) result = runHalloweenEntry("packageUse", { ctx: ctx, data: data, petData: pets, guildData: guilds, sender: user, room: ctx.permissionRoom, message: message, packageInfo: packages, packageLog: logs, actual: actual, deferPackageUse: true, event: { id: request.packageUseRequestId } });
+    else result = usePackageFromBag(data, pets, guilds, user, message, packages, logs, null, actual);
+    if (!result.ok) { replier.reply(result.message); return; }
+    if (!owner) { member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), total: null }; owner = member.serverRaidAccount.id; }
+    var savedLog = result.packageLogData.logs[result.packageLogData.logs.length - 1];
+    savedLog.owner = owner; savedLog.requestId = request.packageUseRequestId; savedLog.command = message; savedLog.receipt = result.receipt;
+    var plan = buildMemberSplitSavePlan(data), rows = [];
+    if (plan) for (var w = 0; w < plan.writes.length; w++) rows.push({ name: String(new java.io.File(plan.writes[w].path).getName()), text: plan.writes[w].text });
+    if (actual.petChanged) rows.push({ name: "member_pet.json", text: JSON.stringify(pets) });
+    if (actual.homeChanged) rows.push({ name: "petSweetHomeData.json", text: JSON.stringify(actual.homes) });
+    if (actual.skillChanged) rows.push({ name: "petSkillData.json", text: JSON.stringify(skills) });
+    if (actual.gemChanged) { actual.gems.owner = owner; member.adventureGemInitialized = true; requireAdventureGemState(actual.gems, owner); rows.push({ name: getAdventureGemFileName(owner, false), text: JSON.stringify(actual.gems) }); }
+    rows.push({ name: "member.json", text: JSON.stringify(plan ? plan.member : data) }, { name: "packageLog.json", text: JSON.stringify(result.packageLogData) });
+    for (var e = 0; result.packageGrantFiles && e < result.packageGrantFiles.length; e++) rows.push(result.packageGrantFiles[e]);
+    publishOperationalRows(rows);
+    ctx.adventureGemSummaries = {};
+    replyPackageContent(replier, result.message);
+}
+
+// 빠진 옵션과 오류 항목만 보관해 일괄 입력 전체를 다시 받지 않는 함수
+function makePackageBulkInputRow(raw, result) {
+    return { raw: raw, reward: result.reward, draft: result.draft, candidates: result.candidates, missingCount: result.missingCount,
+        error: result.error || (result.draft ? buildPackageOptionPrompt(result.draft) : result.missingCount ? "몇 개 넣을까요? 예: 1" : result.candidates ? buildPackageCandidatePrompt(result.candidates) : null) };
+}
+
+// 동일 이름의 실제 후보를 기존 실물 표기로 표시하는 함수
+function buildPackageCandidatePrompt(candidates) {
+    var text = "어떤 보상인지 선택해주세요.\n\n";
+    for (var i = 0; i < candidates.length; i++) text += (i + 1) + ". " + formatPackageActualReward(candidates[i]) + "\n";
+    return text + "\n번호를 입력해주세요.";
+}
+
+// 남은 첫 옵션만 문서의 누락 안내로 요청하는 함수
+function buildPackageOptionPrompt(draft) {
+    var labels = { grade: "등급", castle: "캐슬매력", raid: "레이드매력", charm: "매력", durability: "내구도", upgrade: "강화수치" };
+    return labels[draft.fields[0]] + "를 확인할 수 없어요. 지급할 값을 입력해주세요.";
+}
+
+// 실제 이름이 확인된 실물만 누락 옵션 입력 대상으로 만드는 함수
+function getPackageOptionDraft(text, type, definitions, count) {
+    var naked = text.replace(/\([^)]*\)|\[[^\]]*\]/g, "").trim(), rows = [], i;
+    if ((!type || type === "gem") && /^(?:루비🔴|사파이어🔵|에메랄드🟢)(?:\[|\(|$)/.test(text)) {
+        var kind = text.indexOf("루비") === 0 ? "ruby" : text.indexOf("사파이어") === 0 ? "sapphire" : "emerald", g = /\[([^\]]+)\]/.exec(text), grade = null;
+        if (g) for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === g[1].replace("🌌", "")) grade = i;
+        var charm = /\(\+([\d,]+)만/.exec(text), castle = /⚔️?\s*\+([\d,]+)만/.exec(text), raid = /👾\s*\+([\d,]+)만/.exec(text);
+        var gem = { kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : charm ? Number(charm[1].replace(/,/g, "")) * 10000 : castle ? Number(castle[1].replace(/,/g, "")) * 10000 : null, raid: kind === "ruby" ? 0 : charm ? Number(charm[1].replace(/,/g, "")) * 10000 : raid ? Number(raid[1].replace(/,/g, "")) * 10000 : null };
+        var fields = []; if (grade === null) fields.push("grade"); if (gem.castle === null) fields.push("castle"); if (gem.raid === null) fields.push("raid");
+        if (fields.length) return { draft: { type: "gem", object: gem, count: count, fields: fields } };
+        return null;
+    }
+    if ((!type || type === "mini") && text.indexOf("(+") < 0) for (i = 0; i < definitions.mini.length; i++) {
+        var mini = definitions.mini[i];
+        if (normalizePackageLookup(naked) !== normalizePackageLookup(mini.name) && normalizePackageLookup(naked) !== normalizePackageLookup(mini.name + (mini.emoji || ""))) continue;
+        var miniGrade = /\[([^\]]+)\]/.exec(text); if (miniGrade && miniGrade[1] !== mini.grade) continue;
+        rows.push({ type: "mini", name: mini.name, object: { name: mini.name, emoji: mini.emoji || "", grade: mini.grade, price: Number(mini.price) || 0, battleExp: Number(mini.battleExp), castleExp: Number(mini.castleExp === undefined ? mini.battleExp : mini.castleExp), raidExp: Number(mini.raidExp === undefined ? mini.battleExp : mini.raidExp), upgrade: 0 } });
+    }
+    if ((!type || type === "furniture") && text.indexOf("(+") < 0) for (i = 0; i < definitions.furniture.length; i++) {
+        var furniture = definitions.furniture[i];
+        if (normalizePackageLookup(naked) !== normalizePackageLookup(furniture.name + (furniture.emoji || ""))) continue;
+        var furnitureGrade = /\[([^\]]+)\]/.exec(text); if (furnitureGrade && furnitureGrade[1] !== furniture.grade) continue;
+        rows.push({ type: "furniture", name: furniture.name, object: { name: furniture.name, exp: Number(furniture.exp), rate: Number(furniture.rate) || 0, grade: furniture.grade, display: furniture.display || furniture.name + "(+" + numberWithCommas(furniture.exp) + "💕)[" + furniture.grade + "]" } });
+    }
+    if ((!type || type === "pendant") && !/\[⚒️?\d+\/\d+\]\(\+\d+\)$/.test(text)) for (i = 0; i < PENDANT_GRADE_TABLE.length; i++) {
+        var pendant = PENDANT_GRADE_TABLE[i];
+        if (normalizePackageLookup(naked) !== normalizePackageLookup(pendant.name) && normalizePackageLookup(naked) !== normalizePackageLookup(pendant.name + pendant.icon)) continue;
+        var pendantGrade = /\[([^\]★]+)(?:★(\d+))?\]/.exec(text), dura = /\[⚒️?(\d+)\/(\d+)\]/.exec(text), up = /\(\+(\d+)\)/.exec(text);
+        if (pendantGrade && pendantGrade[1] !== pendant.grade) continue;
+        rows.push({ type: "pendant", name: pendant.name, object: { name: pendant.name, icon: pendant.icon, grade: pendant.grade, promotionLevel: pendantGrade ? Number(pendantGrade[2] || 0) : 0, durability: dura ? Number(dura[1]) : null, maxDurability: 5, upgrade: up ? Number(up[1]) : null, bound: false } });
+    }
+    var unique = [], seen = {};
+    for (i = 0; i < rows.length; i++) { var key = JSON.stringify(rows[i]); if (!seen[key]) { seen[key] = true; unique.push(rows[i]); } }
+    if (unique.length > 1) return { candidates: unique };
+    if (!unique.length) return null;
+    var row = unique[0], missing = [];
+    if (row.type === "mini" || row.type === "furniture") missing.push("charm");
+    if (row.type === "pendant") { if (row.object.durability === null) missing.push("durability"); if (row.object.upgrade === null) missing.push("upgrade"); }
+    return { draft: { type: row.type, name: row.name, object: row.object, count: count, fields: missing } };
+}
+
+// 누락 옵션 하나를 검증하고 나머지 확인된 옵션은 그대로 유지하는 함수
+function applyPackageOptionAnswer(draft, input) {
+    var field = draft.fields[0], value, text = String(input || "").trim();
+    if (field === "grade") {
+        value = null; for (var i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === text.replace("🌌", "")) value = i;
+        if (value === null) return "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요.";
+    } else {
+        var isMan = /만$/.test(text); text = text.replace(/^\+/, "").replace(/만$/, "");
+        if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(text)) return "숫자를 확인해주세요. 예: 1000 또는 1,000";
+        value = Number(text.replace(/,/g, "")) * (isMan ? 10000 : 1);
+        if (!isPointShopSafeCount(value)) return "숫자를 확인해주세요. 예: 1000 또는 1,000";
+        if (field === "durability" && value > draft.object.maxDurability) return "내구도는 최대 내구도를 넘을 수 없어요.";
+        if (field === "upgrade" && value > GLOBAL_CONFIG.pendant.upgrade.maxLevel) return "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + GLOBAL_CONFIG.pendant.upgrade.maxLevel + "입니다.";
+        if (field === "castle" || field === "raid") {
+            var grade = GLOBAL_CONFIG.adventureGem.grades[draft.object.grade];
+            if (value < grade.min || value > grade.max || value % GLOBAL_CONFIG.adventureGem.charmStep !== 0) return "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + formatAdventureGemCharm(grade.min) + "~" + formatAdventureGemCharm(grade.max) + "입니다.";
+        }
+    }
+    if (field === "charm") {
+        if (draft.type === "mini") draft.object.battleExp = draft.object.castleExp = draft.object.raidExp = value;
+        else { draft.object.exp = value; draft.object.display = draft.object.name + "(+" + numberWithCommas(value) + "💕)[" + draft.object.grade + "]"; }
+    } else draft.object[field] = value;
+    draft.fields.shift(); return "";
+}
+
+// 보완한 옵션을 동일한 등록 검증기에 다시 전달할 원문으로 만드는 함수
+function formatPackageOptionDraft(draft) {
+    return formatPackageActualReward(draft) + (draft.count ? " x" + draft.count : "");
+}
+
+// 구성품의 수량 끝을 기준으로 이어 보내 에메랄드 이름과 두 매력 줄을 분리하지 않는 함수
+function replyPackageContent(replier, message) {
+    var text = String(message), pattern = /\sx[\d,]+(?=,\s|\n|$)/g, boundaries = [0], match;
+    while ((match = pattern.exec(text))) boundaries.push(match.index + match[0].length);
+    boundaries.push(text.length);
+    var chunk = "", limit = GLOBAL_CONFIG.adventureGem.messageLimit;
+    for (var i = 1; i < boundaries.length; i++) {
+        var piece = text.substring(boundaries[i - 1], boundaries[i]);
+        if (chunk && chunk.length + piece.length > limit) { replier.reply(chunk); chunk = ""; }
+        chunk += piece;
+    }
+    if (chunk) replier.reply(chunk);
+}
+
+// 스레드·재컴파일 사이에도 새 조회가 이전 대량 출력을 중단하도록 토큰을 읽는 함수
+function getAdventureGemReplyToken(key) {
+    var value = java.lang.System.getProperty(GLOBAL_CONFIG.adventureGem.replyPrefix + key);
+    return value === null ? null : String(value);
+}
+
+// 현재 대량 출력의 식별자만 공유 메모리에 등록하거나 해제하는 함수
+function setAdventureGemReplyToken(key, value) {
+    if (value === null) java.lang.System.clearProperty(GLOBAL_CONFIG.adventureGem.replyPrefix + key);
+    else java.lang.System.setProperty(GLOBAL_CONFIG.adventureGem.replyPrefix + key, value);
+}
+
+// 큰 슬롯 목록을 작은 묶음으로 생성·전송해 명령 MQ와 메모리를 오래 점유하지 않는 함수
+function replyAdventureGemSlotStream(replier, blocks) {
+    var context = getCurrentContext(), key = context.adventureGemReplyKey || JSON.stringify([context.rootPath, context.permissionRoom]), token = getAdventureGemReplyToken(key);
+    if (!token) { token = String(java.util.UUID.randomUUID()); setAdventureGemReplyToken(key, token); }
+    var previousContext = createCommandContext(context.isDev, context.permissionRoom);
+    var thread = new java.lang.Thread(new java.lang.Runnable({ run: function () {
+        var previous = enterCommandContext(previousContext), text = "", limit = GLOBAL_CONFIG.adventureGem.messageLimit;
+        try {
+            for (var i = 0; i < blocks.length; i++) {
+                if (getAdventureGemReplyToken(key) !== token) return;
+                var block = blocks[i];
+                if (typeof block !== "object" || !block.slotRows) {
+                    var value = String(block);
+                    if (text && text.length + value.length + 1 > limit) { replier.reply(text); text = ""; }
+                    text += (text ? "\n" : "") + value; continue;
+                }
+                var batch = 0;
+                for (var slot = block.from; slot <= block.to; slot++) {
+                    if (getAdventureGemReplyToken(key) !== token) return;
+                    var equipped = block.occupied[slot];
+                    if ((block.slotRows === "empty" || block.slotRows === "example") && equipped) continue;
+                    var line = block.slotRows === "example" ? "👉 " + slot + "번 슬롯: /보석장착 1 " + slot : block.slotRows === "labels" ? formatAdventureGemSlot(slot) : formatAdventureGemSlot(slot) + " " + (equipped ? formatAdventureGem(equipped) : "🔓 빈 슬롯");
+                    var separator = block.slotRows === "labels" ? batch ? " · " : "" : text ? "\n" : "";
+                    if (text && text.length + line.length + separator.length > limit) { replier.reply(text); text = ""; separator = ""; }
+                    text += separator + line;
+                    if (++batch >= GLOBAL_CONFIG.adventureGem.slotMessageBatch) { replier.reply(text); text = ""; batch = 0; }
+                }
+            }
+            if (text && getAdventureGemReplyToken(key) === token) replier.reply(text);
+        } catch (replyError) { debuggerLog("[AdventureGem reply] " + replyError); }
+        finally { if (getAdventureGemReplyToken(key) === token) setAdventureGemReplyToken(key, null); exitCommandContext(previous); }
+    } }));
+    thread.setDaemon(true); thread.start();
 }
