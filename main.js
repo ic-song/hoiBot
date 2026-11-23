@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.889"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.890"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -8138,6 +8138,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     removePetSkillFromBag(petSkillData, sender, equipName, 1);
                     skillStore.equipped.push(equipName);
+                    if (data.HoiCastle && data.HoiCastle.lord === sender && normalizePetSkillName(equipName) === "악덕한 영주") data.HoiCastle.taxRate = GLOBAL_CONFIG.guildWar.lordTaxRate;
                     if (recordAdventureQuestAction(data, sender, 8, "skillEquipped", 0)) saveJsonFile(data, filePath);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
@@ -8247,6 +8248,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
 
                     unequipStore.equipped.splice(unequipIndex - 1, 1);
+                    if (data.HoiCastle && data.HoiCastle.lord === sender && normalizePetSkillName(unequipName) === "악덕한 영주") data.HoiCastle.taxRate = GLOBAL_CONFIG.guildWar.defaultTaxRate;
                     removeItem(data, sender, GLOBAL_CONFIG.petSkill.unbindItemName, 1);
                     var verandaUnequipReleasedItems = [];
                     if (verandaUnequipBonus > 0 && verandaUnequipReleaseCount > 0) {
@@ -17734,12 +17736,12 @@ replier.reply(
                 }
 
                 if (msg === "/패키지추가시작") {
-                    if (!(isAdmin(sender) || isMaster(sender))) return;
-                    replier.reply(startPackageAddFlow(sender, getPackageGrantIdentity(data, sender), request.receivedAt));
+                    if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("⛔ 패키지 관리 권한이 없습니다."); return; }
+                    replier.reply(appendPackageAddCancelGuide(sender, startPackageAddFlow(sender, getPackageGrantIdentity(data, sender), request.receivedAt)));
                     return;
                 }
 
-                if (msg === "/패키지추가취소") {
+                if (msg === "/패키지추가취소" && !(userState[sender] && userState[sender].packageAdd && userState[sender].packageAdd.awaitingRegistration)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     replier.reply(cancelPackageAddFlow(sender));
                     return;
@@ -17751,12 +17753,27 @@ replier.reply(
                     return;
                 }
 
-                if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg) && String(msg).charAt(0) !== "/" && userState[sender].packageAdd.room === ctx.permissionRoom && userState[sender].packageAdd.rootPath === ctx.rootPath) {
+                if (userState[sender] && userState[sender].packageAdd && (!isPackageAddStartCommand(msg) || msg === "/패키지추가취소" && userState[sender].packageAdd.awaitingRegistration) && userState[sender].packageAdd.room === ctx.permissionRoom && userState[sender].packageAdd.rootPath === ctx.rootPath) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageWriting = userState[sender].packageAdd;
                     if (packageWriting.accountId && packageWriting.accountId !== getPackageGrantIdentity(data, sender) || packageWriting.receivedAt && request.receivedAt < packageWriting.receivedAt) { replier.reply("작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요."); return; }
-                    if (String(msg).trim() === "취소") { replier.reply(cancelPackageAddFlow(sender)); return; }
-                    var packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
+                    if (String(msg).trim() === "취소" && !packageWriting.awaitingRegistration) { replier.reply(cancelPackageAddFlow(sender)); return; }
+                    if (String(msg).charAt(0) === "/" && msg !== "/패키지추가취소") { replier.reply(appendPackageAddCancelGuide(sender, "지금은 패키지를 작성 중이에요. 현재 질문에 답하거나 \"취소\"를 입력해주세요.\n\n" + buildPackageWritingQuestion(packageWriting))); return; }
+                    var packageInfoData;
+                    try { packageInfoData = requirePackageInfoData(loadJsonFile(packageInfoPath)); }
+                    catch (packageReadError) { if (!packageWriting.awaitingRegistration) throw packageReadError; replier.reply(appendPackageAddCancelGuide(sender, "⏳ 패키지 등록 결과를 확인하고 있어요. 확인이 끝나면 결과를 안내할게요.")); return; }
+                    if (packageWriting.awaitingRegistration) {
+                        var persistedIndex = -1;
+                        for (var pi = 0; pi < packageInfoData.length; pi++) if (packageInfoData[pi] && packageInfoData[pi].registrationId === packageWriting.id) persistedIndex = pi;
+                        if (persistedIndex >= 0) {
+                            var registeredInfo = packageInfoData[persistedIndex];
+                            if (registeredInfo.name !== packageWriting.name || JSON.stringify(registeredInfo.rewards) !== JSON.stringify(packageWriting.rewards)) throw new Error("패키지 등록 저장 결과 불일치");
+                            delete userState[sender].packageAdd;
+                            replier.reply("이미 등록된 패키지입니다. 번호: " + (persistedIndex + 1) + "."); return;
+                        }
+                        packageWriting.awaitingRegistration = false;
+                    }
+                    if (msg === "/패키지추가취소" || String(msg).trim() === "취소") { replier.reply(cancelPackageAddFlow(sender)); return; }
                     var packageHomeInfo = loadJsonFile(homeInfoFile), packageKnownItems = loadJsonFile(itemListPath);
                     var packageDefinitions = getPackageActualDefinitions(data, packageKnownItems, packageInfoData, packageHomeInfo, sender);
                     var packageWriteEvent = getServerRaidEventId(request.callbackEvent);
@@ -17768,9 +17785,11 @@ replier.reply(
                     if (packageFlowResult.ok && packageFlowResult.packageInfoData) {
                         try { saveJsonFile(packageFlowResult.packageInfoData, packageInfoPath); endDataSaveTransaction(); beginDataSaveTransaction(); }
                         catch (packageWriteError) {
-                            var packagePersisted = requirePackageInfoData(loadJsonFile(packageInfoPath)), packagePersistedEntry = null;
+                            var packagePersisted, packagePersistedEntry = null;
+                            try { packagePersisted = requirePackageInfoData(loadJsonFile(packageInfoPath)); }
+                            catch (packageVerificationError) { packageWriting.awaitingRegistration = true; replier.reply(appendPackageAddCancelGuide(sender, "⏳ 패키지 등록 결과를 확인하고 있어요. 확인이 끝나면 결과를 안내할게요.")); return; }
                             for (var pp = 0; pp < packagePersisted.length; pp++) if (packagePersisted[pp] && packagePersisted[pp].registrationId === packageWriting.id) packagePersistedEntry = packagePersisted[pp];
-                            if (!packagePersistedEntry) { replier.reply("❌ 저장하지 못했어요. 입력 내용은 유지했으니 다시 등록해주세요."); return; }
+                            if (!packagePersistedEntry) { replier.reply(appendPackageAddCancelGuide(sender, "❌ 저장하지 못했어요. 입력 내용은 유지했으니 다시 등록해주세요.")); return; }
                             if (packagePersistedEntry.name !== packageWriting.name || JSON.stringify(packagePersistedEntry.rewards) !== JSON.stringify(packageWriting.rewards)) throw new Error("패키지 등록 저장 결과 불일치");
                             endDataSaveTransaction(); beginDataSaveTransaction();
                         }
@@ -17781,7 +17800,7 @@ replier.reply(
                         packageWriting.receipts.push({ id: request.packageWriteRequestId, message: packageFlowResult.message });
                         if (packageWriting.receipts.length > GLOBAL_CONFIG.adventureGem.receiptLimit) packageWriting.receipts.shift();
                     }
-                    replyPackageContent(replier, packageFlowResult.message);
+                    replier.reply(packageFlowResult.message);
                     return;
                 }
 
@@ -20682,24 +20701,18 @@ replier.reply(
                     replier.reply("✅ 기록이 등록되었습니다.");
                     return;
                 }
-                if (msg.startsWith("/세금 ") && data.HoiCastle && sender == data.HoiCastle.lord) {
-                    let hoiCastle = data.HoiCastle;
-                    let command = msg.split(" ");
-                    if (command.length === 2 && command[1].match(/^\d+$/)) {
-                        let newTaxRate = parseInt(command[1]); // '/세금 숫자' 형식으로 받음
-                        if (hasPetSkill(petSkillData, sender, "악덕한 영주") && (newTaxRate === 5 || newTaxRate > 10 && newTaxRate <= 30)) {
-                            newTaxRate = GLOBAL_CONFIG.guildWar.lordTaxRate;
-                            hoiCastle.taxRate = newTaxRate.toString();
-                            noticeMsg("[알림] 악덕한 영주✨ [" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 님이 세금을 " + newTaxRate.toString() + "% 강제징수 합니다!");
-                        } else if (newTaxRate >= 5 && newTaxRate <= 5) {
-                            let oldTaxRate = hoiCastle.taxRate || 0;
-                            hoiCastle.taxRate = newTaxRate.toString(); // 세금 업데이트
-                            noticeMsg("[세금💲]\n[" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 영주가 세율을\n[💰" + oldTaxRate + "%]⏩[💰" + newTaxRate + "%]로 조정하였습니다.");
-                        } else {
-                            // 세금 값이 유효하지 않을 때 처리
-                            noticeMsg("세금은 5% 고정만 가능합니다.");
-                        }
-                    }
+                if (/^\/세금\s+\d+$/.test(msg) && data.HoiCastle && sender === data.HoiCastle.lord) {
+                    var hoiCastle = data.HoiCastle, requestedTaxRate = Number(msg.trim().split(/\s+/)[1]);
+                    var oldTaxRate = getHoiCastleTaxRate(data, petSkillData), previousTaxRate = hoiCastle.taxRate;
+                    var forceTax = requestedTaxRate > 10 && requestedTaxRate <= 30 && hasPetSkill(petSkillData, sender, "악덕한 영주");
+                    if (requestedTaxRate !== GLOBAL_CONFIG.guildWar.defaultTaxRate && !forceTax) { noticeMsg("세금은 5% 고정만 가능합니다."); return; }
+                    var newTaxRate = forceTax ? GLOBAL_CONFIG.guildWar.lordTaxRate : requestedTaxRate;
+                    hoiCastle.taxRate = String(newTaxRate);
+                    try { saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
+                    catch (taxSaveError) { if (previousTaxRate === undefined) delete hoiCastle.taxRate; else hoiCastle.taxRate = previousTaxRate; throw taxSaveError; }
+                    if (forceTax) noticeMsg("[알림] 악덕한 영주✨ [" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 님이 세금을 " + newTaxRate + "% 강제징수 합니다!");
+                    else noticeMsg("[세금💲]\n[" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 영주가 세율을\n[💰" + oldTaxRate + "%]⏩[💰" + newTaxRate + "%]로 조정하였습니다.");
+                    return;
                 }
                 if (msg === "/호이상점") {
                     // 상점확인, 상품지급
@@ -23090,14 +23103,13 @@ replier.reply(
                     var guildMove = prepareGuildServerMove(data, guildData, sender, msg);
                     var guildMoveHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
                     if (guildMove.changed) {
-                        try { saveJsonFile(guildData, guildPath); }
+                        try { saveJsonFile(guildData, guildPath); endDataSaveTransaction(); beginDataSaveTransaction(); }
                         catch (guildMoveError) {
-                            guildMove.guild.server = guildMove.previous;
+                            if (guildMove.hadServer) guildMove.guild.server = guildMove.previous; else delete guildMove.guild.server;
                             rollbackDataSaveTransaction();
-                            replier.reply(guildMoveHeader + "🌐 길드 서버 이동\n━━━━━━━━━━━━━\n서버 이동을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.");
+                            replier.reply(guildMoveHeader + "❌ 서버 이동을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.");
                             return;
                         }
-                        endDataSaveTransaction(); beginDataSaveTransaction();
                     }
                     replier.reply(guildMoveHeader + guildMove.message);
                     return;
@@ -25024,7 +25036,7 @@ replier.reply(
                         let r = results[i];
                         let grade = r.grade || "";
                         let gradeRate = gradeRateMap[grade] || Number(r.rate) || 0;
-                        let gtxt = (i == 5 ? allsee : "") + (grade ? "[" + grade + "] " : "");
+                        let gtxt = i == 5 ? allsee : "";
                         lines.push(gtxt + getFurnitureDisplay(r) + " (등급 확률:" + formatGachaProbability(gradeRateTotal > 0 ? gradeRate / gradeRateTotal : 0) + ")");
                     }
                     let leftTicketAfter = data.member[sender] && data.member[sender].bag && data.member[sender].bag[ticketName] ? data.member[sender].bag[ticketName] : 0;
@@ -28292,8 +28304,8 @@ replier.reply(
                         var itemPrice = itemDetails.price || 0;
                         var itemTax = "";
 
-                        if (getHoiCastleTaxRate(data, petSkillData) > 0) {
-                            var taxRate = getHoiCastleTaxRate(data, petSkillData);
+                        if (getPointShopTaxRate(data, petSkillData) > 0) {
+                            var taxRate = getPointShopTaxRate(data, petSkillData);
                             var taxAmount = itemPrice * (taxRate / 100);
                             itemTax = "\n(세금: 🅟" + numberWithCommas(taxAmount.toFixed(0)) + ")";
                         }
@@ -28307,15 +28319,11 @@ replier.reply(
                     });
 
                     if (itemList.length > 0) {
-                        var taxInfo = "";
-                        if (data.HoiCastle) {
-                            taxInfo = "\n호월킹덤 영주: 🏰" + data.HoiCastle.lord;
-
-                            var lordGuildInfo = getMyGuildInfo(data, guildData, data.HoiCastle.lord);
-                            if (lordGuildInfo && !lordGuildInfo.error && lordGuildInfo.guild) {
-                                taxInfo += "\n점령중인 길드: " + lordGuildInfo.guild.name + "(" + lordGuildInfo.guild.mark + ")" + "\n(세금💲: " + getHoiCastleTaxRate(data, petSkillData) + "%)";
-                            }
-                        }
+                        var shopLord = data.HoiCastle && data.HoiCastle.lord || "";
+                        var taxInfo = "\n호월킹덤 영주: 🏰" + shopLord;
+                        var lordGuildInfo = shopLord ? getMyGuildInfo(data, guildData, shopLord) : null;
+                        if (lordGuildInfo && !lordGuildInfo.error && lordGuildInfo.guild) taxInfo += "\n점령중인 길드: " + lordGuildInfo.guild.name + "(" + lordGuildInfo.guild.mark + ")";
+                        taxInfo += "\n(세금💲: " + getPointShopTaxRate(data, petSkillData) + "%)";
 
                         var responseMessage = "🎖️호월킹덤 길드상점🎖️\n" + taxInfo + "\n\n(구매방법:/길드상점구매 [번호] [갯수])\n" + "※ 상품을 보시려면 전체보기를 눌러주세요\n";
                         //여기! 아이템 리스트 출력 직전에 allsee 삽입
@@ -28334,8 +28342,8 @@ replier.reply(
                     return;
                 }
 
-                if (msg.indexOf("/길드상점구매") === 0) {
-                    var parts = msg.split(" ");
+                if (msg === "/길드상점구매" || /^\/길드상점구매\s+\d+(?:\s+\d+)?$/.test(msg)) {
+                    var parts = msg.trim().split(/\s+/);
 
                     if (parts.length < 2) {
                         replier.reply("사용법\n/길드상점구매 번호 갯수");
@@ -28377,6 +28385,7 @@ replier.reply(
                     var itemInfo = guildData.shop[itemName];
                     var price = itemInfo.price || 0;
                     var basePrice = price * count;
+                    if (!isPointShopSafeCount(count) || !isPointShopSafeCount(basePrice)) throw new Error("길드상점 구매금액 수치 오류");
                     var userPoint = data.member[sender].point || 0;
 
                     if (itemName === "길드공헌훈장🌟(/길드공헌 숫자)") {
@@ -28391,12 +28400,14 @@ replier.reply(
 
                     // 체크용 세금 계산만 먼저 수행
                     var taxRate = 0;
-                    if (getHoiCastleTaxRate(data, petSkillData) > 0) {
-                        taxRate = getHoiCastleTaxRate(data, petSkillData);
+                    if (getPointShopTaxRate(data, petSkillData) > 0) {
+                        taxRate = getPointShopTaxRate(data, petSkillData);
                     }
 
                     var tax = Math.round(basePrice * (taxRate / 100));
                     var totalPrice = basePrice + tax;
+                    if (!isPointShopTaxSettlementSafe(data, guildData, tax)) throw new Error("길드상점 세금 적립 수치 오류");
+                    if (!isPointShopSafeCount(totalPrice)) throw new Error("길드상점 구매금액 수치 오류");
 
                     if (userPoint < totalPrice) {
                         replier.reply(
@@ -28421,7 +28432,7 @@ replier.reply(
                     addPoint(data, sender, -totalPrice);
 
                     // 결제 확정 후 성주 수익 반영
-                    applyTax(basePrice, data, guildData, undefined, petSkillData);
+                    applyTax(basePrice, data, guildData, tax, petSkillData, true);
 
                     addItem(data, sender, itemName, count);
 
@@ -28432,6 +28443,7 @@ replier.reply(
                         data.member[sender].gMedalBuyCnt += count;
                     }
 
+                    saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
                     replier.reply(
                         "✅ 길드상점 구매 완료\n" +
                         "상품 : " +
@@ -28454,7 +28466,6 @@ replier.reply(
                         numberWithCommas(data.member[sender].point || 0)
                     );
 
-                    saveJsonFile(data, filePath);
                     return;
                 }
                 if (msg.indexOf("/길드상점추가 ") === 0 && isMaster(sender)) {
@@ -42502,11 +42513,11 @@ function castleMsg(msg, replier, isGroupChat) {
         // Api.replyRoom(room6, msg);
     }
 }
-// 영주가 없으면 징수를 중단하고 악덕한 영주의 강제 세율을 일관되게 적용하는 함수
+// 영주가 명시한 저장 세율을 조회하고 미점령 징수를 구분하는 함수
 function getHoiCastleTaxRate(data, petSkillData) {
     var castle = data.HoiCastle;
     if (!castle || !castle.lord) return 0;
-    return hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : Number(castle.taxRate || 0);
+    return castle.taxRate === undefined ? (hasPetSkill(petSkillData, castle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : 0) : Number(castle.taxRate || 0);
 }
 
 
@@ -48216,7 +48227,7 @@ function startPackageAddFlow(sender, accountId, receivedAt) {
     lines.push("📦 패키지 추가를 시작합니다.");
     lines.push("");
     lines.push("1단계: 패키지 이름을 입력해주세요.");
-    lines.push("예: 모험가 응원 패키지🎁");
+    lines.push("예: 테스트 패키지🎁");
     lines.push("");
     lines.push(GLOBAL_CONFIG.package.cancelGuide);
     return lines.join("\n");
@@ -48225,7 +48236,10 @@ function startPackageAddFlow(sender, accountId, receivedAt) {
 // 작성이 계속되는 화면에 기존 취소 방법을 한 번만 붙이는 함수
 function appendPackageAddCancelGuide(sender, message) {
     var state = userState[sender] && userState[sender].packageAdd, ctx = getCurrentContext(), guide = GLOBAL_CONFIG.package.cancelGuide;
-    return state && state.room === ctx.permissionRoom && state.rootPath === ctx.rootPath && String(message).indexOf(guide) === -1 ? message + "\n\n" + guide : message;
+    if (!state || state.room !== ctx.permissionRoom || state.rootPath !== ctx.rootPath) return message;
+    var body = String(message), back = '돌아가려면 "이전"';
+    if (state.step !== "NAME" && state.step !== "DESC" && state.step !== "REWARD_CHOICE" && state.step !== "CONFIRM" && body.indexOf(back) === -1 && body.indexOf("📦 작성 중인 패키지가 있어요.") !== 0) body += "\n\n" + back;
+    return body.indexOf(guide) === -1 ? body + (body.slice(-back.length) === back ? "\n" : "\n\n") + guide : body;
 }
 
 // 패키지 단계별 추가 상태 취소 함수
@@ -48303,11 +48317,6 @@ function buildPackageRewardChoiceMessage(state) {
     lines.push("10. 보석");
     lines.push("");
     lines.push("숫자 또는 이름으로 입력해주세요.");
-    if (state && state.rewards && state.rewards.length > 0) {
-        lines.push("");
-        lines.push("현재 보상:");
-        lines.push(formatPackageRewardLines(state.rewards));
-    }
     return lines.join("\n");
 }
 
@@ -54192,19 +54201,27 @@ function resetMiniPetState(sender) {
 function getMiniPetState(sender) {
     return userState[sender] && userState[sender].miniPet ? userState[sender].miniPet : null;
 }
-// 길드장 본인의 길드 서버만 변경하고 기존 길드·개인 서버 자료를 보존하는 함수
+// 운영 MASTER가 정확히 지정한 한 길드의 서버만 변경하는 함수
 function prepareGuildServerMove(data, guildData, sender, message) {
-    var title = "🌐 길드 서버 이동\n━━━━━━━━━━━━━\n";
-    var target = message.substring("/길드서버이동".length).trim();
-    if (!target) return { message: title + "이동할 서버 이름을 입력해주세요.\n\n※ /길드서버이동 서버이름\n└ 예) /길드서버이동 호이서버1[30]" };
-    var member = data.member[sender], guild = member && member.guild && guildData.guilds && guildData.guilds[member.guild.id];
-    if (!guild || !guild.members || !Object.prototype.hasOwnProperty.call(guild.members, sender)) return { message: title + "길드에 가입되어 있지 않습니다." };
-    if (guild.master !== sender) return { message: title + "길드장만 사용할 수 있습니다." };
-    if (GLOBAL_CONFIG.serverRaid.servers.indexOf(target) === -1) return { message: title + "서버 이름을 확인해 주세요." };
-    if (normalizeHoiServerLabel(guild.server) === target) return { message: title + "이미 해당 서버에 소속되어 있습니다." };
-    var previous = guild.server;
+    if (!isMaster(sender)) return { message: "❌ MASTER 권한만 사용할 수 있습니다." };
+    var usage = "🌐 길드 서버 이동\n━━━━━━━━━━━━━\n길드명과 이동할 서버 이름을 입력해주세요.\n\n사용법: /길드서버이동 길드명 서버\n예: /길드서버이동 호이길드 호이서버1[30]\n\n※ MASTER 전용 명령어입니다.";
+    var input = message.substring("/길드서버이동".length).trim(), servers = GLOBAL_CONFIG.serverRaid.servers, target = "", name = "";
+    if (!input || servers.indexOf(input) !== -1) return { message: usage };
+    for (var i = 0; i < servers.length; i++) {
+        var suffix = " " + servers[i];
+        if (input.length > suffix.length && input.slice(-suffix.length) === suffix && servers[i].length > target.length) { target = servers[i]; name = input.slice(0, -suffix.length).trim(); }
+    }
+    if (!target) return { message: "❌ 서버 이름을 확인해 주세요.\n\n" + usage + "\n\n" + servers.join("\n") };
+    if (!name) return { message: usage };
+    var matches = [], guilds = guildData.guilds || {};
+    for (var gid in guilds) if (Object.prototype.hasOwnProperty.call(guilds, gid) && guilds[gid] && guilds[gid].name === name) matches.push(guilds[gid]);
+    if (!matches.length) return { message: "❌ [" + name + "] 길드를 찾을 수 없습니다." };
+    if (matches.length > 1) return { message: "❌ 같은 이름의 길드가 여러 개입니다. 길드 정보를 확인해 주세요." };
+    var guild = matches[0];
+    if (normalizeHoiServerLabel(guild.server) === target) return { message: "ℹ️ [" + guild.name + "] 길드는 이미 [" + target + "]에 소속되어 있습니다." };
+    var previous = guild.server, hadServer = Object.prototype.hasOwnProperty.call(guild, "server");
     guild.server = target;
-    return { changed: true, guild: guild, previous: previous, message: "✅ 길드 서버 이동 완료!\n━━━━━━━━━━━━━\n🏰 길드 : [" + guild.name + "]\n🌐 서버 : " + target + "\n━━━━━━━━━━━━━\n서버이동되었습니다." };
+    return { changed: true, guild: guild, previous: previous, hadServer: hadServer, message: "✅ 길드 서버 이동 완료!\n━━━━━━━━━━━━━\n🏰 길드 : [" + guild.name + "]\n🌐 서버 : " + target + "\n━━━━━━━━━━━━━\n서버이동되었습니다." };
 }
 
 // 변경할 필드와 기존 변경권을 선택하는 함수
@@ -68844,14 +68861,14 @@ function restoreGuildWarBattleItems(data, war, guildData) {
 }
 
 // 정상 점령의 영주·세금·전체알림을 기존 흐름과 함께 확정하는 함수
-function occupyGuildWarTerritory(data, guildData, war, now) {
+function occupyGuildWarTerritory(data, guildData, war, now, skills) {
     var state = guildData.war24;
     if (state.siegeVersion !== undefined && getGuildWarOwned(state, war.attackId).stages[getGuildWarStage(war.no)].length && state.territories[String(war.no)].owner !== war.attackId) throw new Error("길드전쟁 단계별 점령 한도 재검사 실패");
     transferGuildWarTerritory(state, war.no, war.attackId, now);
     if (war.no !== getGuildWarKingdomNo(state)) return;
     if (state.kingdomTerm.captured.indexOf(war.attackId) < 0) state.kingdomTerm.captured.push(war.attackId);
     if (!data.HoiCastle) throw new Error("호월킹덤 영주 원본 확인 필요");
-    data.HoiCastle.lord = war.attack[2].name; data.HoiCastle.taxRate = GLOBAL_CONFIG.guildWar.defaultTaxRate;
+    data.HoiCastle.lord = war.attack[2].name; data.HoiCastle.taxRate = skills && hasPetSkill(skills, data.HoiCastle.lord, "악덕한 영주") ? GLOBAL_CONFIG.guildWar.lordTaxRate : GLOBAL_CONFIG.guildWar.defaultTaxRate;
     data.HoiCastle.earnings = 0; data.HoiCastle.defenseCount = 0;
     var legacy = guildData.territoryWar && guildData.territoryWar.territories && guildData.territoryWar.territories["1"];
     if (legacy) { legacy.ownerGuildId = war.attackId; legacy.ownerUser = data.HoiCastle.lord; }
@@ -70120,7 +70137,7 @@ function processGuildWars(data, guildData, now, random, disbandId, sources) {
                 war.occupied = war.wins >= 2;
                 if (war.no === GLOBAL_CONFIG.guildWar.campaign.kingdom && war.occupied && !isGuildWarFighterPresent(data, guildData, war.attackId, war.attack[2])) { war.occupied = false; war.reason = "공격 대장 탈퇴로 호월킹덤 점령 실패"; }
                 if (war.occupied && getGuildWarOwned(state, war.attackId).stages[getGuildWarStage(war.no)].length) { war.occupied = false; war.captureBlocked = true; war.reason = "전투 승리 · 해당 단계 점령 한도로 점령 불가 · 길드 점령 보상 없음"; }
-                if (war.occupied) occupyGuildWarTerritory(data, guildData, war, now);
+                if (war.occupied) occupyGuildWarTerritory(data, guildData, war, now, sources && sources.skills);
             }
             war.finished = now; awardGuildWarFighters(data, guildData, war); creditGuildWarVictory(guildData, war);
             war.ownerName = formatGuildDisplay(getGuildByIdSafe(guildData, state.territories[String(war.no)].owner));
@@ -70781,7 +70798,7 @@ function runGuildWarEntry(ctx, sender, room, msg, replier, now, data) {
                 war.originalAttack = cloneFreeMarketObject(war.attack); war.initialDefenseId = war.defenseId; war.declaredAt = now;
                 if (!defenseId) {
                     war.bloodless = true; war.wins = 3; war.occupied = true; war.finished = now;
-                    occupyGuildWarTerritory(data, guildData, war, now); creditGuildWarVictory(guildData, war);
+                    occupyGuildWarTerritory(data, guildData, war, now, skills); creditGuildWarVictory(guildData, war);
                     war.ownerName = war.attackName; recordGuildWar(state, guildData, war);
                     publishGuildWar(data, guildData, true);
                     if (war.ticketSource === "extra" || war.ticketSource === "commander") replier.reply(buildGuildWarDeclarationTicketMessage(war));
@@ -71075,7 +71092,7 @@ function applyGuildWarAmbush(data, petData, guildData, skills, gid, user, no, no
     entry.ambushUsed = GLOBAL_CONFIG.guildWar.siege.ambushLimit;
     var war = { regionId: GLOBAL_CONFIG.guildWar.map.regionKeys[no - 1], ambush: true, id: state.nextId++, no: no, rulesVersion: 2, day: state.day, at: now, finished: now, declaredAt: now, declaredBy: user, declaredAccountId: ticket.accountId, attackId: gid, defenseId: defenseId, attackName: formatGuildDisplay(guild), defenseName: formatGuildDisplay(defender), occupied: success, wins: success ? 3 : 0, matches: [], ticketEpoch: entry.ticketEpoch, right: ticket.right, ticketSource: ticket.source, personalTicket: ticket.personal, ambushReward: reward, ambushUserDisplay: checkRank(data, petData, guildData, user) };
     if (ticket.source === "extra") { war.extraTicketsBefore = ticket.before; war.extraTicketsAfter = ticket.after; }
-    if (success) { occupyGuildWarTerritory(data, guildData, war, now); creditGuildWarVictory(guildData, war); }
+    if (success) { occupyGuildWarTerritory(data, guildData, war, now, skills); creditGuildWarVictory(guildData, war); }
     else { war.reward = null; war.rewardPolicy = GLOBAL_CONFIG.guildWar.rewardPolicy; }
     war.ownerName = success ? war.attackName : war.defenseName;
     recordGuildWar(state, guildData, war);
@@ -71433,8 +71450,8 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
     var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [보석가방번호] [슬롯번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요."];
     for (var e = 0; e < equipped.length; e++) blocks.push(formatAdventureGemSlot(equipped[e].slot) + " " + formatAdventureGem(equipped[e]).replace(/\n└/g, "\n     └"));
     var emptyHeading = false;
-    if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n💛 빈 슬롯 목록", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
-    else for (var slot = 1; slot <= slots.total; slot++) if (!occupied[slot]) { if (!emptyHeading) { blocks.push("\n💛 빈 슬롯 목록"); emptyHeading = true; } blocks.push(formatAdventureGemSlot(slot) + " 🔓 빈 슬롯"); }
+    if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n━━━━━━💛 빈 슬롯 목록━━━━━━", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
+    else for (var slot = 1; slot <= slots.total; slot++) if (!occupied[slot]) { if (!emptyHeading) { blocks.push("\n━━━━━━💛 빈 슬롯 목록━━━━━━"); emptyHeading = true; } blocks.push(formatAdventureGemSlot(slot) + " 🔓 빈 슬롯"); }
     var full = summary.count >= slots.total;
     blocks.push("\n🎒 " + (full ? "교체" : "장착") + " 가능한 보석 목록\n※ 아래 번호는 보석가방 번호예요.\n━━━━━━━━━━━━━");
     for (var b = 0; b < bag.length; b++) blocks.push("[" + (b + 1) + "] " + formatAdventureGem(bag[b]));
@@ -71876,7 +71893,7 @@ function runAdventureGemNoticeEntry(ctx, worker) {
 }
 
 // 천 단위 쉼표·옵션 괄호·에메랄드 보조 줄을 보존하며 복사한 구성품을 나누는 함수
-function splitPackageComposition(input) {
+function splitPackageComposition(input, definitions) {
     var text = String(input || "").replace(/^\s*구성\s*:\s*/, "").trim(), parts = [], start = 0, depth = 0;
     for (var i = 0; i < text.length; i++) {
         var ch = text.charAt(i);
@@ -71884,7 +71901,11 @@ function splitPackageComposition(input) {
         if (ch === ")" || ch === "]") depth--;
         if (depth < 0) return [text];
         if (depth) continue;
-        var comma = ch === "," && !/^\d{3}(?=[,\s]|$)/.test(text.substring(i + 1)) && readPackageRewardInput(text.substring(start, i)).count !== null;
+        var numericComma = ch === "," && /\d/.test(text.charAt(i - 1)) && /^\d+(?=,|\s|$|개)/.test(text.substring(i + 1)); // 손상된 천 단위 수량도 항목 안에서 검증
+        var prefix = ch === "," ? readPackageRewardInput(text.substring(start, i)) : null;
+        var knownPrefix = prefix && definitions && definitions.items.indexOf(prefix.text) !== -1;
+        var optionPrefix = prefix && /\(\+[\d,]+(?:만)?(?:💕|💞|⚔️|👾)+\)\[[^\]]+\](?:\([^)]*\))?$/.test(prefix.text);
+        var comma = ch === "," && !numericComma && (prefix.count !== null || prefix.invalidCount || knownPrefix || optionPrefix);
         var line = (ch === "\n" || ch === "\r") && !/^\s*└/.test(text.substring(i + 1));
         if (comma || line) {
             var part = text.substring(start, i).trim();
@@ -71921,6 +71942,7 @@ function normalizePackageLookup(input) {
 function readPackageRewardInput(input) {
     var text = String(input || "").trim(), match = /\s*[x×]\s*((?:\d{1,3}(?:,\d{3})+|\d+))\s*(?:개)?(?=\s*(?:\n\s*└|$))/.exec(text);
     if (!match) match = /\s+((?:\d{1,3}(?:,\d{3})+|\d+))\s*개$/.exec(text);
+    if (!match) match = /\s+[x×]\s*(\S+?)\s*(?:개)?$/.exec(text) || /\s+([-+]?[\d,.]+)\s*개$/.exec(text);
     if (!match) return { text: text, count: null };
     var count = parsePackagePositiveCount(match[1]);
     return { text: (text.substring(0, match.index) + text.substring(match.index + match[0].length)).trim(), count: count, invalidCount: !count };
@@ -71950,7 +71972,7 @@ function resolvePackageCustomRewardInput(text, type, definitions, count, options
         var emoji = sameDisplay ? options.emoji : null;
         name = sameDisplay ? options.name : match[1].trim(); // 새 이름·외형의 경계는 문자열에서 추측하지 않고 기존 생성 명령처럼 따로 확인
         value = match[2] === null ? null : parsePackageOptionInteger(match[2]);
-        object = { name: name, emoji: emoji, grade: match[3], price: sameDisplay && options.price !== undefined ? options.price : null, battleExp: value, castleExp: value, raidExp: value, upgrade: /\(MAX(?:💫)?\)$/.test(text) ? getMiniPetUpgradeMaxLevel({ grade: match[3] }) : Number(match[4] || 0) };
+        object = { name: name, emoji: emoji, grade: match[3], price: sameDisplay && options.grade === match[3] && options.price !== undefined ? options.price : null, battleExp: value, castleExp: value, raidExp: value, upgrade: /\(MAX(?:💫)?\)$/.test(text) ? getMiniPetUpgradeMaxLevel({ grade: match[3] }) : Number(match[4] || 0) };
         if (object.grade === null) fields.push("grade");
         if (value === null) fields.push("charm");
         if (!sameDisplay && match[2] !== null) fields.push("name");
@@ -72116,23 +72138,32 @@ function mergePackageActualRewards(target, additions) {
 }
 
 // 원문에 있는 종류별 첫 입력 안내를 반환하는 함수
-function getPackageActualPrompt(type) {
-    var messages = { point: "💰 패키지 1개당 지급할 포인트를 입력해주세요. 예: 300000 또는 300,000", item: "🎒 넣을 가방아이템 이름을 입력해주세요.", mini: "🐹 어떤 미니펫을 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", furniture: "🏡 어떤 가구를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", pendant: "📿 어떤 펜던트를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", skill: "📙 넣을 펫스킬북 이름을 입력해주세요. 예: 삼성전자📙", gem: "🪽 넣을 보석의 이름·등급·매력을 입력해주세요. 기존 보석 표기를 붙여넣어도 돼요." };
+function getPackageActualPrompt(type, state) {
+    if (state && state.editRewardIndex !== undefined) {
+        var row = state.rewards[state.editRewardIndex], current = formatPackageActualReward(row) + " x" + numberWithCommas(row.count);
+        if (type === "point") return "💰 패키지 1개당 지급할 포인트를 입력해주세요.\n현재: " + numberWithCommas(row.count) + "\n예: 500000 또는 500,000";
+        var label = { mini: "미니펫", furniture: "가구", pendant: "펜던트", gem: "보석" }[type];
+        if (label) return "✏️ 바꿀 옵션을 반영한 " + label + " 표기를 보내주세요.\n\n현재: " + current + "\n\n예:\n" + (type === "mini" ? "가온빛💖(+1,002,000💕)[창세] x1" : current) + "\n\n수량을 생략하면 현재 수량 " + row.count + "개를 유지해요.";
+    }
+    if (type === "mini") return "🐹 어떤 미니펫을 넣을까요?\n\n이름·등급·매력을 입력해주세요.\n수량까지 함께 입력해도 돼요.\n\n예:\n가온빛💖(+1,001,280💕)[창세] x1";
+    var messages = { point: "💰 패키지 1개당 지급할 포인트를 입력해주세요. 예: 300000 또는 300,000", item: "🎒 넣을 가방아이템 이름을 입력해주세요.", furniture: "🏡 어떤 가구를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", pendant: "📿 어떤 펜던트를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", skill: "📙 넣을 펫스킬북 이름을 입력해주세요. 예: 삼성전자📙", gem: "🪽 넣을 보석의 이름·등급·매력을 입력해주세요. 기존 보석 표기를 붙여넣어도 돼요." };
     return messages[type];
 }
 
 // 일괄 입력의 정상 항목도 보관하면서 첫 미해결 항목만 수정하도록 안내하는 함수
 function buildPackageBulkReview(state) {
-    var errors = [], rewards = [];
+    var pending = [], rewards = [], active = 0;
     for (var i = 0; i < state.bulk.length; i++) {
-        var row = state.bulk[i]; if (row.removed) continue;
-        if (row.error) errors.push({ index: i, row: row }); else rewards.push(row.reward);
+        var row = state.bulk[i]; if (row.removed) continue; active++;
+        if (isPackageRowPending(row)) pending.push(i); else rewards.push(row.reward);
     }
-    if (errors.length) {
-        state.step = errors.length > 1 ? "BULK_PICK_ERROR" : "BULK_FIX"; state.fixIndex = errors[0].index;
-        var message = "";
-        for (var n = 0; n < errors.length; n++) message += (n ? "\n\n" : "") + "🔎 " + (errors[n].index + 1) + "번 보상을 확인해주세요.\n\n입력: " + errors[n].row.raw + "\n" + errors[n].row.error;
-        return message + (errors.length > 1 ? "\n\n수정할 번호를 입력해주세요." : "\n\n수정할 내용을 보내주세요.") + "\n이 보상을 빼려면 \"빼기\"\n돌아가려면 \"이전\"\n\n나머지 입력은 보관하고 있어요.";
+    if (!active) { state.step = "BULK"; state.bulk = null; state.bulkRaw = null; state.bulkRewards = null; state.bulkEditing = false; state.editingBulkRaw = false; return "🎁 보상을 하나 이상 넣어주세요.\n\n" + getPackageBulkPrompt(state); }
+    if (pending.length === 1) { state.fixIndex = pending[0]; state.step = "BULK_FIX"; return buildPackageRowQuestion(state.bulk[state.fixIndex], state.fixIndex); }
+    if (pending.length > 1) {
+        state.step = "BULK_PICK_ERROR";
+        var text = "🔎 확인이 필요한 보상이 " + pending.length + "개 있어요.";
+        for (var n = 0; n < pending.length; n++) { var row = state.bulk[pending[n]]; text += "\n\n" + (pending[n] + 1) + "번 · " + row.raw + "\n사유: " + (row.candidates ? "어떤 보상인지 선택해주세요." : row.draft ? buildPackageOptionPrompt(row.draft, row.raw).split("\n")[0] : row.missingCount ? "수량은 1 이상의 정수로 입력해주세요." : row.error); }
+        return text + "\n\n정상 보상 " + rewards.length + "개 항목은 보관하고 있어요.\n수정할 보상 번호를 입력해주세요.\n선택 가능: " + pending.map(function (i) { return i + 1; }).join(", ");
     }
     state.bulkRewards = mergePackageActualRewards([], rewards); state.step = "BULK_CONFIRM";
     return "📦 이렇게 담을게요!\n\n구성: " + formatPackageRewardSummary(state.bulkRewards) + "\n\n추가 / 수정 / 이전";
@@ -72140,9 +72171,9 @@ function buildPackageBulkReview(state) {
 
 // 실물 입력을 같은 검증기로 처리하고 수량 누락만 별도 단계로 보완하는 함수
 function processPackageActualInput(state, text, definitions, customOptions) {
-    var current = state.editRewardIndex === undefined ? null : state.rewards[state.editRewardIndex];
-    var result = resolvePackageRewardInput(text, state.rewardType, definitions, undefined, customOptions || current && current.custom && current.object);
-    return applyPackageActualInputResult(state, result, text);
+    var old = state.editRewardIndex === undefined ? null : state.rewards[state.editRewardIndex];
+    var count = readPackageRewardInput(text).count, result = resolvePackageRewardInput(text, state.rewardType, definitions, !count && old ? old.count : undefined, customOptions || old && old.custom && old.object);
+    return acceptPackageWritingRow(state, makePackageBulkInputRow(text, result), false);
 }
 
 // 종류별 검증 결과를 같은 수량·옵션 보완 단계로 연결하는 함수
@@ -72157,10 +72188,12 @@ function applyPackageActualInputResult(state, result, text) {
 
 // 검증한 보상 하나를 추가 또는 수정하고 작성 화면으로 돌아가는 함수
 function completePackageActualInput(state, reward) {
-    if (state.editRewardIndex !== undefined) { state.rewards[state.editRewardIndex] = reward; delete state.editRewardIndex; }
+    var editing = state.editRewardIndex !== undefined;
+    if (editing) { state.rewards[state.editRewardIndex] = reward; delete state.editRewardIndex; }
     else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
-    state.pendingReward = null; state.pendingRaw = null; state.step = "REWARD_CHOICE";
-    return { ok: true, message: "✅ 보상에 담았어요!\n\n" + formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count) + "\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
+    state.inputRow = null; state.pendingReward = null; state.pendingRaw = null;
+    state.step = editing ? "CONFIRM" : "REWARD_CHOICE";
+    return { ok: true, message: editing ? buildPackageAddPreviewMessage(state) : "✅ 보상에 담았어요!\n\n" + formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count) + "\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
 }
 
 // 작성 중 보상의 편집 대상만 기존 표기로 나열하는 함수
@@ -72176,8 +72209,19 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
     if (state.room !== getCurrentContext().permissionRoom || state.rootPath !== getCurrentContext().rootPath) return { ok: false, message: "📦 작성 중인 패키지가 있어요. 이어서 작성하거나, 취소 후 다시 시작해주세요." };
     if (Date.now() > state.expiresAt) { delete userState[sender].packageAdd; return { ok: false, message: "작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요." }; }
     state.expiresAt = Date.now() + GLOBAL_CONFIG.manualReset.timeoutMs;
-    if (!text) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
     if (text === "취소") return { ok: true, message: cancelPackageAddFlow(sender) };
+    if (!text) return { ok: false, message: (state.step === "NAME" ? "패키지 이름을 입력해주세요." : "안내된 번호나 이름으로 입력해주세요.") + "\n\n" + buildPackageWritingQuestion(state) };
+    if (text.charAt(0) === "/") return { ok: false, message: "지금은 패키지를 작성 중이에요. 현재 질문에 답하거나 \"취소\"를 입력해주세요.\n\n" + buildPackageWritingQuestion(state) };
+    if (text === "이전" || text === "돌아가기") {
+        if (state.step === "BULK_FIX" && state.editingBulkRaw) { state.editingBulkRaw = false; state.bulkEditing = true; state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) }; }
+        if (state.step === "ACTUAL_CANDIDATE" || state.step === "ACTUAL_OPTION" || state.step === "ACTUAL_COUNT" || state.step === "BULK_FIX") return answerPackageWritingRow(state, "이전", definitions, state.step === "BULK_FIX");
+        if (state.step === "BULK_CONFIRM" || state.step === "BULK_PICK_ERROR") state.step = "BULK";
+        else if (state.step === "BULK" || state.step === "ACTUAL_INPUT") { if (state.editRewardIndex !== undefined) state.step = "EDIT_REWARD"; else state.step = "REWARD_CHOICE"; }
+        else if (state.step === "EDIT_NAME" || state.step === "EDIT_DESC" || state.step === "EDIT_PICK") state.step = "EDIT_MENU";
+        else if (state.step === "EDIT_REWARD") { delete state.editRewardIndex; state.step = "EDIT_PICK"; }
+        else if (state.step === "EDIT_MENU") state.step = "CONFIRM";
+        return { ok: true, message: buildPackageWritingQuestion(state) };
+    }
     if (state.step === "NAME" || state.step === "EDIT_NAME") {
         if (text === GLOBAL_CONFIG.package.retiredMiniSet.name || text === GLOBAL_CONFIG.package.retiredMiniSet.ticket) return { ok: false, message: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
         for (var p = 0; p < packages.length; p++) if (packages[p] && packages[p].name === text) duplicate = packages[p];
@@ -72185,7 +72229,7 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         state.name = text;
         if (state.step === "EDIT_NAME") { state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
         state.step = "DESC";
-        return { ok: true, message: "✅ 이름을 정했어요!\n\n패키지: " + state.name + "\n\n2단계: 패키지 설명을 입력해주세요." };
+        return { ok: true, message: "✅ 이름을 정했어요!\n\n패키지: " + state.name + "\n\n2단계: 패키지 설명을 입력해주세요.\n예: 3000" };
     }
     if (state.step === "DESC" || state.step === "EDIT_DESC") {
         state.desc = text;
@@ -72196,118 +72240,80 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         var choice = normalizePackageRewardChoice(text);
         if (choice === "CANCEL") return { ok: true, message: cancelPackageAddFlow(sender) };
         if (choice === "DONE") {
+            if (state.inputRow && isPackageRowPending(state.inputRow)) return acceptPackageWritingRow(state, state.inputRow, false);
+            if (state.deferredInputs) for (var deferredType in state.deferredInputs) if (Object.prototype.hasOwnProperty.call(state.deferredInputs, deferredType)) { state.rewardType = deferredType; state.inputRow = state.deferredInputs[deferredType]; delete state.deferredInputs[deferredType]; return acceptPackageWritingRow(state, state.inputRow, false); }
+            if (state.bulk && state.bulk.some(function (row) { return !row.removed; })) return { ok: true, message: buildPackageBulkReview(state) };
             if (!state.rewards.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
             state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) };
         }
-        if (choice === "BULK") { state.step = "BULK"; return { ok: true, message: "📦 구성품을 그대로 붙여넣어주세요!\n\n예:\n삼성전자📙 x1, 경제사범📙 x1, 미니펫 강화석💫 x1,000\n\n여러 종류를 섞어도 돼요.\n기존 패키지의 \"구성:\" 줄을 복사해도 돼요.\n숫자는 쉼표가 있어도 없어도 돼요.\n\n돌아가려면 \"이전\"" }; }
+        if (choice === "BULK") { state.step = "BULK"; return { ok: true, message: getPackageBulkPrompt(state) }; }
         if (!choice) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
-        state.rewardType = choice.toLowerCase(); state.step = "ACTUAL_INPUT";
-        return { ok: true, message: getPackageActualPrompt(state.rewardType) };
+        var type = choice.toLowerCase();
+        if (state.inputRow && state.rewardType !== type) { if (!state.deferredInputs) state.deferredInputs = {}; state.deferredInputs[state.rewardType] = state.inputRow; state.inputRow = null; }
+        state.rewardType = type;
+        if (!state.inputRow && state.deferredInputs && state.deferredInputs[type]) { state.inputRow = state.deferredInputs[type]; delete state.deferredInputs[type]; }
+        if (state.inputRow && isPackageRowPending(state.inputRow)) return acceptPackageWritingRow(state, state.inputRow, false);
+        state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(type, state) };
     }
     if (state.step === "ACTUAL_INPUT") return processPackageActualInput(state, text, definitions);
-    if (state.step === "ACTUAL_CANDIDATE") {
-        var candidateNumber = parsePackagePositiveCount(text), candidate = candidateNumber && state.optionCandidates[candidateNumber - 1];
-        if (!candidate) return { ok: false, message: buildPackageCandidatePrompt(state.optionCandidates) };
-        state.rewardType = candidate.type;
-        if (candidate.fields && candidate.fields.length) {
-            state.optionDraft = JSON.parse(JSON.stringify(candidate)); state.optionDraft.count = state.optionCount; state.step = "ACTUAL_OPTION";
-            return { ok: true, message: buildPackageOptionPrompt(state.optionDraft) };
-        }
-        return processPackageActualInput(state, formatPackageActualReward(candidate) + (state.optionCount ? " x" + state.optionCount : ""), definitions, candidate.custom ? candidate.object : null);
-    }
-    if (state.step === "ACTUAL_OPTION") {
-        if (state.optionDraft.custom && (!definitions.custom || definitions.custom[state.optionDraft.type] !== true)) return { ok: false, message: "⛔ 패키지 관리 권한이 없습니다." };
-        var optionError = applyPackageOptionAnswer(state.optionDraft, text);
-        if (optionError) return { ok: false, message: optionError + "\n\n" + buildPackageOptionPrompt(state.optionDraft) };
-        if (state.optionDraft.fields.length) return { ok: true, message: buildPackageOptionPrompt(state.optionDraft) };
-        var completedDraft = state.optionDraft, completedInput = formatPackageOptionDraft(completedDraft); state.optionDraft = null;
-        state.step = "ACTUAL_INPUT";
-        if (completedDraft.custom) return applyPackageActualInputResult(state, resolvePackageCustomRewardInput(formatPackageActualReward(completedDraft), completedDraft.type, definitions, completedDraft.count, completedDraft.object), completedInput);
-        return processPackageActualInput(state, completedInput, definitions);
-    }
-    if (state.step === "ACTUAL_COUNT") {
-        if (text === "옵션 수정") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
-        var count = parsePackagePositiveCount(text); if (!count) return { ok: false, message: "수량은 1 이상의 정수로 입력해주세요." };
-        state.pendingReward.count = count; return completePackageActualInput(state, state.pendingReward);
-    }
-    if (/^BULK/.test(state.step)) {
-        if (text === "이전") { state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
-        if (state.step === "BULK_CONFIRM") {
-            if (text === "추가") { state.rewards = mergePackageActualRewards(state.rewards, state.bulkRewards); var added = state.bulkRewards.length; state.bulk = null; state.bulkRewards = null; state.step = "REWARD_CHOICE"; return { ok: true, message: "✅ 보상 " + added + "개 항목을 담았어요!\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) }; }
-            if (text === "수정") {
-                state.bulk = state.bulkRewards.map(function (reward) { return { raw: formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count), reward: JSON.parse(JSON.stringify(reward)) }; }); // 표시한 합산 항목과 수정 번호를 일치
-                state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) };
-            }
-            return { ok: false, message: "추가 / 수정 / 이전" };
-        }
-        if (state.step === "BULK_PICK_ERROR") { var index = parsePackagePositiveCount(text); if (!index || !state.bulk[index - 1] || state.bulk[index - 1].removed) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.fixIndex = index - 1; state.step = "BULK_FIX"; return { ok: true, message: "수정할 내용을 보내주세요.\n이 보상을 빼려면 \"빼기\"\n돌아가려면 \"이전\"" }; }
-        if (state.step === "BULK_FIX") {
-            if (text === "빼기") state.bulk[state.fixIndex].removed = true;
-            else {
-                var current = state.bulk[state.fixIndex], fixed;
-                if (current.draft) {
-                    if (current.draft.custom && (!definitions.custom || definitions.custom[current.draft.type] !== true)) return { ok: false, message: "⛔ 패키지 관리 권한이 없습니다." };
-                    var bulkOptionError = applyPackageOptionAnswer(current.draft, text);
-                    if (bulkOptionError) return { ok: false, message: bulkOptionError + "\n\n" + buildPackageOptionPrompt(current.draft) };
-                    if (current.draft.fields.length) return { ok: true, message: buildPackageOptionPrompt(current.draft) };
-                    if (current.draft.custom) {
-                        fixed = resolvePackageCustomRewardInput(formatPackageActualReward(current.draft), current.draft.type, definitions, current.draft.count, current.draft.object);
-                        state.bulk[state.fixIndex] = makePackageBulkInputRow(current.raw, fixed);
-                        return { ok: true, message: buildPackageBulkReview(state) };
-                    }
-                    text = formatPackageOptionDraft(current.draft);
-                } else if (current.missingCount) {
-                    var bulkCount = parsePackagePositiveCount(text);
-                    if (!bulkCount) return { ok: false, message: "수량은 1 이상의 정수로 입력해주세요." };
-                    current.reward.count = bulkCount; current.error = null; current.missingCount = false;
-                    return { ok: true, message: buildPackageBulkReview(state) };
-                } else if (current.candidates) {
-                    var bulkCandidateNumber = parsePackagePositiveCount(text), bulkCandidate = bulkCandidateNumber && current.candidates[bulkCandidateNumber - 1];
-                    if (!bulkCandidate) return { ok: false, message: buildPackageCandidatePrompt(current.candidates) };
-                    if (bulkCandidate.fields && bulkCandidate.fields.length) {
-                        var candidateDraft = JSON.parse(JSON.stringify(bulkCandidate)); candidateDraft.count = readPackageRewardInput(current.raw).count;
-                        state.bulk[state.fixIndex] = makePackageBulkInputRow(current.raw, { draft: candidateDraft });
-                        return { ok: true, message: buildPackageBulkReview(state) };
-                    }
-                    text = formatPackageActualReward(bulkCandidate) + (readPackageRewardInput(current.raw).count ? " x" + readPackageRewardInput(current.raw).count : "");
-                    if (bulkCandidate.custom) {
-                        fixed = resolvePackageRewardInput(text, bulkCandidate.type, definitions, undefined, bulkCandidate.object);
-                        state.bulk[state.fixIndex] = makePackageBulkInputRow(current.raw, fixed);
-                        return { ok: true, message: buildPackageBulkReview(state) };
-                    }
-                }
-                fixed = resolvePackageRewardInput(text, current.reward && current.reward.custom ? current.reward.type : null, definitions, undefined, current.reward && current.reward.custom ? current.reward.object : null);
-                state.bulk[state.fixIndex] = makePackageBulkInputRow(text, fixed);
-            }
-            return { ok: true, message: buildPackageBulkReview(state) };
-        }
-        var parts = splitPackageComposition(text); if (!parts.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요." };
-        state.bulk = [];
-        for (var b = 0; b < parts.length; b++) { var parsed = resolvePackageRewardInput(parts[b], null, definitions); state.bulk.push(makePackageBulkInputRow(parts[b], parsed)); }
+    if (/^ACTUAL_/.test(state.step)) return answerPackageWritingRow(state, text, definitions, false);
+    if (state.step === "BULK") {
+        if (text === state.bulkRaw && state.bulk) return { ok: true, message: buildPackageBulkReview(state) };
+        var parts = splitPackageComposition(text, definitions); if (!parts.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요.\n\n" + getPackageBulkPrompt(state) };
+        state.bulkRaw = text; state.bulk = []; state.bulkEditing = false; state.editingBulkRaw = false;
+        for (var b = 0; b < parts.length; b++) state.bulk.push(makePackageBulkInputRow(parts[b], resolvePackageRewardInput(parts[b], null, definitions)));
         return { ok: true, message: buildPackageBulkReview(state) };
     }
-    if (state.step === "EDIT_MENU") {
-        if (text === "1") { state.step = "EDIT_NAME"; return { ok: true, message: "패키지 이름을 입력해주세요." }; }
-        if (text === "2") { state.step = "EDIT_DESC"; return { ok: true, message: "2단계: 패키지 설명을 입력해주세요." }; }
-        if (text === "3") { state.step = "EDIT_PICK"; return { ok: true, message: buildPackageActualEditList(state) }; }
-        if (text === "4" || text === "돌아가기") { state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
-        return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
+    if (state.step === "BULK_PICK_ERROR") {
+        var index = parsePackagePositiveCount(text), row = index && state.bulk[index - 1];
+        if (!row || row.removed || !state.bulkEditing && !isPackageRowPending(row)) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + (state.bulkEditing ? buildPackageActualEditList({ rewards: state.bulkRewards }) : buildPackageBulkReview(state)) };
+        state.fixIndex = index - 1; state.step = "BULK_FIX";
+        if (state.bulkEditing) { state.bulkEditing = false; state.editingBulkRaw = true; return { ok: true, message: buildPackageRawFix(row, state.fixIndex) }; }
+        return { ok: true, message: buildPackageRowQuestion(row, state.fixIndex) };
     }
-    if (state.step === "EDIT_PICK") { var selected = parsePackagePositiveCount(text); if (!selected || !state.rewards[selected - 1]) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." }; state.editRewardIndex = selected - 1; state.step = "EDIT_REWARD"; return { ok: true, message: getPackageRewardEditChoices(state.rewards[selected - 1]) }; }
+    if (state.step === "BULK_FIX") {
+        if (state.editingBulkRaw && text !== "빼기") { state.editingBulkRaw = false; var previous = state.bulk[state.fixIndex], previousReward = previous.reward; return acceptPackageWritingRow(state, makePackageBulkInputRow(text, resolvePackageRewardInput(text, previousReward && previousReward.type, definitions, undefined, previousReward && previousReward.custom ? previousReward.object : null)), true); }
+        state.editingBulkRaw = false; return answerPackageWritingRow(state, text, definitions, true);
+    }
+    if (state.step === "BULK_CONFIRM") {
+        if (text === "추가") {
+            state.rewards = mergePackageActualRewards(state.rewards, state.bulkRewards); var added = state.bulkRewards.length;
+            state.bulk = null; state.bulkRewards = null; state.bulkRaw = null; state.step = "REWARD_CHOICE";
+            return { ok: true, message: "✅ 보상 " + added + "개 항목을 담았어요!\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
+        }
+        if (text === "수정") {
+            state.bulk = state.bulkRewards.map(function (reward) { return makePackageBulkInputRow(formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count), { reward: JSON.parse(JSON.stringify(reward)) }); });
+            state.bulkEditing = true; state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) };
+        }
+        return { ok: false, message: "추가, 수정, 이전 중 하나를 입력해주세요.\n\n" + buildPackageBulkReview(state) };
+    }
+    if (state.step === "EDIT_MENU") {
+        if (text === "1") state.step = "EDIT_NAME";
+        else if (text === "2") state.step = "EDIT_DESC";
+        else if (text === "3") state.step = "EDIT_PICK";
+        else if (text === "4") state.step = "CONFIRM";
+        else return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + buildPackageWritingQuestion(state) };
+        return { ok: true, message: buildPackageWritingQuestion(state) };
+    }
+    if (state.step === "EDIT_PICK") {
+        var selected = parsePackagePositiveCount(text);
+        if (!selected || !state.rewards[selected - 1]) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + buildPackageActualEditList(state) };
+        state.editRewardIndex = selected - 1; state.step = "EDIT_REWARD"; return { ok: true, message: buildPackageRewardEditPrompt(state) };
+    }
     if (state.step === "EDIT_REWARD") {
-        if (text === "빼기") { state.rewards.splice(state.editRewardIndex, 1); delete state.editRewardIndex; state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
-        if (text === "돌아가기") { delete state.editRewardIndex; state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
-        state.rewardType = state.rewards[state.editRewardIndex].type;
-        if (text === "수량 변경" && state.rewardType !== "point") { state.pendingReward = JSON.parse(JSON.stringify(state.rewards[state.editRewardIndex])); state.step = "ACTUAL_COUNT"; return { ok: true, message: "몇 개 넣을까요?\n예: 1" }; }
-        if (text === "옵션 수정" && ["mini", "furniture", "pendant", "gem"].indexOf(state.rewardType) !== -1 || text === "지급액 변경" && state.rewardType === "point") { state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType) }; }
-        return { ok: false, message: "안내된 번호나 이름으로 입력해주세요." };
+        var reward = state.rewards[state.editRewardIndex];
+        if (text === "빼기") { state.rewards.splice(state.editRewardIndex, 1); delete state.editRewardIndex; state.step = state.rewards.length ? "CONFIRM" : "REWARD_CHOICE"; return { ok: true, message: buildPackageWritingQuestion(state) }; }
+        state.rewardType = reward.type;
+        if (text === "수량 변경" && reward.type !== "point") return acceptPackageWritingRow(state, makePackageBulkInputRow(formatPackageActualReward(reward) + " x" + reward.count, { reward: JSON.parse(JSON.stringify(reward)), missingCount: true }), false);
+        if (text === "옵션 수정" && ["mini", "furniture", "pendant", "gem"].indexOf(reward.type) !== -1 || text === "지급액 변경" && reward.type === "point") { state.inputRow = null; state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(reward.type, state) }; }
+        return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + buildPackageRewardEditPrompt(state) };
     }
     if (state.step === "CONFIRM") {
-        if (text === "수정") { state.step = "EDIT_MENU"; return { ok: true, message: "✏️ 무엇을 수정할까요?\n\n1. 패키지 이름\n2. 설명\n3. 보상\n4. 돌아가기" }; }
+        if (text === "수정") { state.step = "EDIT_MENU"; return { ok: true, message: buildPackageWritingQuestion(state) }; }
         if (text === "더 넣기") { state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
-        if (text !== "등록") return { ok: false, message: "등록, 수정, 더 넣기, 취소 중 하나를 입력해주세요." };
+        if (text !== "등록") return { ok: false, message: "등록, 수정, 더 넣기, 취소 중 하나를 입력해주세요.\n\n" + buildPackageAddPreviewMessage(state) };
         for (var n = 0; n < packages.length; n++) {
-            if (packages[n] && packages[n].registrationId === state.id) return { ok: true, registered: true, message: "이미 등록된 패키지입니다. 번호: " + (n + 1) };
+            if (packages[n] && packages[n].registrationId === state.id) return { ok: true, registered: true, message: "이미 등록된 패키지입니다. 번호: " + (n + 1) + "." };
             if (packages[n] && packages[n].name === state.name) return { ok: false, message: "같은 이름의 패키지가 있어요. 다른 이름을 입력해주세요." };
         }
         if (!state.rewards.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요." };
@@ -72329,6 +72335,7 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         return { ok: true, registered: true, packageInfoData: packages, message: "✅ 패키지 추가 완료!\n\n번호: " + packages.length + "\n패키지: " + info.name + "\n설명: " + info.desc + "\n구성: " + formatPackageRewardSummary(info.rewards) };
     }
     return { ok: false, message: "작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요." };
+
 }
 
 // 보상에 실제로 존재하는 편집 항목만 기획서의 기존 선택 문구로 제공하는 함수
@@ -72525,21 +72532,41 @@ function runPackageActualUseEntry(data, pets, skills, guilds, user, message, pac
 
 // 빠진 옵션과 오류 항목만 보관해 일괄 입력 전체를 다시 받지 않는 함수
 function makePackageBulkInputRow(raw, result) {
-    return { raw: raw, reward: result.reward, draft: result.draft, candidates: result.candidates, missingCount: result.missingCount,
-        error: result.error || (result.draft ? buildPackageOptionPrompt(result.draft) : result.missingCount ? "몇 개 넣을까요? 예: 1" : result.candidates ? buildPackageCandidatePrompt(result.candidates) : null) };
+    return { raw: raw, reward: result.reward, draft: result.draft, candidates: result.candidates, missingCount: result.missingCount, error: result.error, history: [] };
 }
 
 // 동일 이름의 실제 후보를 기존 실물 표기로 표시하는 함수
-function buildPackageCandidatePrompt(candidates) {
-    var text = "어떤 보상인지 선택해주세요.\n\n";
-    for (var i = 0; i < candidates.length; i++) text += (i + 1) + ". " + formatPackageActualReward(candidates[i]) + "\n";
-    return text + "\n번호를 입력해주세요.";
+function buildPackageCandidatePrompt(candidates, raw, index) {
+    var kinds = { mini: "미니펫", furniture: "가구", pendant: "펜던트", gem: "보석", item: "가방아이템", skill: "펫스킬북" };
+    var bags = { mini: "미니펫가방", furniture: "가구가방", pendant: "펜던트가방", gem: "보석가방", item: "가방", skill: "펫스킬가방" };
+    var text = index === undefined ? "어떤 보상인지 선택해주세요." : "🔎 " + (index + 1) + "번 보상의 종류를 선택해주세요.";
+    if (raw) text += "\n\n입력: " + raw;
+    for (var i = 0; i < candidates.length; i++) {
+        var row = candidates[i];
+        text += "\n\n" + (i + 1) + ". " + kinds[row.type] + (row.custom ? " · 사용자 지정" : "") + "\n   " + formatPackageActualReward(row) + "\n   지급 위치: " + bags[row.type];
+        if (row.object && row.object.price !== null && row.object.price !== undefined && candidates.some(function (other) { return other !== row && other.type === row.type && other.object && other.object.price !== row.object.price; })) text += "\n   💰" + numberWithCommas(row.object.price) + "포인트";
+    }
+    return text + "\n\n1~" + candidates.length + " 중 번호를 입력해주세요.\n이 보상을 제외하려면 \"빼기\"";
 }
 
 // 남은 첫 옵션만 문서의 누락 안내로 요청하는 함수
-function buildPackageOptionPrompt(draft) {
-    var labels = { grade: "등급", castle: "캐슬매력", raid: "레이드매력", charm: "매력", durability: "내구도", upgrade: "강화수치", price: "가격", emoji: "외형", name: "이름" };
-    var label = labels[draft.fields[0]], last = label.charCodeAt(label.length - 1); // 한글 필드명의 받침에 맞는 조사만 선택
+function buildPackageOptionPrompt(draft, raw) {
+    var field = draft.fields[0], object = draft.object, known = [];
+    if (object.grade !== null && object.grade !== undefined) known.push("등급 " + object.grade);
+    if (object.battleExp !== null && object.battleExp !== undefined) known.push("매력 " + numberWithCommas(object.battleExp));
+    if (draft.count) known.push("수량 " + numberWithCommas(draft.count) + "개");
+    var checked = known.length ? "확인한 값: " + known.join(" / ") : "";
+    if (draft.type === "mini") {
+        if (field === "name") return "🐹 사용자 지정 미니펫을 확인할게요.\n\n입력: " + raw + "\n" + checked + "\n\n이름과 외형을 따로 확인할게요.\n미니펫 이름만 입력해주세요.\n예: 호이빛";
+        if (field === "emoji") return "✅ 이름: " + object.name + "\n\n미니펫 외형을 입력해주세요.\n예: 💖" + (checked ? "\n\n" + checked : "");
+        if (field === "price") return "✅ 미니펫: " + object.name + (object.emoji || "") + "\n\n이 미니펫의 가격을 입력해주세요.\n패키지 설명의 금액과는 별개예요.\n\n예: 1000000 또는 1,000,000" + (checked ? "\n\n" + checked : "");
+        if (field === "grade") return "🐹 미니펫 등급을 입력해주세요.\n예: 창세";
+        if (field === "charm") return "💕 지급할 미니펫의 매력을 입력해주세요.\n예: 1350000 또는 1,350,000";
+    }
+    if (draft.type === "furniture" && field === "grade") return "🏡 가구 등급을 입력해주세요.\n예: 로열 루미에르";
+    if (draft.type === "furniture" && field === "charm") return "💕 지급할 가구의 매력을 입력해주세요.\n예: 140000 또는 140,000";
+    var labels = { grade: "등급", castle: "캐슬매력", raid: "레이드매력", durability: "내구도", upgrade: "강화수치" };
+    var label = labels[field], last = label.charCodeAt(label.length - 1);
     return label + (last >= 0xAC00 && last <= 0xD7A3 && (last - 0xAC00) % 28 !== 0 ? "을" : "를") + " 확인할 수 없어요. 지급할 값을 입력해주세요.";
 }
 
@@ -72696,4 +72723,130 @@ function replyAdventureGemSlotStream(replier, blocks) {
         finally { if (getAdventureGemReplyToken(key) === token) setAdventureGemReplyToken(key, null); exitCommandContext(previous); }
     } }));
     thread.setDaemon(true); thread.start();
+}
+
+// 원문 수정이 필요한 항목만 현재 번호와 실패 사유로 표시하는 함수
+function buildPackageRawFix(row, index) {
+    var text = "✏️ " + (index + 1) + "번 보상을 수정해주세요.\n\n현재 입력: " + row.raw;
+    if (row.error) text += "\n사유: " + row.error;
+    text += "\n\n수정한 보상 전체를 보내주세요.";
+    var sample = row.raw.replace(/(\[⚒️?)(\d+)\/(\d+)(\])/, function (all, left, now, max, right) { return left + Math.min(Number(now), Number(max)) + "/" + max + right; }).replace(/([x×])0$/, "$11");
+    if (sample !== row.raw) text += "\n예: " + sample;
+    return text + "\n\n이 보상을 제외하려면 \"빼기\"\n나머지 입력은 보관하고 있어요.";
+}
+
+// 보완 중인 개별 항목 또는 일괄 항목의 현재 질문을 만드는 함수
+function buildPackageRowQuestion(row, index) {
+    if (row.candidates) return buildPackageCandidatePrompt(row.candidates, row.raw, index);
+    var body;
+    if (row.draft) body = buildPackageOptionPrompt(row.draft, row.raw);
+    else if (row.missingCount) body = formatPackageActualReward(row.reward) + "\n\n몇 개 넣을까요?\n예: 1\n\n옵션을 바꾸려면 \"옵션 수정\"";
+    else return buildPackageRawFix(row, index === undefined ? 0 : index);
+    return index === undefined ? body : "🔎 " + (index + 1) + "번 보상을 확인해주세요.\n\n" + body + "\n\n나머지 입력은 보관하고 있어요.";
+}
+
+// 일괄 항목의 미해결 상태를 판정하는 함수
+function isPackageRowPending(row) {
+    return !row.removed && (!!row.candidates || !!row.draft || !!row.missingCount || !!row.error || !row.reward);
+}
+
+// 개별 등록과 일괄 등록의 원문 입력 화면을 구분하는 함수
+function getPackageBulkPrompt(state) {
+    return "📦 구성품을 그대로 붙여넣어주세요!\n\n예:\n가온빛💖(+1,001,280💕)[창세] x1, 미니펫 강화석💫 x1,000, 포인트 x300,000\n\n여러 종류를 섞어도 돼요.\n기존 패키지의 \"구성:\" 줄을 복사해도 돼요.\n숫자는 쉼표가 있어도 없어도 돼요." + (state.bulkRaw ? "\n\n현재 입력: " + state.bulkRaw : "");
+}
+
+// 보완한 한 항목을 개별 구성 또는 일괄 검토에 연결하는 함수
+function acceptPackageWritingRow(state, row, bulk) {
+    if (bulk) { state.bulk[state.fixIndex] = row; return { ok: true, message: buildPackageBulkReview(state) }; }
+    state.inputRow = row;
+    if (!isPackageRowPending(row)) return completePackageActualInput(state, row.reward);
+    state.step = row.candidates ? "ACTUAL_CANDIDATE" : row.draft ? "ACTUAL_OPTION" : row.missingCount ? "ACTUAL_COUNT" : "ACTUAL_INPUT";
+    return { ok: !row.error || !!row.candidates, message: buildPackageRowQuestion(row) };
+}
+
+// 보상 편집 메뉴에 실제 선택 대상과 허용 작업을 표시하는 함수
+function buildPackageRewardEditPrompt(state) {
+    var reward = state.rewards[state.editRewardIndex];
+    return "✏️ 이 보상을 어떻게 수정할까요?\n\n" + formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count) + "\n\n" + getPackageRewardEditChoices(reward);
+}
+
+// 뒤로가기에 필요한 한 항목의 직전 확정 상태만 보관하는 함수
+function rememberPackageRow(row) {
+    var previous = JSON.parse(JSON.stringify(row)); delete previous.history;
+    if (!row.history) row.history = [];
+    row.history.push(previous);
+}
+
+// 후보 선택·옵션 보완·수량을 같은 검증 경로에서 처리하는 함수
+function answerPackageWritingRow(state, text, definitions, bulk) {
+    var row = bulk ? state.bulk[state.fixIndex] : state.inputRow, parsed = readPackageRewardInput(text), result;
+    if (text === "빼기") {
+        if (bulk) { row.removed = true; return { ok: true, message: buildPackageBulkReview(state) }; }
+        state.inputRow = null; state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType, state) };
+    }
+    if (text === "이전") {
+        if (row.history && row.history.length) { var history = row.history, restored = history.pop(); restored.history = history; return acceptPackageWritingRow(state, restored, bulk); }
+        if (bulk) {
+            if (state.bulk.filter(isPackageRowPending).length > 1) return { ok: true, message: buildPackageBulkReview(state) };
+            state.step = "BULK"; return { ok: true, message: getPackageBulkPrompt(state) };
+        }
+        state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType, state) + "\n\n현재 입력: " + row.raw };
+    }
+    if (row.candidates) {
+        var number = parsePackagePositiveCount(text), candidate = number && row.candidates[number - 1];
+        if (!candidate) return { ok: false, message: "❌ 1~" + row.candidates.length + " 중 번호를 입력해주세요.\n\n" + buildPackageRowQuestion(row, bulk ? state.fixIndex : undefined) };
+        rememberPackageRow(row); row.type = candidate.type;
+        var selected = JSON.parse(JSON.stringify(candidate)); selected.count = readPackageRewardInput(row.raw).count;
+        delete row.candidates; delete row.error;
+        if (selected.fields && selected.fields.length) row.draft = selected;
+        else { delete selected.fields; row.reward = selected; if (!selected.count) { delete selected.count; row.missingCount = true; } }
+        return acceptPackageWritingRow(state, row, bulk);
+    }
+    // A pasted full display replaces this row; it is never stored as a name or emoji.
+    if ((row.draft || row.missingCount) && /\(\+|\[[^\]]+\]|(?:\s[x×]\s*[\d,]+|\s[\d,]+개)$/.test(text)) {
+        var type = row.type || row.draft && row.draft.type || row.reward && row.reward.type || state.rewardType;
+        var previousObject = row.draft && row.draft.object || row.reward && row.reward.object, previousCount = row.draft && row.draft.count || row.reward && row.reward.count;
+        result = resolvePackageRewardInput(text, type, definitions, parsed.count ? undefined : previousCount, previousObject);
+        rememberPackageRow(row);
+        var replacement = makePackageBulkInputRow(text, result); replacement.type = type; replacement.history = row.history;
+        return acceptPackageWritingRow(state, replacement, bulk);
+    }
+    if (row.draft) {
+        if (row.draft.custom && (!definitions.custom || definitions.custom[row.draft.type] !== true)) return { ok: false, message: "⛔ 패키지 관리 권한이 없습니다." };
+        var backup = JSON.parse(JSON.stringify(row.draft)), optionError = applyPackageOptionAnswer(row.draft, text);
+        if (optionError) return { ok: false, message: optionError + "\n\n" + buildPackageRowQuestion(row, bulk ? state.fixIndex : undefined) };
+        var snapshot = JSON.parse(JSON.stringify(row)); snapshot.draft = backup; delete snapshot.history;
+        row.history.push(snapshot);
+        if (row.draft.fields.length) return acceptPackageWritingRow(state, row, bulk);
+        var completed = row.draft;
+        result = completed.custom ? resolvePackageCustomRewardInput(formatPackageActualReward(completed), completed.type, definitions, completed.count, completed.object) : resolvePackageRewardInput(formatPackageOptionDraft(completed), completed.type, definitions);
+        var fixed = makePackageBulkInputRow(row.raw, result); fixed.type = completed.type; fixed.history = row.history;
+        return acceptPackageWritingRow(state, fixed, bulk);
+    }
+    if (row.missingCount) {
+        if (text === "옵션 수정") { if (bulk) { row.error = null; row.missingCount = false; row.reward = null; return { ok: true, message: buildPackageRawFix(row, state.fixIndex) }; } state.step = "ACTUAL_INPUT"; return { ok: true, message: getPackageActualPrompt(state.rewardType, state) + "\n\n현재 입력: " + row.raw }; }
+        var count = parsePackagePositiveCount(text); if (!count) return { ok: false, message: "수량은 1 이상의 정수로 입력해주세요.\n\n" + buildPackageRowQuestion(row, bulk ? state.fixIndex : undefined) };
+        rememberPackageRow(row); row.reward.count = count; row.missingCount = false; delete row.error;
+        return acceptPackageWritingRow(state, row, bulk);
+    }
+    result = resolvePackageRewardInput(text, row.type || null, definitions);
+    var nextRow = makePackageBulkInputRow(text, result); nextRow.type = row.type;
+    return acceptPackageWritingRow(state, nextRow, bulk);
+}
+
+// 현재 작성 단계의 승인된 질문을 다시 표시하는 함수
+function buildPackageWritingQuestion(state) {
+    if (state.step === "REWARD_CHOICE") return buildPackageRewardChoiceMessage(state);
+    if (state.step === "ACTUAL_INPUT") return getPackageActualPrompt(state.rewardType, state) + (state.inputRow && state.inputRow.raw ? "\n\n현재 입력: " + state.inputRow.raw : "");
+    if (/^ACTUAL_/.test(state.step)) return buildPackageRowQuestion(state.inputRow);
+    if (state.step === "BULK") return getPackageBulkPrompt(state);
+    if (state.step === "BULK_FIX") return buildPackageRowQuestion(state.bulk[state.fixIndex], state.fixIndex);
+    if (state.step === "BULK_CONFIRM" || state.step === "BULK_PICK_ERROR") return buildPackageBulkReview(state);
+    if (state.step === "CONFIRM") return buildPackageAddPreviewMessage(state);
+    if (state.step === "EDIT_MENU") return "✏️ 무엇을 수정할까요?\n\n1. 패키지 이름\n2. 설명\n3. 보상\n4. 돌아가기\n\n번호를 입력해주세요.";
+    if (state.step === "EDIT_PICK") return buildPackageActualEditList(state);
+    if (state.step === "EDIT_REWARD") return buildPackageRewardEditPrompt(state);
+    if (state.step === "EDIT_NAME") return "✏️ 새 패키지 이름을 입력해주세요.\n현재 이름: " + state.name;
+    if (state.step === "EDIT_DESC") return "✏️ 새 패키지 설명을 입력해주세요.\n현재 설명: " + state.desc;
+    return state.step === "NAME" ? "패키지 이름을 입력해주세요." : "2단계: 패키지 설명을 입력해주세요.\n예: 3000";
 }
