@@ -716,6 +716,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
 		}
 		if (getMessageFilterRequest(msg)) return; // 관리 명령은 Main에서만 처리
+		if (/^\/(?:길드서버이동|미니펫이름|미니펫외형)(?:\s|$)/.test(msg)) return; // 변경과 응답은 Main의 확인 흐름에서만 처리
 		if (msg === "/세율5적용") return; // 1회 세율 보정의 권한·저장·응답은 Main에서만 처리
 		if (ctx.isDev && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(msg)) msg = msg.substring(1);
 		if (msg === "/초기화" || msg === "/댓글초기화" || msg === "/피드초기화" || msg === "1삭제" || msg === "2취소" || /^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)) return;
