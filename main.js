@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.896"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.897"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -48308,9 +48308,30 @@ function formatPackageRewardLines(rewards) {
     return lines.join("\n");
 }
 
+// 방금 담은 보상과 수량 합산 후의 전체 항목 수를 표시하는 함수
+function buildPackageRewardAddedSummary(addedRewards, totalItems) {
+    var labels = { mini: "미니펫", item: "가방아이템", furniture: "가구", pendant: "펜던트", skill: "펫스킬북", gem: "보석" };
+    var types = [], byType = {};
+    for (var i = 0; i < addedRewards.length; i++) {
+        var reward = addedRewards[i];
+        if (!byType[reward.type]) { byType[reward.type] = []; types.push(reward.type); }
+        byType[reward.type].push(reward);
+    }
+    var details = types.map(function (type) {
+        var rows = byType[type], reward = rows[0];
+        if (rows.length > 1) return labels[type] + " " + numberWithCommas(rows.length) + "종";
+        if (type === "point") return "포인트 🅟" + numberWithCommas(reward.count);
+        return formatPackageActualReward(reward).replace(/\n└ /g, " · ") + " " + numberWithCommas(reward.count) + "개";
+    });
+    var lastType = types[types.length - 1];
+    var particle = lastType === "point" ? "" : byType[lastType].length > 1 ? "을" : "를";
+    return "✅ " + details.join(" · ") + particle + " 담았어요.\n현재 구성: 보상 " + numberWithCommas(totalItems) + "개 항목\n\n";
+}
+
 // 패키지 보상 선택 안내 메시지 생성 함수
-function buildPackageRewardChoiceMessage(state) {
-    return "📦 " + state.name + "\n추가할 보상을 선택해주세요.\n\n1. 포인트\n2. 가방아이템\n3. 미니펫\n4. 가구\n5. 펜던트\n6. 펫스킬북\n7. 보석\n8. 일괄 등록\n\n9. 등록\n10. 취소\n\n숫자 또는 이름으로 입력해주세요.\n다 담았다면 9 또는 \"등록\"";
+function buildPackageRewardChoiceMessage(state, addedRewards) {
+    var summary = addedRewards && addedRewards.length ? buildPackageRewardAddedSummary(addedRewards, state.rewards.length) : "";
+    return summary + "📦 " + state.name + "\n추가할 보상을 선택해주세요.\n\n1. 포인트\n2. 가방아이템\n3. 미니펫\n4. 가구\n5. 펜던트\n6. 펫스킬북\n7. 보석\n8. 일괄 등록\n\n9. 등록\n10. 취소\n\n숫자 또는 이름으로 입력해주세요.\n다 담았다면 9 또는 \"등록\"";
 }
 
 // 패키지 추가 미리보기 메시지 생성 함수
@@ -72403,14 +72424,15 @@ function buildPackageBulkReview(state) {
     return finishPackageBulkInput(state, rewards);
 }
 
-// 검증된 일괄 보상을 한 번 합쳐 전체 미리보기로 이동하는 함수
+// 검증된 일괄 보상을 합치고 추가 요약과 함께 보상 선택 메뉴로 돌아가는 함수
 function finishPackageBulkInput(state, rewards) {
-    state.rewards = mergePackageActualRewards(state.rewards, rewards);
+    var addedRewards = mergePackageActualRewards([], rewards); // 이번에 들어온 동일 보상만 합산
+    state.rewards = mergePackageActualRewards(state.rewards, addedRewards);
     state.bulk = null; state.bulkRewards = null; state.bulkRaw = null;
     state.bulkEditing = false; state.editingBulkRaw = false; state.returnToPreview = false;
     state.resumePreviewInput = false;
     state.step = "REWARD_CHOICE";
-    return buildPackageRewardChoiceMessage(state);
+    return buildPackageRewardChoiceMessage(state, addedRewards);
 }
 
 // 보류한 개별 보상을 불러와 미입력 항목을 계속 묻는 함수
@@ -72472,7 +72494,7 @@ function completePackageActualInput(state, reward) {
     state.returnToPreview = false;
     state.resumePreviewInput = false;
     state.step = "REWARD_CHOICE";
-    return { ok: true, message: buildPackageRewardChoiceMessage(state) };
+    return { ok: true, message: buildPackageRewardChoiceMessage(state, reward.type === "mini" ? [reward] : null) };
 }
 
 // 작성 중 보상의 편집 대상만 기존 표기로 나열하는 함수
