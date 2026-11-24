@@ -8,7 +8,7 @@ const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
     adventureGem: { // Main과 같은 보석 원본·집계 캐시 검증 설정
-        accountPrefix: "adventureGemAccount_", charmStep: 100000,
+        accountPrefix: "adventureGemAccount_", charmStep: 10000,
         cachePrefix: "hoiBot.adventureGem.summary.", revisionPrefix: "hoiBot.adventureGem.revision.",
         grades: [
             { name: "하급", min: 300000, max: 500000 }, { name: "중급", min: 600000, max: 900000 },
@@ -481,7 +481,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var summary = getInfoAdventureLevelSummary(level);
 	var statState = getAdventureStatState(member); // 조회는 최초 소급 잔고도 저장 없이 계산
 	var gemSummary = getAdventureGemSummary(data, user), gemSlots = Math.floor(level / 10) + gemSummary.extraSlots;
-	var gemLine = "🪽 보석 [" + gemSummary.count + "/" + gemSlots + "칸]" + (gemSummary.creation ? " · 🌌창조 " + gemSummary.creation : "") + (gemSummary.hidden ? " · 🟢히든 " + gemSummary.hidden : "") + "\n";
+	var gemLine = "🪽 보석 [" + gemSummary.count + "/" + gemSlots + "칸]" + (gemSummary.creation ? " · 🌌창조 " + gemSummary.creation : "") + (gemSummary.hidden ? " · 💚히든 " + gemSummary.hidden : "") + "\n";
 	if (gemSummary.count) gemLine += "└ ⚔️ +" + (gemSummary.castle / 10000) + "만 · 👾 +" + (gemSummary.raid / 10000) + "만\n";
 	gemLine += "  └ /보석정보 · /보석가방\n";
 	var canInvestStats = statState.points > 0 && GLOBAL_CONFIG.adventureStats.trees.some(function (tree) { return statState[tree.key][0] < GLOBAL_CONFIG.adventureStats.maxStage; }); // 미완성 트리가 있을 때만 투자 안내
@@ -723,6 +723,7 @@ try {
 }
 
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    if (String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥" || String(room) === "🤩30대 월루 도파민 반말방❤️보룸,봇,친목" || String(room) === "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻") return;
 	var ctx = createCommandContext(isDevCommandMessage(msg), room);
 	var prevCtx = enterCommandContext(ctx);
 	try {

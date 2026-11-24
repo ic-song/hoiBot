@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.892"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.893"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -820,15 +820,18 @@ const room5 = "호이월드 커뮤니티[티어 킹 이상 입장가능]";
 const room6 = "💜3040대친목 반말방🐻 24시 보이스룸💜";
 const room7 = "2030 반말방 | 우리는 청춘이라는 별 아래서✨";
 const room8 = "공성전";
-const room10 = "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙";
 const room11 = "🎇3040, 도파민 디스코팡팡🎇";
 const room12 = "🎀30대,주파수가 맞는 사이🌙,보룸 수다 벙 반말";
-const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
 const room14 = "🐶30대 반말방💞친목🐩봇,보룸,수다,벙🎤";
 const room15 = "🚨 30대 반말방｜도파민 폭주구역 💣🔥";
 const room90 = "호이월드 GM 관리자방";
 const room91 = "통합스텝";
 const room92 = "서버관리자";
+
+// 운영에서 제외한 방과 확인된 이전 방 이름을 차단하는 함수
+function isRetiredHoiRoom(room) {
+    return String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥" || String(room) === "🤩30대 월루 도파민 반말방❤️보룸,봇,친목" || String(room) === "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻";
+}
 
 //서버데이터
 const roomToServer = {};
@@ -837,10 +840,8 @@ roomToServer[room2] = "호이서버2[2030]";
 roomToServer[room3] = "벨라서버1[2030]";
 roomToServer[room6] = "호이서버3[3040]";
 roomToServer[room7] = "호이서버5[2030]";
-roomToServer[room10] = "호이서버6[30]";
 roomToServer[room11] = "호이서버4[3040]";
 roomToServer[room12] = "벨라서버2[30]";
-roomToServer[room13] = "호이서버7[2030]";
 roomToServer[room14] = "호이서버1[30]";
 roomToServer[room15] = "호이서버6[30]";
 roomToServer[room90] = "호이월드 운영진[GM]";
@@ -1181,7 +1182,7 @@ const GLOBAL_CONFIG = {
     "regionLabels": ["동부 금광", "중앙 금광", "서부 금광", "북부 금광", "펫스킬 광산", "다이아 광산", "미강석 광산", "루미에르 요새", "호월킹덤"],
     "rewardPolicy": 3,
     "dailyTickets": 5,
-    "supply": { "points": 200000000, "ricePerSupport": 1, "ricePerTicket": 100 },
+    "supply": { "points": 200000000, "ricePerSupport": 5, "ricePerTicket": 100 },
     "campaign": { "version": 1, "kingdom": 9, "skillMine": 5, "diamondMine": 6, "miniPetMine": 7, "gold": [1, 2, 3, 4], "oldToNew": [0, 6, 1, 2, 3, 4, 5] },
     "siege": { "version": 2, "legacyKingdom": 6, "fortress": 8, "ambushLimit": 1, "ambushSuccessRate": 0.5, "stageNames": ["금광", "핵심 광산", "요새", "킹덤"] },
     "masterSkills": { "commander": "전투형 지휘관", "attack": "기사단 증원", "defense": "징집명령", "attackPercent": 3, "defensePercent": 2 },
@@ -1231,7 +1232,7 @@ const GLOBAL_CONFIG = {
         "memberOperationLogs_back2.json"
     ],
     "formationGuide": "/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호",
-    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 9곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n👑 호월킹덤: 점령 당일 탈환 무제한 · 다음 날 하루 점령 불가\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 / [4] 북부 금광\n              ⬇️\n📕 [5] 펫스킬 광산 · 💎 [6] 다이아 광산\n💫 [7] 미강석 광산\n              ⬇️\n🛡️ [8] 루미에르 요새\n              ↕️\n🏰 [9] 호월킹덤\n\n🪙 금광: 네 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n👑 [9] 호월킹덤 점령·탈환\n⚔️ 점령 당일에는 성을 빼앗겨도 횟수 제한 없이 탈환할 수 있습니다.\n└ 탈환 시 기존 진격 조건과 공격권이 적용됩니다.\n🏳️ 하루가 바뀌면 호월킹덤은 미점령 상태가 됩니다.\n🔒 전날 한 번이라도 점령한 길드는 오늘 하루 킹덤을 점령할 수 없습니다.\n└ 무혈입성하거나 중간에 성을 빼앗긴 길드도 포함됩니다.\n└ 오늘 성이 비어 있어도 제한 중인 길드는 무혈입성할 수 없습니다.\n📅 월요일 A 점령 → B 탈환 → A 재탈환\n└ A와 B 모두 화요일은 제한, 수요일부터 다시 점령 가능\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 계속 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 진격 조건이나 단계별 점령 한도에 걸리면 🔒로 표시합니다.\n└ 전날 킹덤을 점령한 우리 길드에는 ‘내일 가능’이 표시됩니다.\n└ 개인 권한·공격권은 선포 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3·4번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n미점령 상태가 되면 킹덤 탐험 혜택과 영주 권한·영주의 세금 징수가 종료됩니다. 호월킹덤 포인트 상점에는 기본 세율 5%가 적용되며, 개인 세금 감면 효과는 기존 규칙에 따라 적용됩니다.\n📙 악덕한 영주: 호랜캐슬 세금 20% 강제 고정\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드전쟁번호 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n└ 자폭으로 킹덤을 비워도 점령 이력에는 포함되지 않습니다. 이후 무혈입성한 길드에 기록됩니다.\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n📅 회원당 하루 1회 · 개인 🅟2억\n🌾 지원 1회당 군량미 +1\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n└ 군량미·추가권은 다음 날에도 유지\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드전쟁번호\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 계속 진행합니다.\n승리 시 같은 단계가 이미 차 있으면 전투 결과와 개인 참여 보상만 확정합니다.\n🏰 킹덤 전투 중 하루가 바뀌면 최종 결과가 나오기 전인 킹덤 전투는 종료됩니다.\n└ 이 전투에 사용한 선포권·공격권은 원래 종류로 복구됩니다.\n└ 전환 전에 점령이 확정됐다면 해당 날짜의 점령으로 기록됩니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
+    "guide": "📖 호이월드 길드전쟁 가이드\n━━━━━━━━━━━━\n🏰 24시간 운영 · 점령지 9곳\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n🏴 단계별 1곳씩 점령 · 길드당 최대 4곳\n👑 호월킹덤: 점령 당일 탈환 무제한 · 다음 날 하루 점령 불가\n⚔️ 일반 전쟁: 선봉·중견·대장 3전 2선승\n🎲 기습: 점령지 0곳인 길드의 공격 대장 · 성공률 50%\n👉 현황 /길드전쟁 · 편성 /전쟁편성\n\n📚 참여방법·진격 조건·보상·명령어 전체보기\n" + allsee + "\n\n【1. 지도·진격·점령 한도】\n━━━━━━━━━━━━\n🪙 [1] 동부 / [2] 중앙 / [3] 서부 / [4] 북부 금광\n              ⬇️\n📕 [5] 펫스킬 광산 · 💎 [6] 다이아 광산\n💫 [7] 미강석 광산\n              ⬇️\n🛡️ [8] 루미에르 요새\n              ↕️\n🏰 [9] 호월킹덤\n\n🪙 금광: 네 금광 중 1곳 · 선행 점령 조건 없음\n⛏️ 핵심 광산: 펫스킬·다이아·미강석 중 1곳 · 금광 1곳 필요\n🛡️ 요새: 1곳 · 핵심 광산 1곳 또는 킹덤 필요\n🏰 킹덤: 1곳 · 루미에르 요새 필요\n└ 단계별 최대 1곳씩, 전체 최대 4곳 동시 보유\n\n현재 소유한 거점으로 진격 조건과 점령 한도를 각각 확인합니다.\n같은 단계의 다른 지역을 보유하면 추가 점령할 수 없습니다.\n전체가 4곳 미만이어도 같은 단계 2곳 보유는 불가합니다.\n해당 단계 보유 수가 0곳이면 다른 조건을 충족한 지역에 다시 도전할 수 있습니다.\n점령 한도로 거절된 요청은 공격권·기습 횟수를 사용하지 않습니다.\n\n🏳️ 실제 미점령 지역은 선행 점령 없이 무혈입성 가능\n└ /전쟁선포 번호 · 단계별 점령 한도는 적용\n└ 기존 공격권 처리 · 정상 점령 보상 · 일반 대전 개인 보상 없음\n\n👑 [9] 호월킹덤 점령·탈환\n⚔️ 점령 당일에는 성을 빼앗겨도 횟수 제한 없이 탈환할 수 있습니다.\n└ 탈환 시 기존 진격 조건과 공격권이 적용됩니다.\n🏳️ 하루가 바뀌면 호월킹덤은 미점령 상태가 됩니다.\n🔒 전날 한 번이라도 점령한 길드는 오늘 하루 킹덤을 점령할 수 없습니다.\n└ 무혈입성하거나 중간에 성을 빼앗긴 길드도 포함됩니다.\n└ 오늘 성이 비어 있어도 제한 중인 길드는 무혈입성할 수 없습니다.\n📅 월요일 A 점령 → B 탈환 → A 재탈환\n└ A와 B 모두 화요일은 제한, 수요일부터 다시 점령 가능\n\n전쟁선포·자폭에는 진격 조건을 적용하며 정찰에는 적용하지 않습니다.\n자폭은 상대 점령을 해제하므로 우리 단계별 점령 한도만으로 막지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 계속 진행합니다.\n하위 거점을 잃어도 보유 중인 상위 거점을 자동 회수하지 않습니다.\n킹덤 보유 길드도 핵심 광산 없이 요새를 공격·탈환할 수 있습니다.\n\n🏴 우리 점령 · ⚔️ 지역 조건상 공격 가능 · 🔒 조건 미충족\n└ 진격 조건이나 단계별 점령 한도에 걸리면 🔒로 표시합니다.\n└ 전날 킹덤을 점령한 우리 길드에는 ‘내일 가능’이 표시됩니다.\n└ 개인 권한·공격권은 선포 시 확인합니다.\n우리 지역은 공격할 수 없습니다.\n지도 아래에서 전체·단계별 점령 한도를 확인하세요.\n/길드전쟁과 /전쟁지도는 같은 화면입니다.\n미가입자도 전체 점령 현황과 이 가이드를 볼 수 있습니다.\n👥 가입할 길드 찾기: /길드목록\n\n【2. 일반 전쟁과 공격권】\n━━━━━━━━━━━━\n🎯 /전쟁선포 번호 · 등록된 자기 길드톡에서 권한 보유자가 실행\n⏳ 선포 후 2분 준비 → 선봉전 → 15초 후 중견전 → 15초 후 대장전\n🏆 3전 2선승 · 3경기 모두 진행\n\n길마 기본권·정찰 역할권·공격 역할권 등 기존 개인 선포권을 사용합니다.\n부길마 직책만으로는 전쟁을 선포할 수 없습니다.\n길마·정찰·공격·지휘관 권리를 겸하면 기존 개인 합계에 반영됩니다.\n같은 사람의 역할별 권리와 개인 합계를 다시 더하지 않습니다.\n\n🎯 길드 공용 기본 공격권: 하루 5회\n📦 추가 공격권 충전: /전쟁공격사용 숫자\n└ 길드원 누구나 아이템으로 충전 · 개인 권리는 늘지 않음\n└ 개인 기본권이 남으면 기본 공용권 우선 사용\n└ 개인 기본권 소진 후에도 기존 유자격자는 추가 공용권으로 선포 가능\n└ 지휘관 전용권은 기존대로 공용권 없이 하루 1회 사용\n└ 기본 공용권만 일일 초기화 · 추가권은 상한·만료 없이 누적\n└ 탈퇴 후에도 충전한 추가권은 길드에 유지 · 아이템 반환 없음\n\n⚔️ 여러 지역의 전쟁 진행은 단계별 점령 한도 안에서 처리합니다.\n└ 서로 다른 길드는 같은 지역에 동시 선포 가능\n└ 같은 길드의 같은 지역 중복 선포는 불가\n└ 동시 처리로 같은 단계의 점령 한도를 초과할 수 없음\n⏱️ 기존 일반 전쟁 공격 쿨타임·점령 보호 없음\n\n🎲 일반 전투 판정\n방어권·길드큐브 → 기습권 → 펫 크리티컬 → 캐슬매력 비교\n└ 해당 전쟁에 확정된 능력치와 효과로 판정\n└ 캐슬 동률은 방어 승리\n└ 대장전에는 특수 기습·절대방어 아이템 미적용, 길드큐브 패시브 유지\n└ 기습·절대방어 아이템은 길드창고에서 발동 시에만 소모\n└ 펫무쌍은 기존대로 개인 가방 아이템 사용\n\n👑 길마 장착 스킬\n지휘관: 개인 선포권 +1회\n기사단: 공격 캐슬 +3%\n징집: 방어 캐슬 +2%\n└ 실제 장착 효과만 적용 · 선포 당시 효과 고정\n└ 재장착으로 사용한 권리가 복구되지 않습니다.\n\n【3. 미점령 길드의 기습공격】\n━━━━━━━━━━━━\n🎲 /기습공격 번호 · 현재 공격 대장 전용\n🏴 우리 길드 전체 점령 0곳일 때 사용\n🪙 상대가 점령한 금광 1·2·3·4번 대상\n🎲 성공률 50% · 일반 전투 없이 한 번 판정\n✅ 성공: 해당 금광 즉시 점령\n❌ 실패: 상대 점령 유지\n└ 일반 전쟁의 기습권 아이템과 별도 기능\n└ 캐슬매력·크리티컬·기습권·절대방어를 적용하거나 소모하지 않음\n\n📅 길드당 하루 1회\n🎯 유효 시도는 기존 전쟁선포 1회와 동일한 공격권 처리\n└ 성공·실패 모두 소모 · 지휘관/개인/기본 공용/추가 공용권의 기존 순서와 예외 유지\n└ 지휘관 전용권은 공용권 미소모\n└ 개인 기본권 소진 후 추가 공용권 사용 경로 유지\n└ 대장 교체·해제·재편성·추가권 충전으로 기습 기회 복구 불가\n\n👤 시도자 개인 🅟1억 · 성공·실패 무관 하루 첫 유효 시도\n└ 정찰·자폭과 별도 일일 보상\n└ 길드 이동·재가입·닉네임 변경·대장 교체로 중복 수령 불가\n🎁 성공: 금광 점령 길드자금 기본 🅟5억 + 기존 길드큐브 보정\n└ 실패 길드자금·상대 방어 성공 보상·일반 3대3 참여 보상 없음\n🚨 성공·실패 모두 양쪽 길드톡에 결과 안내\n\n🔒 준비 중을 포함해 전쟁이 선포된 지역에는 기습 불가\n🏳️ 미점령 금광은 /전쟁선포 번호로 무혈입성 안내\n└ 권한·대상·점령 조건·횟수·공격권 부족으로 거절되면 미소모·보상 없음\n└ 번호 생략 시 사용법과 현재 금광 점령 목록 조회\n\n【4. 보상과 점령 혜택】\n━━━━━━━━━━━━\n💰 길드자금 기본 보상\n🪙 금광: 점령 🅟5억 · 방어 성공 🅟2.5억\n📕💎💫 핵심 광산: 점령 🅟3억 · 방어 성공 🅟1억\n🛡️ 요새: 점령 🅟3억 · 방어 성공 🅟1억\n🏰 킹덤: 점령 🅟3억 · 방어 성공 🅟1억\n💔 일반 전쟁 공격 실패: 🅟1억\n└ 점령·방어 성공에는 길드큐브3 추가율을 한 번 적용\n└ 일반 공격 실패 보상에는 보정 없음 · 기습은 3장의 별도 기준\n\n🧳 광산 전용 보상\n📕 펫스킬 광산 점령·방어 성공: 길드창고 펫스킬조각📙 +1개\n💎 다이아 광산 점령·방어 성공: 길드창고 다이아 +1\n💫 미강석 광산 공격 성공·방어 성공: 길드창고 미니펫 강화석💫 +5개\n└ 무혈입성도 정상 점령 보상 5개 · 실패·자폭·단순 /방어 입력에는 지급 없음\n🛡️ 요새: 전용 아이템·시간당 생산·전용 능력치 버프 없음\n🏰 킹덤 점령 중: 길드원 전체 탐험 성공확률 +5%p\n미점령 상태가 되면 킹덤 탐험 혜택과 영주 권한·영주의 세금 징수가 종료됩니다. 호월킹덤 포인트 상점에는 기본 세율 5%가 적용되며, 개인 세금 감면 효과는 기존 규칙에 따라 적용됩니다.\n📙 악덕한 영주: 호랜캐슬 세금 20% 강제 고정\n\n👤 개인 보상\n⚔️🛡️ 정상 일반 대전 공격·방어 편성 6명: 승패 무관 각 🅟1억\n🔭 정찰 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n💣 자폭 시도자: 성공·실패 무관 하루 첫 보상 🅟1억\n🎲 기습 시도 대장: 성공·실패 무관 하루 첫 보상 🅟1억\n└ 정찰·자폭·기습은 계정별로 각각 하루 1회\n🛡️ /방어 참여: 🅟5천만 · 동일 전투 중복 수령 불가\n🌾 보급 지원: 🅟2억 · 조건은 6장 참고\n\n※ 금광 시간당 생산 보상 없음\n※ 기존 시간제 영지전·영지포인트 순위 보상은 휴식 유지\n📣 전체 점령 공지는 킹덤만 · 당사자 길드톡 결과는 모든 지역 안내\n\n【5. 정찰·방어·자폭】\n━━━━━━━━━━━━\n🔭 /정찰 길드전쟁번호 · 정찰병 본인 · 길드당 하루 2회\n└ 정찰병 교체 하루 2회 · 최초 편성 무료\n└ 선행 거점 조건 없음 · 단독 정찰은 전투·선봉 버프 없음\n└ 실패 시 상대에게 정찰병 정보 역공개\n\n🔎 선포 시 양측 정찰병 개인 종합매력 비교\n🎯 공격 정찰 승리: 상대 정찰병·방어 3명 정보 공개\n└ 2분 준비 중 기존 공격 3명의 순서 변경 가능\n⚒️ 방어 정찰 승리: 상대 정찰병 정보 공개 · 방어 선봉 캐슬 +5%p\n└ 동률은 방어 정찰 승리\n└ 방어 정찰병이 없으면 0:0을 포함해 정찰 버프 없음\n🔒 방어 인원·자리는 선포 시 확정, 정찰 결과로 바뀌지 않음\n\n🛡️ /방어 · 해당 전투의 확정 방어자가 2분 준비 중 참여\n└ 정찰 결과와 무관하게 가능\n└ 캐슬매력 +5% · 절대방어 확률 +5%\n└ 개인 🅟5천만 별도 지급 · 동일 전투 중복 적용 불가\n└ 동시 방어전은 시작이 빠른 참여 대상 전투 1건에 적용\n⚒️ 기본 방어 캐슬: 선봉 +3% · 중견 +10%\n└ 정찰·징집·방어 참여 효과는 실제 적용 상태로 합산\n\n💣 /자폭 번호 · 자폭병 본인 · 길드당 하루 2회\n🎲 성공률 50%\n✅ 성공: 상대 지역을 미점령으로 전환\n└ 자폭으로 킹덤을 비워도 점령 이력에는 포함되지 않습니다. 이후 무혈입성한 길드에 기록됩니다.\n❌ 실패: 상대 점령 유지\n└ 성공해도 우리 길드가 자동 점령하지 않음\n└ 점령·대전 보상 없음 · 자폭병 개인 보상은 별도\n└ 전쟁 중·자기 점령·미점령 지역에는 불가\n└ 진격 조건 적용 · 불가 조건에서는 횟수 미차감\n🚨 성공·실패 모두 상대 길드톡에도 통보\n\n【6. 편성과 보급 지원】\n━━━━━━━━━━━━\n👥 정찰 1 · 자폭 1 · 공격 3 · 방어 3 = 총 8칸\n└ 기습은 공격 대장의 기능, 별도 칸 없음\n🎯 공격·방어 진형은 전체 길드원 편성 가능\n⚠️ 최대 2개 역할 겸직 · 공격/방어 중복 불가\n🔢 /길드정보의 길드원 번호 사용\n🔄 정찰·공격·방어·자폭 교체: 각각 하루 2회 · 최초 편성 무료\n🔒 전쟁 중 기본 편성 변경 제한\n└ 편성 초기화는 8칸 해제 · 사용한 권리/교체 횟수 복구 없음\n\n📊 횟수: 개인 선포권·교체·정찰·자폭·기습·기본 공격권 = 남음/총\n└ 추가 공격권 = 실제 잔액\n└ 기습은 길드 공용이며 개인 선포권 합계에 더하지 않음\n└ 지도 아래의 점령 수 = 현재/한도, 하루 사용 횟수가 아님\n\n🔔 전쟁톡 이름: 마크를 제외한 정확한 길드명\n길마·부길마: /전쟁톡등록 → /전쟁톡확인\n\n🌾 /길드보급 · 전쟁 포지션 미편성 길드원 대상\n└ 정찰·자폭·공격·방어 편성 인원 제외\n└ 포지션 해제로 보급대가 된 날은 불가, 다음 날부터 가능\n【🌾 보급 지원】\n🌾 보급대원 지원: /길드보급\n📅 회원당 하루 1회\n🎁 개인 보상: 🅟2억\n🌾 길드 군량미: +5\n🎯 군량미 100마다 길드 추가 공격권 +1회 자동 적립\n\n군량미 0 기준, 유효한 보급 지원 누적 20회로 추가 공격권 1회를 얻어요.\n군량미와 추가 공격권은 다음 날에도 유지됩니다.\n👥 보급대 명단: /전쟁편성\n└ 편성 변경·탈퇴·재가입·길드 이동으로 당일 기회 복구 불가\n└ 보급으로 개인 선포권이 늘거나 복구되지 않음\n\n【7. 전쟁기록】\n━━━━━━━━━━━━\n📜 /전쟁기록: 최신 5건 요약 우선 표시\n📚 전체보기: 같은 메시지에서 나머지 요약 펼치기, 최근 30건까지\n🔎 /전쟁기록 기록번호: 선택한 한 건을 별도 메시지로 조회\n└ 상세 메시지의 전체보기에서 전투 세부정보 확인\n목록의 #숫자는 고유 기록번호이며 지역번호가 아닙니다.\n예: #1280 상세는 /전쟁기록 1280\n전체보기 클릭은 새 명령이나 기록 선택을 자동 실행하지 않습니다.\n등록된 자기 길드톡에서 우리 길드의 기록을 조회합니다.\n기록 보관량과 기존 정찰 공개 범위는 유지됩니다.\n\n【8. 전체 명령어】\n━━━━━━━━━━━━\n📍 조회·가입 안내\n/길드전쟁\n/전쟁지도\n/길드전쟁가이드\n/전쟁가이드\n/전쟁기록\n/전쟁기록 기록번호\n/길드목록\n/길드정보\n\n👥 편성과 역할\n/전쟁편성\n/일괄전쟁편성 정찰 자폭 공격선봉 공격중견 공격대장 방어선봉 방어중견 방어대장\n/전쟁공격편성 번호 번호 번호\n/전쟁방어편성 번호 번호 번호\n/전쟁정찰편성 번호\n/전쟁자폭편성 번호\n/전쟁정찰해제\n/전쟁자폭해제\n/전쟁편성초기화\n\n⚔️ 전투·정찰·기습\n/전쟁선포 번호\n/기습공격 번호\n/방어\n/전쟁정찰\n/정찰 길드전쟁번호\n/자폭 번호\n\n🌾 지원·창고\n/길드보급\n/전쟁공격사용 숫자\n/길드창고\n/길드기부 번호 수량\n\n🔔 전쟁톡 관리\n/전쟁톡등록\n/전쟁톡확인\n/전쟁톡해제\n\n【전환·동시 처리 안내】\n같은 길드는 준비 중을 포함해 같은 단계에 한 건만 새로 선포할 수 있습니다.\n기존 초과 점령은 유지하며 새 점령으로 초과 상태를 늘리지 않습니다.\n이미 선포한 전쟁은 진격에 필요한 거점을 잃어도 계속 진행합니다.\n승리 시 같은 단계가 이미 차 있으면 전투 결과와 개인 참여 보상만 확정합니다.\n🏰 킹덤 전투 중 하루가 바뀌면 최종 결과가 나오기 전인 킹덤 전투는 종료됩니다.\n└ 이 전투에 사용한 선포권·공격권은 원래 종류로 복구됩니다.\n└ 전환 전에 점령이 확정됐다면 해당 날짜의 점령으로 기록됩니다.\n공격 거절에는 공격권이 소모되지 않습니다.",
     "defenseItems": [
         {
             "name": "영지절대방어권🛡(80%)",
@@ -1661,7 +1662,7 @@ const GLOBAL_CONFIG = {
             { title: "펫·친밀도", emoji: "🐾", intro: "함께하는 펫을 확인하고 친밀도를 알아봐요!", learn: ["펫정보에서 펫과 친밀도를 확인해요.", "친밀도와 펫 성장의 관계를 알아봐요.", "아이템은 보유 수량과 설명을 먼저 확인해요."], commands: ["/펫정보", "/가방"], check: "친밀도와 관련 아이템을 확인할 수 있나요?", note: "/냠냠 수량의 대상 아이템과 결과는 기존 게임 안내를 따라요. 재화 사용은 필수가 아니에요." },
             { title: "펫스킬", emoji: "📙", intro: "보유한 스킬과 장착 효과를 확인해요!", learn: ["보유 스킬과 장착 스킬을 구분해요.", "스킬마다 효과가 적용되는 조건을 확인해요.", "장착·해제 시 달라지는 효과를 알아봐요."], commands: ["/펫스킬", "/펫스킬가방", "/펫스킬정보 스킬이름"], check: "내 장착 스킬의 효과를 설명할 수 있나요?", note: "교체할 스킬이 있고 원할 때만 /펫스킬장착 스킬가방번호를 안내해요. 기존 스킬을 임의 해제하지 않아요." },
             { title: "미니펫", emoji: "🐣", intro: "미니펫의 장착과 성장 방법을 알아봐요!", learn: ["주력·보조 장착과 보유 미니펫을 구분해요.", "강화 전 소모 재화와 안내를 먼저 확인해요."], commands: ["/미니펫정보", "/미니펫가방"], check: "장착 상태와 강화 전 확인 사항을 알고 있나요?", note: "선택 실습: /미니펫장착 가방번호, /미니펫보조장착 가방번호. /미니펫강화 0 횟수는 대표, 00 횟수는 보조, 양수는 가방 번호예요. 강화는 필수가 아니에요." },
-            { title: "펜던트 · 🪽 보석", emoji: "📿", intro: "펜던트 강화·복원과 보석 장착·교체를 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요.", "루비🔴 · 캐슬매력⚔️ 증가", "사파이어🔵 · 레이드 매력👾 증가", "히든 에메랄드🟢 · 캐슬·레이드 매력 동시 증가", "미장착 보석: 가방 보관·조합·개인 판매·자유시장 거래 가능", "🔗 장착하면 거래·조합할 수 없어요.", "다른 보석으로 교체하면 이 보석은 소멸해요."], commands: ["/펜던트가방", "/펜던트정보 0", "/보석가방", "/보석정보"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?\n보석 교체 시 소멸 여부", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요.\n📚 보석 자세히: /보석가이드" },
+            { title: "펜던트 · 🪽 보석", emoji: "📿", intro: "펜던트 강화·복원과 보석 장착·교체를 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요.", "루비❤️ · 캐슬매력⚔️ 증가", "사파이어🩵 · 레이드 매력👾 증가", "히든 에메랄드💚 · 캐슬·레이드 매력 동시 증가", "미장착 보석: 가방 보관·조합·개인 판매·자유시장 거래 가능", "🔗 장착하면 거래·조합할 수 없어요.", "다른 보석으로 교체하면 이 보석은 소멸해요."], commands: ["/펜던트가방", "/펜던트정보 0", "/보석가방", "/보석정보"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?\n보석 교체 시 소멸 여부", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요.\n📚 보석 자세히: /보석가이드" },
             {"title":"펫홈·가구","emoji":"🏡","intro":"내 펫홈과 가구 효과를 한눈에 확인해요!","learn":["보유 가구와 장착 가구를 구분해요.","집 면적·장착칸·가구 효과를 구분해요.","가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.","펫홈 1평당 캐슬매력 +75,000, 레이드매력 +75,000이 증가해요.","평수 매력 보너스는 /가구정보에서 확인해요.","루미에르 빌리지와 별채의 역할을 알아봐요."],"commands":["/펫홈","/가구정보"],"check":"장착 상태와 가구 효과를 어디서 확인하나요?\n펫홈 1평당 캐슬·레이드 매력이 얼마나 증가하나요?","note":"현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요."},
             { title: "대전·길드·길드전쟁", emoji: "⚔️", intro: "다른 유저와 대결하고 길드원들과 함께 성장하는 콘텐츠를 배워봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 시간·횟수·참가 조건을 구분해요.", "길드목록·가입 안내와 길드정보를 확인해요. 가입은 필수 수행 조건이 아니에요.", "24시간 길드전쟁은 8개 지역·역할별 공격권 하루5회, 정찰병도 선포 가능해요.", "신규 전쟁은 2분 뒤 15초 간격으로 3경기를 진행해요. 금광 점령5억·방어2.5억, 기타 점령3억·방어1억, 공격 실패1억이에요. 특수광산 승리 시 길드창고에 조각1개·다이아1개·미니펫 강화석5개 중 해당 광산 보상을 더 받아요.", "자폭병은 기존 역할과 겸직 가능, 자폭 하루2회·성공50%·변경하루2회예요. 성공하면 미점령, 실패해도 상대톡에 알려요. 무혈입성은 즉시 점령하고 같은 보상을 받아요.", "전쟁톡 이름을 마크 제외 길드명과 맞추고 길마·부길마가 /전쟁톡등록, /전쟁톡확인으로 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전", "/길드전쟁", "/길드전쟁가이드"], check: "대전 조건·길드 가입 방법·길드전쟁·전쟁톡 등록을 이해했나요?", note: "비진행 시간에도 설명·조회로 교육 가능. 구매·강화·가입·거래·전쟁선포는 필수가 아니에요." },
             { title: "거래·이용 수칙", emoji: "🤝", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /자유시장, /자유시장검색, /내판매상품. 실제 거래번호·다이아 가격을 확인하고 /거래확인 1 또는 2로 구매를 확인·취소해요. 실제 거래·판매·송금을 강요하지 않아요." },
@@ -3535,18 +3536,18 @@ blockedNicknameTerms: [
         noticeMaxLength: 100
     },
     adventureGem: { // 운영자 확정값과 보석의 공통 정의
-        bagLimit: 50, maxOpenCount: 100, salePoint: 20000000, levelsPerSlot: 10, charmStep: 100000, pityCount: 100, gaugeSlots: 10,
+        bagLimit: 50, maxOpenCount: 100, salePoint: 20000000, levelsPerSlot: 10, charmStep: 10000, rubyRate: 0.4, pityCreationRate: 0.002, pityCount: 100, gaugeSlots: 10,
         ticketName: "모험가 보석뽑기🪎(/보석오픈 숫자)", slotItemName: "모험가 보석슬롯추가🔓(/보석슬롯오픈 숫자)",
         accountPrefix: "adventureGemAccount_", receiptPrefix: "adventureGemReceipt_", noticeName: "adventureGemNotices.json",
         receiptLimit: 20, confirmationMs: 60000, messageLimit: 3500, slotMessageBatch: 100, noticeDelayMs: 1000, noticeRetryMs: 5000, cachePrefix: "hoiBot.adventureGem.summary.", revisionPrefix: "hoiBot.adventureGem.revision.", replyPrefix: "hoiBot.adventureGem.reply.",
         grades: [
-            { name: "하급", weight: 3000, min: 300000, max: 500000, combinePoint: 100000000 },
-            { name: "중급", weight: 2500, min: 600000, max: 900000, combinePoint: 500000000 },
-            { name: "상급", weight: 2000, min: 1000000, max: 1500000, combinePoint: 1000000000 },
-            { name: "최상급", weight: 1700, min: 1800000, max: 2800000, combinePoint: 5000000000 },
-            { name: "초월", weight: 600, min: 3500000, max: 5500000, combinePoint: 20000000000 },
-            { name: "창세", weight: 180, min: 7000000, max: 10000000, combinePoint: 50000000000 },
-            { name: "🌌창조", weight: 20, min: 14000000, max: 20000000, combinePoint: 100000000000 }
+            { name: "하급", weight: 5200, min: 300000, max: 500000, combinePoint: 100000000 },
+            { name: "중급", weight: 3000, min: 600000, max: 900000, combinePoint: 500000000 },
+            { name: "상급", weight: 1000, min: 1000000, max: 1500000, combinePoint: 1000000000 },
+            { name: "최상급", weight: 490, min: 1800000, max: 2800000, combinePoint: 5000000000 },
+            { name: "초월", weight: 200, min: 3500000, max: 5500000, combinePoint: 20000000000 },
+            { name: "창세", weight: 100, min: 7000000, max: 10000000, combinePoint: 50000000000 },
+            { name: "🌌창조", weight: 10, min: 14000000, max: 20000000, combinePoint: 100000000000 }
         ]
     },
     guildTerritory: { // 길드 영토전 설정
@@ -4067,6 +4068,7 @@ function replyChatExperienceResult(data, petData, guildData, sender, room, chatE
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     // Java 문자열도 접수 시 원시 문자열로 고정해 명령·방·권한 비교를 유지한다.
     room = String(room);
+    if (isRetiredHoiRoom(room)) return;
     msg = String(msg);
     sender = String(sender);
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
@@ -4403,7 +4405,7 @@ function buildOperatorReadFailureMessage(request, diagnostic) {
 function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packageName, request) {
     var miniGameRequestAt = request.receivedAt; // 실제 접수 시각으로 리셋·회차 경계 판정
     var miniGameRequestGameId = request.gameId;
-    if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
+    if (isRetiredHoiRoom(room) || GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     var responseDataLock = getResponseDataFlowLock(msg);
     var responseTransactionAcquired = false;
     var dataSaveTransactionEntered = false;
@@ -4462,6 +4464,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         recoverPackageGrantPending(); // 회원·이벤트 파일을 읽기 전에 접수된 지급과 실적을 함께 확정
         recoverDailyRankingPending();
         runHalloweenEntry("state", { ctx: ctx });
+        var premiumMentReplier = replier; // 등록한 원문에 공통 게임 아이템 표기 치환을 적용하지 않는다.
         replier = createContextReplier(replier, ctx);
         var responseStartMs = miniGameRequestAt; // 잠금·초기 복구를 포함한 실제 응답 진입 기준
         var responsePreprocessStartMs = Date.now();
@@ -4502,6 +4505,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             } else { delete diamondLiveCancelAliasScopes[diamondAliasScope]; delete request.diamondLiveFailureNick; }
         } else if (/^\/(?:다이아조합(?:법|선택)?|포인트(?:기준설정|다이아통계|통계(?:다이아)?)|다이아기준설정)(?:\s|$)/.test(diamondEarlyInput)) msg = diamondEarlyInput;
         var dramaSessionKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
+        var equipmentGuideInput = String(msg).trim();
+        if (/^\/(?:펜던트가이드|가구가이드|미니펫가이드)(?:\s|$)/.test(equipmentGuideInput)) msg = equipmentGuideInput;
         var dramaEarlyRequest = getHowolDramaRequest(msg);
         if (dramaEarlyRequest) msg = String(msg).replace(/^[ \t]+|[ \t]+$/g, ""); // 공통 필터·대전 제한에도 실행할 명령과 같은 문자열 전달
         if (dramaEarlyRequest) { delete manualResetSessions[dramaSessionKey]; delete dataCleanupSessions[dramaSessionKey]; }
@@ -5960,7 +5965,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var pointShopBootstrapChanged = syncStoneBoxShopItems(data); // 돌멩이 단가와 상자 가격 동기화
         var incomingServerChanged = room === room15 && isGroupChat === true && assignUnspecifiedMemberServer(data, sender, roomToServer[room]); // 신규 방은 짧은 일반 채팅에서도 미지정 소속을 결정
         if (pointShopBootstrapChanged || incomingServerChanged) saveJsonFile(data, filePath);
-        if (isPlainChatInput(msg) && !data.member[sender]) {
+        var guestMentReplies = isGroupChat === true && !data.member[sender] ? getPremiumMentReplies(data, sender, request.msg, request.callbackEvent, ctx) : null;
+        if (!data.member[sender] && (isPlainChatInput(msg) || guestMentReplies)) {
             updateResponseQueueStage(request, "미가입 채팅 인식");
             var plainLightStartedAt = Date.now();
             if (isGroupChat === true && /^[^\s]+ (남|여)$/.test(sender) && String(msg || "").trim()) {
@@ -5968,6 +5974,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (recordSearchAuthenticationChat(plainLightData, sender, room)) saveJsonFile(plainLightData, attendanceLightPath, false, plainLightSnapshot);
             }
             addResponseTiming("미가입 채팅 인식", plainLightStartedAt);
+            replyPremiumMentMessages(guestMentReplies, premiumMentReplier, ctx);
             return;
         }
         commonStepStart = Date.now();
@@ -6051,7 +6058,17 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
         addResponseTiming("guildData.json 로드", commonStepStart);
+        if (/^\/(?:멘트|멘트삭제|멘트리스트)(?:\s|$)/.test(msg)) {
+            var mentResult = processPremiumMentCommand(data, sender, msg);
+            if (mentResult.changed) {
+                saveJsonFile(data, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+            }
+            premiumMentReplier.reply(ctx.header(mentResult.message));
+            return;
+        }
         if (canUsePlainChatFastPath(data, petData, petSkillData, sender, room, msg, ctx)) {
+            var premiumMentReplies = getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat);
             updateResponseQueueStage(request, "일반 채팅 집계");
             var plainChatStartedAt = Date.now();
             var plainAutoAttackChanged = disableInvalidGuildTerritoryAutoAttacks(data).length > 0;
@@ -6071,6 +6088,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             updateResponseQueueStage(request, "일반 채팅 결과 전송");
             var plainChatReplyStartedAt = Date.now();
             replyChatExperienceResult(data, petData, guildData, sender, room, plainChatExp, replier);
+            replyPremiumMentMessages(premiumMentReplies, premiumMentReplier, ctx);
             addResponseTiming("일반 채팅 결과 전송", plainChatReplyStartedAt);
             return;
         }
@@ -7439,7 +7457,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
                 if (data.member[sender] && !petData[sender]) {
                     initializePet(sender, petData);
-                    if (!isSignupPetFlow) return;
+                    if (!isSignupPetFlow) {
+                        replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
+                        return;
+                    }
                 }
 
                 initPetSkillUser(petSkillData, sender);
@@ -8794,7 +8815,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     if (gemMarketActive >= gemMarketLimit) { replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + gemMarketActive + "/" + gemMarketLimit + "건\n요청: +1건"); return; }
                     if (!isFreeMarketConfirmed) { setFreeMarketConfirmState(sender, "register", msg, 0); replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatAdventureGem(gemMarketGem), 1, gemMarketPrice, 0, "", petSkillData)); return; }
                     gemMarketStore.gems = gemMarketStore.gems.filter(function (row) { return row.id !== gemMarketGem.id; });
-                    addFreeMarketListing(marketV2, "gem", sender, gemMarketGem.kind === "ruby" ? "루비🔴" : gemMarketGem.kind === "sapphire" ? "사파이어🔵" : "에메랄드🟢", 1, gemMarketPrice, { gems: [cloneFreeMarketObject(gemMarketGem)] }, 0, false);
+                    addFreeMarketListing(marketV2, "gem", sender, gemMarketGem.kind === "ruby" ? "루비❤️" : gemMarketGem.kind === "sapphire" ? "사파이어🩵" : "에메랄드💚", 1, gemMarketPrice, { gems: [cloneFreeMarketObject(gemMarketGem)] }, 0, false);
                     saveJsonFile(gemMarketStore, ctx.marketGemPath); saveJsonFile(marketV2, freeMarketPath);
                     clearFreeMarketConfirmState(sender);
                     replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatAdventureGem(gemMarketGem) + "] 1개가\n💎" + numberWithCommas(gemMarketPrice) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender, petSkillData)); return;
@@ -9235,23 +9256,25 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
+                var legacyMentReplies = getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat);
                 if (msg.length > 3) {
                     updateResponseQueueStage(request, "채팅 집계");
                     var legacyChatStartedAt = Date.now();
                     data.member[sender].point++;
                     data.member[sender].chatcnt0++;
                     var chatExpResult = hasAttendedToday(data, sender) ? awardDailyChatExperience(data, sender) : null; // 출석 후 남은 일일 한도 안에서 실제 지급한 채팅 경험치
-                    if (chatExpResult && chatExpResult.total > 0) saveJsonFile(data, filePath);
+                    if (!legacyMentReplies && chatExpResult && chatExpResult.total > 0) saveJsonFile(data, filePath);
                     //서버데이터 넣기
                     if (!data.member[sender].server) {
                         if (roomToServer[room]) {
                             data.member[sender].server = roomToServer[room];
                         }
                     }
+                    if (legacyMentReplies) saveJsonFile(data, filePath);
                     replyChatExperienceResult(data, petData, guildData, sender, room, chatExpResult, replier);
                     addResponseTiming("채팅 집계", legacyChatStartedAt);
                 }
-
+                if (replyPremiumMentMessages(legacyMentReplies, premiumMentReplier, ctx)) return;
 
                 updateResponseQueueStage(request, "명령 실행");
                 if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg) && !isOrderLogRoomBot(sender)) {
@@ -9438,11 +9461,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     Api.replyRoom(room5, message);
                     Api.replyRoom(room6, message);
                     Api.replyRoom(room7, message);
-                    Api.replyRoom(room10, message);
                     // Api.replyRoom(room9, message);
                     Api.replyRoom(room11, message);
                     Api.replyRoom(room12, message);
-                    Api.replyRoom(room13, message);
                 }
                 const authorizedUsers5 = [
                     "해치 여",
@@ -9522,11 +9543,9 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         Api.replyRoom(room5, message);
                         Api.replyRoom(room7, message);
                         Api.replyRoom(room6, message);
-                        Api.replyRoom(room10, message);
                         //    Api.replyRoom(room9, message);
                         Api.replyRoom(room11, message);
                         Api.replyRoom(room12, message);
-                        Api.replyRoom(room13, message);
                     }
                     data.auction = data.auction.filter((item) => item.originalIndex !== biditemNumber);
                 }
@@ -17797,7 +17816,7 @@ replier.reply(
                         packageWriting.receipts.push({ id: request.packageWriteRequestId, message: packageFlowResult.message });
                         if (packageWriting.receipts.length > GLOBAL_CONFIG.adventureGem.receiptLimit) packageWriting.receipts.shift();
                     }
-                    replier.reply(packageFlowResult.message);
+                    replyPackageContent(replier, packageFlowResult.message);
                     return;
                 }
 
@@ -20831,11 +20850,9 @@ replier.reply(
                         Api.replyRoom(room5, message);
                         Api.replyRoom(room6, message);
                         Api.replyRoom(room7, message);
-                        Api.replyRoom(room10, message);
                         // Api.replyRoom(room9, message);
                         Api.replyRoom(room11, message);
                         Api.replyRoom(room12, message);
-                        Api.replyRoom(room13, message);
                         if (remainingTime <= 60000) {
                             auctionItem.endTime += 60000;
                             var message =
@@ -20851,11 +20868,9 @@ replier.reply(
                             Api.replyRoom(room5, message);
                             Api.replyRoom(room6, message);
                             Api.replyRoom(room7, message);
-                            Api.replyRoom(room10, message);
                             //   Api.replyRoom(room9, message);
                             Api.replyRoom(room11, message);
                             Api.replyRoom(room12, message);
-                            Api.replyRoom(room13, message);
                         }
                     }
                 }
@@ -21597,7 +21612,11 @@ replier.reply(
                     }
                     return;
                 }
-                if (msg === "/펜던트가이드") { replier.reply(buildPendantGuideMessage()); return; }
+                if (msg === "/미니펫가이드") {
+                    replier.reply("🐹 미니펫 가이드\n━━━━━━━━━━━━━\n※ 미니펫 정보: /미니펫정보\n※ 대표장착: /미니펫장착 [미니펫가방번호]\n※ 보조장착: /미니펫보조장착 [미니펫가방번호]\n※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]\n※ 등급 정리: /미니펫등급정리 [등급이름]\n※ 매력 정리: /미니펫가방정리 [매력]\n└ 창조·창세·엘리트 등급 제외");
+                    return;
+                }
+                if (/^\/(?:펜던트가이드|가구가이드)(?:\s|$)/.test(msg)) { replier.reply(buildEquipmentGuideMessage(msg)); return; }
                 if (msg === "/펜던트강화" || /^\/펜던트강화\s+.+$/.test(msg)) {
                     if (!/^\/펜던트강화[ \t]+\d+(?:[ \t]+[1-9]\d*)?$/.test(msg) || /[\r\n]/.test(msg)) {
                         replier.reply("/펜던트강화 [펜던트가방번호] [횟수]");
@@ -26690,11 +26709,6 @@ replier.reply(
                         return;
                     }
 
-                    if (guildCubeGuild.master !== sender) {
-                        replier.reply(guildCubeActorHeader + "길드장만 사용할 수 있습니다.");
-                        return;
-                    }
-
                     if (msg === "/길드큐브") {
                         replier.reply(guildCubeActorHeader + "사용법: /길드큐브 [길드옵션번호] [시도횟수]");
                         return;
@@ -30649,6 +30663,9 @@ replier.reply(
                 commonStepStart = Date.now();
                 saveJsonFile(data, filePath);
                 addResponseTiming("회원·분리 데이터 저장", commonStepStart);
+            } else {
+                // 기존 채팅 집계 대상이 아닌 가입자도 단체방에서 멘트를 호출할 수 있다.
+                replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
             }
         }
     } catch (error) {
@@ -34067,7 +34084,7 @@ function resetServerRaid(data, generation) {
 
 // 등록된 일반 운영방과 기존 운영방의 공지 대상을 반환하는 함수
 function getNoticeTargetRooms(ctx) {
-    return ctx.isDev ? [isDebuggerFlag ? testRoom : room8] : [room1, room2, room3, room5, room6, room7, room8, room10, room11, room12, room13, room15, room90];
+    return ctx.isDev ? [isDebuggerFlag ? testRoom : room8] : [room1, room2, room3, room5, room6, room7, room8, room11, room12, room15, room90];
 }
 
 // 공지방과 입력방을 중복 제외한 발송 대기 상태를 추가하는 함수
@@ -34814,7 +34831,7 @@ function pickServerRaidNotice(state, blockedRooms) {
         if (notice.generation !== state.generation) continue;
         for (var j = 0; j < notice.deliveries.length; j++) {
             var delivery = notice.deliveries[j];
-            if (!delivery.sent && !delivery.cancelled && blockedRooms.indexOf(delivery.room) === -1) return { generation: state.generation, id: notice.id, room: delivery.room, text: notice.text };
+            if (!delivery.sent && !delivery.cancelled && !isRetiredHoiRoom(delivery.room) && blockedRooms.indexOf(delivery.room) === -1) return { generation: state.generation, id: notice.id, room: delivery.room, text: notice.text };
         }
     }
     return null;
@@ -40202,7 +40219,7 @@ function resetAttendance(petData, data, replier) {
     }
     data.attend_list = []; // 오늘 출석 목록 초기화
     replier.reply("출첵시작! 리셋 완료");
-    const rooms = [room1, room2, room3, testRoom, room5, room6, room7, room10, room11, room12, room15];
+    const rooms = [room1, room2, room3, testRoom, room5, room6, room7, room11, room12, room15];
     const checkinMessage = "출석체크가 시작 되었습니다!\nㅊㅊ 가즈아!!";
     rooms.forEach((room) => Api.replyRoom(room, checkinMessage));
 }
@@ -42001,11 +42018,9 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-                Api.replyRoom(room10, message);
                 //     Api.replyRoom(room9, message);
                 Api.replyRoom(room11, message);
                 Api.replyRoom(room12, message);
-                Api.replyRoom(room13, message);
             } else if (auctionedItem.startsWith("[펫타이틀]")) {
                 var petTitleData = loadJsonFile(petTitlePath);
                 let petTitleName = auctionedItem.substring("[펫타이틀]".length);
@@ -42041,11 +42056,9 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-                Api.replyRoom(room10, message);
                 //    Api.replyRoom(room9, message);
                 Api.replyRoom(room11, message);
                 Api.replyRoom(room12, message);
-                Api.replyRoom(room13, message);
                 saveJsonFile(petTitleData, petTitlePath);
                 return;
             } else if (auctionedItem.startsWith("[미니펫]")) {
@@ -42083,11 +42096,9 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-                Api.replyRoom(room10, message);
                 //   Api.replyRoom(room9, message);
                 Api.replyRoom(room11, message);
                 Api.replyRoom(room12, message);
-                Api.replyRoom(room13, message);
                 saveJsonFile(petData, memberPetPath); // 미니펫 저장
                 return;
             } else if (auctionedItem.startsWith("[펫외형]")) {
@@ -42104,11 +42115,9 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-                Api.replyRoom(room10, message);
                 //  Api.replyRoom(room9, message);
                 Api.replyRoom(room11, message);
                 Api.replyRoom(room12, message);
-                Api.replyRoom(room13, message);
             } else if (auctionedItem.startsWith("[펫성격]")) {
                 let petTitleWithoutPrefix = auctionedItem.substring("[펫성격]".length);
                 if (!petData[highestBidder] || !petData[highestBidder].petname) {
@@ -42275,11 +42284,9 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
             Api.replyRoom(room5, message);
             Api.replyRoom(room6, message);
             Api.replyRoom(room7, message);
-            Api.replyRoom(room10, message);
             //  Api.replyRoom(room9, message);
             Api.replyRoom(room11, message);
             Api.replyRoom(room12, message);
-            Api.replyRoom(room13, message);
         }
     } else {
         replier.reply("경매 아이템이 유효하지 않습니다.");
@@ -42460,7 +42467,7 @@ function noticeMsg(msg, targetRooms) {
     var ctx = getCurrentContext();
     var rooms = targetRooms || getNoticeTargetRooms(ctx);
     var successful = true;
-    for (var i = 0; i < rooms.length; i++) if (Api.replyRoom(rooms[i], ctx.isDev ? ctx.header(msg) : msg) === false) successful = false;
+    for (var i = 0; i < rooms.length; i++) if (!isRetiredHoiRoom(rooms[i]) && Api.replyRoom(rooms[i], ctx.isDev ? ctx.header(msg) : msg) === false) successful = false;
     return successful;
 }
 
@@ -42473,7 +42480,7 @@ function noticeMsgExceptRoom(msg, originRoom) {
         if (devRoom !== originRoom) Api.replyRoom(devRoom, ctx.header(msg));
         return;
     }
-    var rooms = [room1, room2, room3, room5, room6, room7, room8, room10, room11, room12, room13, room15, room90];
+    var rooms = [room1, room2, room3, room5, room6, room7, room8, room11, room12, room15, room90];
     for (var i = 0; i < rooms.length; i++) {
         if (rooms[i] !== originRoom) Api.replyRoom(rooms[i], msg);
     }
@@ -44605,6 +44612,7 @@ function expireHoiPassPremium(data, petSkillData, activityData, user, reason, op
     pass.enabled = false;
     pass.expiredAt = formatDateTime(new Date());
     pass.expireReason = reason || "기간 만료";
+    delete member.premiumMent;
     var lockedSkillCount = 0; // 한도가 줄어도 기존 장착과 효과를 보존하고 추가 장착만 제한
     var removedTicketCount = 0;
     if (!hasActiveHoiOrNewbiePass(data, user)) removedTicketCount = removeAllAutoExploreTickets(data, user);
@@ -44896,6 +44904,7 @@ function cleanupExpiredSupportPasses(data) {
             pass.enabled = false;
             result.changed = true;
             result.expiredCount++;
+            if (config.key === "premium") delete member.premiumMent;
             if (config.key === "newbie" || config.key === "hoi") autoPassExpired = true;
             debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
         }
@@ -45861,6 +45870,7 @@ function applyPassDurationExtension(data, skills, activity, user, request, today
 function addHoiPassPremium(data, petSkillData, activityData, user, endDate, operator, avoidDuplicateTicket) {
     var passStore = ensureSupportPassStore(data, user);
     var previous = passStore.premium || {};
+    if (!isHoiPassPremiumActive(data, user)) delete data.member[user].premiumMent;
     var shouldGrantAutoExploreTicket = !isSupportPassActive(data, user, "hoi") && (!avoidDuplicateTicket || getAutoExploreTicketCount(data, user) < 1); // 기본 호이패스가 없을 때 프리미엄용 자동탐험권 지급
     passStore.premium = {
         enabled: true,
@@ -48233,7 +48243,9 @@ function startPackageAddFlow(sender, accountId, receivedAt) {
 function appendPackageAddCancelGuide(sender, message) {
     var state = userState[sender] && userState[sender].packageAdd, ctx = getCurrentContext(), guide = GLOBAL_CONFIG.package.cancelGuide;
     if (!state || state.room !== ctx.permissionRoom || state.rootPath !== ctx.rootPath) return message;
-    var body = String(message), back = '돌아가려면 "이전"';
+    var body = String(message);
+    if (body.indexOf("이전 / 취소") !== -1 || state.step === "CONFIRM" || body.indexOf("추가할 보상을 선택해주세요.") !== -1) return body;
+    var back = '돌아가려면 "이전"';
     if (state.step !== "NAME" && state.step !== "DESC" && state.step !== "REWARD_CHOICE" && state.step !== "CONFIRM" && body.indexOf(back) === -1 && body.indexOf("📦 작성 중인 패키지가 있어요.") !== 0) body += "\n\n" + back;
     return body.indexOf(guide) === -1 ? body + (body.slice(-back.length) === back ? "\n" : "\n\n") + guide : body;
 }
@@ -48267,14 +48279,14 @@ function normalizePackageRewardChoice(input) {
     var text = String(input || "").trim(); // 보상 선택 원문
     if (text === "1" || text === "포인트") return "POINT";
     if (text === "2" || text === "아이템" || text === "가방아이템") return "ITEM";
-    if (text === "3" || text === "완료") return "DONE";
-    if (text === "4" || text === "취소") return "CANCEL";
-    if (text === "5" || text === "미니펫") return "MINI";
-    if (text === "6" || text === "가구") return "FURNITURE";
-    if (text === "7" || text === "펜던트") return "PENDANT";
+    if (text === "9" || text === "등록" || text === "완료") return "DONE";
+    if (text === "10" || text === "취소") return "CANCEL";
+    if (text === "3" || text === "미니펫") return "MINI";
+    if (text === "4" || text === "가구") return "FURNITURE";
+    if (text === "5" || text === "펜던트") return "PENDANT";
     if (text === "8" || text === "일괄 등록") return "BULK";
-    if (text === "9" || text === "펫스킬북") return "SKILL";
-    if (text === "10" || text === "보석") return "GEM";
+    if (text === "6" || text === "펫스킬북") return "SKILL";
+    if (text === "7" || text === "보석") return "GEM";
     return "";
 }
 
@@ -48298,27 +48310,15 @@ function formatPackageRewardLines(rewards) {
 
 // 패키지 보상 선택 안내 메시지 생성 함수
 function buildPackageRewardChoiceMessage(state) {
-    var lines = [];
-    lines.push("3단계: 무엇을 추가할까요?");
-    lines.push("");
-    lines.push("1. 포인트");
-    lines.push("2. 가방아이템");
-    lines.push("3. 완료");
-    lines.push("4. 취소");
-    lines.push("5. 미니펫");
-    lines.push("6. 가구");
-    lines.push("7. 펜던트");
-    lines.push("8. 일괄 등록");
-    lines.push("9. 펫스킬북");
-    lines.push("10. 보석");
-    lines.push("");
-    lines.push("숫자 또는 이름으로 입력해주세요.");
-    return lines.join("\n");
+    return "📦 " + state.name + "\n추가할 보상을 선택해주세요.\n\n1. 포인트\n2. 가방아이템\n3. 미니펫\n4. 가구\n5. 펜던트\n6. 펫스킬북\n7. 보석\n8. 일괄 등록\n\n9. 등록\n10. 취소\n\n숫자 또는 이름으로 입력해주세요.\n다 담았다면 9 또는 \"등록\"";
 }
 
 // 패키지 추가 미리보기 메시지 생성 함수
 function buildPackageAddPreviewMessage(state) {
-    return "📦 패키지 추가 미리보기\n\n패키지: " + state.name + "\n설명: " + state.desc + "\n구성: " + formatPackageRewardSummary(state.rewards) + "\n\n등록 / 수정 / 더 넣기 / 취소";
+    var rows = state.rewards.map(function (reward, index) {
+        return (index + 1) + ". " + (reward.type === "point" ? "포인트 🅟" + numberWithCommas(reward.count) : formatPackageActualReward(reward) + " ×" + numberWithCommas(reward.count));
+    });
+    return "📦 패키지 등록 미리보기\n\n패키지: " + state.name + "\n설명: " + state.desc + "\n✅ 보상 " + rows.length + "개 항목을 준비했어요.\n\n등록 / 수정 / 더 넣기 / 취소\n저장하려면 \"등록\"을 입력해주세요.\n━━━━━━━━━━━━━\n구성 · 패키지 1개 기준\n" + rows.join("\n");
 }
 
 // 패키지 추가 상태를 실제 packageInfo 항목으로 변환하는 함수
@@ -49128,6 +49128,9 @@ function buildUserPackageBagMessage(data, petData, petSkillData, guildData, send
     lines.push("━━━━━━━━━━━");
     lines.push("⚙️ 자동기능 설정");
     lines.push("━━━━━━━━━━━");
+    lines.push("[✅] ON　[❌] OFF　[🔒] 이용 불가");
+    lines.push("※ 패스가 만료되면 연결된 자동기능도 중지됩니다.");
+    lines.push("");
     lines.push("⚔️ 길드영지 자동공격: " + territoryStatus);
     lines.push("└ 내 공격 차례에 영지 1~7번 중 자동 공격");
     lines.push("└ 같은 길드 영지를 공격할 수도 있으니 확인이 필요합니다.");
@@ -49144,9 +49147,149 @@ function buildUserPackageBagMessage(data, petData, petSkillData, guildData, send
     lines.push("└ 설정: /출첵온 · /출첵오프");
     lines.push("└ 필요: 호이패스 프리미엄👑");
     lines.push("");
-    lines.push("[✅] ON　[❌] OFF　[🔒] 이용 불가");
-    lines.push("※ 패스가 만료되면 연결된 자동기능도 중지됩니다.");
+    lines.push(buildPremiumMentStatus(data, sender, true));
     return lines.join("\n");
+}
+
+// 같은 수신 이벤트를 다시 전달받았을 때만 멘트 중복을 차단한다.
+var premiumMentEventIds = [];
+
+// 패스가 유효한 계정의 멘트만 조회하는 함수
+function getActivePremiumMent(data, user) {
+    var member = data.member && data.member[user];
+    return member && typeof member.premiumMent === "string" && member.premiumMent && isHoiPassPremiumActive(data, user) ? member.premiumMent : "";
+}
+
+// 등록 내용의 화면 표시 문자 수를 제한까지 확인하는 함수
+function countPremiumMentCharacters(text, limit) {
+    var iterator = android.os.Build.VERSION.SDK_INT >= 24 ?
+        android.icu.text.BreakIterator.getCharacterInstance() : java.text.BreakIterator.getCharacterInstance();
+    iterator.setText(text);
+    var count = 0;
+    while (iterator.next() !== -1 && count <= limit) count++;
+    return count;
+}
+
+// 가방과 본인 조회에 쓰는 멘트 상태와 설정 안내를 만드는 함수
+function buildPremiumMentStatus(data, user, bag) {
+    var active = isHoiPassPremiumActive(data, user), ment = getActivePremiumMent(data, user);
+    var text = "💬 나만의 멘트: " + (ment ? "ON [✅]" : active ? "OFF [❌]" : "이용 불가 [🔒]");
+    text += "\n└ 호출 이름: " + normalizePendingUserIdBaseName(user);
+    if (!bag && !ment) return text + "\n└ 등록: /멘트 [내용]\n└ 최대 200자·3줄\n└ 프리미엄 만료 시 자동 삭제";
+    text += "\n└ 등록·수정: /멘트 [내용]";
+    if (!bag) text += "\n└ 삭제: /멘트삭제";
+    if (!active) text += "\n└ 필요: 호이패스 프리미엄👑";
+    text += "\n└ 프리미엄 만료 시 사용 중지·자동 삭제";
+    return text + (ment ? "\n└ 내 멘트: " + ment : "");
+}
+
+// 단체방에서 기존 작성 세션을 우선하고 일반 멘트를 조회하는 함수
+function getGroupPremiumMentReplies(data, room, sender, msg, event, ctx, isGroupChat) {
+    var writing = userState[sender];
+    if (isGroupChat !== true || writing && Object.keys(writing).length || worldNewsDraftState[getWorldNewsDraftKey(sender, room)]) return null;
+    return getPremiumMentReplies(data, sender, msg, event, ctx);
+}
+
+// 조회된 멘트 전송과 이미 처리한 호출의 종료 여부를 반환하는 함수
+function replyPremiumMentMessages(messages, replier, ctx) {
+    if (!messages) return false;
+    for (var i = 0; i < messages.length; i++) replier.reply(ctx.header(messages[i]));
+    return true;
+}
+
+// 서버와 관계없이 호출 이름과 일치하는 활성 멘트를 찾는 함수
+function getPremiumMentReplies(data, sender, message, event, ctx) {
+    var name = String(message); // 원문 전체가 호출 이름과 같을 때만 응답
+    if (!name || name.charAt(0) === "/" || /[\r\n]/.test(name) || sender === "오픈채팅봇" ||
+        ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(name) !== -1 || GLOBAL_CONFIG.commandQueue.plainInputExceptions.indexOf(name) !== -1) return null;
+    var users = [], rows = [];
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user) || !data.member[user] ||
+            normalizePendingUserIdBaseName(user) !== name) continue;
+        var ment = getActivePremiumMent(data, user);
+        if (ment) { users.push(user); rows.push(ment); }
+    }
+    if (!rows.length) return null;
+    var id = getServerRaidEventId(event);
+    if (id) {
+        var key = ctx.key() + ":" + id;
+        if (premiumMentEventIds.indexOf(key) !== -1) return [];
+        premiumMentEventIds.push(key);
+        if (premiumMentEventIds.length > GLOBAL_CONFIG.adventureGem.receiptLimit) premiumMentEventIds.shift();
+    }
+    if (rows.length === 1) return ["[👑호프]\n" + rows[0]];
+    var messages = [], text = "[👑호프]";
+    for (var i = 0; i < rows.length; i++) {
+        var block = users[i] + "\n" + rows[i];
+        if (text.length + block.length + 2 > GLOBAL_CONFIG.adventureGem.messageLimit) { messages.push(text); text = "[👑호프]"; }
+        text += (text === "[👑호프]" ? "\n" : "\n\n") + block;
+    }
+    messages.push(text);
+    return messages;
+}
+
+// 멘트 명령의 권한과 입력을 확인하고 본인 데이터만 변경하는 함수
+function processPremiumMentCommand(data, user, message) {
+    var none = "등록된 멘트가 없습니다.";
+    if (message === "/멘트리스트") {
+        if (!(isAdmin(user) || isMaster(user))) return { message: "⛔ 관리자 전용 명령어입니다." };
+        var rows = [];
+        for (var owner in data.member) {
+            if (!Object.prototype.hasOwnProperty.call(data.member, owner)) continue;
+            var content = getActivePremiumMent(data, owner);
+            if (!content) continue;
+            var pass = data.member[owner].pass && data.member[owner].pass.premium;
+            rows.push((rows.length + 1) + ". " + owner + "\n└ 호출 이름: " + normalizePendingUserIdBaseName(owner) + "\n└ 멘트: " + content + "\n└ 프리미엄 종료일: " + (pass ? formatHoiPassPremiumBagExpiry(data, owner) : "정보 확인 불가"));
+        }
+        return { message: rows.length ? "💬 유저 멘트 전체 목록\n━━━━━━━━━━━\n등록 유저: " + rows.length + "명\n\n" + allsee + rows.join("\n\n") + "\n━━━━━━━━━━━" : none };
+    }
+    if (/^\/멘트삭제\s/.test(message)) return { message: "사용법: /멘트삭제" };
+    if (/^\/멘트리스트\s/.test(message)) return { message: "사용법: /멘트리스트" };
+    var member = data.member && data.member[user], current = getActivePremiumMent(data, user);
+    if (message === "/멘트삭제") {
+        if (!member || !member.premiumMent) return { message: none };
+        delete member.premiumMent;
+        return { changed: true, message: "✅ 나만의 멘트를 삭제했어요.\n다시 등록: /멘트 [내용]" };
+    }
+    if (!member || !isHoiPassPremiumActive(data, user)) return { message: "🔒 호이패스 프리미엄 전용 기능입니다.\n\n프리미엄 이용 중에 나만의 멘트를 등록할 수 있어요.\n이용 현황: /패키지가방" };
+    var value = message.slice("/멘트".length).replace(/\r\n?/g, "\n").trim();
+    if (!value) return { message: buildPremiumMentStatus(data, user, false) };
+    if (value.split("\n").length > 3 || countPremiumMentCharacters(value, 200) > 200)
+        return { message: "멘트는 최대 200자·3줄까지 등록할 수 있어요.\n공백과 줄바꿈도 글자 수에 포함됩니다." + (current ? "\n기존 멘트는 변경되지 않았어요." : "") };
+    member.premiumMent = value;
+    var name = normalizePendingUserIdBaseName(user);
+    return { changed: true, message: "✅ 나만의 멘트를 " + (current ? "변경" : "등록") + "했어요!\n\n📣 호출 이름: " + name + "\n💬 멘트: " + value + "\n\n채팅에 \"" + name + "\"를 입력하면 멘트가 나와요.\n확인: /멘트 · 삭제: /멘트삭제\n※ 호이패스 프리미엄 만료 시 자동 삭제됩니다." };
+}
+
+// PROD 시작과 KST 자정마다 만료된 멘트만 정리하는 함수
+function schedulePremiumMentCleanup(delay) {
+    setTimeout(function () {
+        var ctx = createCommandContext(false), previous = enterCommandContext(ctx), nextDelay;
+        dataTransactionLock.lock();
+        try {
+            beginDataSaveTransaction();
+            var data = loadJsonFile(filePath), changed = false;
+            for (var user in data.member) {
+                if (Object.prototype.hasOwnProperty.call(data.member, user) && data.member[user] &&
+                    data.member[user].premiumMent && !isHoiPassPremiumActive(data, user)) {
+                    delete data.member[user].premiumMent;
+                    changed = true;
+                }
+            }
+            if (changed) saveJsonFile(data, filePath);
+            var dayMs = 86400000, kstOffsetMs = 9 * 3600000;
+            nextDelay = dayMs - (Date.now() + kstOffsetMs) % dayMs + 1000;
+        } catch (error) {
+            rollbackDataSaveTransaction();
+            debuggerLog("[프리미엄 멘트 만료 정리 오류] " + error);
+            nextDelay = GLOBAL_CONFIG.guildWar.retryMs;
+        } finally {
+            endDataSaveTransaction();
+            dataTransactionLock.unlock();
+            exitCommandContext(previous);
+            schedulePremiumMentCleanup(nextDelay);
+        }
+    }, delay);
 }
 
 // 공백 포함 이름과 마지막 두 양의 정수 인자만 지급 명령으로 허용하는 함수
@@ -52527,7 +52670,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
         var log = logs[i];
         var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + (Number(log.feeRate) === GLOBAL_CONFIG.freeMarket.memberTradeFeeRate ? GLOBAL_CONFIG.freeMarket.memberFeeTag : "자회원🏪(수수료 " + formatTransferFeeRate(Number(log.feeRate) * 100) + "%)") : "";
         var completedTimeText = formatFreeMarketDisplayTime(log.completedAt, log.completedAtMs);
-        out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개" + "]\n└[" + (log.currency === "DIAMOND" ? "💎" + numberWithCommas(log.price || 0) : "기존 포인트 🅟" + numberWithCommas(log.price || 0)) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
+        var itemName = log.type === "gem" ? formatFreeMarketCompletedGemName(log.itemName) : log.itemName;
+        out += (i + 1) + ". [" + itemName + "x" + numberWithCommas(log.quantity || 0) + "개" + "]\n└[" + (log.currency === "DIAMOND" ? "💎" + numberWithCommas(log.price || 0) : "기존 포인트 🅟" + numberWithCommas(log.price || 0)) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
         if (completedTimeText) out += "\n  └(" + completedTimeText + ")";
         out += "\n\n";
     }
@@ -56790,7 +56934,7 @@ function buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData
 function buildPetHomeFurnitureBagMessage(data, petData, petSkillData, guildData, homeData, user) {
     var home = homeData[user], bag = home.furnitureBag;
     var out = getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 가구 가방🛌 [" + bag.length + "/" + getFurnitureBagLimit(data, user) + "]\n";
-    out += "📥 /별채등록 [가구가방번호] …\n미장착 그랑·로열·아르카나 가구 최대 10개\n━━━━━━ ✦ ━━━━━━\n※ 가구 장착: /가구장착 [번호]\n※ 1번 장착 예시: /가구장착 1\n※ 적용 매력 확인: /가구정보\n※ 가구 판매: /가구판매 [번호]\n※ 장착 가구판매: /집청소 [번호]\n※ 장착 귀속해제: /가구해제 [번호]\n━━━━━━ ✦ ━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
+    out += "📥 /별채등록 [가구가방번호] …\n미장착 그랑·로열·아르카나 가구 최대 10개\n━━━━━━ ✦ ━━━━━━\n🏠 가구 가이드: /가구가이드\n━━━━━━ ✦ ━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
     if (bag.length === 0) out += "[가방에 보유 중인 가구 없음]\n";
     for (var i = 0; i < bag.length; i++) {
         if (i === 3) out += allsee + "\n";
@@ -61817,12 +61961,6 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     var out = "[" + checkRank(data, petData, guildData, user) + "] 보유 펜던트가방💎[" + bag.length + "/" + getPendantBagLimit() + "]\n";
     out += "━━━━━━━━━━━━━\n";
     out += "💎 펜던트 가이드: /펜던트가이드\n";
-    out += "※ 펜던트 장착: /펜던트장착 [펜던트가방번호]\n";
-    out += "※ 펜던트 판매: /펜던트판매 [번호]\n";
-    out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
-    out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] [횟수]\n※ 횟수 생략 시 1회 · 장착 펜던트는 0\n※ 펜던트 복원: /펜던트복원 [번호] (장착 펜던트는 0)\n";
-    out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
-    out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n※ [⚒️현재/최대 내구도](+강화수치) · 최대 +40강\n";
     out += "━━━━━━━━━━━━━\n";
     if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
     for (var i = 0; i < bag.length; i++) {
@@ -62263,14 +62401,48 @@ function formatPendantGuideAmount(value) {
 }
 
 // 노션 원문 사이의 40단계 표만 실제 강화 데이터로 생성하는 함수
-function buildPendantGuideMessage() {
+function buildPendantUpgradeGuidePage() {
     var config = GLOBAL_CONFIG.pendant.upgrade, table = [], cumulative = 0;
     for (var i = 1; i <= config.maxLevel; i++) {
         var row = PENDANT_UPGRADE_TABLE[i]; cumulative += row.charm;
         table.push("+" + i + " | " + row.rate + "% | " + formatPendantGuideAmount(row.point) + " | 📿" + row.stone + "개\n└ 매력 +" + formatPendantGuideAmount(row.charm) + " · 누적 " + formatPendantGuideAmount(cumulative) + " · 탐험 +" + row.explore.toFixed(1) + "%p");
     }
-    return config.guideIntro + "\n" + allsee + "\n" + config.guideBeforeTable + table.join("\n\n") + "\n\n" + config.guideAfterTable;
+    return "📊 강화 확률·비용·전체 수치\n━━━━━━━━━━━━━\n목표 강화 단계 기준 · 포인트는 1회 시도 비용입니다.\n\n+1~+6: 100% · 10억\n+7~+10: 33% · 30억\n+11~+14: 10% · 100억\n+15~+20: 5% · 150억\n+21~+23: 3% · 200억\n+24~+40: 2% · 300억\n\n강화석은 목표 단계만큼 필요해요.\n예: +25 → +26 도전은 300억 + 강화석 26개\n\n📈 1~40강 상세 수치" + "\n" + allsee + "\n━━━━━━━━━━━━━\n표시: 목표 단계 | 성공확률 | 1회 포인트 | 강화석\n매력은 성공 시 추가되는 수치이며, 누적은 강화로 얻는 총합입니다.\n기본 매력과 승급 매력은 아래 누적 수치에 포함하지 않습니다.\n탐험은 강화로 추가되는 누적 성공확률이며 %p 단위입니다.\n\n" + table.join("\n\n") + "\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드";
 }
+
+// 목차 또는 가이드의 유효한 번호 하나를 조회하는 함수
+function buildEquipmentGuideMessage(msg) {
+    var pendant = msg.indexOf("/펜던트가이드") === 0;
+    var command = pendant ? "/펜던트가이드" : "/가구가이드", max = pendant ? 9 : 8;
+    var match = /^[ \t]+([1-9])$/.exec(msg.slice(command.length));
+    var page = msg === command ? 0 : match ? Number(match[1]) : -1;
+    if (page < 0 || page > max) return "번호를 확인해주세요.\n사용법: " + command + " [1~" + max + "]\n예: " + command + " 3\n목차: " + command;
+    if (pendant && page === 4) return buildPendantUpgradeGuidePage();
+    var pages = pendant ? [
+        "💎 펜던트 가이드\n━━━━━━━━━━━━━\n1. 펜던트 기본·명령어\n2. 장착·교체·귀속해제\n3. 단일·연속 강화\n4. 강화 확률·비용·전체 수치\n5. 내구도·복원\n6. 창조 펜던트 승급\n7. 펜던트 조합\n8. 판매·가방정리·자유시장\n9. 관련 아이템·획득\n━━━━━━━━━━━━━\n※ 조회: /펜던트가이드 [번호]\n예: /펜던트가이드 3",
+        "💎 펜던트 기본·명령어\n━━━━━━━━━━━━━\n장착하면 종합매력과 펫탐험 성공확률이 올라가요.\n종합매력은 캐슬⚔️ 50% + 레이드👾 50%로 반영돼요.\n기본 등급은 13개이며 강화는 최대 +40강입니다.\n\n뽑기: /펜던트오픈 [수량]\n가방: /펜던트가방\n정보: /펜던트정보 [번호]\n장착: /펜던트장착 [가방번호]\n\n정보·강화·복원·승급에서 0은 장착 펜던트입니다.\n[창조★2]는 승급, [⚒️5/5]는 내구도, (+2)는 강화예요.\n승급과 강화는 서로 다른 성장입니다.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        "💎 장착·교체·귀속해제\n━━━━━━━━━━━━━\n장착: /펜던트장착 [가방번호]\n해제: /펜던트해제\n\n이미 장착 중이라면 교체 확인 화면을 먼저 확인해주세요.\n장착할래 → 기존 펜던트 소멸 후 새 펜던트 장착\n생각해볼게 → 교체 취소\n\n기존 펜던트를 보존하려면 먼저 /펜던트해제!\n펜던트 귀속해제💎를 사용해 가방으로 돌려보냅니다.\n귀속해제 없이 교체하면 기존 펜던트는 소멸해요.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        "🔨 단일·연속 강화\n━━━━━━━━━━━━━\n/펜던트강화 [번호] [횟수]\n횟수 생략 시 1회 · 0번은 장착 펜던트\n\n/펜던트강화 1 → 가방 1번을 1회 시도\n/펜던트강화 0 10 → 장착 펜던트를 최대 10회 시도\n\n횟수는 성공 횟수가 아닌 시도 횟수예요.\n비용 확인 후 진행시켜 / 쫄았음 중 선택해주세요.\n\n성공: 강화 +1\n실패: 내구도 -1, 강화 단계 유지\n내구도 0: 강화 중단, 펜던트는 파괴되지 않아요.\n\n실제 시도한 만큼 포인트와 강화석이 소모됩니다.\n재료 부족·내구도 0·+40 도달 시 연속 강화가 중단돼요.\n복원석은 자동으로 사용하지 않습니다.\n확률·비용·상승량: /펜던트가이드 4\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        null,
+        "🔷 내구도·복원\n━━━━━━━━━━━━━\n/펜던트복원 [번호]\n0: 장착 펜던트 / 나머지: 가방번호\n\n펜던트 복원석🔷으로 내구도를 최대치까지 회복해요.\n내구도가 남아 있어도 복원할 수 있습니다.\n내구도 0이어도 펜던트가 파괴되는 것은 아니에요.\n\n예: [⚒️1/5](+2) → [⚒️5/5](+2)\n복원해도 강화 단계는 유지됩니다.\n복원 후 강화 명령을 다시 입력해주세요.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        "⭐ 창조 펜던트 승급\n━━━━━━━━━━━━━\n/펜던트승급 [번호]\n0: 장착 펜던트 / 나머지: 가방번호\n\n창조 → ★1 → ★2 → ★3 → 계속 승급 가능\n성공률 100% · 승급당 종합매력 +500만\n\n★1: 강화석 10개 + 100억\n★2: 강화석 20개 + 200억\n★3: 강화석 30개 + 300억\n이후 단계마다 강화석 10개와 포인트 100억씩 증가해요.\n\n창조 펜던트 승급에 적용되는 규칙입니다.\n강화 +40 상한과 승급 ★단계는 별개예요.\n실제 대상·재료·비용을 확인한 뒤 진행해주세요.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        "🧩 펜던트 조합\n━━━━━━━━━━━━━\n초월 6개 → 창세 1개\n/펜던트조합창세 [번호1] [번호2] [번호3] [번호4] [번호5] [번호6]\n\n창세 3개 → 창조 1개\n/펜던트조합창조 [번호1] [번호2] [번호3]\n\n성공률 100% · 포인트 소모 없음\n재료 펜던트는 조합 시 소모됩니다.\n장착·강화된 펜던트도 기존 조합 규칙에 따라 사용할 수 있어요.\n진행 전 선택한 실제 펜던트를 꼭 확인해주세요.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        "🏪 판매·가방정리·자유시장\n━━━━━━━━━━━━━\n개별 판매: /펜던트판매 [가방번호]\n구간 판매: /펜던트가방정리 [시작번호]~[끝번호]\n예: /펜던트가방정리 1~10\n\n장착 중인 펜던트는 판매할 수 없어요.\n판매할 실제 대상과 반환 금액을 확인해주세요.\n\n자유시장 등록:\n/펜던트거래등록 [펜던트가방번호] [판매금액]\n펜던트 등록에는 수량을 넣지 않습니다.\n\n거래 상세: /펜던트거래정보 [자유시장번호]\n시장 이용 안내: /자유시장판매가이드\n가방번호와 자유시장번호는 서로 다릅니다.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드",
+        "🎁 관련 아이템·획득\n━━━━━━━━━━━━━\n펜던트뽑기💎\n└ /펜던트오픈 [수량]으로 사용\n\n펜던트 강화석📿\n└ 강화·승급에 사용\n\n펜던트 복원석🔷\n└ 내구도를 최대치까지 회복\n\n펜던트 귀속해제💎\n└ /펜던트해제로 장착 펜던트를 가방으로 회수\n\n강화·복원·귀속해제는 서로 다른 기능입니다.\n현재 보유 아이템과 실제 필요 수량을 확인해주세요.\n━━━━━━━━━━━━━\n※ 목차: /펜던트가이드"
+    ] : [
+        "🏠 가구 가이드\n━━━━━━━━━━━━━\n1. 가구와 매력\n2. 조회·장착·귀속해제\n3. 집 확장·평수 매력\n4. 가구 장착 가능 수\n5. 루미에르 빌리지·별채\n6. 별채 등록\n7. 가구스킬·적용 매력\n8. 판매·집청소·자유시장\n━━━━━━━━━━━━━\n※ 조회: /가구가이드 [번호]\n예: /가구가이드 6",
+        "🏠 가구와 매력\n━━━━━━━━━━━━━\n가구는 장착하면 캐슬·레이드 매력을 올려줘요.\n현재 적용 매력과 가구스킬은 /가구정보에서 확인하세요.\n\n가구에 표시된 +10만💞 기준\n캐슬 +10만 / 레이드 +10만 / 두 매력 합계 +20만\n\n개별 가구 매력과 종합매력 합계는 다른 표시입니다.\n장착 가구·가구스킬·빌리지·평수 보너스는\n각자의 적용 기준으로 계산됩니다.\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "🪑 조회·장착·귀속해제\n━━━━━━━━━━━━━\n내 가방: /가구가방\n내 펫홈: /펫홈\n장착·스킬·매력 상세: /가구정보\n\n장착: /가구장착 [가구가방번호]\n장착 귀속해제: /가구해제 [장착번호]\n\n가방번호와 장착 목록 번호는 서로 달라요.\n장착 가구 번호는 /가구정보에서 확인해주세요.\n귀속해제에 필요한 조건·아이템은 기존 안내를 확인하세요.\n\n다른 유저 조회:\n/펫홈 [아이디]\n/가구정보 [아이디]\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "🏡 집 확장·평수 매력\n━━━━━━━━━━━━━\n확장 재료 확인: /집짓기\n확장 진행: 집뚝딱\n확장 보류: 생각해본다\n\n집뚝딱·생각해본다는 슬래시 없이 입력해주세요.\n재료와 다음 집 정보를 확인한 뒤 결정할 수 있어요.\n\n집 1평당 기본 추가 매력\n⚔️ 캐슬 +75,000\n👾 레이드 +75,000\n💞 합계 +150,000\n\n현재 전체 평수에 적용됩니다.\n현재 평수 보너스 확인: /가구정보\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "📐 가구 장착 가능 수\n━━━━━━━━━━━━━\n가방 보관 용량과 동시에 장착할 수 있는 가구 수는 달라요.\n\n100평까지는 기존 장착 한도를 따릅니다.\n100평 이후에는 5평마다 장착 가능 수가 1개 증가해요.\n\n100평 기준 추가 수\n104평: +0개\n105평: +1개\n110평: +2개\n200평: +20개\n\n현재 장착 가능 수와 적용 스킬: /가구정보\n집 확장 재료 확인: /집짓기\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "🏛️ 루미에르 빌리지·별채\n━━━━━━━━━━━━━\n미장착 그랑·로열·아르카나 가구로 별채를 성장시켜요.\n같은 등급 가구 10개마다 해당 별채가 확정으로 Lv.+1!\n\n🏠 그랑 별채: 레벨당 +10%p\n🏰 로열 별채: 레벨당 +20%p\n👑 아르카나 별채: 레벨당 +30%p\n\n등급별 진행도는 각각 누적되고 남은 수량은 이월됩니다.\n각 별채는 집 전체 평수 10평당 Lv.1까지 성장할 수 있어요.\n예: 40평이면 각 별채 Lv.4까지\n\n현재 레벨·진행도·적용 버프: /가구정보\n별채 등록 방법: /가구가이드 6\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "📦 별채 등록\n━━━━━━━━━━━━━\n/별채등록 [가구가방번호] …\n예: /별채등록 3 8\n\n본인 소유의 미장착 그랑·로열·아르카나 가구만 가능해요.\n한 번에 전체 합계 1~10개, 서로 다른 등급도 함께 선택할 수 있어요.\n\n확인 화면에서 소모할 가구와 결과를 확인해주세요.\n등록한다 → 등록 확정\n등록안한다 → 취소\n두 입력에는 슬래시를 붙이지 않습니다.\n\n등록한 가구는 소모되어 사라집니다.\n장착 가구를 자동 해제해 등록하지 않아요.\n번호 중복·대상 불가·성장 한도 초과가 있으면 전체 등록을 취소합니다.\n가구 소모로 스킬 조건이 달라질 수 있으니 확인 화면을 확인해주세요.\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "✨ 가구스킬·적용 매력\n━━━━━━━━━━━━━\n/가구정보에서 장착 가구·가구스킬·별채 효과를 함께 확인해요.\n\n스킬은 실제 장착·보유·발동 조건을 만족할 때 적용됩니다.\n별채 등록이나 판매로 보유 조건이 달라지면\n적용 스킬과 최종 매력도 달라질 수 있어요.\n\n인테리어 장인과 평수 보너스 등은 각자의 계산 기준을 따릅니다.\n별채 버프를 모든 매력에 한 번 더 곱하지 않아요.\n현재 캐슬·레이드 적용 결과는 /가구정보에서 확인해주세요.\n━━━━━━━━━━━━━\n※ 목차: /가구가이드",
+        "🏪 가구 판매·집청소·자유시장\n━━━━━━━━━━━━━\n가방 가구 판매: /가구판매 [가구가방번호]\n장착 가구 판매: /집청소 [장착번호]\n장착 귀속해제: /가구해제 [장착번호]\n\n집청소는 장착 가구 판매, 가구해제는 귀속해제입니다.\n실행 전 대상 번호와 처리 결과를 확인해주세요.\n\n자유시장 등록:\n/가구거래등록 [가구가방번호] [갯수] [판매금액]\n\n시장 이용 안내: /자유시장판매가이드\n실제 거래 자격·가격·수수료는 현재 시장 안내를 따릅니다.\n━━━━━━━━━━━━━\n※ 목차: /가구가이드"
+    ];
+    return pages[page];
+}
+
 
 // 완료된 시도만 집계해 기획서의 결과 화면을 만드는 함수
 function buildPendantUpgradeBatchResult(data, petData, guildData, sender, state, result, pendant, index) {
@@ -66731,7 +66903,7 @@ function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectio
     var collectionRank = getMiniPetCollectionRanking(collectionData);
     var collectionRankText = "순위없음📊";
     for (var r = 0; r < collectionRank.length; r++) if (collectionRank[r].userName === user) { collectionRankText = (r + 1) + "등📊"; break; }
-    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "※ 미니펫 정보: /미니펫정보", "※ 대표장착: /미니펫장착 [미니펫가방번호]", "※ 보조장착: /미니펫보조장착 [미니펫가방번호]", "※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]", "※ 등급 정리: /미니펫등급정리 [등급이름]", "※ 매력 정리: /미니펫가방정리 [매력]", "└ 창조·창세·엘리트 등급 제외", "━━━━━━━━━━━━━"];
+    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "🐹 미니펫 가이드: /미니펫가이드", "━━━━━━━━━━━━━"];
     if (!bag.length) lines.push("미니펫가방이 비어 있습니다.");
     for (var i = 0; i < bag.length; i++) {
         if (i === 5) lines.push(allsee);
@@ -67856,6 +68028,7 @@ finally { initData = null; }
 for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
 if (startupWork.raid) scheduleServerRaidWork(createCommandContext(false, room8), startupWork.raid.generation, 1, startupWork.raid.sequence);
 startupWork = null;
+schedulePremiumMentCleanup(1);
 
 // 호월드라마 명령을 한 줄 전체 일치로 해석하는 함수
 function getHowolDramaRequest(message) {
@@ -68436,7 +68609,8 @@ function applyGuildWarSupply(data, guildData, gid, user, now) {
     member.point += config.points; member.guildSupplyDay = day;
     entry.supplyRice = remaining; entry.extraTickets = after;
     var text = "🌾 보급 지원 완료!\n━━━━━━━━━━━━\n🎁 개인 보상: 🅟" + numberWithCommas(config.points) + "\n🌾 군량미: +" + config.ricePerSupport + " · (" + remaining + "/" + config.ricePerTicket + ")";
-    text += converted ? "\n🎯 군량미 " + config.ricePerTicket + " 달성! 추가 공격권 +" + numberWithCommas(converted) + "회\n└ 길드 추가 공격권: " + numberWithCommas(before) + "회 → " + numberWithCommas(after) + "회" : "\n✅ 오늘 지원 완료 · 1/1회";
+    text += converted ? "\n🎯 군량미 " + config.ricePerTicket + " 달성! 추가 공격권 +" + numberWithCommas(converted) + "회\n└ 길드 추가 공격권: " + numberWithCommas(before) + "회 → " + numberWithCommas(after) + "회" : "";
+    text += "\n✅ 오늘 지원 완료 · 1/1회";
     return { changed: true, text: text };
 }
 
@@ -70295,7 +70469,11 @@ function resetGuildWarDay(guildData, now, data) {
 function buildGuildWarMain(data, guildData, gid, now) {
     var state = guildData.war24, guild = getGuildByIdSafe(guildData, gid), owned = getGuildWarOwned(state, guild ? gid : null);
     var text = "⚔️ " + (guild ? formatGuildDisplay(guild) : "호이월드") + " 길드전쟁\n";
-    if (guild) text += buildGuildWarTicketLine(getGuildWarEntry(state, gid)) + "\n🏴 우리 길드 점령: " + (owned.all.length ? owned.all.length + "곳 (" + owned.all.join("·") + "번)" : "없음");
+    if (guild) {
+        var entry = getGuildWarEntry(state, gid);
+        text += buildGuildWarTicketLine(entry) + "\n🌾 군량미: " + getGuildWarSupplyRice(entry) + "/" + GLOBAL_CONFIG.guildWar.supply.ricePerTicket;
+        text += "\n🏴 우리 길드 점령: " + (owned.all.length ? owned.all.length + "곳 (" + owned.all.join("·") + "번)" : "없음");
+    }
     else text += "🏴 소속 길드: 없음";
     text += "\n━━━━━━━━━━━━\n🗺️ 금광 → 핵심 광산 → 요새 ↔ 킹덤\n\n";
     for (var no = 1; no <= GLOBAL_CONFIG.guildWar.regions.length; no++) {
@@ -70516,6 +70694,7 @@ function flushGuildWarNotices(guildData, ctx) {
         if (!refreshGuildWarDefenseNotice(state, notice, Date.now())) { notice.attempts = 2; continue; }
         if (notice.gid && !isGuildWarRoomValid(state, guildData, notice.gid)) { notice.attempts = 2; continue; }
         if (notice.gid) notice.room = state.guilds[notice.gid].room; // 재등록 후에는 현재 등록 이름으로만 발송
+        if (isRetiredHoiRoom(notice.room)) { notice.attempts = 2; continue; }
         if (notice.inFlight) { notice.attempts = 2; debuggerLog("[길드전쟁 알림 전송 결과 미확인] " + (notice.eventId || notice.room)); }
         if (notice.attempts < 2) {
             notice.attempts++; notice.inFlight = true;
@@ -71270,14 +71449,39 @@ function getAdventureGemBag(store) {
 
 // 캐슬·레이드 보석 매력을 기획서의 만 단위로 표시하는 함수
 function formatAdventureGemCharm(value) {
-    return String(value / 10000) + "만";
+    return numberWithCommas(value / 10000) + "만";
 }
 
-// 종류별 기존 보석 표기와 에메랄드의 두 능력치 줄을 만드는 함수
+// 실제 매력의 등급 내 위치를 네 품질 구간으로 표시하는 함수
+function getAdventureGemQuality(definition, value) {
+    return ["C", "B", "A", "S"][Math.min(3, Math.floor((value - definition.min) * 4 / (definition.max - definition.min)))];
+}
+
+// 보석 종류와 실제 옵션을 공통 형식으로 출력하는 함수
 function formatAdventureGem(gem) {
-    var grade = GLOBAL_CONFIG.adventureGem.grades[gem.grade].name;
-    if (gem.kind === "emerald") return "에메랄드🟢[" + grade + "]\n└ ⚔️ +" + formatAdventureGemCharm(gem.castle) + " · 👾 +" + formatAdventureGemCharm(gem.raid);
-    return gem.kind === "ruby" ? "루비🔴(+" + formatAdventureGemCharm(gem.castle) + "⚔️)[" + grade + "]" : "사파이어🔵(+" + formatAdventureGemCharm(gem.raid) + "👾)[" + grade + "]";
+    var definition = GLOBAL_CONFIG.adventureGem.grades[gem.grade];
+    if (gem.kind === "emerald") return "에메랄드💚[" + definition.name + "]\n└ ⚔️ +" + formatAdventureGemCharm(gem.castle) + " · 👾 +" + formatAdventureGemCharm(gem.raid);
+    var value = gem.kind === "ruby" ? gem.castle : gem.raid;
+    return (gem.kind === "ruby" ? "루비❤️(+" : "사파이어🩵(+") + formatAdventureGemCharm(value) + (gem.kind === "ruby" ? "💕" : "👾") + ")[" + definition.name + "·" + getAdventureGemQuality(definition, value) + "]";
+}
+
+// 저장된 구형 거래 기록은 원본을 유지하고 화면에서만 현재 보석 표기로 바꾸는 함수
+function formatFreeMarketCompletedGemName(itemName) {
+    if (typeof itemName !== "string") return itemName;
+    var single = /^(루비🔴|사파이어🔵)\(\+([\d,]+)만(?:⚔️?|👾)\)\[([^\]]+)\]$/.exec(itemName);
+    var emerald = /^에메랄드🟢\[([^\]]+)\]\n└ ⚔️? \+([\d,]+)만 · 👾 \+([\d,]+)만$/.exec(itemName);
+    if (!single && !emerald) return itemName;
+    var config = GLOBAL_CONFIG.adventureGem, gradeName = single ? single[3] : emerald[1];
+    for (var grade = 0; grade < config.grades.length; grade++) {
+        var definition = config.grades[grade];
+        if (definition.name !== gradeName) continue;
+        var kind = emerald ? "emerald" : single[1] === "루비🔴" ? "ruby" : "sapphire";
+        var value = Number((emerald ? emerald[2] : single[2]).replace(/,/g, "")) * 10000; // 구형 만 단위 값으로 실제 매력 복원
+        var raid = emerald ? Number(emerald[3].replace(/,/g, "")) * 10000 : value;
+        if (value < definition.min || value > definition.max || raid < definition.min || raid > definition.max) return itemName;
+        return formatAdventureGem({ kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : value, raid: kind === "ruby" ? 0 : raid });
+    }
+    return itemName;
 }
 
 // 현재 모험가 레벨과 영구 추가칸으로 고정 슬롯 범위를 계산하는 함수
@@ -71320,14 +71524,14 @@ function applyAdventureGemDraw(data, user, store, count, random) {
     for (var g = 0; g < config.grades.length; g++) totalWeight += config.grades[g].weight;
     for (var i = 0; i < count; i++) {
         var guaranteed = store.pity === config.pityCount - 1, grade = config.grades.length - 1, roll = random() * totalWeight;
-        if (guaranteed) grade = roll < totalWeight - config.grades[grade].weight ? grade - 1 : grade;
+        if (guaranteed) grade = roll < totalWeight * (1 - config.pityCreationRate) ? grade - 1 : grade;
         else for (var n = 0; n < config.grades.length; n++) { roll -= config.grades[n].weight; if (roll < 0) { grade = n; break; } }
-        var definition = config.grades[grade], kind = random() < 0.5 ? "ruby" : "sapphire";
+        var definition = config.grades[grade], kind = random() < config.rubyRate ? "ruby" : "sapphire";
         var charm = definition.min + Math.floor(random() * ((definition.max - definition.min) / config.charmStep + 1)) * config.charmStep;
         var gem = createAdventureGem(kind, grade, kind === "ruby" ? charm : 0, kind === "sapphire" ? charm : 0);
         store.gems.push(gem);
         store.pity = grade >= config.grades.length - 2 ? 0 : store.pity + 1;
-        results.push({ gem: JSON.parse(JSON.stringify(gem)), guaranteed: guaranteed, rate: guaranteed ? (grade === config.grades.length - 1 ? config.grades[grade].weight : totalWeight - config.grades[config.grades.length - 1].weight) * 100 / totalWeight : definition.weight * 100 / totalWeight });
+        results.push({ gem: JSON.parse(JSON.stringify(gem)), guaranteed: guaranteed, rate: guaranteed ? (grade === config.grades.length - 1 ? config.pityCreationRate : 1 - config.pityCreationRate) * 100 : definition.weight * 100 / totalWeight });
     }
     removeItem(data, user, config.ticketName, count);
     store.hasAcquired = true;
@@ -71427,7 +71631,7 @@ function replyAdventureGemResult(replier, result, nickname) {
 function buildAdventureGemBagBlocks(data, user, store, nickname) {
     var bag = getAdventureGemBag(store), slots = getAdventureGemSlots(data, user, store), summary = summarizeAdventureGems(store), config = GLOBAL_CONFIG.adventureGem;
     var blocks = ["[" + nickname + "] 님의 보유 보석가방🪽[" + bag.length + "/" + config.bagLimit + "]\n🧭 Lv." + slots.level + " · 보석 장착 [" + summary.count + "/" + slots.total + "칸]\n━━━━━━━━━━━━━\n" +
-        "🪽 보석 가이드: /보석가이드\n※ 보석 장착: /보석장착 [가방번호] [슬롯번호]\n※ 슬롯번호 생략 시 장착 위치 선택\n※ 장착 정보: /보석정보\n※ 보석 조합: /보석조합 [루비 가방번호] [사파이어 가방번호]\n※ 조합 성공률 100% · 재료의 매력을 그대로 계승\n※ 조합 입력 후 재료·조합비를 확인하고 확정\n※ 보석 판매: /보석판매 [가방번호]\n※ 보석 정리: /보석가방정리 [번호~번호]\n※ 슬롯 확장: /보석슬롯오픈 [수량]\n※ 장착하면 거래·조합 불가 · 교체 시 기존 보석 소멸\n━━━━━━━━━━━━━"];
+        "🪽 보석 가이드: /보석가이드\n━━━━━━━━━━━━━"];
     for (var i = 0; i < bag.length; i++) blocks.push((i + 1) + ". " + formatAdventureGem(bag[i]) + (i === 4 ? allsee : ""));
     return blocks;
 }
@@ -71438,7 +71642,7 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
     for (var i = 0; i < store.gems.length; i++) if (store.gems[i].slot) { occupied[store.gems[i].slot] = store.gems[i]; equipped.push(store.gems[i]); }
     equipped.sort(function (a, b) { return b.castle + b.raid - a.castle - a.raid || a.slot - b.slot; });
     var nextLevel = (Math.floor(slots.level / GLOBAL_CONFIG.adventureGem.levelsPerSlot) + 1) * GLOBAL_CONFIG.adventureGem.levelsPerSlot;
-    var special = (summary.creation ? "🌌창조 " + summary.creation + "개" : "") + (summary.hidden ? (summary.creation ? " · " : "") + "🟢히든 " + summary.hidden + "개" : "");
+    var special = (summary.creation ? "🌌창조 " + summary.creation + "개" : "") + (summary.hidden ? (summary.creation ? " · " : "") + "💚히든 " + summary.hidden + "개" : "");
     var header = "[" + nickname + "] 님의\n🪽 현재 장착 중인 보석 [" + summary.count + "/" + slots.total + "칸]\n━━━━━━━━━━━━━\n🧭 레벨 장착 공간: " + slots.base + "칸 · Lv." + slots.level + "\n" +
         GLOBAL_CONFIG.adventureGem.slotItemName.replace("(/보석슬롯오픈 숫자)", "") + ": +" + slots.extra + "칸\n🧩 총 장착 가능 공간: " + slots.total + "칸\n📭 남은 장착 공간: " + Math.max(0, slots.total - summary.count) + "칸\n🔒 다음 슬롯: Lv." + nextLevel + " · " + (nextLevel - slots.level) + "레벨 남음\n━━━━━━━━━━━━━\n";
     if (special) header += special + "\n";
@@ -71590,32 +71794,38 @@ function buildAdventureGemConfirmation(state, nickname) {
 
 // 공통 7등급 확률·매력 범위와 개인 보장 상태를 같은 설정으로 표시하는 함수
 function buildAdventureGemProbabilityBlocks(store, nickname) {
-    var config = GLOBAL_CONFIG.adventureGem, text = "[" + nickname + "] 님\n📊 확률정보: /보석확률\n━━━━━━━━━━━━━\n루비 50% · 사파이어 50%\n", total = 0;
+    var config = GLOBAL_CONFIG.adventureGem, total = 0;
+    var kinds = "루비❤️ " + config.rubyRate * 100 + "% · 사파이어🩵 " + (1 - config.rubyRate) * 100 + "%";
+    var text = "[" + nickname + "] 님\n💎 보석 확률\n━━━━━━━━━━━━━\n" + kinds + "\n\n";
     for (var i = 0; i < config.grades.length; i++) total += config.grades[i].weight;
-    for (var n = 0; n < config.grades.length; n++) { var grade = config.grades[n]; text += grade.name + " " + grade.weight * 100 / total + "% · +" + formatAdventureGemCharm(grade.min) + "~" + formatAdventureGemCharm(grade.max) + "\n"; }
-    text += "━━━━━━━━━━━━━\n보장 회차 등급 확률: 창세 99.8% · 창조 0.2%\n일반 회차의 특정 색·등급·수치 획득 확률 = 등급 확률 × 50% ÷ 해당 등급의 수치 경우의 수.\n" +
-        "정확히 +1780만인 창조 루비는 기본 회차에서 약 0.00163934%.\n" + buildAdventureGemPity(store.pity) + allsee;
+    for (var n = 0; n < config.grades.length; n++) {
+        var grade = config.grades[n];
+        text += grade.name + " " + grade.weight * 100 / total + "% · +" + formatAdventureGemCharm(grade.min) + "~" + formatAdventureGemCharm(grade.max) + "\n";
+    }
+    text += "\n매력은 등급별 범위에서 1만 단위로 동일한 확률로 나와요.\n품질은 매력에 따라 C → B → A → S로 정해져요.\n\n📚 품질 구간: /보석가이드 1\n📚 뽑기·보장 안내: /보석가이드 2\n" + allsee;
+    text += "\n🎯 100회 보장\n창세 이상을 99회 연속 얻지 못하면 다음 1회는 창세 이상 확정!\n보장 회차: 창세 99.8% · 🌌창조 0.2%\n종류: " + kinds + "\n매력: 등급별 범위에서 1만 단위로 동일한 확률\n\n창세·창조를 얻으면 누적 횟수가 초기화돼요.\n" + buildAdventureGemPity(store.pity);
+    text += "\n\n일반 회차의 특정 종류·등급·수치 획득 확률 = 등급 확률 × 종류 확률 ÷ 해당 등급의 수치 경우의 수.\n정확히 +1,780만인 창조 루비: 약 0.0000665557%.";
     return [text];
 }
 
 // 기획서의 보석 목차·종류·성장·조합·시장 안내를 같은 운영값으로 표시하는 함수
 function buildAdventureGemGuideBlocks(store, nickname, page) {
     var config = GLOBAL_CONFIG.adventureGem, header = "[" + nickname + "] 님\n📚 보석 가이드\n━━━━━━━━━━━━━\n";
-    var titles = ["🪽 보석 종류와 매력", "🪎 보석뽑기·확률·100회 보장", "🔓 슬롯·장착·교체", "🟢 에메랄드 조합과 비용", "🏪 판매·가방정리·자유시장"];
+    var titles = ["🪽 보석 종류·등급·품질", "🪎 보석뽑기·확률·100회 보장", "🔓 슬롯·장착·교체", "에메랄드💚 조합과 비용", "🏪 판매·가방정리·자유시장"];
     if (!page) {
         for (var i = 0; i < titles.length; i++) header += (i + 1) + ". " + titles[i] + "\n";
         return [header + "━━━━━━━━━━━━━\n※ 조회: /보석가이드 [번호]\n예시: /보석가이드 4"];
     }
     if (page === 2) return buildAdventureGemProbabilityBlocks(store, nickname).concat([config.ticketName + "\n입력: /보석오픈 [수량]\n뽑기권 1개당 보석 1개\n100회 보장 · 창세 이상 획득 시 누적 초기화\n가방 정원 이상이면 뽑기 불가"]);
     var text = header + titles[page - 1] + "\n━━━━━━━━━━━━━\n";
-    if (page === 1) text += "루비🔴 · 캐슬매력⚔️ 증가\n사파이어🔵 · 레이드 매력👾 증가\n히든 에메랄드🟢 · 캐슬·레이드 매력 동시 증가\n\n같은 종류 중복 장착: 가능\n보석 매력 상한: 없음. 장착 효과 전부 합산";
+    if (page === 1) text = "[" + nickname + "] 님\n" + "📚 보석 종류·등급·품질\n\n루비❤️: 캐슬 매력\n사파이어🩵: 레이드 매력\n에메랄드💚: 루비·사파이어의 두 매력을 계승\n\n등급: 하급 → 중급 → 상급 → 최상급 → 초월 → 창세 → 🌌창조\n품질: C → B → A → S\n\n루비·사파이어의 품질은 같은 등급 안에서 매력이 얼마나 높은지 보여줘요.\n매력이 정해지면 품질도 자동으로 정해져요.\n\n사파이어🩵(+30만👾)[하급·C]\n사파이어🩵(+49만👾)[하급·S]\n루비❤️(+2,000만💕)[🌌창조·S]\n\n📏 루비·사파이어 품질 구간\n단위: 만 · 각 구간 양 끝 포함\n하급: C 30~34 · B 35~39 · A 40~44 · S 45~50\n중급: C 60~67 · B 68~74 · A 75~82 · S 83~90\n상급: C 100~112 · B 113~124 · A 125~137 · S 138~150\n최상급: C 180~204 · B 205~229 · A 230~254 · S 255~280\n초월: C 350~399 · B 400~449 · A 450~499 · S 500~550\n창세: C 700~774 · B 775~849 · A 850~924 · S 925~1,000\n🌌창조: C 1,400~1,549 · B 1,550~1,699 · A 1,700~1,849 · S 1,850~2,000\n\n📊 뽑기 확률: /보석확률" + "\n\n같은 종류 중복 장착: 가능\n보석 매력 상한: 없음. 장착 효과 전부 합산";
     if (page === 3) text += "모험가 레벨 10마다 1칸\n추가 슬롯: 슬롯추가 아이템 1개당 영구 +1칸. Lv.10 이전에도 사용·장착 가능\n계정당 추가 슬롯 제한: 없음\n\n/보석장착 [보석가방번호]\n/보석장착 [보석가방번호] [슬롯번호]\n/보석슬롯오픈 [수량]\n\n※ 첫 번째 숫자는 보석가방 번호예요.\n※ 두 번째 숫자는 고정 슬롯번호예요.\n🔗 장착하면 거래·조합할 수 없어요.\n다른 보석으로 교체하면 이 보석은 소멸해요.\n가방 정원과 무관하게 장착·교체할 수 있다.\n별도 보석 제거: 제공하지 않음. 교체 확정 시에만 기존 장착 보석 소멸";
     if (page === 4) {
         text += "같은 등급의 미장착 루비 1개 + 사파이어 1개\n성공률은 전 등급 100%다.\n루비의 캐슬매력과 사파이어의 레이드 매력을 각각 100% 계승하고, 두 효과를 슬롯 1칸에 적용한다.\n\n";
         for (var g = 0; g < config.grades.length; g++) text += config.grades[g].name + " · 🅟" + formatAdventureGemPoint(config.grades[g].combinePoint) + "\n";
         text += "\n가방 초과 중에도 조합 가능\n입력: /보석조합 [루비 가방번호] [사파이어 가방번호]\n🎒 재료 확인: /보석가방";
     }
-    if (page === 5) text += "※ 보석 판매: /보석판매 [가방번호]\n※ 보석 정리: /보석가방정리 [번호~번호]\n\n숫자는 보석가방 목록의 번호다. 장착 슬롯번호나 판매할 개수가 아니다.\n/보석가방정리 1~10은 현재 가방 1번부터 10번까지 총 10개 판매\n\n시스템 판매가\n루비🔴 · 사파이어🔵 · 에메랄드🟢\n🅟" + numberWithCommas(config.salePoint) + "\n\n🪽 보석 등록\n/보석거래등록 [보석가방번호] [판매금액]\n/자유시장판매가이드\n\n장착하면 거래·조합 불가 · 교체 시 기존 보석 소멸";
+    if (page === 5) text += "※ 보석 판매: /보석판매 [가방번호]\n※ 보석 정리: /보석가방정리 [번호~번호]\n\n숫자는 보석가방 목록의 번호다. 장착 슬롯번호나 판매할 개수가 아니다.\n/보석가방정리 1~10은 현재 가방 1번부터 10번까지 총 10개 판매\n\n시스템 판매가\n루비❤️ · 사파이어🩵 · 에메랄드💚\n🅟" + numberWithCommas(config.salePoint) + "\n\n🪽 보석 등록\n/보석거래등록 [보석가방번호] [판매금액]\n/자유시장판매가이드\n\n장착하면 거래·조합 불가 · 교체 시 기존 보석 소멸";
     return [text];
 }
 
@@ -72074,12 +72284,12 @@ function resolvePackageRewardInput(input, type, definitions, countOverride, cust
         }
     }
     if (!type || type === "gem") {
-        var gemMatch = /^(루비🔴|사파이어🔵)\(\+([\d,]+)만[⚔️👾]+\)\[([^\]]+)\]$/.exec(text), emeraldMatch = /^에메랄드🟢\[([^\]]+)\]\s*└\s*⚔️?\s*\+([\d,]+)만\s*·\s*👾\s*\+([\d,]+)만$/.exec(text);
+        var gemMatch = /^(루비(?:🔴|❤️)|사파이어(?:🔵|🩵))\(\+([\d,]+)(만)?(?:⚔️?|💕|👾)\)\[([^\]]+)\]$/.exec(text), emeraldMatch = /^에메랄드(?:🟢|💚)\[([^\]]+)\]\s*└\s*⚔️?\s*\+([\d,]+)만\s*·\s*👾\s*\+([\d,]+)만$/.exec(text);
         if (gemMatch || emeraldMatch) {
-            var gradeName = gemMatch ? gemMatch[3] : emeraldMatch[1], gradeIndex = -1;
+            var gradeName = gemMatch ? gemMatch[4].replace(/·[CBAS]$/, "") : emeraldMatch[1], gradeIndex = -1;
             for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (normalizePackageLookup(GLOBAL_CONFIG.adventureGem.grades[i].name) === normalizePackageLookup(gradeName)) gradeIndex = i;
             if (gradeIndex < 0) return { error: "이 보상을 찾을 수 없어요. 이름과 옵션을 확인해주세요." };
-            var kind = emeraldMatch ? "emerald" : gemMatch[1] === "루비🔴" ? "ruby" : "sapphire", castle = kind === "sapphire" ? 0 : parsePackageOptionInteger(emeraldMatch ? emeraldMatch[2] : gemMatch[2]) * 10000, raid = kind === "ruby" ? 0 : parsePackageOptionInteger(emeraldMatch ? emeraldMatch[3] : gemMatch[2]) * 10000;
+            var kind = emeraldMatch ? "emerald" : gemMatch[1].indexOf("루비") === 0 ? "ruby" : "sapphire", castle = kind === "sapphire" ? 0 : parsePackageOptionInteger(emeraldMatch ? emeraldMatch[2] : gemMatch[2]) * (emeraldMatch || gemMatch[3] ? 10000 : 1), raid = kind === "ruby" ? 0 : parsePackageOptionInteger(emeraldMatch ? emeraldMatch[3] : gemMatch[2]) * (emeraldMatch || gemMatch[3] ? 10000 : 1);
             if (!isPointShopSafeCount(castle) || !isPointShopSafeCount(raid)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
             var gemValidation = createAdventureGemState("package"); gemValidation.gems = [{ id: "package", kind: kind, grade: gradeIndex, castle: castle, raid: raid, slot: 0 }];
             try { requireAdventureGemState(gemValidation, "package"); } catch (invalidGem) { return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + formatAdventureGemCharm(GLOBAL_CONFIG.adventureGem.grades[gradeIndex].min) + "~" + formatAdventureGemCharm(GLOBAL_CONFIG.adventureGem.grades[gradeIndex].max) + "입니다." }; }
@@ -72141,7 +72351,7 @@ function getPackageActualPrompt(type, state) {
         var label = { mini: "미니펫", furniture: "가구", pendant: "펜던트", gem: "보석" }[type];
         if (label) return "✏️ 바꿀 옵션을 반영한 " + label + " 표기를 보내주세요.\n\n현재: " + current + "\n\n예:\n" + (type === "mini" ? "가온빛💖(+1,002,000💕)[창세] x1" : current) + "\n\n수량을 생략하면 현재 수량 " + row.count + "개를 유지해요.";
     }
-    if (type === "mini") return "🐹 어떤 미니펫을 넣을까요?\n\n이름·등급·매력을 입력해주세요.\n수량까지 함께 입력해도 돼요.\n\n예:\n가온빛💖(+1,001,280💕)[창세] x1";
+    if (type === "mini") return "🐹 어떤 미니펫을 넣을까요?\n이름·옵션 표기를 그대로 붙여넣어주세요.\n\n예: 가온빛💖(+1,001,280💕)[창세]\n수량까지 넣어도 돼요: 가온빛💖(+1,001,280💕)[창세] x1\n\n이전 / 취소";
     var messages = { point: "💰 패키지 1개당 지급할 포인트를 입력해주세요. 예: 300000 또는 300,000", item: "🎒 넣을 가방아이템 이름을 입력해주세요.", furniture: "🏡 어떤 가구를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", pendant: "📿 어떤 펜던트를 넣을까요? 기존 이름·옵션 표기를 그대로 붙여넣어도 돼요.", skill: "📙 넣을 펫스킬북 이름을 입력해주세요. 예: 삼성전자📙", gem: "🪽 넣을 보석의 이름·등급·매력을 입력해주세요. 기존 보석 표기를 붙여넣어도 돼요." };
     return messages[type];
 }
@@ -72161,8 +72371,43 @@ function buildPackageBulkReview(state) {
         for (var n = 0; n < pending.length; n++) { var row = state.bulk[pending[n]]; text += "\n\n" + (pending[n] + 1) + "번 · " + row.raw + "\n사유: " + (row.candidates ? "어떤 보상인지 선택해주세요." : row.draft ? buildPackageOptionPrompt(row.draft, row.raw).split("\n")[0] : row.missingCount ? "수량은 1 이상의 정수로 입력해주세요." : row.error); }
         return text + "\n\n정상 보상 " + rewards.length + "개 항목은 보관하고 있어요.\n수정할 보상 번호를 입력해주세요.\n선택 가능: " + pending.map(function (i) { return i + 1; }).join(", ");
     }
-    state.bulkRewards = mergePackageActualRewards([], rewards); state.step = "BULK_CONFIRM";
-    return "📦 이렇게 담을게요!\n\n구성: " + formatPackageRewardSummary(state.bulkRewards) + "\n\n추가 / 수정 / 이전";
+    return finishPackageBulkInput(state, rewards);
+}
+
+// 검증된 일괄 보상을 한 번 합쳐 전체 미리보기로 이동하는 함수
+function finishPackageBulkInput(state, rewards) {
+    state.rewards = mergePackageActualRewards(state.rewards, rewards);
+    state.bulk = null; state.bulkRewards = null; state.bulkRaw = null;
+    state.bulkEditing = false; state.editingBulkRaw = false; state.returnToPreview = false;
+    return openPackageAddPreview(state).message;
+}
+
+// 보류한 개별 보상을 불러와 미입력 항목을 계속 묻는 함수
+function resumePackagePendingInput(state) {
+    if (!state.inputRow || !isPackageRowPending(state.inputRow)) {
+        var deferred = state.deferredInputs;
+        if (deferred) for (var type in deferred) {
+            if (!Object.prototype.hasOwnProperty.call(deferred, type) || !isPackageRowPending(deferred[type])) continue;
+            state.rewardType = type;
+            state.inputRow = deferred[type];
+            delete deferred[type];
+            break;
+        }
+    }
+    if (!state.inputRow || !isPackageRowPending(state.inputRow)) return null;
+    state.returnToPreview = false;
+    state.resumePreviewInput = true;
+    return acceptPackageWritingRow(state, state.inputRow, false);
+}
+
+// 미확정 보상이 없을 때만 최종 미리보기를 여는 함수
+function openPackageAddPreview(state) {
+    var pending = resumePackagePendingInput(state);
+    if (pending) return pending;
+    state.returnToPreview = false;
+    state.resumePreviewInput = false;
+    state.step = "CONFIRM";
+    return { ok: true, message: buildPackageAddPreviewMessage(state) };
 }
 
 // 실물 입력을 같은 검증기로 처리하고 수량 누락만 별도 단계로 보완하는 함수
@@ -72185,11 +72430,16 @@ function applyPackageActualInputResult(state, result, text) {
 // 검증한 보상 하나를 추가 또는 수정하고 작성 화면으로 돌아가는 함수
 function completePackageActualInput(state, reward) {
     var editing = state.editRewardIndex !== undefined;
-    if (editing) { state.rewards[state.editRewardIndex] = reward; delete state.editRewardIndex; }
-    else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
+    if (editing) {
+        var editedRewards = state.rewards.slice();
+        editedRewards[state.editRewardIndex] = reward;
+        state.rewards = mergePackageActualRewards([], editedRewards);
+        delete state.editRewardIndex;
+    } else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
     state.inputRow = null; state.pendingReward = null; state.pendingRaw = null;
-    state.step = editing ? "CONFIRM" : "REWARD_CHOICE";
-    return { ok: true, message: editing ? buildPackageAddPreviewMessage(state) : "✅ 보상에 담았어요!\n\n" + formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count) + "\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
+    if (editing || state.returnToPreview || state.resumePreviewInput) return openPackageAddPreview(state);
+    state.step = "REWARD_CHOICE";
+    return { ok: true, message: buildPackageRewardChoiceMessage(state) };
 }
 
 // 작성 중 보상의 편집 대상만 기존 표기로 나열하는 함수
@@ -72209,6 +72459,12 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
     if (!text) return { ok: false, message: (state.step === "NAME" ? "패키지 이름을 입력해주세요." : "안내된 번호나 이름으로 입력해주세요.") + "\n\n" + buildPackageWritingQuestion(state) };
     if (text.charAt(0) === "/") return { ok: false, message: "지금은 패키지를 작성 중이에요. 현재 질문에 답하거나 \"취소\"를 입력해주세요.\n\n" + buildPackageWritingQuestion(state) };
     if (text === "이전" || text === "돌아가기") {
+        if (state.returnToPreview && (state.step === "REWARD_CHOICE" || /^ACTUAL_|^BULK/.test(state.step))) {
+            state.returnToPreview = false; state.inputRow = null; state.deferredInputs = null;
+            state.bulk = null; state.bulkRaw = null; state.bulkRewards = null;
+            state.step = "CONFIRM";
+            return { ok: true, message: buildPackageAddPreviewMessage(state) };
+        }
         if (state.step === "BULK_FIX" && state.editingBulkRaw) { state.editingBulkRaw = false; state.bulkEditing = true; state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) }; }
         if (state.step === "ACTUAL_CANDIDATE" || state.step === "ACTUAL_OPTION" || state.step === "ACTUAL_COUNT" || state.step === "BULK_FIX") return answerPackageWritingRow(state, "이전", definitions, state.step === "BULK_FIX");
         if (state.step === "BULK_CONFIRM" || state.step === "BULK_PICK_ERROR") state.step = "BULK";
@@ -72260,6 +72516,7 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         for (var b = 0; b < parts.length; b++) state.bulk.push(makePackageBulkInputRow(parts[b], resolvePackageRewardInput(parts[b], null, definitions)));
         return { ok: true, message: buildPackageBulkReview(state) };
     }
+    if (text === "등록" && (state.step === "BULK_PICK_ERROR" || state.step === "BULK_FIX")) return { ok: false, message: buildPackageBulkReview(state) };
     if (state.step === "BULK_PICK_ERROR") {
         var index = parsePackagePositiveCount(text), row = index && state.bulk[index - 1];
         if (!row || row.removed || !state.bulkEditing && !isPackageRowPending(row)) return { ok: false, message: "안내된 번호나 이름으로 입력해주세요.\n\n" + (state.bulkEditing ? buildPackageActualEditList({ rewards: state.bulkRewards }) : buildPackageBulkReview(state)) };
@@ -72272,16 +72529,12 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         state.editingBulkRaw = false; return answerPackageWritingRow(state, text, definitions, true);
     }
     if (state.step === "BULK_CONFIRM") {
-        if (text === "추가") {
-            state.rewards = mergePackageActualRewards(state.rewards, state.bulkRewards); var added = state.bulkRewards.length;
-            state.bulk = null; state.bulkRewards = null; state.bulkRaw = null; state.step = "REWARD_CHOICE";
-            return { ok: true, message: "✅ 보상 " + added + "개 항목을 담았어요!\n\n더 넣으려면 종류를 선택하고,\n다 넣었다면 \"완료\"를 입력해주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
-        }
+        if (text === "추가" || text === "확인") return { ok: true, message: finishPackageBulkInput(state, state.bulkRewards || []) };
         if (text === "수정") {
             state.bulk = state.bulkRewards.map(function (reward) { return makePackageBulkInputRow(formatPackageActualReward(reward) + " x" + numberWithCommas(reward.count), { reward: JSON.parse(JSON.stringify(reward)) }); });
             state.bulkEditing = true; state.step = "BULK_PICK_ERROR"; return { ok: true, message: buildPackageActualEditList({ rewards: state.bulkRewards }) };
         }
-        return { ok: false, message: "추가, 수정, 이전 중 하나를 입력해주세요.\n\n" + buildPackageBulkReview(state) };
+        return { ok: false, message: "추가, 수정, 이전 중 하나를 입력해주세요." };
     }
     if (state.step === "EDIT_MENU") {
         if (text === "1") state.step = "EDIT_NAME";
@@ -72306,8 +72559,10 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
     }
     if (state.step === "CONFIRM") {
         if (text === "수정") { state.step = "EDIT_MENU"; return { ok: true, message: buildPackageWritingQuestion(state) }; }
-        if (text === "더 넣기") { state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
-        if (text !== "등록") return { ok: false, message: "등록, 수정, 더 넣기, 취소 중 하나를 입력해주세요.\n\n" + buildPackageAddPreviewMessage(state) };
+        if (text === "더 넣기") { state.returnToPreview = true; state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
+        if (text !== "등록") return { ok: false, message: "입력할 수 있는 명령을 확인해주세요.\n등록 / 수정 / 더 넣기 / 취소\n\n패키지를 저장하려면 \"등록\"을 입력해주세요." };
+        var pendingInput = resumePackagePendingInput(state);
+        if (pendingInput) return { ok: false, message: pendingInput.message };
         for (var n = 0; n < packages.length; n++) {
             if (packages[n] && packages[n].registrationId === state.id) return { ok: true, registered: true, message: "이미 등록된 패키지입니다. 번호: " + (n + 1) + "." };
             if (packages[n] && packages[n].name === state.name) return { ok: false, message: "같은 이름의 패키지가 있어요. 다른 이름을 입력해주세요." };
@@ -72328,7 +72583,7 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         }
         if (definitionChanged) { state.rewards = currentRewards; return { ok: true, message: buildPackageAddPreviewMessage(state) }; }
         var info = createPackageInfoFromState(state, packages); info.registrationId = state.id; packages.push(info);
-        return { ok: true, registered: true, packageInfoData: packages, message: "✅ 패키지 추가 완료!\n\n번호: " + packages.length + "\n패키지: " + info.name + "\n설명: " + info.desc + "\n구성: " + formatPackageRewardSummary(info.rewards) };
+        return { ok: true, registered: true, packageInfoData: packages, message: "✅ 패키지 등록 완료!\n\n번호: " + packages.length + "\n패키지: " + info.name + "\n보상: " + info.rewards.length + "개 항목" };
     }
     return { ok: false, message: "작성 상태가 종료됐어요. /패키지추가시작으로 다시 시작해주세요." };
 
@@ -72569,11 +72824,11 @@ function buildPackageOptionPrompt(draft, raw) {
 // 확인된 실물의 누락 옵션만 보완하고 완성 표기는 같은 등록 검증기로 연결하는 함수
 function getPackageOptionDraft(text, type, definitions, count) {
     var naked = text.replace(/\([^)]*\)|\[[^\]]*\]/g, "").trim(), rows = [], i;
-    if ((!type || type === "gem") && /^(?:루비🔴|사파이어🔵|에메랄드🟢)(?:\[|\(|$)/.test(text)) {
+    if ((!type || type === "gem") && /^(?:루비(?:🔴|❤️)|사파이어(?:🔵|🩵)|에메랄드(?:🟢|💚))(?:\[|\(|$)/.test(text)) {
         var kind = text.indexOf("루비") === 0 ? "ruby" : text.indexOf("사파이어") === 0 ? "sapphire" : "emerald", g = /\[([^\]]+)\]/.exec(text), grade = null;
-        if (g) for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === g[1].replace("🌌", "")) grade = i;
-        var charm = /\(\+([\d,]+)만/.exec(text), castle = /⚔️?\s*\+([\d,]+)만/.exec(text), raid = /👾\s*\+([\d,]+)만/.exec(text);
-        var gem = { kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : charm ? parsePackageOptionInteger(charm[1]) * 10000 : castle ? parsePackageOptionInteger(castle[1]) * 10000 : null, raid: kind === "ruby" ? 0 : charm ? parsePackageOptionInteger(charm[1]) * 10000 : raid ? parsePackageOptionInteger(raid[1]) * 10000 : null };
+        if (g) for (i = 0; i < GLOBAL_CONFIG.adventureGem.grades.length; i++) if (GLOBAL_CONFIG.adventureGem.grades[i].name.replace("🌌", "") === g[1].replace("🌌", "").replace(/·[CBAS]$/, "")) grade = i;
+        var charm = /\(\+([\d,]+)(만)?(?=⚔|💕|👾|\))/.exec(text), castle = /⚔️?\s*\+([\d,]+)만/.exec(text), raid = /👾\s*\+([\d,]+)만/.exec(text);
+        var gem = { kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : charm ? parsePackageOptionInteger(charm[1]) * (charm[2] ? 10000 : 1) : castle ? parsePackageOptionInteger(castle[1]) * 10000 : null, raid: kind === "ruby" ? 0 : charm ? parsePackageOptionInteger(charm[1]) * (charm[2] ? 10000 : 1) : raid ? parsePackageOptionInteger(raid[1]) * 10000 : null };
         if (gem.castle !== null && !isPointShopSafeCount(gem.castle) || gem.raid !== null && !isPointShopSafeCount(gem.raid)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
         var fields = []; if (grade === null) fields.push("grade"); if (gem.castle === null) fields.push("castle"); if (gem.raid === null) fields.push("raid");
         if (fields.length) return { draft: { type: "gem", object: gem, count: count, fields: fields } };
@@ -72662,7 +72917,7 @@ function formatPackageOptionDraft(draft) {
 
 // 구성품의 수량 끝을 기준으로 이어 보내 에메랄드 이름과 두 매력 줄을 분리하지 않는 함수
 function replyPackageContent(replier, message) {
-    var text = String(message), pattern = /\sx[\d,]+(?=,\s|\n|$)/g, boundaries = [0], match;
+    var text = String(message), pattern = /\s[x×]\s*[\d,]+(?=,\s|\n|$)/g, boundaries = [0], match;
     while ((match = pattern.exec(text))) boundaries.push(match.index + match[0].length);
     boundaries.push(text.length);
     var chunk = "", limit = GLOBAL_CONFIG.adventureGem.messageLimit;
@@ -72671,7 +72926,10 @@ function replyPackageContent(replier, message) {
         if (chunk && chunk.length + piece.length > limit) { replier.reply(chunk); chunk = ""; }
         chunk += piece;
     }
-    if (chunk) replier.reply(chunk);
+    if (chunk) {
+        if (text.indexOf("📦 패키지 등록 미리보기") === 0 && chunk !== text) chunk += "\n\n등록 / 수정 / 더 넣기 / 취소";
+        replier.reply(chunk);
+    }
 }
 
 // 스레드·재컴파일 사이에도 새 조회가 이전 대량 출력을 중단하도록 토큰을 읽는 함수
@@ -72736,7 +72994,7 @@ function buildPackageRowQuestion(row, index) {
     if (row.candidates) return buildPackageCandidatePrompt(row.candidates, row.raw, index);
     var body;
     if (row.draft) body = buildPackageOptionPrompt(row.draft, row.raw);
-    else if (row.missingCount) body = formatPackageActualReward(row.reward) + "\n\n몇 개 넣을까요?\n예: 1\n\n옵션을 바꾸려면 \"옵션 수정\"";
+    else if (row.missingCount) body = formatPackageActualReward(row.reward) + "\n\n몇 개 넣을까요?\n예: 1\n\n옵션 수정 / 이전 / 취소";
     else return buildPackageRawFix(row, index === undefined ? 0 : index);
     return index === undefined ? body : "🔎 " + (index + 1) + "번 보상을 확인해주세요.\n\n" + body + "\n\n나머지 입력은 보관하고 있어요.";
 }
@@ -72748,7 +73006,7 @@ function isPackageRowPending(row) {
 
 // 개별 등록과 일괄 등록의 원문 입력 화면을 구분하는 함수
 function getPackageBulkPrompt(state) {
-    return "📦 구성품을 그대로 붙여넣어주세요!\n\n예:\n가온빛💖(+1,001,280💕)[창세] x1, 미니펫 강화석💫 x1,000, 포인트 x300,000\n\n여러 종류를 섞어도 돼요.\n기존 패키지의 \"구성:\" 줄을 복사해도 돼요.\n숫자는 쉼표가 있어도 없어도 돼요." + (state.bulkRaw ? "\n\n현재 입력: " + state.bulkRaw : "");
+    return "📦 구성품을 붙여넣어주세요.\n이름·옵션과 수량을 함께 입력하면 등록 화면으로 바로 이동해요.\n\n예: 컬렉션창조🐹(+1💞)[창조] x1, 컬렉션창세🐹(+1💞)[창세] x1\n\n이전 / 취소" + (state.bulkRaw ? "\n\n현재 입력: " + state.bulkRaw : "");
 }
 
 // 보완한 한 항목을 개별 구성 또는 일괄 검토에 연결하는 함수
