@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.895"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.896"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -72150,7 +72150,9 @@ function normalizePackageLookup(input) {
 
 // 한 보상의 명시 수량과 본문을 분리하며 에메랄드 옵션 줄을 유지하는 함수
 function readPackageRewardInput(input) {
-    var text = String(input || "").trim(), match = /\s*[x×]\s*((?:\d{1,3}(?:,\d{3})+|\d+))\s*(?:개)?(?=\s*(?:\n\s*└|$))/.exec(text);
+    var text = String(input || "").trim();
+    text = text.replace(/(\s[x×]\s*(?:\d{1,3}(?:,\d{3})+|\d+)\s*(?:개)?)\s*,$/, "$1");
+    var match = /\s*[x×]\s*((?:\d{1,3}(?:,\d{3})+|\d+))\s*(?:개)?(?=\s*(?:\n\s*└|$))/.exec(text);
     if (!match) match = /\s+((?:\d{1,3}(?:,\d{3})+|\d+))\s*개$/.exec(text);
     if (!match) match = /\s+[x×]\s*(\S+?)\s*(?:개)?$/.exec(text) || /\s+([-+]?[\d,.]+)\s*개$/.exec(text);
     if (!match) return { text: text, count: null };
@@ -72160,7 +72162,11 @@ function readPackageRewardInput(input) {
 
 // 이미 읽은 정의와 기존 실물 생성 권한만 패키지 입력에 전달하는 함수
 function getPackageActualDefinitions(data, items, packages, homes, actor) {
-    return { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: miniPetData.miniPet, furniture: homes.furniture,
+    var collection = createLegacyMiniEntitlementPackage("ticket").rewards.map(function (reward) {
+        reward.object.packageCollection = true;
+        return reward.object;
+    }); // 기존 지급 정의에서 컬렉션 미니펫의 외형·매력·가격을 가져온다.
+    return { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: miniPetData.miniPet.concat(collection), furniture: homes.furniture,
         custom: { mini: actor === "호이 남" || isOrderLogRoomBot(actor), furniture: isAdmin(actor) || isMaster(actor), pendant: isMaster(actor) } };
 }
 
@@ -72275,6 +72281,7 @@ function resolvePackageRewardInput(input, type, definitions, countOverride, cust
             var miniExp = parsePackageOptionInteger(miniMatch[2]), upgrade = /\(MAX(?:💫)?\)$/.test(text) ? getMiniPetUpgradeMaxLevel(mini) : Number(miniMatch[4] || 0);
             if (!isPointShopSafeCount(miniExp)) return { error: "숫자를 확인해주세요. 예: 1000 또는 1,000" };
             if (!isPointShopSafeCount(miniExp) || !isPointShopSafeCount(upgrade) || upgrade > getMiniPetUpgradeMaxLevel(mini)) return { error: "이 값으로는 등록할 수 없어요. 입력 가능한 범위는 " + getMiniPetUpgradeMaxLevel(mini) + "입니다." };
+            if (mini.packageCollection && (miniExp !== mini.battleExp || upgrade !== mini.upgrade)) continue;
             choices.push({ type: "mini", name: mini.name, object: { name: mini.name, emoji: mini.emoji || "", grade: mini.grade, price: Number(mini.price) || 0, battleExp: miniExp, castleExp: miniExp, raidExp: miniExp, upgrade: upgrade } });
         }
     }
