@@ -110,7 +110,7 @@ Status: VERIFIED
 ## READY 레거시 변경 (2026-11-24)
 
 - 반말방 room10·room13 운영 등록 해제: main.js 수신·유입·발송 목록, 보존된 예약 대상 검사, 별도 notice.js 발송 목록과 네 스크립트의 확인된 이전 이름 수신 제외. 호이서버6·7 기존 소속과 이동 가능 목록은 유지.
-- 패키지 추가: handlePackageActualFlowMessage → buildPackageBulkReview → finishPackageBulkInput → 보상 선택 메뉴. 미니펫 개별 추가도 완료 시 보상 선택 메뉴로 복귀한다. 9에서 미확정 개별 보상을 보완하고 미리보기를 연다. 수정 후 같은 옵션은 수량을 합산. 미리보기 등록만 기존 등록 ID 및 packageInfoPath 저장 절차를 실행.
+- 패키지 추가: handlePackageActualFlowMessage → buildPackageBulkReview → finishPackageBulkInput → 보상 선택 메뉴. 미니펫 개별 추가도 완료 시 보상 선택 메뉴로 복귀한다. 개별·일괄 입력 모두 가방에서 복사한 미니펫의 목록 번호를 구분한다. 9에서 미확정 개별 보상을 보완하고 미리보기를 연다. 수정 후 같은 옵션은 수량을 합산. 미리보기 등록만 기존 등록 ID 및 packageInfoPath 저장 절차를 실행.
 - 보석: applyAdventureGemDraw에서 일반 등급·보장 등급 확률 분리, 공통 1만 단위 추첨. formatAdventureGem에서 실매력 품질을 계산하고 resolvePackageRewardInput에서 신·구 입력 호환. Info.js의 기존 보석 조회 검증 단위도 1만. 자유시장 완료 기록의 구형 표기는 읽을 때만 변환.
 - 가이드: /펜던트가이드 1~9·/가구가이드 1~8은 buildEquipmentGuideMessage에서 조회. /미니펫가이드는 가방에서 옮긴 사용법을 표시.
 - 멘트: processPremiumMentCommand의 본인 등록·삭제는 회원 원본 저장 후 응답. getPremiumMentReplies는 방과 서버 소속에 관계없이 수신 원문 전체가 호출 이름과 일치할 때 활성 등록자를 조회. 기존 채팅 집계를 마친 후 응답. 지원 종료·재가입·KST 일일 정리에서 만료 멘트 제거.
