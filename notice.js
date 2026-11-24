@@ -11,10 +11,8 @@ const NOTICE_CONFIG = {
         "💜3040대친목 반말방🐻 24시 보이스룸💜",
         "💜20대 30대 반말방💙친목.보룸.수다",
         "공성전",
-        "🤩30대 월루 도파민 반말방❤️보룸,봇,친목",
         "🐤30대 40대 반말방💛신생/친목/보룸/수다/벙/봇",
         "🐹신생🐹 30대 반말방 보이스룸 수다 벙🍒",
-        "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻",
         "호이월드 GM 관리자방"
     ],
     errorRoom: "호이월드 GM 관리자방",
@@ -35,7 +33,7 @@ var noticeRuntimeSchedule = null;
  * (string) packageName
  */
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-    if (String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥") return;
+    if (String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥" || String(room) === "🤩30대 월루 도파민 반말방❤️보룸,봇,친목" || String(room) === "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻") return;
     if (!isNoticeCommand(msg)) return;
 
     if (!isNoticeOperator(sender)) {

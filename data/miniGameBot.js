@@ -16,7 +16,7 @@ let crocGame = {
 };
 
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-    if (String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥") return;
+    if (String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥" || String(room) === "🤩30대 월루 도파민 반말방❤️보룸,봇,친목" || String(room) === "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻") return;
     // 준비
     try {
         // if (!isGroupChat && room != "광산") { return };

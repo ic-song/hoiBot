@@ -830,7 +830,7 @@ const room92 = "서버관리자";
 
 // 운영에서 제외한 방과 확인된 이전 방 이름을 차단하는 함수
 function isRetiredHoiRoom(room) {
-    return String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥";
+    return String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥" || String(room) === "🤩30대 월루 도파민 반말방❤️보룸,봇,친목" || String(room) === "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻";
 }
 
 //서버데이터
@@ -5974,7 +5974,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (recordSearchAuthenticationChat(plainLightData, sender, room)) saveJsonFile(plainLightData, attendanceLightPath, false, plainLightSnapshot);
             }
             addResponseTiming("미가입 채팅 인식", plainLightStartedAt);
-            if (guestMentReplies) for (var guestMentPart = 0; guestMentPart < guestMentReplies.length; guestMentPart++) premiumMentReplier.reply(ctx.header(guestMentReplies[guestMentPart]));
+            replyPremiumMentMessages(guestMentReplies, premiumMentReplier, ctx);
             return;
         }
         commonStepStart = Date.now();
@@ -6067,9 +6067,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             premiumMentReplier.reply(ctx.header(mentResult.message));
             return;
         }
-        var premiumMentReplies = isGroupChat === true && !userState[sender] && !worldNewsDraftState[getWorldNewsDraftKey(sender, room)] ?
-            getPremiumMentReplies(data, sender, msg, request.callbackEvent, ctx) : null;
         if (canUsePlainChatFastPath(data, petData, petSkillData, sender, room, msg, ctx)) {
+            var premiumMentReplies = getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat);
             updateResponseQueueStage(request, "일반 채팅 집계");
             var plainChatStartedAt = Date.now();
             var plainAutoAttackChanged = disableInvalidGuildTerritoryAutoAttacks(data).length > 0;
@@ -6089,12 +6088,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             updateResponseQueueStage(request, "일반 채팅 결과 전송");
             var plainChatReplyStartedAt = Date.now();
             replyChatExperienceResult(data, petData, guildData, sender, room, plainChatExp, replier);
-            if (premiumMentReplies) for (var mentReply = 0; mentReply < premiumMentReplies.length; mentReply++) premiumMentReplier.reply(ctx.header(premiumMentReplies[mentReply]));
+            replyPremiumMentMessages(premiumMentReplies, premiumMentReplier, ctx);
             addResponseTiming("일반 채팅 결과 전송", plainChatReplyStartedAt);
-            return;
-        }
-        if (premiumMentReplies) {
-            for (var mentPart = 0; mentPart < premiumMentReplies.length; mentPart++) premiumMentReplier.reply(ctx.header(premiumMentReplies[mentPart]));
             return;
         }
         updateResponseQueueStage(request, "공통 게임 보정");
@@ -7462,7 +7457,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
                 if (data.member[sender] && !petData[sender]) {
                     initializePet(sender, petData);
-                    if (!isSignupPetFlow) return;
+                    if (!isSignupPetFlow) {
+                        replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
+                        return;
+                    }
                 }
 
                 initPetSkillUser(petSkillData, sender);
@@ -9258,23 +9256,25 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
+                var legacyMentReplies = getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat);
                 if (msg.length > 3) {
                     updateResponseQueueStage(request, "채팅 집계");
                     var legacyChatStartedAt = Date.now();
                     data.member[sender].point++;
                     data.member[sender].chatcnt0++;
                     var chatExpResult = hasAttendedToday(data, sender) ? awardDailyChatExperience(data, sender) : null; // 출석 후 남은 일일 한도 안에서 실제 지급한 채팅 경험치
-                    if (chatExpResult && chatExpResult.total > 0) saveJsonFile(data, filePath);
+                    if (!legacyMentReplies && chatExpResult && chatExpResult.total > 0) saveJsonFile(data, filePath);
                     //서버데이터 넣기
                     if (!data.member[sender].server) {
                         if (roomToServer[room]) {
                             data.member[sender].server = roomToServer[room];
                         }
                     }
+                    if (legacyMentReplies) saveJsonFile(data, filePath);
                     replyChatExperienceResult(data, petData, guildData, sender, room, chatExpResult, replier);
                     addResponseTiming("채팅 집계", legacyChatStartedAt);
                 }
-
+                if (replyPremiumMentMessages(legacyMentReplies, premiumMentReplier, ctx)) return;
 
                 updateResponseQueueStage(request, "명령 실행");
                 if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg) && !isOrderLogRoomBot(sender)) {
@@ -30668,6 +30668,9 @@ replier.reply(
                 commonStepStart = Date.now();
                 saveJsonFile(data, filePath);
                 addResponseTiming("회원·분리 데이터 저장", commonStepStart);
+            } else {
+                // 기존 채팅 집계 대상이 아닌 가입자도 단체방에서 멘트를 호출할 수 있다.
+                replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
             }
         }
     } catch (error) {
@@ -49185,10 +49188,25 @@ function buildPremiumMentStatus(data, user, bag) {
     return text + (ment ? "\n└ 내 멘트: " + ment : "");
 }
 
+// 단체방에서 기존 작성 세션을 우선하고 일반 멘트를 조회하는 함수
+function getGroupPremiumMentReplies(data, room, sender, msg, event, ctx, isGroupChat) {
+    var writing = userState[sender];
+    if (isGroupChat !== true || writing && Object.keys(writing).length || worldNewsDraftState[getWorldNewsDraftKey(sender, room)]) return null;
+    return getPremiumMentReplies(data, sender, msg, event, ctx);
+}
+
+// 조회된 멘트 전송과 이미 처리한 호출의 종료 여부를 반환하는 함수
+function replyPremiumMentMessages(messages, replier, ctx) {
+    if (!messages) return false;
+    for (var i = 0; i < messages.length; i++) replier.reply(ctx.header(messages[i]));
+    return true;
+}
+
 // 서버와 관계없이 호출 이름과 일치하는 활성 멘트를 찾는 함수
 function getPremiumMentReplies(data, sender, message, event, ctx) {
     var name = String(message).trim();
-    if (!isPlainChatInput(name) || sender === "오픈채팅봇") return null;
+    if (!name || name.charAt(0) === "/" || /[\r\n]/.test(name) || sender === "오픈채팅봇" ||
+        ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(name) !== -1 || GLOBAL_CONFIG.commandQueue.plainInputExceptions.indexOf(name) !== -1) return null;
     var users = [], rows = [];
     for (var user in data.member) {
         if (!Object.prototype.hasOwnProperty.call(data.member, user) || !data.member[user] ||
@@ -52657,7 +52675,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
         var log = logs[i];
         var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + (Number(log.feeRate) === GLOBAL_CONFIG.freeMarket.memberTradeFeeRate ? GLOBAL_CONFIG.freeMarket.memberFeeTag : "자회원🏪(수수료 " + formatTransferFeeRate(Number(log.feeRate) * 100) + "%)") : "";
         var completedTimeText = formatFreeMarketDisplayTime(log.completedAt, log.completedAtMs);
-        out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개" + "]\n└[" + (log.currency === "DIAMOND" ? "💎" + numberWithCommas(log.price || 0) : "기존 포인트 🅟" + numberWithCommas(log.price || 0)) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
+        var itemName = log.type === "gem" ? formatFreeMarketCompletedGemName(log.itemName) : log.itemName;
+        out += (i + 1) + ". [" + itemName + "x" + numberWithCommas(log.quantity || 0) + "개" + "]\n└[" + (log.currency === "DIAMOND" ? "💎" + numberWithCommas(log.price || 0) : "기존 포인트 🅟" + numberWithCommas(log.price || 0)) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
         if (completedTimeText) out += "\n  └(" + completedTimeText + ")";
         out += "\n\n";
     }
@@ -71451,6 +71470,25 @@ function formatAdventureGem(gem) {
     return (gem.kind === "ruby" ? "루비❤️(+" : "사파이어🩵(+") + formatAdventureGemCharm(value) + (gem.kind === "ruby" ? "💕" : "👾") + ")[" + definition.name + "·" + getAdventureGemQuality(definition, value) + "]";
 }
 
+// 저장된 구형 거래 기록은 원본을 유지하고 화면에서만 현재 보석 표기로 바꾸는 함수
+function formatFreeMarketCompletedGemName(itemName) {
+    if (typeof itemName !== "string") return itemName;
+    var single = /^(루비🔴|사파이어🔵)\(\+([\d,]+)만(?:⚔️?|👾)\)\[([^\]]+)\]$/.exec(itemName);
+    var emerald = /^에메랄드🟢\[([^\]]+)\]\n└ ⚔️? \+([\d,]+)만 · 👾 \+([\d,]+)만$/.exec(itemName);
+    if (!single && !emerald) return itemName;
+    var config = GLOBAL_CONFIG.adventureGem, gradeName = single ? single[3] : emerald[1];
+    for (var grade = 0; grade < config.grades.length; grade++) {
+        var definition = config.grades[grade];
+        if (definition.name !== gradeName) continue;
+        var kind = emerald ? "emerald" : single[1] === "루비🔴" ? "ruby" : "sapphire";
+        var value = Number((emerald ? emerald[2] : single[2]).replace(/,/g, "")) * 10000; // 구형 만 단위 값으로 실제 매력 복원
+        var raid = emerald ? Number(emerald[3].replace(/,/g, "")) * 10000 : value;
+        if (value < definition.min || value > definition.max || raid < definition.min || raid > definition.max) return itemName;
+        return formatAdventureGem({ kind: kind, grade: grade, castle: kind === "sapphire" ? 0 : value, raid: kind === "ruby" ? 0 : raid });
+    }
+    return itemName;
+}
+
 // 현재 모험가 레벨과 영구 추가칸으로 고정 슬롯 범위를 계산하는 함수
 function getAdventureGemSlots(data, user, store) {
     var level = Math.max(1, parseInt(data.member[user].lv, 10) || 1), base = Math.floor(level / GLOBAL_CONFIG.adventureGem.levelsPerSlot), total = base + store.extraSlots;
@@ -72346,8 +72384,35 @@ function finishPackageBulkInput(state, rewards) {
     state.rewards = mergePackageActualRewards(state.rewards, rewards);
     state.bulk = null; state.bulkRewards = null; state.bulkRaw = null;
     state.bulkEditing = false; state.editingBulkRaw = false; state.returnToPreview = false;
+    return openPackageAddPreview(state).message;
+}
+
+// 보류한 개별 보상을 불러와 미입력 항목을 계속 묻는 함수
+function resumePackagePendingInput(state) {
+    if (!state.inputRow || !isPackageRowPending(state.inputRow)) {
+        var deferred = state.deferredInputs;
+        if (deferred) for (var type in deferred) {
+            if (!Object.prototype.hasOwnProperty.call(deferred, type) || !isPackageRowPending(deferred[type])) continue;
+            state.rewardType = type;
+            state.inputRow = deferred[type];
+            delete deferred[type];
+            break;
+        }
+    }
+    if (!state.inputRow || !isPackageRowPending(state.inputRow)) return null;
+    state.returnToPreview = false;
+    state.resumePreviewInput = true;
+    return acceptPackageWritingRow(state, state.inputRow, false);
+}
+
+// 미확정 보상이 없을 때만 최종 미리보기를 여는 함수
+function openPackageAddPreview(state) {
+    var pending = resumePackagePendingInput(state);
+    if (pending) return pending;
+    state.returnToPreview = false;
+    state.resumePreviewInput = false;
     state.step = "CONFIRM";
-    return buildPackageAddPreviewMessage(state);
+    return { ok: true, message: buildPackageAddPreviewMessage(state) };
 }
 
 // 실물 입력을 같은 검증기로 처리하고 수량 누락만 별도 단계로 보완하는 함수
@@ -72370,13 +72435,16 @@ function applyPackageActualInputResult(state, result, text) {
 // 검증한 보상 하나를 추가 또는 수정하고 작성 화면으로 돌아가는 함수
 function completePackageActualInput(state, reward) {
     var editing = state.editRewardIndex !== undefined;
-    if (editing) { state.rewards[state.editRewardIndex] = reward; delete state.editRewardIndex; }
-    else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
+    if (editing) {
+        var editedRewards = state.rewards.slice();
+        editedRewards[state.editRewardIndex] = reward;
+        state.rewards = mergePackageActualRewards([], editedRewards);
+        delete state.editRewardIndex;
+    } else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
     state.inputRow = null; state.pendingReward = null; state.pendingRaw = null;
-    var preview = editing || state.returnToPreview;
-    state.returnToPreview = false;
-    state.step = preview ? "CONFIRM" : "REWARD_CHOICE";
-    return { ok: true, message: preview ? buildPackageAddPreviewMessage(state) : buildPackageRewardChoiceMessage(state) };
+    if (editing || state.returnToPreview || state.resumePreviewInput) return openPackageAddPreview(state);
+    state.step = "REWARD_CHOICE";
+    return { ok: true, message: buildPackageRewardChoiceMessage(state) };
 }
 
 // 작성 중 보상의 편집 대상만 기존 표기로 나열하는 함수
@@ -72498,6 +72566,8 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         if (text === "수정") { state.step = "EDIT_MENU"; return { ok: true, message: buildPackageWritingQuestion(state) }; }
         if (text === "더 넣기") { state.returnToPreview = true; state.step = "REWARD_CHOICE"; return { ok: true, message: buildPackageRewardChoiceMessage(state) }; }
         if (text !== "등록") return { ok: false, message: "입력할 수 있는 명령을 확인해주세요.\n등록 / 수정 / 더 넣기 / 취소\n\n패키지를 저장하려면 \"등록\"을 입력해주세요." };
+        var pendingInput = resumePackagePendingInput(state);
+        if (pendingInput) return { ok: false, message: pendingInput.message };
         for (var n = 0; n < packages.length; n++) {
             if (packages[n] && packages[n].registrationId === state.id) return { ok: true, registered: true, message: "이미 등록된 패키지입니다. 번호: " + (n + 1) + "." };
             if (packages[n] && packages[n].name === state.name) return { ok: false, message: "같은 이름의 패키지가 있어요. 다른 이름을 입력해주세요." };
