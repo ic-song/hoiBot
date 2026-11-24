@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.894"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.895"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -72223,9 +72223,27 @@ function resolvePackageCustomRewardInput(text, type, definitions, count, options
     return { reward: reward };
 }
 
+// 가방에서 복사한 미니펫 행의 번호를 확인된 미니펫 이름 앞에서만 제거하는 함수
+function stripPackageMiniPetRowNumber(text, miniDefinitions) {
+    var row = /^\u200b*([1-9]\d*\.[ \t]+)((.*?)\(\+[\d,]+(?:💕|💞)\)\[([^\]]+)\](?:\([^)]*\))?)$/.exec(text);
+    if (!row) return text;
+    var name = normalizePackageLookup(row[3]), numberedName = normalizePackageLookup(row[1] + row[3]);
+    var hasUnnumberedName = false;
+    for (var i = 0; i < miniDefinitions.length; i++) {
+        var mini = miniDefinitions[i];
+        if (mini.grade !== row[4]) continue;
+        var baseName = normalizePackageLookup(mini.name), displayName = normalizePackageLookup(mini.name + (mini.emoji || ""));
+        if (numberedName === baseName || numberedName === displayName) return text;
+        if (name === baseName || name === displayName) hasUnnumberedName = true;
+    }
+    return hasUnnumberedName ? row[2] : text;
+}
+
 // 현재 정의와 명시된 옵션만 사용해 패키지 한 항목을 실제 보상 규격으로 검증하는 함수
 function resolvePackageRewardInput(input, type, definitions, countOverride, customOptions) {
-    var parsed = readPackageRewardInput(input), text = parsed.text, count = countOverride || parsed.count, key = normalizePackageLookup(text), choices = [], i;
+    var parsed = readPackageRewardInput(input), text = parsed.text, count = countOverride || parsed.count;
+    if (!type || type === "mini") text = stripPackageMiniPetRowNumber(text, definitions.mini);
+    var key = normalizePackageLookup(text), choices = [], i;
     if (GLOBAL_CONFIG.package.retiredMiniSet && (text === GLOBAL_CONFIG.package.retiredMiniSet.ticket || text === GLOBAL_CONFIG.package.retiredMiniSet.name)) return { error: "종료된 패키지입니다.\n/패키지리스트에서 현재 패키지를 확인해주세요." };
     if (parsed.invalidCount || countOverride !== undefined && !parsePackagePositiveCount(countOverride)) return { error: "수량은 1 이상의 정수로 입력해주세요." };
     var optionDraft = getPackageOptionDraft(text, type, definitions, count);
