@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.891"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.892"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -1210,6 +1210,7 @@ const GLOBAL_CONFIG = {
     "retryMs": 5000,
     "recordLimit": 30,
     "defaultTaxRate": 12,
+    "manualTaxRate": 5,
     "lordTaxRate": 20,
     "pendingName": "guildWarPending.json",
     "snapshotSuffix": ".guildwar-rollback",
@@ -20701,7 +20702,7 @@ replier.reply(
                     var hoiCastle = data.HoiCastle, requestedTaxRate = Number(msg.trim().split(/\s+/)[1]);
                     var oldTaxRate = getHoiCastleTaxRate(data, petSkillData), previousTaxRate = hoiCastle.taxRate;
                     var forceTax = requestedTaxRate > 10 && requestedTaxRate <= 30 && hasPetSkill(petSkillData, sender, "악덕한 영주");
-                    if (requestedTaxRate !== GLOBAL_CONFIG.guildWar.defaultTaxRate && !forceTax) { noticeMsg("세금은 5% 고정만 가능합니다."); return; }
+                    if (requestedTaxRate !== GLOBAL_CONFIG.guildWar.manualTaxRate && !forceTax) { noticeMsg("세금은 5% 고정만 가능합니다."); return; }
                     var newTaxRate = forceTax ? GLOBAL_CONFIG.guildWar.lordTaxRate : requestedTaxRate;
                     hoiCastle.taxRate = String(newTaxRate);
                     try { saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
