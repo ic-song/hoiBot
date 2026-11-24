@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.893"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.894"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -49180,7 +49180,11 @@ function buildPremiumMentStatus(data, user, bag) {
     if (!bag) text += "\n└ 삭제: /멘트삭제";
     if (!active) text += "\n└ 필요: 호이패스 프리미엄👑";
     text += "\n└ 프리미엄 만료 시 사용 중지·자동 삭제";
-    return text + (ment ? "\n└ 내 멘트: " + ment : "");
+    if (ment) {
+        text += "\n└ 내 멘트: " + ment;
+        if (bag) text += "\n└ 필요: 호이패스 프리미엄👑";
+    }
+    return text;
 }
 
 // 단체방에서 기존 작성 세션을 우선하고 일반 멘트를 조회하는 함수
@@ -72379,7 +72383,9 @@ function finishPackageBulkInput(state, rewards) {
     state.rewards = mergePackageActualRewards(state.rewards, rewards);
     state.bulk = null; state.bulkRewards = null; state.bulkRaw = null;
     state.bulkEditing = false; state.editingBulkRaw = false; state.returnToPreview = false;
-    return openPackageAddPreview(state).message;
+    state.resumePreviewInput = false;
+    state.step = "REWARD_CHOICE";
+    return buildPackageRewardChoiceMessage(state);
 }
 
 // 보류한 개별 보상을 불러와 미입력 항목을 계속 묻는 함수
@@ -72437,7 +72443,9 @@ function completePackageActualInput(state, reward) {
         delete state.editRewardIndex;
     } else state.rewards = mergePackageActualRewards(state.rewards, [reward]);
     state.inputRow = null; state.pendingReward = null; state.pendingRaw = null;
-    if (editing || state.returnToPreview || state.resumePreviewInput) return openPackageAddPreview(state);
+    if (editing || (reward.type !== "mini" && (state.returnToPreview || state.resumePreviewInput))) return openPackageAddPreview(state);
+    state.returnToPreview = false;
+    state.resumePreviewInput = false;
     state.step = "REWARD_CHOICE";
     return { ok: true, message: buildPackageRewardChoiceMessage(state) };
 }
@@ -72492,8 +72500,8 @@ function handlePackageActualFlowMessage(sender, msg, packages, definitions) {
         var choice = normalizePackageRewardChoice(text);
         if (choice === "CANCEL") return { ok: true, message: cancelPackageAddFlow(sender) };
         if (choice === "DONE") {
-            if (state.inputRow && isPackageRowPending(state.inputRow)) return acceptPackageWritingRow(state, state.inputRow, false);
-            if (state.deferredInputs) for (var deferredType in state.deferredInputs) if (Object.prototype.hasOwnProperty.call(state.deferredInputs, deferredType)) { state.rewardType = deferredType; state.inputRow = state.deferredInputs[deferredType]; delete state.deferredInputs[deferredType]; return acceptPackageWritingRow(state, state.inputRow, false); }
+            var pendingRewardInput = resumePackagePendingInput(state);
+            if (pendingRewardInput) return pendingRewardInput;
             if (state.bulk && state.bulk.some(function (row) { return !row.removed; })) return { ok: true, message: buildPackageBulkReview(state) };
             if (!state.rewards.length) return { ok: false, message: "🎁 보상을 하나 이상 넣어주세요.\n\n" + buildPackageRewardChoiceMessage(state) };
             state.step = "CONFIRM"; return { ok: true, message: buildPackageAddPreviewMessage(state) };
