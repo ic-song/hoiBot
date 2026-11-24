@@ -5965,7 +5965,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         var pointShopBootstrapChanged = syncStoneBoxShopItems(data); // 돌멩이 단가와 상자 가격 동기화
         var incomingServerChanged = room === room15 && isGroupChat === true && assignUnspecifiedMemberServer(data, sender, roomToServer[room]); // 신규 방은 짧은 일반 채팅에서도 미지정 소속을 결정
         if (pointShopBootstrapChanged || incomingServerChanged) saveJsonFile(data, filePath);
-        var guestMentReplies = isGroupChat === true && !data.member[sender] ? getPremiumMentReplies(data, sender, msg, request.callbackEvent, ctx) : null;
+        var guestMentReplies = isGroupChat === true && !data.member[sender] ? getPremiumMentReplies(data, sender, request.msg, request.callbackEvent, ctx) : null;
         if (!data.member[sender] && (isPlainChatInput(msg) || guestMentReplies)) {
             updateResponseQueueStage(request, "미가입 채팅 인식");
             var plainLightStartedAt = Date.now();
@@ -6068,7 +6068,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             return;
         }
         if (canUsePlainChatFastPath(data, petData, petSkillData, sender, room, msg, ctx)) {
-            var premiumMentReplies = getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat);
+            var premiumMentReplies = getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat);
             updateResponseQueueStage(request, "일반 채팅 집계");
             var plainChatStartedAt = Date.now();
             var plainAutoAttackChanged = disableInvalidGuildTerritoryAutoAttacks(data).length > 0;
@@ -7458,7 +7458,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (data.member[sender] && !petData[sender]) {
                     initializePet(sender, petData);
                     if (!isSignupPetFlow) {
-                        replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
+                        replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
                         return;
                     }
                 }
@@ -9256,7 +9256,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
-                var legacyMentReplies = getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat);
+                var legacyMentReplies = getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat);
                 if (msg.length > 3) {
                     updateResponseQueueStage(request, "채팅 집계");
                     var legacyChatStartedAt = Date.now();
@@ -26709,11 +26709,6 @@ replier.reply(
                         return;
                     }
 
-                    if (guildCubeGuild.master !== sender) {
-                        replier.reply(guildCubeActorHeader + "길드장만 사용할 수 있습니다.");
-                        return;
-                    }
-
                     if (msg === "/길드큐브") {
                         replier.reply(guildCubeActorHeader + "사용법: /길드큐브 [길드옵션번호] [시도횟수]");
                         return;
@@ -30670,7 +30665,7 @@ replier.reply(
                 addResponseTiming("회원·분리 데이터 저장", commonStepStart);
             } else {
                 // 기존 채팅 집계 대상이 아닌 가입자도 단체방에서 멘트를 호출할 수 있다.
-                replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
+                replyPremiumMentMessages(getGroupPremiumMentReplies(data, room, sender, request.msg, request.callbackEvent, ctx, isGroupChat), premiumMentReplier, ctx);
             }
         }
     } catch (error) {
@@ -49204,7 +49199,7 @@ function replyPremiumMentMessages(messages, replier, ctx) {
 
 // 서버와 관계없이 호출 이름과 일치하는 활성 멘트를 찾는 함수
 function getPremiumMentReplies(data, sender, message, event, ctx) {
-    var name = String(message).trim();
+    var name = String(message); // 원문 전체가 호출 이름과 같을 때만 응답
     if (!name || name.charAt(0) === "/" || /[\r\n]/.test(name) || sender === "오픈채팅봇" ||
         ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(name) !== -1 || GLOBAL_CONFIG.commandQueue.plainInputExceptions.indexOf(name) !== -1) return null;
     var users = [], rows = [];

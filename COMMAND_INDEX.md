@@ -113,7 +113,7 @@ Status: VERIFIED
 - 패키지 추가: handlePackageActualFlowMessage → buildPackageBulkReview → finishPackageBulkInput → 전체 미리보기. 미확정 개별 보상은 미리보기와 등록 전에 보완하며 수정 후 같은 옵션은 수량을 합산. 미리보기 등록만 기존 등록 ID 및 packageInfoPath 저장 절차를 실행.
 - 보석: applyAdventureGemDraw에서 일반 등급·보장 등급 확률 분리, 공통 1만 단위 추첨. formatAdventureGem에서 실매력 품질을 계산하고 resolvePackageRewardInput에서 신·구 입력 호환. Info.js의 기존 보석 조회 검증 단위도 1만. 자유시장 완료 기록의 구형 표기는 읽을 때만 변환.
 - 가이드: /펜던트가이드 1~9·/가구가이드 1~8은 buildEquipmentGuideMessage에서 조회. /미니펫가이드는 가방에서 옮긴 사용법을 표시.
-- 멘트: processPremiumMentCommand의 본인 등록·삭제는 회원 원본 저장 후 응답. getPremiumMentReplies는 방과 서버 소속에 관계없이 정확한 호출 이름의 활성 등록자를 조회. 기존 채팅 집계를 마친 후 응답. 지원 종료·재가입·KST 일일 정리에서 만료 멘트 제거.
+- 멘트: processPremiumMentCommand의 본인 등록·삭제는 회원 원본 저장 후 응답. getPremiumMentReplies는 방과 서버 소속에 관계없이 수신 원문 전체가 호출 이름과 일치할 때 활성 등록자를 조회. 기존 채팅 집계를 마친 후 응답. 지원 종료·재가입·KST 일일 정리에서 만료 멘트 제거.
 
 ## 보급대·보급 지원·군량미 (2026-11-13, ver_2.840)
 
@@ -1965,6 +1965,7 @@ Status: VERIFIED
 
 - Search in `main.js`: `/길드큐브`
 - Guard: exact usage command or two complete numeric arguments
+- Permission: actual members of the guild may use the cube with their own contribution.
 
 ## Files
 
