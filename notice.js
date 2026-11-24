@@ -35,6 +35,7 @@ var noticeRuntimeSchedule = null;
  * (string) packageName
  */
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    if (String(room) === "🥲30대반말방💬어른이된건사고였다🎙️보룸·수다·벙" || String(room) === "😎 2030 어 왔냐? 앉아 반말해🍿" || String(room) === "🚨30대 반말방💊도파민 비상사태💥") return;
     if (!isNoticeCommand(msg)) return;
 
     if (!isNoticeOperator(sender)) {

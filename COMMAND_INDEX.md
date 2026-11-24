@@ -107,15 +107,23 @@ Status: VERIFIED
 - `compactGuildWarRecords(state, previewOnly)`는 순수 계산이며 과거 전환 실행은 확인된 `/데이터정리` 분기 한 곳에만 있다. 미리보기 지문에 원본을 포함해 변경 시 재확인하고, 같은 번호의 다른 내용이나 참조 누락은 오류로 거절한다. 일반 명령·컴파일·기동에서 과거 기록을 전환하거나 보관 백업을 정리하지 않는다.
 - `/길드전쟁`·`/전쟁지도`는 선행 조건 문구를 생략하되 🔒/⚔️/🏴·진격 조건·점령 한도를 유지한다. `/자유시장판매가이드`·`자유시장 판매가이드`는 거래 자료 로드·매물 회수·변경 배치 전에 기존 `buildFreeMarketV2Guide`만 출력한다. 삼성전자 설명은 육백만전자로 표기한다.
 
+## READY 레거시 변경 (2026-11-24)
+
+- 반말방 room10·room13 운영 등록 해제: main.js 수신·유입·발송 목록, 보존된 예약 대상 검사 및 Info.js·notice.js·data/miniGameBot.js 수신 방어. 호이서버6·7 기존 소속과 이동 가능 목록은 유지.
+- 패키지 추가: handlePackageActualFlowMessage → buildPackageBulkReview → finishPackageBulkInput → 전체 미리보기. 미리보기 등록만 기존 등록 ID 및 packageInfoPath 저장 절차를 실행.
+- 보석: applyAdventureGemDraw에서 일반 등급·보장 등급 확률 분리, 공통 1만 단위 추첨. formatAdventureGem에서 실매력 품질을 계산하고 resolvePackageRewardInput에서 신·구 입력 호환. Info.js의 기존 보석 조회 검증 단위도 1만.
+- 가이드: /펜던트가이드 1~9·/가구가이드 1~8은 buildEquipmentGuideMessage에서 조회. /미니펫가이드는 가방에서 옮긴 사용법을 표시.
+- 멘트: processPremiumMentCommand의 본인 등록·삭제는 회원 원본 저장 후 응답. getPremiumMentReplies는 방과 서버 소속에 관계없이 정확한 호출 이름의 활성 등록자를 조회. 지원 종료·재가입·KST 일일 정리에서 만료 멘트 제거.
+
 ## 보급대·보급 지원·군량미 (2026-11-13, ver_2.840)
 
 Status: VERIFIED
 
 - 진입: 정확한 무인수 /길드보급 → getGuildWarRequest → runGuildWarEntry → applyGuildWarSupply. 기존 응답 MQ·전체 데이터 잠금 안에서 최신 회원과 실제 길드 소속을 재확인한다. 등록 길드톡·출석·정지·개인톡의 공통 조건을 유지하며 수량·안내문이 붙으면 지급하지 않는다. 사용자 후속 확정으로 보급대만 참여할 수 있다. getGuildWarSupplyMembers로 실제 최신 정찰·자폭·공격3·방어3 역할 중 하나라도 있으면 저장 전에 거부하며 일반 직책만 있는 회원은 허용한다. 편성 변경 시 당일 지원 기록은 유지한다. 마지막 전쟁 역할이 해제될 때 recordGuildWarSupplyRoleRelease가 회원의 guildSupplyRoleReleasedDay에 현재 KST 주기를 남긴다. 직접/일괄/전체 초기화·탈퇴/제명·가입 정리·길드 해산/전체 초기화·소속 정리 모두 동일 기록을 사용한다. hasGuildWarSupplyRoleReleaseToday가 당일 보급을 차단하고 다음 주기에만 해제한다. 단순 순서 변경·남은 겸직·실패한 편성은 새 제한을 만들지 않는다. 편성/정리 명령은 회원과 길드를 함께 게시한다. 전쟁 중·공용/개인 선포권 소진 중에도 보급대는 지원 가능하다.
-- GLOBAL_CONFIG.guildWar.supply는 개인 포인트 200,000,000·군량미1·전환단위100을 정의한다. 회원의 guildSupplyDay를 getVaultRobberyDay 기준으로 확인하므로 회원 데이터 이관·길드 이동·편성 변경·재시작·동일 주기 초기화로 재지원할 수 없다. helpers에서 신규 IO를 하지 않는다.
+- GLOBAL_CONFIG.guildWar.supply는 개인 포인트 200,000,000·군량미5·전환단위100을 정의한다. 회원의 guildSupplyDay를 getVaultRobberyDay 기준으로 확인하므로 회원 데이터 이관·길드 이동·편성 변경·재시작·동일 주기 초기화로 재지원할 수 없다. helpers에서 신규 IO를 하지 않는다.
 - getGuildWarSupplyRice는 war24.guilds[gid].supplyRice 부재만0으로 읽고 손상은 오류로 전파한다. 합산값의 몫은 calculateGuildWarExtraTickets로 기존 정규화된 큰 정수 문자열 extraTickets에 더하고 나머지는 보존한다. 기존 적립량은 축소하지 않으며 실물 아이템·개인 선포권·기본권·지휘관권을 지급/차감/복구하지 않는다. 기존 일일/관리자 초기화는 군량미와 추가권을 유지한다.
 - 회원 지원 기록·개인 포인트·길드 군량미·추가권은 publishGuildWar(data, guildData, true)로 기존 회원/길드 게시·복구 범위에 함께 저장한 뒤 응답한다. 저장 전 오류는 성공 응답 없이 중단하고 기존 롤백/재시작 복구를 따르며, 성공 응답 실패 후 재입력도 회원 기록으로 중복 차단한다.
-- getGuildWarSupplyMembers는 정찰·자폭·공격3·방어3 중 아무 역할도 없는 고유 현재 길드원을 계산한다. 일반 직책은 보존한다. /길드전쟁의 보급 인원·군량미 표시는 2026-11-16 통합 지도에서 제외했다. 보급 기능·전쟁편성 명단은 유지한다. /전쟁편성은 기존 번호·능력치·8칸·allsee를 유지하고 미편성 명단을 오늘 지원 완료/가능 보급대 명단으로 바꾼다. /전쟁지도는 2026-11-16부터 /길드전쟁과 같은 지도를 출력한다. /길드전쟁가이드와 별칭 /전쟁가이드는 같은 본문을 출력한다.
+- getGuildWarSupplyMembers는 정찰·자폭·공격3·방어3 중 아무 역할도 없는 고유 현재 길드원을 계산한다. 일반 직책은 보존한다. /길드전쟁 통합 지도에서 길드 군량미 진행률을 표시한다. 보급 기능·전쟁편성 명단은 유지한다. /전쟁편성은 기존 번호·능력치·8칸·allsee를 유지하고 미편성 명단을 오늘 지원 완료/가능 보급대 명단으로 바꾼다. /전쟁지도는 2026-11-16부터 /길드전쟁과 같은 지도를 출력한다. /길드전쟁가이드와 별칭 /전쟁가이드는 같은 본문을 출력한다.
 
 ## 길드 전투 아이템 기부·사용처 (2026-11-12, ver_2.832)
 
