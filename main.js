@@ -54240,10 +54240,11 @@ function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
     }
 
     for (var i = 0; i < list.length; i++) {
-        if (i === 4) msg += "눌러서 상세보기👈" + allsee + "\n";
         var bagSkillData = getPetSkillData(list[i]);
         var bagSkillGrade = bagSkillData ? bagSkillData.grade : "미확인";
-        msg += (i + 1) + ". " + formatPetSkillName(list[i]) + "[" + bagSkillGrade + "] x" + numberWithCommas(skills.bag[list[i]]) + "\n";
+        msg += (i + 1) + ". " + formatPetSkillName(list[i]) + "[" + bagSkillGrade + "] x" + numberWithCommas(skills.bag[list[i]]);
+        if (i === 4 && list.length > 5) msg += allsee;
+        msg += "\n";
     }
 
     return msg.trim();
@@ -67046,14 +67047,7 @@ function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectio
     var collectionRank = getMiniPetCollectionRanking(collectionData);
     var collectionRankText = "순위없음📊";
     for (var r = 0; r < collectionRank.length; r++) if (collectionRank[r].userName === user) { collectionRankText = (r + 1) + "등📊"; break; }
-    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "📚 미니펫 가이드: /미니펫가이드",
-        "※ 미니펫 정보: /미니펫정보",
-        "※ 대표장착: /미니펫장착 [미니펫가방번호]",
-        "※ 보조장착: /미니펫보조장착 [미니펫가방번호]",
-        "※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]",
-        "※ 등급 이하 정리: /미니펫등급정리 [등급이름]",
-        "※ 매력 이하 정리: /미니펫가방정리 [매력]",
-        "└ " + MINI_PET_CHARM_CLEANUP_PROTECTED_GRADES.concat(["엘리트"]).join("·") + " 등급 제외", "━━━━━━━━━━━━━"];
+    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "📚 미니펫 가이드: /미니펫가이드", "━━━━━━━━━━━━━"];
     if (!bag.length) lines.push("미니펫가방이 비어 있습니다.");
     for (var i = 0; i < bag.length; i++) {
         if (i === 5) lines.push(allsee);

@@ -9070,7 +9070,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `main.js`: `buildPetSkillGuideMessage`은 목차와 1~10 상세 원고를, `formatSkillBagMessage`는 5행부터 전체보기를 출력한다.
+- `main.js`: `buildPetSkillGuideMessage`은 목차와 1~10 상세 원고를, `formatSkillBagMessage`는 가방 목록의 6번부터 전체보기를 출력한다. `buildMiniPetBagRenewedMessage`는 가방 상단에 미니펫 가이드 한 줄을 표시한다.
 - `buildCurrentTierWeaponStatus`는 현재 티어에 대응하는 정의와 실제 장착 스킬을 대조한다. `buildGmEducationManual`은 4~8장의 승인 원고를 표시한다.
 
 ## /미니펫가이드 · 마스터 미니펫 강화
