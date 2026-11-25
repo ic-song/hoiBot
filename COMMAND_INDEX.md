@@ -110,7 +110,7 @@ Status: VERIFIED
 ## READY 레거시 변경 (2026-11-24)
 
 - 반말방 room10·room13 운영 등록 해제: main.js 수신·유입·발송 목록, 보존된 예약 대상 검사, 별도 notice.js 발송 목록과 네 스크립트의 확인된 이전 이름 수신 제외. 호이서버6·7 기존 소속과 이동 가능 목록은 유지.
-- 패키지 추가: handlePackageActualFlowMessage → buildPackageBulkReview → finishPackageBulkInput → 보상 선택 메뉴. 미니펫 개별 추가도 완료 시 보상 선택 메뉴로 복귀한다. 3번과 8번의 완료 응답은 맨 위에 이번 보상과 합산 후 전체 항목 수를 표시한다. 개별·일괄 입력 모두 가방에서 복사한 미니펫의 목록 번호와 수량 뒤에 남은 구분 쉼표를 구분한다. 컬렉션 미니펫 8종은 기존 지급 정의로 확인한다. 9에서 미확정 개별 보상을 보완하고 미리보기를 연다. 수정 후 같은 옵션은 수량을 합산. 미리보기 등록만 기존 등록 ID 및 packageInfoPath 저장 절차를 실행.
+- 패키지 추가: handlePackageActualFlowMessage → buildPackageBulkReview → finishPackageBulkInput → 보상 선택 메뉴. 미니펫 개별 추가도 완료 시 보상 선택 메뉴로 복귀한다. 3번과 8번의 완료 응답은 맨 위에 이번 보상과 합산 후 전체 항목 수를 표시한다. 개별·일괄 입력 모두 가방에서 복사한 미니펫의 목록 번호와 수량 뒤에 남은 구분 쉼표를 구분한다. 컬렉션 미니펫 8종은 기존 지급 정의로 확인한다. 9에서 미확정 개별 보상을 보완하고 미리보기를 연다. 수정 후 같은 옵션은 수량을 합산. 미리보기 등록만 기존 등록 ID 및 packageInfoPath 저장 절차를 실행. 등록과 개봉은 getPackageMiniRewardDefinitions에서 같은 컬렉션 미니펫 정의를 읽는다.
 - 보석: applyAdventureGemDraw에서 일반 등급·보장 등급 확률 분리, 공통 1만 단위 추첨. formatAdventureGem에서 실매력 품질을 계산하고 resolvePackageRewardInput에서 신·구 입력 호환. Info.js의 기존 보석 조회 검증 단위도 1만. 자유시장 완료 기록의 구형 표기는 읽을 때만 변환.
 - 가이드: /펜던트가이드 1~9·/가구가이드 1~8은 buildEquipmentGuideMessage에서 조회. /미니펫가이드는 가방에서 옮긴 사용법을 표시.
 - 멘트: processPremiumMentCommand의 본인 등록·삭제는 회원 원본 저장 후 응답. getPremiumMentReplies는 방과 서버 소속에 관계없이 수신 원문 전체가 호출 이름과 일치할 때 활성 등록자를 조회. 기존 채팅 집계를 마친 후 응답. 지원 종료·재가입·KST 일일 정리에서 만료 멘트 제거.
@@ -9065,3 +9065,17 @@ Status: VERIFIED
 - `adventureGemAccount_<계정ID SHA256>.json`: 실제 개체·영구 추가칸·천장·최초 획득만 계정별 보관. `adventureGemReceipt_<동일 해시>.json`은 최근 20개 접수 결과. 실제 콜백 식별자가 없으면 기존 request 객체의 UUID를 재사용하며 새 정상 메시지를 시간으로 차단하지 않는다. 7인수 콜백을 유지한다. 확인은 계정/방/환경·60초·개체 서명 검증이며 새 시작이 기존 대상을 덮지 않는다. 변경 성공에서만 계정 원본과 회원 표시를 생성하고 조회·오류·취소·미리보기는 생성하지 않는다.
 - Main/Info `getAdventureGemSummary`는 현재 계정 원본과 요청/파일 지문/게시 revision 캐시를 사용한다. 캐슬·레이드 장비 합산에 한 번만 더하며 기존 % 적용 순서를 유지한다. `/레벨`, 교육7, 자유시장 등록/검색/구매/취소/가격 수정/기록과 `/글자수전체정리`에 연결한다. 정리에서는 강함순 앞 50개·장착분을 보존하고 초과분만 무보상 삭제한다.
 - `adventureGemNotices.json`은 초월 이상 실제 뽑기·천장·조합의 보석 1개별 공지 대기만 보관한다. 별도 Java 작업자에서 잠금 밖 전송, 방별 성공 기록·재시도, 전송 결과 불명확 시 자동 중복 전송을 막는다. 대량 슬롯 표시는 작은 묶음으로 생성해 별도 작업자에서 전송하고 같은 계정/방의 새 보석 요청은 이전 대량 출력을 중단한다. 컴파일 시 전체 보석·백업 파일을 읽지 않는다.
+
+## /펫스킬가이드 · /펫스킬가방 · /티어 · /교육 4~8
+
+Status: VERIFIED
+
+- `main.js`: `buildPetSkillGuideMessage`은 목차와 1~10 상세 원고를, `formatSkillBagMessage`는 5행부터 전체보기를 출력한다.
+- `buildCurrentTierWeaponStatus`는 현재 티어에 대응하는 정의와 실제 장착 스킬을 대조한다. `buildGmEducationManual`은 4~8장의 승인 원고를 표시한다.
+
+## /미니펫가이드 · 마스터 미니펫 강화
+
+Status: VERIFIED
+
+- `buildMiniPetNumberedGuideMessage`은 목차 및 1~13 상세를 표시한다. 일반 뽑기 확률은 `getMiniPetDrawGradeRates`를 뽑기·확률 조회와 공유한다.
+- `getMiniPetUpgradeMaxLevel`과 `getCharmGainFor`는 마스터 1,000강과 목표 단계별 상승량을 결정한다. `runMiniPetUpgradeOnce`는 대표 0, 보조 00, 가방 번호에서 실제 대상에 동일 규칙을 적용한다.
