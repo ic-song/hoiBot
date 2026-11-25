@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.898"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.899"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -3148,6 +3148,9 @@ blockedNicknameTerms: [
         dayMs: 86400000, dayOffsetMs: 32340000, defaultBaseSales: 20, accountEffectiveLimit: 20, historyPageSize: 100, historyPreviewCount: 5, combinePoint: 350000000
     },
     freeMarket: { // 자유시장 설정
+        purchaseWaitResets: 2,
+        mainPriceLimit: 3,
+        mainCategories: [["gem", "보석", "💎"], ["miniPet", "미니펫", "🐹"], ["pendant", "펜던트", "📿"], ["furniture", "가구", "🏡"], ["skill", "펫스킬", "📙"], ["bag", "아이템", "🎒"], ["package", "패키지", "📦"]],
         mySalesHistoryLimit: 10, // 본인의 최근 판매 완료 기록 표시 개수
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
@@ -8394,24 +8397,32 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         data = loadJsonFile(filePath);
                     }
                     if (msg === "/자유시장검색") { replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buildFreeMarketSearchGuide()); return; }
-                    if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품" || msg === "/자유시장검색" || /^\/자유시장검색\s+.+$/.test(msg)) {
-                        var marketRows = searchFreeMarketV2(marketV2, msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : "", msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품");
-                        if (msg === "/내판매상품") marketRows = marketRows.filter(function (row) { return row.seller === sender; });
-                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, msg === "/내판매상품" ? "내 판매" : "호월 자유시장", msg.indexOf("/자유시장검색") === 0 ? msg.substring(8).trim() : undefined, petSkillData)); return;
+                    if (msg === "/자유시장" || msg === "ㅈㅈ" || msg === "/내판매상품") {
+                        replyFreeMarketV2(replier, buildFreeMarketHomeMessage(data, petData, guildData, marketV2, sender, petSkillData, msg === "/내판매상품", Date.now()));
+                        return;
+                    }
+                    if (/^\/자유시장검색\s+.+$/.test(msg)) {
+                        var marketSearch = msg.substring("/자유시장검색".length).trim();
+                        var marketRows = searchFreeMarketV2(marketV2, marketSearch, false);
+                        replyFreeMarketV2(replier, buildFreeMarketV2List(data, petData, guildData, marketV2, sender, marketRows, "호월 자유시장", marketSearch, petSkillData));
+                        return;
                     }
                     if (msg === "/내판매기록") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, sender, petSkillData, sender)); return; }
                     if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") { replyFreeMarketV2(replier, buildFreeMarketHistoryMessage(data, petData, guildData, marketV2, undefined, petSkillData, sender)); return; }
                     if (msg === "/자유시장정보" || /^\/자유시장정보\s+\d+$/.test(msg)) {
-                        var marketInfo = getFreeMarketListingById(marketV2, Number(msg.split(/\s+/)[1]));
+                        var marketInfo = findFreeMarketPurchaseListing(marketV2, Number(msg.split(/\s+/)[1]));
                         if (!marketInfo) { replier.reply("❌ 거래번호를 확인해주세요. /자유시장정보 번호"); return; }
-                        replier.reply(buildFreeMarketV2List(data, petData, guildData, marketV2, sender, [marketInfo], "판매 상세", undefined, petSkillData) + (marketInfo.type === "pendant" ? "\n" + buildPendantTradeInfoMessage(marketV2, marketInfo.id) : "")); return;
+                        replier.reply(buildFreeMarketV2List(data, petData, guildData, marketV2, sender, [marketInfo], "판매 상세", undefined, petSkillData) + (marketInfo.type === "pendant" ? "\n" + buildPendantInfoDetailMessage("펜던트 거래정보:", marketInfo.payload.pendants[0]) : "")); return;
                     }
                     if (msg === "/자유시장가격수정" || /^\/자유시장가격수정\s+\d+\s+\d+$/.test(msg)) {
                         var marketEditParts = msg.split(/\s+/), marketEdit = getFreeMarketListingById(marketV2, Number(marketEditParts[1])), marketNewPrice = Number(marketEditParts[2]);
                         if (!marketEdit || marketEdit.seller !== sender || !isPointShopSafeCount(marketNewPrice)) { replier.reply("❌ 본인 매물과 " + GLOBAL_CONFIG.freeMarket.minPrice + " 이상의 정수 가격을 확인해주세요.\n/자유시장가격수정 거래번호 다이아가격"); return; }
                         if (marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(true)); return; }
+                        if (marketEdit.price === marketNewPrice) { replier.reply(buildFreeMarketExpectedSettlement(data, sender, marketNewPrice, petSkillData)); return; }
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
-                        marketEdit.price = marketNewPrice; saveJsonFile(marketV2, freeMarketPath);
+                        marketEdit.price = marketNewPrice;
+                        restartFreeMarketPurchaseWait(marketEdit, Date.now());
+                        saveJsonFile(marketV2, freeMarketPath);
                         replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice, petSkillData)); return;
                     }
                     if (msg === "/거래확인 1" || msg === "/거래확인 2") {
@@ -8420,7 +8431,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         msg = msg === "/거래확인 1" ? "자유시장거래" : "자유시장거래취소";
                     }
                     var marketGemCommand = msg === "자유시장거래" ? (getFreeMarketConfirmState(sender) || {}).command || msg : msg;
-                    var marketGemListing = /^\/(?:자유시장구매|자유시장취소|거래소강제취소)\s+\d+$/.test(marketGemCommand) ? getFreeMarketListingByDisplayNo(marketV2, Number(marketGemCommand.split(/\s+/)[1])) : null;
+                    var marketGemListing = null;
+                    if (/^\/자유시장구매\s+\d+$/.test(marketGemCommand)) {
+                        marketGemListing = findFreeMarketPurchaseListing(marketV2, Number(marketGemCommand.split(/\s+/)[1]));
+                        if (marketGemListing && !getFreeMarketPurchaseNo(marketGemListing)) marketGemListing = null;
+                    } else if (/^\/(?:자유시장취소|거래소강제취소)\s+\d+$/.test(marketGemCommand)) {
+                        marketGemListing = getFreeMarketListingById(marketV2, Number(marketGemCommand.split(/\s+/)[1]));
+                    }
                     var marketGemTarget = /^\/보석거래등록(?:\s|$)/.test(marketGemCommand) || marketGemListing && marketGemListing.type === "gem" ? /^\/거래소강제취소\s/.test(marketGemCommand) ? marketGemListing.seller : sender : null;
                     var marketGemPaths = [];
                     if (marketGemTarget) {
@@ -8820,7 +8837,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 if (/^\/자유시장취소\s+\d+$/.test(msg)) {
                     var cancelNo = parseInt(msg.trim().split(/\s+/)[1], 10);
                     var freeMarketCancelData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    var cancelListing = getFreeMarketListingByDisplayNo(freeMarketCancelData, cancelNo);
+                    var cancelListing = getFreeMarketListingById(freeMarketCancelData, cancelNo);
                     if (!cancelListing) {
                         replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
                         return;
@@ -8856,7 +8873,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     var forceNo = parseInt(msg.trim().split(/\s+/)[1], 10);
                     var freeMarketForceData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    var forceListing = getFreeMarketListingByDisplayNo(freeMarketForceData, forceNo);
+                    var forceListing = getFreeMarketListingById(freeMarketForceData, forceNo);
                     if (!forceListing) {
                         replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
                         return;
@@ -8891,14 +8908,26 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         return;
                     }
                     var buyNo = parseInt(msg.trim().split(/\s+/)[1], 10);
-                    var freeMarketBuyData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+                    var freeMarketBuyData = requireFreeMarketSource(loadJsonFile(freeMarketPath));
                     var buyListing = null;
                     if (isFreeMarketConfirmed && freeMarketConfirmState && freeMarketConfirmState.listingId) {
                         buyListing = getFreeMarketListingById(freeMarketBuyData, freeMarketConfirmState.listingId);
                     } else {
-                        buyListing = getFreeMarketListingByDisplayNo(freeMarketBuyData, buyNo);
+                        buyListing = findFreeMarketPurchaseListing(freeMarketBuyData, buyNo);
                     }
                     if (!buyListing) {
+                        replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
+                        return;
+                    }
+                    var activePurchaseNo = getFreeMarketPurchaseNo(buyListing);
+                    if (!activePurchaseNo) {
+                        clearFreeMarketConfirmState(sender);
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n\n입력한 구매번호: " + buyNo + "\n" +
+                            getFreeMarketItemText(buyListing) + "\n\n🔒 아직 구매할 수 없는 상품입니다.\n" + formatFreeMarketPurchaseDay(freeMarketBuyData, buyListing, Date.now()));
+                        return;
+                    }
+                    if (activePurchaseNo !== buyNo) {
+                        clearFreeMarketConfirmState(sender);
                         replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
                         return;
                     }
@@ -9373,6 +9402,11 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     publishGuildWar(data, guildData, true);
                     scheduleGuildWarWork(ctx);
                     if (miniGameResetWrites.length) scheduleMiniGameWork(ctx, 1);
+                    // 길드 리셋 게시가 성공한 뒤 시장의 일자와 해제 번호를 한 파일에 확정한다.
+                    if (new java.io.File(resolveActiveDataPath(freeMarketPath)).exists()) {
+                        var resetMarket = requireFreeMarketSource(loadJsonFile(freeMarketPath));
+                        if (resetMarket.version === 2 && advanceFreeMarketPurchaseReset(resetMarket, Date.now())) saveJsonFile(resetMarket, freeMarketPath);
+                    }
                     if (resetMarbleResult) replier.reply("🎲 길드마블 정리: 경기 " + resetMarbleResult.closed + "개 종료 · 모집 " + resetMarbleResult.cancelled + "개 취소 · 정산 대기 " + resetMarbleResult.pending + "개");
                     if (ctx.miniGameRecoveryBlocked) replier.reply("⏸️ 미니게임 지급 확인 중이라 미니게임의 일일 초기화는 보류했어요. 기존 기록은 보존했어요.");
                     if (resetAutoAttendanceResult.noticeMessage) {
@@ -52055,16 +52089,104 @@ function ensureFreeMarketData(freeMarketData) {
     return freeMarketData;
 }
 
+// 등록과 리셋을 한국 시간의 날짜로 비교한다.
+function getFreeMarketDay(now) {
+    return new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// 날짜 키에 일수를 더하며 다음 달과 윤일을 계산한다.
+function shiftFreeMarketDay(day, offset) {
+    return new Date(Date.parse(day + "T00:00:00Z") + offset * 86400000).toISOString().slice(0, 10);
+}
+
+// 리셋 이력과 잠금 원본에 실제 달력 날짜만 허용한다.
+function isFreeMarketDay(day) {
+    if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+    var ms = Date.parse(day + "T00:00:00Z");
+    return isFinite(ms) && new Date(ms).toISOString().slice(0, 10) === day;
+}
+
+// 새 정책 이전의 판매번호는 해당 매물의 최초 구매번호로 유지한다.
+function getFreeMarketPurchaseNo(listing) {
+    return listing.purchaseWaitDay === undefined ? listing.id : listing.purchaseNo;
+}
+
+// 판매번호와 공개 구매번호를 공통 숫자 순번에서 한 번씩 발급한다.
+function allocateFreeMarketNumber(market) {
+    if (!isPointShopSafeCount(market.nextId) || market.nextId < 1 || market.nextId >= 9007199254740991) throw new Error("자유시장 거래번호 범위 초과");
+    return market.nextId++;
+}
+
+// 가격을 바꿀 때 기존 구매번호를 무효화하고 등록일은 보존한다.
+function restartFreeMarketPurchaseWait(listing, now) {
+    var prior = getFreeMarketPurchaseNo(listing);
+    if (prior !== undefined) listing.previousPurchaseNo = prior;
+    listing.purchaseWaitDay = getFreeMarketDay(now);
+    delete listing.purchaseNo;
+    delete listing.purchaseUnlockedAtMs;
+}
+
+// 완료한 리셋만 날짜별로 한 번 기록하고 조건에 맞는 매물에 새 번호를 부여한다.
+function advanceFreeMarketPurchaseReset(market, now) {
+    var today = getFreeMarketDay(now), days = market.purchaseResetDays || [];
+    if ((now + 9 * 60 * 60 * 1000) % 86400000 < 60000 || days.length && days[days.length - 1] >= today) return false;
+    market.purchaseResetDays = days.concat(today).slice(-GLOBAL_CONFIG.freeMarket.purchaseWaitResets);
+    var completed = market.purchaseResetDays;
+    if (completed.length === GLOBAL_CONFIG.freeMarket.purchaseWaitResets) {
+        getFreeMarketActiveListings(market).forEach(function (row) {
+            if (!getFreeMarketPurchaseNo(row) && row.purchaseWaitDay < completed[0]) {
+                row.purchaseNo = allocateFreeMarketNumber(market);
+                row.purchaseUnlockedAtMs = now;
+            }
+        });
+    }
+    return true;
+}
+
+// 남은 리셋의 가장 빠른 날짜를 표시하며 날짜 경과만으로 잠금을 해제하지 않는다.
+function formatFreeMarketPurchaseDay(market, listing, now) {
+    var days = market.purchaseResetDays || [], today = getFreeMarketDay(now);
+    var completed = days.filter(function (day) { return day > listing.purchaseWaitDay; }).length;
+    var first = today > listing.purchaseWaitDay ? today : shiftFreeMarketDay(listing.purchaseWaitDay, 1);
+    if (days.indexOf(first) >= 0) first = shiftFreeMarketDay(first, 1);
+    var date = shiftFreeMarketDay(first, Math.max(0, GLOBAL_CONFIG.freeMarket.purchaseWaitResets - completed - 1)).split("-");
+    return "📅 " + Number(date[1]) + "월 " + Number(date[2]) + "일부터 구매 가능";
+}
+
+// 현재 공개번호나 잠겨 있는 매물의 판매번호·이전 구매번호를 찾는다.
+function findFreeMarketPurchaseListing(market, number) {
+    if (!isPointShopSafeCount(number) || number < 1) return null;
+    for (var i = 0; i < market.listings.length; i++) {
+        var row = market.listings[i];
+        if (!row || row.status !== "SELLING") continue;
+        var publicNo = getFreeMarketPurchaseNo(row);
+        if (publicNo === number || !publicNo && (row.id === number || row.previousPurchaseNo === number)) return row;
+    }
+    return null;
+}
+
 // 자유시장 2.0 대상 명령을 기존 실행 명령과 정확한 경계로 구분하는 함수
 // 읽은 시장 원본을 보정하지 않고 전환·거래에 필요한 구조와 활성 매물을 검증하는 함수
 function requireFreeMarketSource(market) {
     if (!market || typeof market !== "object" || Array.isArray(market) || !Array.isArray(market.listings) || !Array.isArray(market.completedLogs) || !isPointShopSafeCount(market.nextId) || market.nextId < 1) throw new Error("자유시장 원본 구조 확인 필요");
+    var resetDays = market.purchaseResetDays;
+    if (resetDays !== undefined && (!Array.isArray(resetDays) || resetDays.length > GLOBAL_CONFIG.freeMarket.purchaseWaitResets ||
+        resetDays.some(function (day, index) { return !isFreeMarketDay(day) || index > 0 && day <= resetDays[index - 1]; }))) throw new Error("자유시장 리셋 이력 형식 오류");
     var seen = {};
     for (var i = 0; i < market.listings.length; i++) {
         var row = market.listings[i];
         if (!row || row.status !== "SELLING") continue;
         if (!isPointShopSafeCount(row.id) || row.id < 1 || row.id >= market.nextId || seen[row.id] || typeof row.seller !== "string" || typeof row.itemName !== "string" || !row.itemName || ["bag", "miniPet", "furniture", "skill", "pendant", "gem"].indexOf(row.type) === -1 || !isPointShopSafeCount(row.quantity) || row.quantity < 1) throw new Error("자유시장 판매 원본 확인 필요");
         seen[row.id] = true;
+        if (row.purchaseWaitDay !== undefined) {
+            if (!isFreeMarketDay(row.purchaseWaitDay) ||
+                row.previousPurchaseNo !== undefined && (!isPointShopSafeCount(row.previousPurchaseNo) || row.previousPurchaseNo < 1 || row.previousPurchaseNo >= market.nextId)) throw new Error("자유시장 구매 대기 원본 확인 필요: " + row.id);
+            if (row.purchaseNo !== undefined) {
+                if (!isPointShopSafeCount(row.purchaseNo) || row.purchaseNo <= row.id || row.purchaseNo >= market.nextId ||
+                    seen[row.purchaseNo] || !isPointShopSafeCount(row.purchaseUnlockedAtMs) || row.purchaseUnlockedAtMs < 1) throw new Error("자유시장 구매번호 원본 확인 필요: " + row.id);
+                seen[row.purchaseNo] = true;
+            }
+        }
         if (market.version === 2 && (row.currency !== "DIAMOND" || !isPointShopSafeCount(row.price) || row.price < GLOBAL_CONFIG.freeMarket.legacyMinPrice)) throw new Error("다이아 판매 가격·통화 원본 확인 필요: " + row.id);
         var payload = row.type === "miniPet" ? row.payload && row.payload.pets : row.type === "furniture" ? row.payload && row.payload.furnitures : row.type === "pendant" ? row.payload && row.payload.pendants : null;
         if (row.type === "gem") {
@@ -52274,21 +52396,78 @@ function replyFreeMarketV2(replier, message) {
     }
     if (chunk) replier.reply(chunk);
 }
-// 검색 결과·내 판매·전체 매물을 같은 실제 거래번호와 가격으로 표시하는 함수
+// 공개 매물과 내 판매 매물은 같은 품목·가격 표기를 적용한다.
+function formatFreeMarketListingBlock(market, row, own, now) {
+    var publicNo = getFreeMarketPurchaseNo(row), locked = !publicNo;
+    var number = own ? row.id : publicNo; // 소유자 화면에는 관리용 판매번호를 표시한다.
+    var header = (locked ? "🔒 " : "") + (number ? "[" + number + "] " : "") + getFreeMarketItemText(row);
+    return header + "\n└ 💎 " + numberWithCommas(row.price) + "개\n└ " + formatFreeMarketDisplayTime(row.createdAt, row.createdAtMs) +
+        (locked ? "\n└ " + formatFreeMarketPurchaseDay(market, row, now) : own ? "\n└ 구매번호: " + publicNo : "");
+}
+
+// 단가가 같으면 먼저 해제된 매물과 오래된 등록을 먼저 표시한다.
+function compareFreeMarketMainPrice(a, b) {
+    return compareFreeMarketUnitPrices(a, b) || (a.purchaseUnlockedAtMs || 0) - (b.purchaseUnlockedAtMs || 0) ||
+        (a.createdAtMs || 0) - (b.createdAtMs || 0) || a.id - b.id;
+}
+
+// 자유시장 상단과 내 판매 목록을 주문 가능 여부에 따라 표시한다.
+function buildFreeMarketHomeMessage(data, petData, guildData, market, user, petSkillData, own, now) {
+    var divider = "━━━━━━━━━━━━", config = GLOBAL_CONFIG.freeMarket;
+    var rows = getFreeMarketActiveListings(market);
+    if (own) rows = rows.filter(function (row) { return row.seller === user; });
+    var selling = [], waiting = [];
+    for (var i = 0; i < rows.length; i++) (getFreeMarketPurchaseNo(rows[i]) ? selling : waiting).push(rows[i]);
+    var output = ["[" + checkRank(data, petData, guildData, user) + "] 님\n", "🏪 " + (own ? "내 판매" : "호월 자유시장") + " 💎", divider,
+        buildFreeMarketFeeStatus(data, user, petSkillData, false, true).replace(/\n$/, ""), divider];
+    var searchHelp = "🔎 상품 찾기·검색 방법: /자유시장검색";
+    if (own) output.push("✏️ /자유시장가격수정 [판매번호] [판매금액]", "❌ /자유시장취소 [판매번호]", "🏪 /자유시장 또는 ㅈㅈ", searchHelp);
+    else output.push("🛒 /자유시장구매 번호", searchHelp, "📦 /내판매상품");
+    output.push("🤑 /내판매기록", "📖 /자유시장판매가이드", "🤝 /자유시장거래현황 또는 ㅅㅅ", divider);
+    function blocks(list) {
+        return list.map(function (row) { return formatFreeMarketListingBlock(market, row, own, now); }).join("\n\n");
+    }
+    if (own) {
+        output.push("🧳 등록 중: " + rows.length + "건", "✅ 판매 중: " + selling.length + "건 · 🔒 구매 대기: " + waiting.length + "건");
+        if (!rows.length) output.push("📭 등록한 판매 상품이 없습니다.");
+        else {
+            output.push("【📦 내 판매상품 보기】" + allsee);
+            if (selling.length) output.push(divider, "✅ 판매 중", "", blocks(selling));
+            if (waiting.length) {
+                if (selling.length) output.push("");
+                output.push(divider, "🔒 구매 대기", "", blocks(waiting));
+            }
+        }
+    } else {
+        output.push("🔒 거래 등록 후 이틀 뒤부터 구매할 수 있어요.", "🧳 판매 중: " + rows.length + "건", "【🏪 자유시장 물품 보기】" + allsee, "");
+        selling.sort(compareFreeMarketMainPrice);
+        for (var c = 0; c < config.mainCategories.length; c++) {
+            var category = config.mainCategories[c];
+            var best = selling.filter(function (row) { return getFreeMarketCategory(row) === category[0]; }).slice(0, config.mainPriceLimit);
+            output.push("━━━━" + category[1] + " 최저가" + category[2] + "━━━━━", best.length ? blocks(best) : "구매 가능한 상품이 없습니다.",
+                "", "🔎 " + category[1] + " 전체보기: /자유시장검색 " + category[1], "");
+        }
+        if (waiting.length) output.push(divider, "🔒 구매 대기 · 최저가 " + config.mainPriceLimit + "건", "", blocks(waiting.sort(compareFreeMarketMainPrice).slice(0, config.mainPriceLimit)));
+    }
+    return output.join("\n").trim();
+}
+
+// 기존 검색 결과의 분류와 출력 순서를 그대로 사용하면서 공개 매물을 표시한다.
 function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery, petSkillData) {
     var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, user, petSkillData, false, true) + "━━━━━━━━━━━━\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
     out = "[" + checkRank(data, petData, guildData, user) + "] 님\n\n" + out;
     if (!rows.length) out += searchQuery !== undefined ? "검색 결과가 없습니다.\n" + searchQuery : "📭 판매 중인 물품이 없습니다.";
-    var previousCategory = null;
+    var previousCategory = null, now = Date.now();
     for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
         var category = getFreeMarketCategory(row);
         if (searchQuery !== undefined && category !== previousCategory) out += "\n【" + GLOBAL_CONFIG.freeMarket.categoryLabels[category] + "】\n";
         previousCategory = category;
-        out += "\n[" + row.id + "] " + getFreeMarketItemText(row) + "\n└ 💎 " + numberWithCommas(row.price) + "개 | [" + checkRank(data, petData, guildData, row.seller) + "]\n└ " + formatFreeMarketDisplayTime(row.createdAt, row.createdAtMs) + "\n";
+        out += "\n" + formatFreeMarketListingBlock(market, row, false, now) + "\n";
     }
     return out;
 }
+
 // 판매 등록·관리 명령과 거래 조건을 노션의 전체보기 순서로 안내하는 함수
 function buildFreeMarketV2Guide(data, user, petSkillData) {
     return [
@@ -52352,7 +52531,7 @@ function buildFreeMarketV2Guide(data, user, petSkillData) {
 }
 // 가격 수정 전후 구매 확인에서 같은 판매 건·가격·물품인지 확인하는 함수
 function getFreeMarketListingFingerprint(listing) {
-    return JSON.stringify([listing.id, listing.seller, listing.itemName, listing.type, listing.quantity, listing.price, listing.payload]);
+    return JSON.stringify([listing.id, listing.seller, listing.itemName, listing.type, listing.quantity, listing.price, listing.payload, getFreeMarketPurchaseNo(listing)]);
 }
 // 기존 음수 잔액을 보존하며 안전한 포인트 합산 범위를 확인하는 함수
 function isFreeMarketPointBalance(value) {
@@ -52460,10 +52639,6 @@ function getFreeMarketActiveListings(freeMarketData) {
         return (b.id || 0) - (a.id || 0);
     });
     return rows;
-}
-
-function getFreeMarketListingByDisplayNo(freeMarketData, displayNo) {
-    return getFreeMarketListingById(freeMarketData, displayNo);
 }
 
 function getFreeMarketListingById(freeMarketData, listingId) {
@@ -52627,7 +52802,11 @@ function formatFreeMarketDisplayTime(timeText, timeMs) {
 
 function getFreeMarketItemText(listing) {
     if (!listing) return "";
-    var itemName = listing.type === "skill" ? formatPetSkillName(listing.itemName) : listing.itemName;
+    var itemName = listing.itemName;
+    if (listing.type === "skill") {
+        var skill = getPetSkillData(itemName);
+        itemName = formatPetSkillName(itemName) + (skill ? "[" + skill.grade + "]" : "");
+    }
     if (listing.type === "gem") itemName = formatAdventureGem(listing.payload.gems[0]);
     if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
         itemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
@@ -52704,11 +52883,12 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
 
 // 자유시장 등록 펜던트 상세 정보 메시지 생성
 function buildPendantTradeInfoMessage(freeMarketData, displayNo) {
-    var listing = getFreeMarketListingByDisplayNo(freeMarketData, displayNo);
+    var listing = findFreeMarketPurchaseListing(freeMarketData, displayNo);
     if (!listing) return "해당 자유시장 번호의 거래 정보를 찾을 수 없습니다.";
     if (listing.type !== "pendant") return "해당 거래 아이템은 펜던트가 아닙니다.\n펜던트 거래정보는 자유시장에 등록된 펜던트만 확인할 수 있습니다.";
     if (!listing.payload || !listing.payload.pendants || !listing.payload.pendants[0]) return "해당 펜던트 정보를 불러올 수 없습니다.\n관리자에게 문의해주세요.";
-    return buildPendantInfoDetailMessage("펜던트 거래정보:", listing.payload.pendants[0]);
+    return buildPendantInfoDetailMessage("펜던트 거래정보:", listing.payload.pendants[0]) +
+        (getFreeMarketPurchaseNo(listing) ? "" : "\n🔒 아직 구매할 수 없는 상품입니다.\n" + formatFreeMarketPurchaseDay(freeMarketData, listing, Date.now()));
 }
 
 // 자유시장 완료 로그가 회원권 수수료 적용 거래인지 확인하는 함수
@@ -52753,9 +52933,9 @@ function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive
 
 function addFreeMarketListing(freeMarketData, type, seller, itemName, quantity, price, payload, unusedRegistrationFee, packageItem) {
     freeMarketData = ensureFreeMarketData(freeMarketData);
-    if (!isPointShopSafeCount(freeMarketData.nextId) || freeMarketData.nextId >= 9007199254740991) throw new Error("자유시장 거래번호 범위 초과");
+    var registeredAt = Date.now();
     var listing = {
-        id: freeMarketData.nextId++,
+        id: allocateFreeMarketNumber(freeMarketData),
         status: "SELLING",
         currency: "DIAMOND",
         packageItem: packageItem === true,
@@ -52765,8 +52945,9 @@ function addFreeMarketListing(freeMarketData, type, seller, itemName, quantity, 
         quantity: quantity,
         price: price,
         payload: payload || null,
-        createdAt: formatDateTime(new Date()),
-        createdAtMs: new Date().getTime()
+        createdAt: formatDateTime(new Date(registeredAt)),
+        createdAtMs: registeredAt,
+        purchaseWaitDay: getFreeMarketDay(registeredAt)
     };
     freeMarketData.listings.push(listing);
     return listing;
@@ -52986,9 +53167,9 @@ function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, list
     var msg = "[" + checkRank(data, petData, guildData, sender) + "]님\n";
     msg += "🏪 자유시장 구매 확인서\n";
     msg += "━━━━━━━━━━━━\n";
-    msg += "거래번호: " + listing.id + "번\n";
+    msg += "거래번호: " + getFreeMarketPurchaseNo(listing) + "번\n";
     msg += "물품: [" + getFreeMarketItemText(listing) + "]\n";
-    msg += "판매자: [" + checkRank(data, petData, guildData, listing.seller) + "]\n";
+
     msg += "묶음 판매금액: 💎" + numberWithCommas(listing.price) + "\n";
     msg += "💎 보유: " + numberWithCommas(data.member[sender].diamond || 0) + "개\n💎 구매 후 잔액: " + numberWithCommas((data.member[sender].diamond || 0) - listing.price) + "개\n";
     msg += "\n구매✅ [/거래확인 1]\n취소❌ [/거래확인 2]\n";
