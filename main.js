@@ -71672,7 +71672,7 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
         GLOBAL_CONFIG.adventureGem.slotItemName.replace("(/보석슬롯오픈 숫자)", "") + ": +" + slots.extra + "칸\n🧩 총 장착 가능 공간: " + slots.total + "칸\n📭 남은 장착 공간: " + Math.max(0, slots.total - summary.count) + "칸\n🔒 다음 슬롯: Lv." + nextLevel + " · " + (nextLevel - slots.level) + "레벨 남음\n━━━━━━━━━━━━━\n";
     if (special) header += special + "\n";
     header += "⚔️ 캐슬 +" + formatAdventureGemCharm(summary.castle) + " · 👾 레이드 +" + formatAdventureGemCharm(summary.raid) + allsee;
-    var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [보석가방번호] [슬롯번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요."];
+    var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [슬롯번호] [보석가방번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요."];
     for (var e = 0; e < equipped.length; e++) blocks.push(formatAdventureGemSlot(equipped[e].slot) + " " + formatAdventureGem(equipped[e]).replace(/\n└/g, "\n     └"));
     var emptyHeading = false;
     if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n━━━━━━💛 빈 슬롯 목록━━━━━━", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
@@ -71685,11 +71685,11 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
     if (bag.length && slots.total && !full) {
         blocks.push("🔓 빈 슬롯 장착 예시\n가방 1번 보석을 장착하려면");
         if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch) blocks.push({ slotRows: "example", from: 1, to: slots.total, occupied: occupied });
-        else for (var empty = 1; empty <= slots.total; empty++) if (!occupied[empty]) blocks.push("👉 " + empty + "번 슬롯: /보석장착 1 " + empty);
+        else for (var empty = 1; empty <= slots.total; empty++) if (!occupied[empty]) blocks.push("👉 " + empty + "번 슬롯: /보석장착 " + empty + " 1");
     }
     if (!bag.length) blocks.push("입력: /보석오픈 [수량]\n🛒 구매 안내: /다이아상점");
     if (!slots.total) blocks.push("레벨 10마다 1칸\n모험가 보석슬롯추가🔓");
-    blocks.push("\n※ 첫 번째 숫자는 보석가방 번호예요.\n※ 두 번째 숫자는 고정 슬롯번호예요.");
+    blocks.push("\n※ 첫 번째 숫자는 고정 슬롯번호예요.\n※ 두 번째 숫자는 보석가방 번호예요.");
     return blocks;
 }
 
@@ -71755,9 +71755,9 @@ function getAdventureGemRequest(message) {
     var match = message.match(/^\/(보석오픈|보석슬롯오픈)(?:\s+(\d+))?$/);
     if (match) return { kind: match[1] === "보석오픈" ? "draw" : "slot", count: match[2] ? Number(match[2]) : match[1] === "보석오픈" ? 1 : NaN, action: "/" + match[1] };
     match = message.match(/^\/보석장착\s+(\d+)(?:\s+(\d+))?$/);
-    if (match) return { kind: "equip", index: Number(match[1]), slot: match[2] ? Number(match[2]) : null, action: "/보석장착" };
+    if (match) return { kind: "equip", index: Number(match[2] || match[1]), slot: match[2] ? Number(match[1]) : null, action: "/보석장착" };
     match = message.match(/^\/보석조합\s+(\d+)\s+(\d+)$/);
-    if (match) return { kind: "combine", ruby: Number(match[1]), sapphire: Number(match[2]), action: "/보석조합" };
+    if (match) return { kind: "combine", first: Number(match[1]), second: Number(match[2]), action: "/보석조합" };
     match = message.match(/^\/보석판매\s+(\d+)$/);
     if (match) return { kind: "sale", start: Number(match[1]), end: Number(match[1]), action: "/보석판매" };
     match = message.match(/^\/보석가방정리\s+(\d+)~(\d+)$/);
@@ -71772,8 +71772,8 @@ function getAdventureGemRequest(message) {
 function buildAdventureGemError(error, request, data, user, store, nickname) {
     var text = "[" + nickname + "] 님\n", config = GLOBAL_CONFIG.adventureGem, action = request.action, bag = getAdventureGemBag(store), divider = "━━━━━━━━━━━━━";
     var usage = action + " [수량]", tail = "📊 확률정보: /보석확률";
-    if (action === "/보석장착") { usage = action + " [보석가방번호]"; tail = "🎒 보석 번호 확인: /보석가방"; }
-    if (action === "/보석조합") { usage = action + " [루비 가방번호] [사파이어 가방번호]"; tail = "🎒 재료 확인: /보석가방"; }
+    if (action === "/보석장착") { usage = action + (request.slot === null ? " [보석가방번호]" : " [슬롯번호] [보석가방번호]"); tail = "🎒 보석 번호 확인: /보석가방"; }
+    if (action === "/보석조합") { usage = action + " [보석가방번호] [보석가방번호]"; tail = "🎒 재료 확인: /보석가방"; }
     if (action === "/보석가방정리") { usage = action + " [시작번호~끝번호]"; tail = "🎒 판매할 번호 확인: /보석가방"; }
     if (action === "/보석판매") { usage = action + " [가방번호]"; tail = "🎒 보석 번호 확인: /보석가방"; }
     if (action === "/보석슬롯오픈") tail = "🛒 구매 안내: /다이아상점";
@@ -71785,7 +71785,7 @@ function buildAdventureGemError(error, request, data, user, store, nickname) {
     if (error.error === "slotItem") { reason = "❌ " + config.slotItemName + "가 부족해요.\n필요: " + error.count + "개 · 보유: " + error.held + "개"; if (error.held) example = "현재 사용 가능: /보석슬롯오픈 " + error.held; }
     if (error.error === "full") return [text + "❌ 보석가방이 가득 차 있어 뽑을 수 없어요.\n🎒 보석가방: " + error.bagCount + "/" + config.bagLimit + "\n" + divider + "\n보석을 판매·조합·장착해 공간을 확보해 주세요.\n🎒 보석 확인: /보석가방\n📚 정리 방법: /보석가이드 5"];
     if (error.error === "changed") reason = "❌ 선택한 보석이나 슬롯 상태가 변경되어 진행할 수 없어요. 다시 선택해 주세요.";
-    if (error.error === "slot") { reason = "❌ 사용할 수 없는 슬롯이에요."; usage = "/보석장착 [보석가방번호] [슬롯번호]"; tail = "👉 장착 현황: /보석정보"; }
+    if (error.error === "slot") { reason = "❌ 사용할 수 없는 슬롯이에요."; usage = "/보석장착 [슬롯번호] [보석가방번호]"; tail = "👉 장착 현황: /보석정보"; }
     if (error.error === "same") reason = "❌ 서로 다른 보석 2개를 선택해 주세요.";
     if (error.error === "materials") reason = "❌ 루비 1개와 사파이어 1개를 선택해 주세요.";
     if (error.error === "grade") reason = "❌ 두 보석의 등급이 달라 조합할 수 없어요.\n같은 등급의 루비 1개와 사파이어 1개가 필요해요.";
@@ -71796,7 +71796,7 @@ function buildAdventureGemError(error, request, data, user, store, nickname) {
     if (error.error === "expired") reason = "❌ 확인 요청이 만료됐어요. 보석을 다시 선택해 주세요.";
     if (error.error === "request") {
         reason = request.kind === "equipConfirm" ? "❌ 확인할 보석 장착 요청이 없어요.\n장착할 보석을 먼저 선택해 주세요." : "❌ 확인할 요청이 없어요.";
-        usage = request.kind === "combineConfirm" ? "/보석조합 [루비 가방번호] [사파이어 가방번호]" : "/보석장착 [보석가방번호]";
+        usage = request.kind === "combineConfirm" ? "/보석조합 [보석가방번호] [보석가방번호]" : "/보석장착 [보석가방번호]";
         tail = "🎒 보석 번호 확인: /보석가방";
         if (bag.length && request.kind !== "combineConfirm") example = "예시: /보석장착 1";
     }
@@ -71844,11 +71844,11 @@ function buildAdventureGemGuideBlocks(store, nickname, page) {
     if (page === 2) return buildAdventureGemProbabilityBlocks(store, nickname).concat([config.ticketName + "\n입력: /보석오픈 [수량]\n뽑기권 1개당 보석 1개\n100회 보장 · 창세 이상 획득 시 누적 초기화\n가방 정원 이상이면 뽑기 불가"]);
     var text = header + titles[page - 1] + "\n━━━━━━━━━━━━━\n";
     if (page === 1) text = "[" + nickname + "] 님\n" + "📚 보석 종류·등급·품질\n\n루비❤️: 캐슬 매력\n사파이어🩵: 레이드 매력\n에메랄드💚: 루비·사파이어의 두 매력을 계승\n\n등급: 하급 → 중급 → 상급 → 최상급 → 초월 → 창세 → 🌌창조\n품질: C → B → A → S\n\n루비·사파이어의 품질은 같은 등급 안에서 매력이 얼마나 높은지 보여줘요.\n매력이 정해지면 품질도 자동으로 정해져요.\n\n사파이어🩵(+30만👾)[하급·C]\n사파이어🩵(+49만👾)[하급·S]\n루비❤️(+2,000만💕)[🌌창조·S]\n\n📏 루비·사파이어 품질 구간\n단위: 만 · 각 구간 양 끝 포함\n하급: C 30~34 · B 35~39 · A 40~44 · S 45~50\n중급: C 60~67 · B 68~74 · A 75~82 · S 83~90\n상급: C 100~112 · B 113~124 · A 125~137 · S 138~150\n최상급: C 180~204 · B 205~229 · A 230~254 · S 255~280\n초월: C 350~399 · B 400~449 · A 450~499 · S 500~550\n창세: C 700~774 · B 775~849 · A 850~924 · S 925~1,000\n🌌창조: C 1,400~1,549 · B 1,550~1,699 · A 1,700~1,849 · S 1,850~2,000\n\n📊 뽑기 확률: /보석확률" + "\n\n같은 종류 중복 장착: 가능\n보석 매력 상한: 없음. 장착 효과 전부 합산";
-    if (page === 3) text += "모험가 레벨 10마다 1칸\n추가 슬롯: 슬롯추가 아이템 1개당 영구 +1칸. Lv.10 이전에도 사용·장착 가능\n계정당 추가 슬롯 제한: 없음\n\n/보석장착 [보석가방번호]\n/보석장착 [보석가방번호] [슬롯번호]\n/보석슬롯오픈 [수량]\n\n※ 첫 번째 숫자는 보석가방 번호예요.\n※ 두 번째 숫자는 고정 슬롯번호예요.\n🔗 장착하면 거래·조합할 수 없어요.\n다른 보석으로 교체하면 이 보석은 소멸해요.\n가방 정원과 무관하게 장착·교체할 수 있다.\n별도 보석 제거: 제공하지 않음. 교체 확정 시에만 기존 장착 보석 소멸";
+    if (page === 3) text += "모험가 레벨 10마다 1칸\n추가 슬롯: 슬롯추가 아이템 1개당 영구 +1칸. Lv.10 이전에도 사용·장착 가능\n계정당 추가 슬롯 제한: 없음\n\n/보석장착 [보석가방번호]\n/보석장착 [슬롯번호] [보석가방번호]\n/보석슬롯오픈 [수량]\n\n※ 첫 번째 숫자는 고정 슬롯번호예요.\n※ 두 번째 숫자는 보석가방 번호예요.\n🔗 장착하면 거래·조합할 수 없어요.\n다른 보석으로 교체하면 이 보석은 소멸해요.\n가방 정원과 무관하게 장착·교체할 수 있다.\n별도 보석 제거: 제공하지 않음. 교체 확정 시에만 기존 장착 보석 소멸";
     if (page === 4) {
-        text += "같은 등급의 미장착 루비 1개 + 사파이어 1개\n성공률은 전 등급 100%다.\n루비의 캐슬매력과 사파이어의 레이드 매력을 각각 100% 계승하고, 두 효과를 슬롯 1칸에 적용한다.\n\n";
+        text += "※ 같은 등급의 미장착 루비 1개와 사파이어 1개를 선택해 주세요.\n※ 재료의 입력 순서는 상관없어요.\n성공률은 전 등급 100%다.\n루비의 캐슬매력과 사파이어의 레이드 매력을 각각 100% 계승하고, 두 효과를 슬롯 1칸에 적용한다.\n\n";
         for (var g = 0; g < config.grades.length; g++) text += config.grades[g].name + " · 🅟" + formatAdventureGemPoint(config.grades[g].combinePoint) + "\n";
-        text += "\n가방 초과 중에도 조합 가능\n입력: /보석조합 [루비 가방번호] [사파이어 가방번호]\n🎒 재료 확인: /보석가방";
+        text += "\n가방 초과 중에도 조합 가능\n입력: /보석조합 [보석가방번호] [보석가방번호]\n🎒 재료 확인: /보석가방";
     }
     if (page === 5) text += "※ 보석 판매: /보석판매 [가방번호]\n※ 보석 정리: /보석가방정리 [번호~번호]\n\n숫자는 보석가방 목록의 번호다. 장착 슬롯번호나 판매할 개수가 아니다.\n/보석가방정리 1~10은 현재 가방 1번부터 10번까지 총 10개 판매\n\n시스템 판매가\n루비❤️ · 사파이어🩵 · 에메랄드💚\n🅟" + numberWithCommas(config.salePoint) + "\n\n🪽 보석 등록\n/보석거래등록 [보석가방번호] [판매금액]\n/자유시장판매가이드\n\n장착하면 거래·조합 불가 · 교체 시 기존 보석 소멸";
     return [text];
@@ -71888,8 +71888,8 @@ function buildAdventureGemSelectionBlocks(data, user, store, state, nickname) {
         blocks.push(formatAdventureGemSlot(i) + " " + (gem ? formatAdventureGem(gem) : "🔓 빈 슬롯"));
     }
     var tail = "━━━━━━━━━━━━━\n";
-    if (empty) tail += "👉 빈 " + empty + "번 슬롯에 장착: /보석장착 " + state.index + " " + empty + "\n";
-    if (occupied) tail += "👉 " + occupied + "번 교체: /보석장착 " + state.index + " " + occupied + "\n";
+    if (empty) tail += "👉 빈 " + empty + "번 슬롯에 장착: /보석장착 " + empty + " " + state.index + "\n";
+    if (occupied) tail += "👉 " + occupied + "번 교체: /보석장착 " + occupied + " " + state.index + "\n";
     blocks.push(tail + "❎ 취소: /보석취소");
     return blocks;
 }
@@ -71961,16 +71961,18 @@ function runAdventureGemEntry(data, petData, guildData, user, action, request, r
         var next = { receivedAt: request.receivedAt, expiresAt: now + config.confirmationMs }, slots = getAdventureGemSlots(data, user, store);
         if (action.kind === "equip") {
             var gem = bag[action.index - 1], old = null;
-            if (!gem) result = { error: "number" };
-            else if (!slots.total || action.slot !== null && (!isAdventureGemInteger(action.slot, 1) || action.slot > slots.total)) result = { error: "slot", slots: slots.total };
+            if (!slots.total || action.slot !== null && (!isAdventureGemInteger(action.slot, 1) || action.slot > slots.total)) result = { error: "slot", slots: slots.total };
+            else if (!gem) result = { error: "number" };
             else {
                 next.index = action.index; next.gem = JSON.parse(JSON.stringify(gem)); next.gemId = gem.id; next.gemText = JSON.stringify(gem); next.slot = action.slot;
                 for (var g = 0; g < store.gems.length; g++) if (action.slot !== null && store.gems[g].slot === action.slot) old = store.gems[g];
                 next.old = old; next.oldText = old ? JSON.stringify(old) : null; next.kind = action.slot === null ? "select" : old ? "replace" : "equip";
             }
         } else {
-            var ruby = bag[action.ruby - 1], sapphire = bag[action.sapphire - 1];
-            if (!ruby || !sapphire) result = { error: "number" };
+            var firstGem = bag[action.first - 1], secondGem = bag[action.second - 1];
+            var ruby = firstGem && firstGem.kind === "ruby" ? firstGem : secondGem;
+            var sapphire = ruby === firstGem ? secondGem : firstGem;
+            if (!firstGem || !secondGem) result = { error: "number" };
             else if (ruby.id === sapphire.id) result = { error: "same" };
             else if (ruby.kind !== "ruby" || sapphire.kind !== "sapphire") result = { error: "materials" };
             else if (ruby.grade !== sapphire.grade) result = { error: "grade" };
