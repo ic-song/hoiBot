@@ -595,7 +595,7 @@ function getInfoUnreadPetHomeAlertCount(activityData, user) {
 }
 //미니펫
 var MINIPET_MAX_LV = 300;
-var ELITE_MINIPET_MAX_LV = MINIPET_MAX_LV;
+var MASTER_MINIPET_MAX_LV = 1000;
 
 //티어티켓정보
 const ticketTierData = {
@@ -4376,13 +4376,9 @@ function getMiniPetGradeStats(petData, gradeTable) {
 
 function getMiniPetUpgradeDisplay(miniPetObj) {
 	if (!miniPetObj) return "";
-	if (isElite(miniPetObj) && miniPetObj.upgrade == ELITE_MINIPET_MAX_LV) {
-		return "MAX";
-	} else if (!isElite(miniPetObj) && miniPetObj.upgrade == MINIPET_MAX_LV) {
-		return "MAX";
-	} else {
-		return miniPetObj.upgrade ? "+" + miniPetObj.upgrade : "";
-	}
+	var maxLevel = miniPetObj.grade === "마스터" ? MASTER_MINIPET_MAX_LV : MINIPET_MAX_LV;
+	if (Number(miniPetObj.upgrade) >= maxLevel) return "MAX";
+	return miniPetObj.upgrade ? "+" + miniPetObj.upgrade : "";
 }
 
 function isElite(mini) {

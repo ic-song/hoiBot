@@ -244,9 +244,17 @@ const allsee = "​".repeat(500);
 // 목표레벨(=현재+1)별 성공확률
 var MINIPET_MAX_LV = 300;
 var ELITE_MINIPET_MAX_LV = MINIPET_MAX_LV;
-var MINI_PROB = buildMiniUpgradeProbabilityTable(MINIPET_MAX_LV);
-var MINI_COST = buildMiniUpgradeCostTable(MINIPET_MAX_LV);
-var MINI_CHARM_MASTER = buildMiniUpgradeCharmTable(MINIPET_MAX_LV, 15000);
+var MASTER_MINIPET_MAX_LV = 1000;
+var MASTER_MINIPET_CHARM_RANGES = [
+    { max: MINIPET_MAX_LV, gain: 15000 },
+    { max: 699, gain: 140000 },
+    { max: 899, gain: 172000 },
+    { max: MASTER_MINIPET_MAX_LV, gain: 240000 }
+];
+var MINI_PET_UPGRADE_TRAIT_PERCENT = 10;
+var MINI_PET_CHARM_CLEANUP_PROTECTED_GRADES = ["창조", "창세", "태초+", "태초"];
+var MINI_PROB = buildMiniUpgradeProbabilityTable(MASTER_MINIPET_MAX_LV);
+var MINI_COST = buildMiniUpgradeCostTable(MASTER_MINIPET_MAX_LV);
 var MINI_CHARM_ELITE = buildMiniUpgradeCharmTable(ELITE_MINIPET_MAX_LV, 12000);
 var MINI_CHARM_OTHER = buildMiniUpgradeCharmTable(MINIPET_MAX_LV, 10000);
 
@@ -7391,6 +7399,10 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         }
         if (/^\/펫스킬가이드(?:\s|$)/.test(msg.trim())) {
             replier.reply(buildPetSkillGuideMessage(msg.trim()));
+            return;
+        }
+        if (/^\/미니펫가이드(?:\s|$)/.test(msg)) {
+            replier.reply(buildMiniPetNumberedGuideMessage(msg, miniPetData.gradeTable));
             return;
         }
         if (isGroupChat && GLOBAL_CONFIG.gmEducation.rooms.indexOf(room) !== -1) {
@@ -21589,10 +21601,6 @@ replier.reply(
                     }
                     return;
                 }
-                if (msg === "/미니펫가이드") {
-                    replier.reply("🐹 미니펫 가이드\n━━━━━━━━━━━━━\n※ 미니펫 정보: /미니펫정보\n※ 대표장착: /미니펫장착 [미니펫가방번호]\n※ 보조장착: /미니펫보조장착 [미니펫가방번호]\n※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]\n※ 등급 정리: /미니펫등급정리 [등급이름]\n※ 매력 정리: /미니펫가방정리 [매력]\n└ 창조·창세·엘리트 등급 제외");
-                    return;
-                }
                 if (/^\/(?:펜던트가이드|가구가이드)(?:\s|$)/.test(msg)) { replier.reply(buildEquipmentGuideMessage(msg)); return; }
                 if (msg === "/펜던트강화" || /^\/펜던트강화\s+.+$/.test(msg)) {
                     if (!/^\/펜던트강화[ \t]+\d+(?:[ \t]+[1-9]\d*)?$/.test(msg) || /[\r\n]/.test(msg)) {
@@ -22426,25 +22434,18 @@ replier.reply(
                     return;
                 }
                 if (msg === "/미니펫확률") {
-                    let filteredTable = typeof GLOBAL_CONFIG.miniPet.allowedGrades !== "undefined" ? miniPetData.gradeTable.filter(function (entry) {
-                        return GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(entry.name || entry.grade) !== -1;
-                    }) : miniPetData.gradeTable;
-                    let totalProb = filteredTable.reduce((sum, entry) => sum + entry.probability, 0);
-                    if (totalProb === 0) {
+                    var gradeRates = getMiniPetDrawGradeRates(miniPetData.gradeTable);
+                    if (!gradeRates.length) {
                         replier.reply("❌ 현재 허용된 등급에 대한 확률 총합이 0입니다.");
                         return;
                     }
-                    let message = "🎲 현재 미니펫 뽑기 확률표 (정규화 기준)\n\n";
-                    let adjustedTotal = 0;
-                    for (let i = 0; i < filteredTable.length; i++) {
-                        let grade = filteredTable[i].grade;
-                        let originalProb = filteredTable[i].probability;
-                        let adjustedProb = (originalProb / totalProb) * 100;
-                        adjustedTotal += originalProb / totalProb;
-                        message += grade + " : " + adjustedProb.toFixed(4) + "%\n";
+                    var message = "🎲 현재 미니펫 뽑기 확률표 (정규화 기준)\n\n";
+                    var adjustedTotal = 0;
+                    for (var i = 0; i < gradeRates.length; i++) {
+                        adjustedTotal += gradeRates[i].rate;
+                        message += gradeRates[i].grade + " : " + (gradeRates[i].rate * 100).toFixed(4) + "%\n";
                     }
-                    message += "\n총 확률: " + adjustedTotal.toFixed(4);
-                    replier.reply(message);
+                    replier.reply(message + "\n총 확률: " + adjustedTotal.toFixed(4));
                 }
                 if (msg === "/미니펫오픈" || /^\/미니펫오픈\s+\d+$/.test(msg)) {
                     if (castleSiegeFlag) return;
@@ -22832,7 +22833,7 @@ replier.reply(
                         var pet = bag[i];
                         var charm = parseInt(pet && pet.battleExp, 10) || 0;
                         var grade = String((pet && pet.grade) || "").trim();
-                        var isProtectedGrade = grade === "창조" || grade === "창세" || grade === "태초+" || grade === "태초" || isElite(pet);
+                        var isProtectedGrade = MINI_PET_CHARM_CLEANUP_PROTECTED_GRADES.indexOf(grade) !== -1 || isElite(pet);
 
                         if (!isProtectedGrade && charm <= threshold) {
                             soldCount++;
@@ -46382,10 +46383,8 @@ function runMiniPetUpgradeOnce(sender, data, petData, guildData, petSkillData, i
     }
 
     var mini = targetInfo.mini;
-    if (!mini.upgrade) mini.upgrade = 0;
-
-    var curLv = mini.upgrade;
-    var maxLv = isElite(mini) ? ELITE_MINIPET_MAX_LV : MINIPET_MAX_LV;
+    var curLv = Number(mini.upgrade) || 0;
+    var maxLv = getMiniPetUpgradeMaxLevel(mini);
     if (curLv >= maxLv) {
         return {
             ok: false,
@@ -46420,7 +46419,7 @@ function runMiniPetUpgradeOnce(sender, data, petData, guildData, petSkillData, i
     }
 
     var baseProb = MINI_PROB[targetLv];
-    var traitPct = hasPetSkill(petSkillData, sender, "개통령") ? 10 : 0;
+    var traitPct = hasPetSkill(petSkillData, sender, "개통령") ? MINI_PET_UPGRADE_TRAIT_PERCENT : 0;
     var traitAdd = traitPct / 100;
     var boostEligible = baseProb + traitAdd < 1.0;
     var boost = boostEligible ? findBestMiniBoostItem(user.bag) : null;
@@ -54374,24 +54373,28 @@ function isMemberTierKing(data, user) {
 /**
  *  미니펫 뽑기 관련 함수들
  */
+// 뽑기와 두 확률 조회에 같은 허용 등급·정규화 확률을 제공한다.
+function getMiniPetDrawGradeRates(gradeTable) {
+    var allowedGrades = GLOBAL_CONFIG.miniPet.allowedGrades;
+    var rows = allowedGrades ? gradeTable.filter(function (row) {
+        return allowedGrades.indexOf(row.name || row.grade) !== -1;
+    }) : gradeTable;
+    var total = rows.reduce(function (sum, row) { return sum + row.probability; }, 0);
+    if (!total) return [];
+    return rows.map(function (row) { return { grade: row.grade, rate: row.probability / total }; });
+}
+
 // 등급별 미니펫 중 랜덤 선택
 // 등급 추첨
 function getRandomGrade(gradeTable) {
-    let filteredTable = typeof GLOBAL_CONFIG.miniPet.allowedGrades !== "undefined" ? gradeTable.filter(function (entry) {
-        return GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(entry.name || entry.grade) !== -1;
-    }) : gradeTable;
-    if (filteredTable.length === 0) return null;
-    let totalProb = filteredTable.reduce((sum, entry) => sum + entry.probability, 0);
-    if (totalProb === 0) return null;
-    let r = Math.random();
-    let sum = 0;
-    for (let i = 0; i < filteredTable.length; i++) {
-        sum += filteredTable[i].probability / totalProb; // normalize
-        if (r <= sum) {
-            return filteredTable[i].grade;
-        }
+    var rates = getMiniPetDrawGradeRates(gradeTable);
+    if (!rates.length) return null;
+    var roll = Math.random(), sum = 0;
+    for (var i = 0; i < rates.length; i++) {
+        sum += rates[i].rate;
+        if (roll <= sum) return rates[i].grade;
     }
-    return filteredTable[filteredTable.length - 1].grade;
+    return rates[rates.length - 1].grade;
 }
 // 미니펫 뽑기 함수
 function getRandomPetByGrade(miniPetList, grade) {
@@ -54900,7 +54903,15 @@ function isMasterMiniPet(mini) {
 function getCharmGainFor(mini, targetLv) {
     if (!mini) return 0;
 
-    let table = isMasterMiniPet(mini) ? MINI_CHARM_MASTER : isElite(mini) ? MINI_CHARM_ELITE : MINI_CHARM_OTHER;
+    if (isMasterMiniPet(mini)) {
+        if (targetLv < 1) return 0;
+        for (var i = 0; i < MASTER_MINIPET_CHARM_RANGES.length; i++) {
+            var range = MASTER_MINIPET_CHARM_RANGES[i];
+            if (targetLv <= range.max) return range.gain;
+        }
+        return 0;
+    }
+    var table = isElite(mini) ? MINI_CHARM_ELITE : MINI_CHARM_OTHER;
     return table[targetLv] || 0;
 }
 //  불변 필드 위주 동일성 체크 (battleExp 등 가변값은 제외)
@@ -54984,16 +54995,13 @@ function rollDiceRoulette() {
  }*/
 function getMiniPetUpgradeDisplay(miniPetObj) {
     if (!miniPetObj) return "";
-    if (isElite(miniPetObj) && miniPetObj.upgrade == ELITE_MINIPET_MAX_LV) {
-        return "MAX";
-    } else if (!isElite(miniPetObj) && miniPetObj.upgrade == MINIPET_MAX_LV) {
-        return "MAX";
-    } else {
-        return miniPetObj.upgrade ? "+" + miniPetObj.upgrade : "";
-    }
+    if (Number(miniPetObj.upgrade) >= getMiniPetUpgradeMaxLevel(miniPetObj)) return "MAX";
+    return miniPetObj.upgrade ? "+" + miniPetObj.upgrade : "";
 }
 
+// 등급별 강화 상한을 반환한다.
 function getMiniPetUpgradeMaxLevel(mini) {
+    if (isMasterMiniPet(mini)) return MASTER_MINIPET_MAX_LV;
     return isElite(mini) ? ELITE_MINIPET_MAX_LV : MINIPET_MAX_LV;
 }
 
@@ -58037,6 +58045,67 @@ function createMasterMiniPetFromCombination(reward) {
     };
 }
 
+// 마스터 강화 구간을 공통 증가량 설정으로 표시한다.
+function buildMasterMiniPetGrowthLines() {
+    var first = 1;
+    return MASTER_MINIPET_CHARM_RANGES.map(function (range) {
+        var line = numberWithCommas(first) + "~" + numberWithCommas(range.max) + "강: 성공당 +" + numberWithCommas(range.gain) + "💞";
+        first = range.max + 1;
+        return line;
+    }).join("\n");
+}
+
+// 가이드 목차 또는 선택한 미니펫 상세 원고를 출력한다.
+function buildMiniPetNumberedGuideMessage(message, gradeTable) {
+    if (message === "/미니펫가이드") return "🐹 미니펫 가이드\n━━━━━━━━━━━━━\n1. 미니펫 명령어\n2. 미니펫이란?\n3. 미니펫 장착 슬롯\n4. 미니펫 아이템\n5. 미니펫 강화\n6. 미니펫 등급 확률\n7. 미니펫 판매가격·정리\n8. 미니펫 거래 — 자유시장\n9. 엘리트 미니펫\n10. 마스터 미니펫\n11. 미니펫 연금\n12. 미니펫대전\n13. 미니펫 컬렉션\n━━━━━━━━━━━━━\n※ 조회: /미니펫가이드 [번호]\n예시: /미니펫가이드 5";
+    var match = /^\/미니펫가이드[ \t]+([1-9]|1[0-3])$/.exec(message);
+    if (!match) return "번호를 확인해주세요.\n사용법: /미니펫가이드 [1~13]\n목차: /미니펫가이드";
+    var pages = [
+        "🐹 미니펫 명령어\n━━━━━━━━━━━━━\n정보: /미니펫정보\n가방: /미니펫가방\n뽑기: /미니펫오픈 [수량]\n뽑기 확률: /미니펫확률\n\n대표 장착: /미니펫장착 [가방번호]\n보조 장착: /미니펫보조장착 [가방번호]\n강화: /미니펫강화 [번호] [횟수]\n└ 0: 대표 / 00: 보조 / 나머지: 가방번호\n\n대전: /미니펫대전\n컬렉션: /미니펫컬렉션\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫이란?\n━━━━━━━━━━━━━\n장착하면 캐슬·레이드 매력을 올려주는 동료입니다.\n대표 1마리 + 보조 1마리를 장착할 수 있어요.\n가방에 보유만 한 미니펫의 매력은 적용되지 않아요.\n\n💞 표시 매력 10,000 기준\n대표: 캐슬 +10,000 / 레이드 +10,000\n보조: 캐슬 +5,000 / 레이드 +5,000\n\n일반 뽑기 최고 등급: 창조\n별도 조합 등급: 엘리트 → 마스터\n강화·대전·컬렉션·거래에 활용할 수 있어요.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 장착 슬롯\n━━━━━━━━━━━━━\n대표 슬롯: 1마리 · 매력 100% 적용\n/미니펫장착 [가방번호]\n보조 슬롯: 1마리 · 매력 50% 적용\n/미니펫보조장착 [가방번호]\n현재 장착 확인: /미니펫정보\n\n기존 미니펫을 보존하려면 먼저 귀속해제!\n대표: /귀속해제\n보조: /보조귀속해제\n└ 귀속해제권 1개와 가방 빈 공간 필요\n\n※ 귀속해제 없이 교체 입양을 확정하면\n   기존 장착 미니펫이 소멸합니다.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 아이템\n━━━━━━━━━━━━━\n🎟️ 뽑기권: 미니펫 뽑기에 사용\n💫 미니펫 강화석: 강화 도전 단계만큼 소모\n🐷 강화확률UP: 강화 성공 확률 추가\n└ 보유한 아이템 중 가장 높은 수치 1개 자동 사용\n\n🐰 귀속해제권: 장착 미니펫을 가방으로 회수\n🙀 이름변경권: /미니펫이름 [새이름]\n😺 외형변경권: /미니펫외형 [새외형]\n└ 이름·외형 변경은 대표 미니펫 대상\n\n🐹 대전리셋권: 대전 이용 관련 아이템\n0️⃣ 전적초기화권: 대전 전적 초기화\n🗝️ 컬렉션 만능 열쇠: 컬렉션 등록에 사용\n\n※ 펫 강화석⭐과 미니펫 강화석💫은 다른 아이템!\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 강화\n━━━━━━━━━━━━━\n/미니펫강화 [번호] [횟수]\n0: 대표 / 00: 보조 / 나머지: 가방번호\n횟수 생략 시 1회 · 최대 100회 연속 시도\n\n일반·엘리트 최대 __ELITE_MAX__강\n마스터 최대 __MASTER_MAX__강\n\n💫 강화석: 도전 단계만큼 매 시도 소모\n🅟 1~100강: __MINI_COST_1__\n🅟 101~200강: __MINI_COST_101__\n🅟 201~__MASTER_MAX__강: __MINI_COST_201__\n\n실패해도 강화 단계는 유지됩니다.\n포인트·강화석·사용한 확률UP은 소모됩니다.\n\n💞 매력 +10,000은 대표 장착 기준\n캐슬 +10,000 · 레이드 +10,000입니다.\n마스터 구간별 상승량: /미니펫가이드 10\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 등급 확률\n━━━━━━━━━━━━━\n일반 미니펫 뽑기 기준입니다.\n\n__GRADE_RATES__\n\n※ 최신 확률 조회: /미니펫확률\n※ 별도 상자·조합에는 각 콘텐츠 확률이 적용됩니다.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 판매가격·정리\n━━━━━━━━━━━━━\n개별 판매: /미니펫판매 [가방번호]\n구간 판매: /미니펫지정판매 [시작번호]~[끝번호]\n등급 정리: /미니펫등급정리 [등급이름]\n└ 입력한 등급 이하를 판매합니다.\n매력 정리: /미니펫가방정리 [매력]\n└ 입력한 매력 이하를 판매합니다.\n\n판매금액은 미니펫별로 다릅니다.\n조합 엘리트 5종: __ELITE_SALE__ 포인트\n마스터 3종: __MASTER_SALE__ 포인트\n\n매력 정리 제외:\n__PROTECTED__\n※ 현재 마스터는 매력 정리 보호 대상이 아닙니다.\n※ 개별·구간 판매에는 위 보호 규칙이 적용되지 않습니다.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 거래 — 자유시장\n━━━━━━━━━━━━━\n미니펫 당근 직접거래는 종료되었습니다.\n현재는 자유시장에서 다이아로 거래합니다.\n\n판매 등록:\n/미니펫거래등록 [가방번호] [갯수] [다이아 총가격]\n\n판매 자격: 킹 이상\n등록비: 무료 / 묶음 최소 가격: 10💎\n묶음 판매는 이름·외형·등급·강화·매력이\n동일한 미니펫끼리 가능합니다.\n장착·귀속·잠금 상태는 등록할 수 없습니다.\n\n검색: /자유시장검색 미니펫\n상세 이용 안내: /자유시장판매가이드\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 엘리트 미니펫\n━━━━━━━━━━━━━\n창조 __ELITE_MAX__강 미니펫 2마리를 조합합니다.\n/미니펫조합엘리트 [가방번호] [가방번호]\n※ 컬렉션창조 미니펫은 재료로 사용할 수 없습니다.\n\n성공 시 아래 5종 중 1종 획득!\n아르케🌌: 기본 매력 1,200만\n카오스🕳️: 기본 매력 1,150만\n데미우르고스👁️: 기본 매력 1,100만\n아이온♾️: 기본 매력 1,050만\n로고스🔱: 기본 매력 1,000만\n\n최대 __ELITE_MAX__강 · 성공당 매력 +__ELITE_GAIN__\n성공 시 재료 2마리 소모\n실패 시 재료 유지 · 포인트 소모\n\n조합 안내 조회: /미니펫조합엘리트\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "👑 마스터 미니펫\n━━━━━━━━━━━━━\n엘리트 __ELITE_MAX__강 미니펫 5마리 + __MASTER_COMBINE_COST__ 포인트\n조합 성공 확률: __MASTER_COMBINE_RATE__%\n/미니펫조합마스터 [번호1] [번호2] [번호3] [번호4] [번호5]\n\n성공 시 3종 중 1종을 동일 확률로 획득!\n⏳ 영겁의 템푸스: 기본 8,100만 → __MASTER_MAX__강 2억\n♾️ 무한의 인피니타: 기본 8,200만 → __MASTER_MAX__강 2억 100만\n🔥 천상의 엠피레온: 기본 8,300만 → __MASTER_MAX__강 2억 200만\n\n💫 최대 강화: __MASTER_MAX__강\n__MASTER_GROWTH__\n\n301강부터 기본 성공률 __MASTER_BASE_RATE__%\n30% 확률UP + 개통령 적용 시 __MASTER_EXAMPLE_RATE__%\n시도당 __MINI_COST_201__ 포인트 + 도전 단계만큼 강화석 소모\n\n💞 상승량은 대표 장착 시 캐슬·레이드에 각각 적용!\n보조 장착 시 각각 50% 적용됩니다.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 연금\n━━━━━━━━━━━━━\n미니펫 순위에 따른 일일 보상입니다.\n\n🏆 보상 대상: 1~200등\n🎁 보상: 펫 강화석⭐ · 순위별 차등 지급\n1등 40개 / 2등 30개 / 3등 25개\n\n⏰ 정기 지급 안내: 15:32\n운영 일정: /스케줄\n지급 완료 여부 확인: /패스목록\n\n※ 보상은 미니펫 강화석💫이 아닌\n   펫 강화석⭐입니다.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫대전\n━━━━━━━━━━━━━\n랜덤 대전: /미니펫대전\n\n하루 최대 10회\n기본 경험치: 75 EXP\n정상 완료 보상: 2,500만 포인트\n└ 승패와 관계없이 대전을 진행한 유저에게 지급\n\n대표 100% + 보조 50%의\n캐슬·레이드 매력을 합산해 적용합니다.\n\n내 기록·남은 횟수: /미니펫정보\n다승 순위: /미니펫대전순위\n승률 순위: /미니펫승률순위\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드",
+        "🐹 미니펫 컬렉션\n━━━━━━━━━━━━━\n시즌 1 최대 100단계!\n\n등록 등급:\n신화·신화+·초월·초월+·태초·태초+·창세·창조\n\n조건·등록 현황·보상: /미니펫컬렉션\n직접 등록: /미니펫컬렉션등록 [가방번호] ...\n열쇠 등록: /미니펫컬렉션만능 [컬렉션번호] ...\n자동 선택: /미니펫컬렉션전체등록\n\n직접 등록은 한 번에 최대 8개\n열쇠 등록은 한 번에 최대 10개\n전체 등록은 현재 단계의 빈 등급만 대상으로 합니다.\n\n※ 등록한 미니펫·사용한 열쇠는 소모됩니다.\n※ 강화가 부족하면 포인트·강화석·확률UP을\n   소모해 자동 강화 후 등록을 시도합니다.\n━━━━━━━━━━━━━\n※ 목차: /미니펫가이드"
+    ];
+    var number = Number(match[1]), page = pages[number - 1];
+    if (number === 6) {
+        var rates = getMiniPetDrawGradeRates(gradeTable);
+        if (!rates.length) return "❌ 현재 허용된 등급에 대한 확률 총합이 0입니다.";
+        var rows = rates.map(function (row) {
+            var spaces = row.grade === "일반" ? "    " : row.grade.length === 2 ? "     " : "    ";
+            return row.grade + spaces + Number((row.rate * 100).toFixed(4)) + "%";
+        });
+        page = page.replace("__GRADE_RATES__", rows.join("\n"));
+    }
+    if (number === 7) {
+        page = page.replace("__ELITE_SALE__", formatKoreanShort(ELITE_MINIPET_COMBINATION_REWARDS[0].price))
+            .replace("__MASTER_SALE__", formatKoreanShort(MASTER_MINIPET_COMBINATION_REWARDS[0].price));
+    }
+    if (number === 10) {
+        var masterCombination = GLOBAL_CONFIG.miniPetCombination.master;
+        var baseRate = MINI_PROB[MINIPET_MAX_LV + 1] * 100; // 첫 마스터 전용 단계의 기본 성공률
+        page = page.replace("__MASTER_GROWTH__", buildMasterMiniPetGrowthLines())
+            .replace("__MASTER_COMBINE_COST__", formatKoreanShort(masterCombination.cost))
+            .replace("__MASTER_COMBINE_RATE__", Math.round(masterCombination.successRate * 100))
+            .replace("__MASTER_BASE_RATE__", baseRate)
+            .replace("__MASTER_EXAMPLE_RATE__", Math.min(100, baseRate + MINI_PET_UPGRADE_TRAIT_PERCENT + 30));
+    }
+    return page.replace(/__MINI_COST_(\d+)__/g, function (_, level) {
+        return formatKoreanShort(MINI_COST[Number(level)]);
+    }).replace("__ELITE_GAIN__", numberWithCommas(MINI_CHARM_ELITE[1]))
+        .replace(/__MASTER_MAX__/g, numberWithCommas(MASTER_MINIPET_MAX_LV))
+        .replace(/__ELITE_MAX__/g, numberWithCommas(ELITE_MINIPET_MAX_LV))
+        .replace("__PROTECTED__", MINI_PET_CHARM_CLEANUP_PROTECTED_GRADES.slice().reverse().concat(["엘리트"]).join("·"));
+}
+
 // 마스터 미니펫 조합 안내 메시지 생성 함수
 function buildMasterMiniPetGuideMessage() {
     return (
@@ -58052,8 +58121,8 @@ function buildMasterMiniPetGuideMessage() {
         "영겁의 템푸스⏳(+8100만💕)[마스터]\n" +
         "무한의 인피니타♾️(+8200만💕)[마스터]\n" +
         "천상의 엠피레온🔥(+8300만💕)[마스터]\n\n" +
-        "1강 강화 시 매력이 15,000💕 상승하며,\n" +
-        "최대 300강까지 강화할 수 있습니다.\n\n" +
+        "💫 최대 강화: " + numberWithCommas(MASTER_MINIPET_MAX_LV) + "강\n" +
+        buildMasterMiniPetGrowthLines() + "\n\n" +
         "판매 금액은 5000억입니다."
     );
 }
@@ -66985,7 +67054,14 @@ function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectio
     var collectionRank = getMiniPetCollectionRanking(collectionData);
     var collectionRankText = "순위없음📊";
     for (var r = 0; r < collectionRank.length; r++) if (collectionRank[r].userName === user) { collectionRankText = (r + 1) + "등📊"; break; }
-    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "🐹 미니펫 가이드: /미니펫가이드", "━━━━━━━━━━━━━"];
+    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "📚 미니펫 가이드: /미니펫가이드",
+        "※ 미니펫 정보: /미니펫정보",
+        "※ 대표장착: /미니펫장착 [미니펫가방번호]",
+        "※ 보조장착: /미니펫보조장착 [미니펫가방번호]",
+        "※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]",
+        "※ 등급 이하 정리: /미니펫등급정리 [등급이름]",
+        "※ 매력 이하 정리: /미니펫가방정리 [매력]",
+        "└ " + MINI_PET_CHARM_CLEANUP_PROTECTED_GRADES.concat(["엘리트"]).join("·") + " 등급 제외", "━━━━━━━━━━━━━"];
     if (!bag.length) lines.push("미니펫가방이 비어 있습니다.");
     for (var i = 0; i < bag.length; i++) {
         if (i === 5) lines.push(allsee);
