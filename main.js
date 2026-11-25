@@ -72181,13 +72181,18 @@ function readPackageRewardInput(input) {
     return { text: (text.substring(0, match.index) + text.substring(match.index + match[0].length)).trim(), count: count, invalidCount: !count };
 }
 
-// 이미 읽은 정의와 기존 실물 생성 권한만 패키지 입력에 전달하는 함수
-function getPackageActualDefinitions(data, items, packages, homes, actor) {
+// 등록과 개봉에 공통으로 사용할 미니펫 보상 정의를 구성하는 함수
+function getPackageMiniRewardDefinitions() {
     var collection = createLegacyMiniEntitlementPackage("ticket").rewards.map(function (reward) {
         reward.object.packageCollection = true;
         return reward.object;
     }); // 기존 지급 정의에서 컬렉션 미니펫의 외형·매력·가격을 가져온다.
-    return { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: miniPetData.miniPet.concat(collection), furniture: homes.furniture,
+    return miniPetData.miniPet.concat(collection);
+}
+
+// 이미 읽은 정의와 기존 실물 생성 권한만 패키지 입력에 전달하는 함수
+function getPackageActualDefinitions(data, items, packages, homes, actor) {
+    return { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: getPackageMiniRewardDefinitions(), furniture: homes.furniture,
         custom: { mini: actor === "호이 남" || isOrderLogRoomBot(actor), furniture: isAdmin(actor) || isMaster(actor), pendant: isMaster(actor) } };
 }
 
@@ -72805,7 +72810,7 @@ function runPackageActualUseEntry(data, pets, skills, guilds, user, message, pac
     var actual = { pets: pets, skills: skills, homes: null, gems: null, definitions: null };
     if (needs.mini || needs.furniture || needs.pendant || needs.skill || needs.gem) {
         var homeInfo = loadJsonFile(homeInfoFile), items = loadJsonFile(itemListPath);
-        actual.definitions = { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: miniPetData.miniPet, furniture: homeInfo.furniture };
+        actual.definitions = { items: Object.keys(getDiamondShopItemNames(data, items, packages)), mini: getPackageMiniRewardDefinitions(), furniture: homeInfo.furniture };
     }
     if (needs.furniture) actual.homes = loadJsonFile(homeDataFile);
     if (needs.gem) {
