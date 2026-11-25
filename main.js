@@ -4506,7 +4506,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
         } else if (/^\/(?:다이아조합(?:법|선택)?|포인트(?:기준설정|다이아통계|통계(?:다이아)?)|다이아기준설정)(?:\s|$)/.test(diamondEarlyInput)) msg = diamondEarlyInput;
         var dramaSessionKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var equipmentGuideInput = String(msg).trim();
-        if (/^\/(?:펜던트가이드|가구가이드|미니펫가이드)(?:\s|$)/.test(equipmentGuideInput)) msg = equipmentGuideInput;
+        if (/^\/(?:펜던트가이드|가구가이드|미니펫가이드|펫스킬가이드)(?:\s|$)/.test(equipmentGuideInput)) msg = equipmentGuideInput;
         var dramaEarlyRequest = getHowolDramaRequest(msg);
         if (dramaEarlyRequest) msg = String(msg).replace(/^[ \t]+|[ \t]+$/g, ""); // 공통 필터·대전 제한에도 실행할 명령과 같은 문자열 전달
         if (dramaEarlyRequest) { delete manualResetSessions[dramaSessionKey]; delete dataCleanupSessions[dramaSessionKey]; }
@@ -7389,6 +7389,15 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             replier.reply(buildReferralRankingMessage(data, petData, guildData, sender));
             return;
         }
+        if (/^\/펫스킬가이드(?:\s|$)/.test(msg.trim())) {
+            replier.reply(buildPetSkillGuideMessage(msg.trim()));
+            return;
+        }
+        if (isGroupChat && GLOBAL_CONFIG.gmEducation.rooms.indexOf(room) !== -1) {
+            if (msg === "/펫스킬확률") { replier.reply(buildPetSkillProbabilityMessage()); return; }
+            if (/^\/(?:펜던트가이드|가구가이드)(?:\s|$)/.test(msg)) { replier.reply(buildEquipmentGuideMessage(msg)); return; }
+            if (msg === "/티어") { replier.reply(buildCurrentTierMessage(data, petData, guildData, petSkillData, sender)); return; }
+        }
         // 정보 조회는 닉네임 길이 제한·펫 초기화의 조기 종료보다 먼저 처리한다.
         if (msg === "/펫스킬정보" || /^\/펫스킬정보\s+/.test(msg)) {
             var skillQuery = msg.replace("/펫스킬정보", "").trim();
@@ -7909,37 +7918,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 }
 
                 if (msg === "/펫스킬확률") {
-                    var rateMsg = "📙 펫스킬북 확률표 📙\n\n" + allsee + "\n";
-                    var totalPercent = 0;
-                    var petSkillGrades = ["SSS", "SS", "S", "A", "B", "C", "D"];
-
-                    for (var pg = 0; pg < petSkillGrades.length; pg++) {
-                        var currentGrade = petSkillGrades[pg];
-                        rateMsg += "━━━" + currentGrade + " 등급━━━\n";
-
-                        for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
-                            var sd = PET_SKILL_LIST[ps];
-                            if (sd.grade !== currentGrade || sd.hideFromRateTable === true || isRetiredPetSkill(sd.name)) continue;
-
-                            var rate = getPetSkillActualRate(sd);
-                            totalPercent += rate;
-                            rateMsg += formatPetSkillName(sd.name) + " (확률: " + formatPetSkillRate(rate) + "%)\n";
-                        }
-
-                        rateMsg += "\n";
-                    }
-
-                    rateMsg += "━━━━━━━━━━━━━━━\n";
-                    rateMsg += "총 확률: " + totalPercent.toFixed(1) + "%\n\n";
-                    rateMsg += "━━━한정판 등급━━━\n";
-                    for (var limitedIndex = 0; limitedIndex < PET_SKILL_LIST.length; limitedIndex++) {
-                        var limitedSkillData = PET_SKILL_LIST[limitedIndex];
-                        if (limitedSkillData.limitedEdition !== true) continue;
-                        rateMsg += formatPetSkillName(limitedSkillData.name) + "\n";
-                    }
-                    rateMsg += "\n※ 한정판 펫스킬은 펫스킬북에서 등장하지 않습니다.";
-
-                    replier.reply(rateMsg.trim());
+                    replier.reply(buildPetSkillProbabilityMessage());
                     return;
                 }
                 if (msg === "/펫스킬중복") {
@@ -19329,9 +19308,7 @@ replier.reply(
                 }
 
                 if (msg === "/티어") {
-                    var tierProgressPlan = buildTierProgressPlan(data, petSkillData, sender);
-                    if (tierProgressPlan) tierProgressPlan.user = checkRank(data, petData, guildData, sender);
-                    replier.reply(buildTierProgressMessage(tierProgressPlan, false));
+                    replier.reply(buildCurrentTierMessage(data, petData, guildData, petSkillData, sender));
                     return;
                 }
                 if (msg === "/티어적용") {
@@ -35202,6 +35179,15 @@ function buildGmEducationStatus(store, data, user, context) {
 
 // 현재 게임 명령과 선택 실습 기준을 포함한 공통 매뉴얼을 표시하는 함수
 function buildGmEducationManual(chapter) {
+    var revisedManuals = [
+        ["📚 호월 교육 · 4/12\n🐾 펫·친밀도\n━━━━━━━━━━━━\n함께하는 펫을 확인하고 친밀도를 알아봐요!\n🎁 완료 보상: 다이아상자💎(소) 1개\n📖 친밀도·스킬 슬롯 안내: /펫스킬가이드 4", "📖 배울 내용\n• /펫정보에서 펫의 상태와 친밀도를 확인해요.\n• 펫 친밀도와 모험가 레벨은 다른 성장 정보예요.\n• 친밀도 100레벨마다 기본 펫스킬 칸이 1칸 늘어나며, 기본 칸은 최대 30칸이에요.\n• 확장권·학개론·프리미엄을 더한 장착 한도는 별도로 확인해요.\n• 아이템은 보유 수량과 설명을 확인한 뒤 사용해요.\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n/펫정보\n/가방\n/펫스킬\n/펫스킬가이드 4\n━━━━━━━━━━━━\n✅ GM 확인\n친밀도는 어디에서 확인하나요?\n친밀도 기본 칸과 확장권을 합친 장착 한도를 구분할 수 있나요?\n━━━━━━━━━━━━\n/냠냠 [수량]은 현재 아이템과 사용 안내를 확인한 뒤 설명해요.\n교육을 위해 먹이나 확장권을 실제로 사용할 필요는 없어요."],
+        ["📚 호월 교육 · 5/12\n📙 펫스킬\n━━━━━━━━━━━━\n보유한 스킬과 장착 효과를 확인해요!\n🎁 완료 보상: 다이아상자💎(소) 1개\n📖 자세한 가이드: /펫스킬가이드\n📙 개별 스킬 정보: /펫스킬정보 [스킬이름]\n📖 전체 펫스킬 목록: /펫스킬확률", "📖 배울 내용\n• /펫스킬가방의 보유 스킬과 /펫스킬의 장착 스킬을 구분해요.\n• /펫스킬확률에서 전체 스킬 목록을 보고, /펫스킬정보 [스킬이름]으로 효과·확률·장착 조건을 확인해요.\n• 친밀도 기본 칸, 학개론·프리미엄, 확장권과 합산 최대 100칸을 구분해요.\n• 티어 무기는 티어 전용 펫스킬북이에요. 필요한 티어 이상이면 장착할 수 있고, 티어 전용끼리는 한 종류만 장착할 수 있어요.\n• /티어를 입력하면 현재 내 티어에 맞는 장착 가능한 전용 무기 이름과 적용 / 미적용중 상태를 확인할 수 있어요.\n• 표시된 무기의 이름을 /펫스킬정보에 입력하면 효과와 장착 조건을 확인할 수 있어요. 자세한 설명은 /펫스킬가이드 5에서 볼 수 있어요.\n• 컬렉션 일반 등록은 가방번호, 만능열쇠는 컬렉션번호를 사용해요.\n• 컬렉션은 실제 등록 성공한 만큼 큐브를 받고, 등록 재료가 소모돼요.\n• 소멸·판매·분해는 장착·보유 스킬을 소모하므로 대상과 수량을 먼저 확인해요.\n• /펫스킬북조합은 펫스킬북 조각 10개를 소모해 오픈용 펫스킬북 1개를 얻는 명령이에요.\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n/펫스킬\n/펫스킬가방\n/펫스킬가이드\n/티어\n/펫스킬가이드 5\n/펫스킬정보 삼성전자\n/펫스킬확률\n/펫스킬중복\n/펫스킬컬렉션\n━━━━━━━━━━━━\n✅ GM 확인\n전체 스킬 목록과 개별 스킬 정보를 각각 어떤 명령으로 확인하나요?\n내 티어에 맞는 티어 무기와 적용 여부를 어디에서 확인하나요?\n가방번호·장착번호·컬렉션번호를 구분할 수 있나요?\n스킬의 조건과 소모가 발생하는 명령을 설명할 수 있나요?\n━━━━━━━━━━━━\n스킬이 없어도 목록과 스펙 조회로 교육할 수 있어요.\n장착·소멸·등록·분해·판매·확장권 사용은 필수가 아니에요."],
+        ["📚 호월 교육 · 6/12\n🐣 미니펫\n━━━━━━━━━━━━\n미니펫의 장착과 성장 방법을 알아봐요!\n🎁 완료 보상: 다이아상자💎(소) 1개\n📖 자세한 가이드: /미니펫가이드", "📖 배울 내용\n• /미니펫가방의 보유 목록과 실제 대표·보조 장착을 구분해요.\n• 대표는 100%, 보조는 50%의 장착 효과를 적용해요.\n• 가방에 보유만 한 미니펫의 매력이 자동으로 적용되는 것은 아니에요.\n• /미니펫정보에서 현재 장착 상태와 효과를 확인해요.\n• 가이드에서 등급별 성장, 강화 비용·확률·최대 단계와 조합 방법을 확인해요.\n• 컬렉션 등록·판매·정리는 미니펫을 소모할 수 있으니 대상을 먼저 확인해요.\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n/미니펫정보\n/미니펫가방\n/미니펫가이드\n━━━━━━━━━━━━\n✅ GM 확인\n대표·보조·가방 보유 상태의 차이를 설명할 수 있나요?\n강화의 대상·비용·확률을 어디에서 확인하나요?\n━━━━━━━━━━━━\n강화·조합·컬렉션 등록·판매는 교육 완료 조건이 아니에요.\n실제 보유 미니펫이 없어도 가이드와 예시로 교육해요."],
+        ["📚 호월 교육 · 7/12\n📿 펜던트\n━━━━━━━━━━━━\n펜던트를 확인하고 강화·복원 기능을 알아봐요!\n🎁 완료 보상: 다이아상자💎(소) 1개\n📖 자세한 가이드: /펜던트가이드", "📖 배울 내용\n• 보유 펜던트는 /펜던트가방, 장착 펜던트는 /펜던트정보 0에서 확인해요.\n• 펜던트 정보·강화·복원에서 0번은 장착 펜던트예요.\n• 등급·강화 단계·남은 내구도·승급은 서로 다른 정보예요.\n• 기존 펜던트를 보존하려면 교체 전 귀속해제 안내를 확인해요.\n• 귀속해제 없이 교체하면 기존 펜던트가 소멸해요.\n• 강화는 시도 횟수와 성공 횟수가 다르며, 비용·확률·내구도를 먼저 확인해요.\n• 복원·승급·조합의 조건과 사용법도 가이드에서 이어서 확인해요.\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n/펜던트가방\n/펜던트정보 0\n/펜던트가이드\n/펜던트가이드 2\n/펜던트가이드 3\n━━━━━━━━━━━━\n✅ GM 확인\n0번과 가방번호의 차이를 알고 있나요?\n기존 펜던트를 보존하는 방법과 강화 전 확인 사항을 설명할 수 있나요?\n━━━━━━━━━━━━\n미장착 상태에서는 가방과 가이드의 예시로 교육해요.\n장착·교체·귀속해제·강화·복원은 교육 완료 조건이 아니에요."],
+        ["📚 호월 교육 · 8/12\n🏡 펫홈·가구\n━━━━━━━━━━━━\n내 펫홈과 가구 효과를 한눈에 확인해요!\n🎁 완료 보상: 다이아상자💎(소) 1개\n📖 자세한 가이드: /가구가이드", "📖 배울 내용\n• /가구가방의 보유 가구와 /가구정보의 장착 가구를 구분해요.\n• 집 면적·가방 보관 용량·장착 가능 수·가구 효과는 서로 달라요.\n• 펫홈 1평당 캐슬매력 +75,000, 레이드매력 +75,000이 증가해요.\n• 두 매력의 합계는 1평당 +150,000이며, 평수 보너스는 /가구정보에서 확인해요.\n• 100평 이후 장착 가능 수는 5평마다 1개씩 늘어나요.\n• 루미에르 빌리지·별채 성장과 가구 장착칸 증가 규칙을 구분해요.\n• 별채 등록에는 대상 가구가 소모되므로 가이드와 확인 내용을 읽어주세요.\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n/펫홈\n/가구가방\n/가구정보\n/가구가이드\n/가구가이드 3\n/가구가이드 5\n/가구가이드 6\n━━━━━━━━━━━━\n✅ GM 확인\n보유·장착·별채 등록의 차이를 설명할 수 있나요?\n1평당 캐슬·레이드 매력과 확인 위치를 알고 있나요?\n━━━━━━━━━━━━\n가구 구매·집 확장·장착·판매·별채 등록은 필수가 아니에요.\n재화와 가구가 없어도 조회·설명·예시로 교육해요."]
+    ];
+    var revised = revisedManuals[chapter - 4]; // 4~8장의 상단과 전체보기 본문
+    if (revised) return revised[0] + "\n" + allsee + revised[1];
     var row = GLOBAL_CONFIG.gmEducation.chapters[chapter - 1];
     var learning = row.learn.slice();
     if (chapter === 11) {
@@ -41846,6 +41832,26 @@ function buildTierQuoteStatusText(quote) {
     return parts.join("\n");
 }
 
+// 일반 채팅과 교육방에서 같은 현재 티어 조회 결과를 표시한다.
+function buildCurrentTierMessage(data, petData, guildData, petSkillData, user) {
+    var plan = buildTierProgressPlan(data, petSkillData, user);
+    if (plan) {
+        plan.tierWeaponStatus = buildCurrentTierWeaponStatus(petSkillData, user, plan.currentTierName);
+        plan.user = checkRank(data, petData, guildData, user);
+    }
+    return buildTierProgressMessage(plan, false);
+}
+
+// 현재 티어와 정확히 대응하는 무기의 장착 효과 상태를 표시한다.
+function buildCurrentTierWeaponStatus(petSkillData, user, tierName) {
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        var weapon = PET_SKILL_LIST[i];
+        if (!weapon.tierExclusive || weapon.requiredTier !== tierName) continue;
+        return "📙 " + formatPetSkillName(weapon.name) + (hasPetSkill(petSkillData, user, weapon.name) ? " 적용" : " 미적용중");
+    }
+    return "";
+}
+
 // /티어와 승급 실패가 함께 사용하는 안내 메시지를 만드는 함수
 function buildTierProgressMessage(plan, isApplyFailure) {
     if (!plan) return "티어 정보를 확인할 수 없습니다.";
@@ -41858,7 +41864,9 @@ function buildTierProgressMessage(plan, isApplyFailure) {
     if (!plan.isMaxTier) lines.push("목표 " + formatTicketTierLabel(plan.targetTierName));
     lines.push(separator, "⛰️ 펫탐험 보너스: " + plan.currentExploreBonus + "% 적용",
         "📊 티어 경험치 보너스: " + plan.currentExperienceBonus + "exp 적용",
-        "🧸 인형 성공확률 보너스: " + currentDollPercent + "% 적용", separator);
+        "🧸 인형 성공확률 보너스: " + currentDollPercent + "% 적용");
+    if (plan.tierWeaponStatus) lines.push(plan.tierWeaponStatus);
+    lines.push(separator);
     if (plan.isMaxTier) {
         lines.push("🏆 현재 최고 티어입니다");
     } else if (plan.canPromote) {
@@ -54170,6 +54178,61 @@ function pickRandomPetSkill() {
     return lastRandomSkill;
 }
 
+// 펫스킬북 조회의 등급별 목록과 확률을 출력한다.
+function buildPetSkillProbabilityMessage() {
+    var rateMsg = "📙 펫스킬북 확률표 📙\n\n" + allsee + "\n";
+    var totalPercent = 0;
+    var petSkillGrades = ["SSS", "SS", "S", "A", "B", "C", "D"];
+
+    for (var pg = 0; pg < petSkillGrades.length; pg++) {
+        var currentGrade = petSkillGrades[pg];
+        rateMsg += "━━━" + currentGrade + " 등급━━━\n";
+
+        for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
+            var sd = PET_SKILL_LIST[ps];
+            if (sd.grade !== currentGrade || sd.hideFromRateTable === true || isRetiredPetSkill(sd.name)) continue;
+
+            var rate = getPetSkillActualRate(sd);
+            totalPercent += rate;
+            rateMsg += formatPetSkillName(sd.name) + " (확률: " + formatPetSkillRate(rate) + "%)\n";
+        }
+
+        rateMsg += "\n";
+    }
+
+    rateMsg += "━━━━━━━━━━━━━━━\n";
+    rateMsg += "총 확률: " + totalPercent.toFixed(1) + "%\n\n";
+    rateMsg += "━━━한정판 등급━━━\n";
+    for (var limitedIndex = 0; limitedIndex < PET_SKILL_LIST.length; limitedIndex++) {
+        var limitedSkillData = PET_SKILL_LIST[limitedIndex];
+        if (limitedSkillData.limitedEdition !== true) continue;
+        rateMsg += formatPetSkillName(limitedSkillData.name) + "\n";
+    }
+    rateMsg += "\n※ 한정판 펫스킬은 펫스킬북에서 등장하지 않습니다.";
+
+    return rateMsg.trim();
+}
+
+// 승인된 목차 또는 펫스킬 상세 원고 한 편을 출력한다.
+function buildPetSkillGuideMessage(message) {
+    if (message === "/펫스킬가이드") return "📙 펫스킬 가이드\n━━━━━━━━━━━━━\n1. 펫스킬북 기본·가방·정보\n2. 스킬북 오픈·등급·확률\n3. 장착·소멸·중복 제한\n4. 친밀도·장착 슬롯·확장권\n5. 티어 전용 펫스킬북\n6. 컬렉션 등록·등급별 보상\n7. 컬렉션 만능열쇠\n8. 펫스킬북 분해·조합\n9. 최근 스킬·효과 확인\n10. 전체 펫스킬 목록·개별 정보\n━━━━━━━━━━━━━\n※ 조회: /펫스킬가이드 [번호]\n예: /펫스킬가이드 4\n📖 전체 펫스킬 목록: /펫스킬확률\n🔎 개별 스킬 정보: /펫스킬정보 [스킬이름]\n예: /펫스킬정보 삼성전자";
+    var match = /^\/펫스킬가이드[ \t]+([1-9]|10)$/.exec(message);
+    if (!match) return "번호를 확인해주세요.\n사용법: /펫스킬가이드 [1~10]\n전체 펫스킬 목록: /펫스킬확률\n목차: /펫스킬가이드";
+    var pages = [
+        "📙 펫스킬북 기본·가방·정보\n━━━━━━━━━━━━━\n펫스킬북은 펫에 스킬을 장착해 추가 능력과 효과를 얻는 아이템이에요.\n가방에 보유한 스킬과 현재 장착한 스킬은 구분해서 확인해주세요.\n\n보유 스킬: /펫스킬가방\n장착 상태·장착 가능 칸: /펫스킬\n개별 정보: /펫스킬정보 [스킬이름]\n전체 펫스킬 목록: /펫스킬확률\n\n펫스킬가방 번호, 장착 목록 번호, 컬렉션 번호는 서로 달라요.\n실행할 명령에 맞는 목록의 현재 번호를 확인해주세요.\n━━━━━━━━━━━━━\n※ 목차: /펫스킬가이드",
+        "📦 스킬북 오픈·등급·확률\n━━━━━━━━━━━━━\n/펫스킬오픈 [수량]\n보유한 오픈용 스킬북을 사용해 펫스킬을 획득해요.\n획득한 스킬은 /펫스킬가방에서 확인할 수 있어요.\n\n일반 등급: SSS → SS → S → A → B → C → D\n전체 확률표: /펫스킬확률\n스킬별 등급·확률·효과: /펫스킬정보 [스킬이름]\n\n한정판 펫스킬은 일반 펫스킬북에서 등장하지 않아요.\n한정판의 획득 방법은 해당 아이템·상품 안내를 확인해주세요.\n━━━━━━━━━━━━━\n※ 전체 펫스킬 목록: /펫스킬확률\n※ 목차: /펫스킬가이드",
+        "🧙‍♂️ 장착·소멸·중복 제한\n━━━━━━━━━━━━━\n장착: /펫스킬장착 [펫스킬가방번호]\n장착 목록: /펫스킬\n중복 제한: /펫스킬중복\n\n장착 가능 칸과 스킬별 조건을 먼저 확인해주세요.\n같은 스킬의 중복 보유와 중복 장착은 달라요.\n서로 다른 종합매력·레이드매력 상승 스킬은\n허용된 조합으로 함께 장착할 수 있어요.\n티어 전용 스킬끼리는 한 종류만 장착할 수 있어요.\n\n장착 스킬 소멸: /펫스킬소멸 [장착목록번호]\n펫스킬소멸권🧙‍♂️이 필요해요.\n선택한 장착 스킬을 삭제하는 명령이므로 대상을 확인해주세요.\n가방으로 돌려받는 명령으로 생각하고 사용하지 마세요.\n━━━━━━━━━━━━━\n※ 티어 제한: /펫스킬가이드 5\n※ 목차: /펫스킬가이드",
+        "🧩 친밀도·장착 슬롯·확장권\n눌러서 상세보기👈 //allsee\n━━━━━━━━━━━━━ \n친밀도로 늘어나는 기본 칸과 확장권으로 늘어나는 칸은 달라요.\n\n🍼 친밀도 100레벨마다 기본 장착 칸 +1\n기본 칸은 친밀도 3,000에서 최대 30칸이에요.\n\n📙 펫스킬 학개론 장착: +3칸\n👑 호이패스 프리미엄 이용 중: +7칸\n📜 펫스킬 슬롯 확장권: 1개 사용 시 영구 +1칸\n\n모든 혜택을 합친 장착 가능 칸은 최대 100칸이에요.\n\n확장: /펫스킬슬롯오픈 [수량]\n예: /펫스킬슬롯오픈 5 → 확장권 5개 사용, +5칸\n현재 구성·장착 가능 칸: /펫스킬\n\n현재 98칸에서 2개 사용 요청 → 100칸까지 확장\n\n학개론 제거·프리미엄 종료 후에도 확장권 누적분은 유지돼요.\n한도가 줄어 초과 장착 상태가 되면 기존 스킬은 보존되며\n한도 이내가 될 때까지 추가 장착이 제한돼요.\n━━━━━━━━━━━━━\n※ 가방 보관 용량과 장착 칸은 별개예요.\n※ 목차: /펫스킬가이드",
+        "🏷️ 티어 전용 펫스킬북\n눌러서 상세보기👈 //allsee\n━━━━━━━━━━━━━\n티어 무기는 티어에 따라 장착할 수 있는 전용 펫스킬북이에요.\n스킬에 지정된 티어 이상이면 장착할 수 있어요.\n현재 티어보다 낮은 티어용 스킬도 장착 가능해요.\n티어 전용 펫스킬북끼리는 한 종류만 장착할 수 있어요.\n\nC등급: 엠퍼러~블랙하트 · 8종\nB등급: 반짝하트~스페이드 · 8종\nA등급: 하트~해피왕 · 8종\nS등급: 마왕~피닉스 · 6종\n\n장미칼·청룡언월도·오딘의 뿅망치와 함께 장착할 수 있어요.\n장착 시 캐슬·레이드 매력이 각각 증가하고,\n소멸 시 해당 스킬로 증가한 매력이 회수돼요.\n\n내 티어에 맞는 티어 무기 확인: /티어\n/티어를 입력하면 현재 티어에서 장착할 수 있는 전용 무기 이름과\n적용 / 미적용중 상태를 확인할 수 있어요.\n표시된 이름을 /펫스킬정보에 입력하면 효과와 장착 조건을 볼 수 있어요.\n필요 티어·정확한 매력: /펫스킬정보 [스킬이름]\n예: /펫스킬정보 🩵 하늘하트의 창공 목걸이\n━━━━━━━━━━━━━\n※ 전체 펫스킬 목록: /펫스킬확률\n※ 목차: /펫스킬가이드",
+        "📚 컬렉션 등록·등급별 보상\n눌러서 상세보기👈 //allsee\n━━━━━━━━━━━━━\n컬렉션 확인: /펫스킬컬렉션\n일반 등록: /펫스킬컬렉션등록 [펫스킬가방번호] ...\n예: /펫스킬컬렉션등록 1 3 5\n한 번에 최대 10개까지 선택할 수 있어요.\n\n일반 등록은 /펫스킬가방에 표시된 번호를 사용해요.\n등록한 펫스킬북은 가방에서 소모됩니다.\n최대 등록 수량에 도달한 스킬은 등록 대상에서 제외돼요.\n제외된 스킬은 소모하지 않으며,\n실제 등록에 성공한 수량만큼 홈뱃지 큐브💟를 즉시 받아요.\n\n등급별 1종 최대 등록 수 / 1개 등록 보상\nSSS: 3개 / 큐브 1,500개\nSS: 5개 / 큐브 500개\nS: 10개 / 큐브 150개\nA: 20개 / 큐브 80개\nB: 50개 / 큐브 50개\nC: 100개 / 큐브 20개\nD: 200개 / 큐브 10개\n한정판: 10개 / 큐브 300개\n\n완성 표시와 등록 보상은 구분해주세요.\n등급 전체·전체 컬렉션 완성의 별도 추가 보상은 없어요.\n━━━━━━━━━━━━━\n※ 만능열쇠: /펫스킬가이드 7\n※ 목차: /펫스킬가이드",
+        "🗝️ 컬렉션 만능열쇠\n━━━━━━━━━━━━━\n/펫스킬컬렉션만능 [펫스킬컬렉션번호] ...\n한 번에 최대 10개까지 선택할 수 있어요.\n\n먼저 /펫스킬컬렉션에서 원하는 스킬의 번호를 확인해주세요.\n가방 번호가 아닌 컬렉션 번호를 사용합니다.\n\n펫스킬컬렉션 만능 열쇠📚로 원하는 스킬의 등록 수를 올려요.\n해당 펫스킬북을 보유하지 않아도 사용할 수 있어요.\n등록 성공 1개당 열쇠 1개가 소모돼요.\n등급별 최대 등록 수와 등록 보상은 컬렉션 기준을 따릅니다.\n\n일반 등록: /펫스킬컬렉션등록 [펫스킬가방번호] ...\n만능열쇠: /펫스킬컬렉션만능 [펫스킬컬렉션번호] ...\n두 명령의 번호와 소모 재료를 구분해주세요.\n━━━━━━━━━━━━━\n※ 등록 한도·보상: /펫스킬가이드 6\n※ 목차: /펫스킬가이드",
+        "🔧 펫스킬북 분해·조합\n━━━━━━━━━━━━━\n분해: /펫스킬북분해 [펫스킬가방번호] [개수]\n지정한 가방 스킬과 수량을 분해하는 명령이에요.\n사용 전 대상과 수량을 확인해주세요.\n\n조합: /펫스킬북조합\n펫스킬북 조각 10개를 소모해\n오픈용 펫스킬북 1개를 획득해요.\n가방번호 없이 명령어만 입력해주세요.\n\n소비: 펫스킬북 조각📙 10개\n획득: 펫스킬북📙(/펫스킬오픈) 1개\n획득한 펫스킬북 사용: /펫스킬오픈 [수량]\n━━━━━━━━━━━━━\n※ 가방 확인: /펫스킬가방\n※ 목차: /펫스킬가이드",
+        "✨ 최근 스킬·효과 확인\n━━━━━━━━━━━━━\n궁금한 스킬은 /펫스킬정보에 이름을 입력해 효과와 적용 조건을 확인해요.\n\n/펫스킬정보 반짝반짝\n/펫스킬정보 수수료 시져시져\n/펫스킬정보 삼성전자\n/펫스킬정보 망작귀의 지팡이\n/펫스킬정보 강철왁뿌볼\n\n레이드 스킬: 레이드정복자·호월토벌대·레이드돌격대·레이드타격대\n조건부 스킬: 창조림·엘리트 박사\n위 스킬도 이름을 넣어 상세 스펙을 볼 수 있어요.\n\n스킬마다 캐슬·레이드 적용 범위, 필요한 장착 조건,\n소멸 후 회수되는 효과와 중복 제한을 확인해주세요.\n━━━━━━━━━━━━━\n※ 전체 펫스킬 목록: /펫스킬확률\n※ 목차: /펫스킬가이드",
+        "📖 전체 펫스킬 목록·개별 정보\n━━━━━━━━━━━━━\n전체 펫스킬 목록과 확률 보기:\n/펫스킬확률\n\n궁금한 스킬의 등급·확률·효과 보기:\n/펫스킬정보 [스킬이름]\n예: /펫스킬정보 삼성전자\n\n전체 목록에서 스킬 이름을 확인한 뒤\n/펫스킬정보에 해당 이름을 입력해주세요.\n━━━━━━━━━━━━━\n※ 목차: /펫스킬가이드"
+    ];
+    return pages[Number(match[1]) - 1].replace(" //allsee", allsee);
+}
+
 // 사용자의 펫 스킬 가방에 있는 스킬 목록과 총 개수를 포맷팅하여 메시지로 반환
 function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
     var skills = initPetSkillUser(petSkillData, user);
@@ -54178,21 +54241,15 @@ function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
 
     var msg = getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 스킬가방📙[" + numberWithCommas(total) + "/" + PET_SKILL_BAG_MAX_COUNT + "]\n";
     msg += "━━━━━━━━━━━━━\n";
-    msg += "※ 스킬 장착: /펫스킬장착 [번호]\n";
-    msg += "※ 스킬 판매: /펫스킬판매 [번호]\n";
-    msg += "※ 스킬 분해: /펫스킬북분해 [번호] [개수]\n";
-    msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
-    msg += "※ 스킬 컬렉: /펫스킬컬렉션등록 [번호]\n";
+    msg += "📙 펫스킬 가이드: /펫스킬가이드\n";
     msg += "━━━━━━━━━━━━━\n";
 
     if (list.length === 0) {
         return msg + "보유 중인 펫스킬북이 없습니다.";
     }
 
-    // 안내문까지만 먼저 보이고, 스킬 목록은 전체보기 뒤로 숨김
-    msg += allsee + "\n";
-
     for (var i = 0; i < list.length; i++) {
+        if (i === 4) msg += "눌러서 상세보기👈" + allsee + "\n";
         var bagSkillData = getPetSkillData(list[i]);
         var bagSkillGrade = bagSkillData ? bagSkillData.grade : "미확인";
         msg += (i + 1) + ". " + formatPetSkillName(list[i]) + "[" + bagSkillGrade + "] x" + numberWithCommas(skills.bag[list[i]]) + "\n";
@@ -73027,7 +73084,7 @@ function replyAdventureGemSlotStream(replier, blocks) {
                     if (getAdventureGemReplyToken(key) !== token) return;
                     var equipped = block.occupied[slot];
                     if ((block.slotRows === "empty" || block.slotRows === "example") && equipped) continue;
-                    var line = block.slotRows === "example" ? "👉 " + slot + "번 슬롯: /보석장착 1 " + slot : block.slotRows === "labels" ? formatAdventureGemSlot(slot) : formatAdventureGemSlot(slot) + " " + (equipped ? formatAdventureGem(equipped) : "🔓 빈 슬롯");
+                    var line = block.slotRows === "example" ? "👉 " + slot + "번 슬롯: /보석장착 " + slot + " 1" : block.slotRows === "labels" ? formatAdventureGemSlot(slot) : formatAdventureGemSlot(slot) + " " + (equipped ? formatAdventureGem(equipped) : "🔓 빈 슬롯");
                     var separator = block.slotRows === "labels" ? batch ? " · " : "" : text ? "\n" : "";
                     if (text && text.length + line.length + separator.length > limit) { replier.reply(text); text = ""; separator = ""; }
                     text += separator + line;
