@@ -9070,7 +9070,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `main.js`: `buildPetSkillGuideMessage`은 목차와 1~10 상세 원고를, `formatSkillBagMessage`는 5행부터 전체보기를 출력한다.
+- `main.js`: `buildPetSkillGuideMessage`은 목차와 1~10 상세 원고를, `formatSkillBagMessage`는 가방 목록의 6번부터 전체보기를 출력한다. `buildMiniPetBagRenewedMessage`는 가방 상단에 미니펫 가이드 한 줄을 표시한다.
 - `buildCurrentTierWeaponStatus`는 현재 티어에 대응하는 정의와 실제 장착 스킬을 대조한다. `buildGmEducationManual`은 4~8장의 승인 원고를 표시한다.
 
 ## /미니펫가이드 · 마스터 미니펫 강화
@@ -9079,3 +9079,12 @@ Status: VERIFIED
 
 - `buildMiniPetNumberedGuideMessage`은 목차 및 1~13 상세를 표시한다. 일반 뽑기 확률은 `getMiniPetDrawGradeRates`를 뽑기·확률 조회와 공유한다.
 - `getMiniPetUpgradeMaxLevel`과 `getCharmGainFor`는 마스터 1,000강과 목표 단계별 상승량을 결정한다. `runMiniPetUpgradeOnce`는 대표 0, 보조 00, 가방 번호에서 실제 대상에 동일 규칙을 적용한다.
+
+## 자유시장 구매 대기·공개 구매번호
+
+Status: VERIFIED
+
+- `addFreeMarketListing`과 실제 가격 변경은 새 구매 대기를 시작한다. 기존 활성 매물은 종전 번호와 구매 가능 상태를 유지한다.
+- `/리셋` 완료 시 `advanceFreeMarketPurchaseReset`이 등록·수정일 뒤 두 번째 한국 날짜를 확인한다. 리셋 일자와 새 공개 구매번호는 `freeMarket.json`에 함께 저장된다.
+- `/자유시장구매`는 현재 공개번호로 요청하고 확정 시에도 대기 상태와 같은 번호를 검사한다. 가격수정·취소는 계속 판매번호를 사용한다.
+- 메인은 카테고리별 개당 최저가 3건과 구매 대기 최저가 3건을 보여 준다. 검색은 기존 필터와 전체 결과를 사용한다.
