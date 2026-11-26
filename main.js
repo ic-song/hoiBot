@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.899"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.900"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -8379,7 +8379,22 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     replier.reply(buildFreeMarketV2Guide(data, sender, petSkillData));
                     return;
                 }
+                var marketRegistration = null;
                 if (isFreeMarketV2Command(msg)) {
+                    var registrationPending = msg === "자유시장거래" ? getFreeMarketConfirmState(sender) : null;
+                    var registrationCommand = registrationPending && registrationPending.action === "register" ? registrationPending.command : msg;
+                    if (isFreeMarketRegisterCommand(registrationCommand)) {
+                        marketRegistration = parseFreeMarketRegistration(registrationCommand);
+                        if (!marketRegistration) {
+                            if (registrationPending) clearFreeMarketConfirmState(sender);
+                            else {
+                                var priorRegistration = getFreeMarketConfirmState(sender);
+                                if (priorRegistration && priorRegistration.action === "register") clearFreeMarketConfirmState(sender);
+                            }
+                            replier.reply(buildFreeMarketRegisterUsageMessage());
+                            return;
+                        }
+                    }
                     if (msg === "/자유시장생성") {
                         if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("❌ Admin/Master 전용 명령어입니다."); return; }
                         if (!new java.io.File(resolveActiveDataPath(freeMarketPath)).exists()) saveJsonFile(ensureFreeMarketData(null), freeMarketPath);
@@ -8418,12 +8433,13 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         var marketEditParts = msg.split(/\s+/), marketEdit = getFreeMarketListingById(marketV2, Number(marketEditParts[1])), marketNewPrice = Number(marketEditParts[2]);
                         if (!marketEdit || marketEdit.seller !== sender || !isPointShopSafeCount(marketNewPrice)) { replier.reply("❌ 본인 매물과 " + GLOBAL_CONFIG.freeMarket.minPrice + " 이상의 정수 가격을 확인해주세요.\n/자유시장가격수정 거래번호 다이아가격"); return; }
                         if (marketNewPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(true)); return; }
-                        if (marketEdit.price === marketNewPrice) { replier.reply(buildFreeMarketExpectedSettlement(data, sender, marketNewPrice, petSkillData)); return; }
                         replier = beginFreeMarketMutation(request, data, petData, petSkillData, replier);
                         marketEdit.price = marketNewPrice;
-                        restartFreeMarketPurchaseWait(marketEdit, Date.now());
+                        var marketEditNow = Date.now();
+                        restartFreeMarketPurchaseWait(marketEdit, marketEditNow);
                         saveJsonFile(marketV2, freeMarketPath);
-                        replier.reply("✅ [" + marketEdit.id + "] 판매 가격을 💎" + numberWithCommas(marketNewPrice) + "개로 수정했습니다. 기존 구매 확인은 다시 받아야 합니다.\n" + buildFreeMarketExpectedSettlement(data, sender, marketNewPrice, petSkillData)); return;
+                        replier.reply(buildFreeMarketPriceEditMessage(data, sender, marketV2, marketEdit, petSkillData, marketEditNow));
+                        return;
                     }
                     if (msg === "/거래확인 1" || msg === "/거래확인 2") {
                         var marketPending = getFreeMarketConfirmState(sender);
@@ -8476,7 +8492,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                 }
 
                 var freeMarketRollbackText = null;
-                if (isFreeMarketRegisterCommand(msg) || /^\/(?:자유시장구매|자유시장취소|거래소강제취소)\s+\d+$/.test(msg)) {
+                if (marketRegistration || /^\/(?:자유시장구매|자유시장취소|거래소강제취소)\s+\d+$/.test(msg)) {
                     freeMarketRollbackText = FileStream.read(resolveActiveDataPath(freeMarketPath), "utf-8"); // 거래 시작 전 시장 원문을 같은 명령의 롤백에 사용
                     parseJsonContent(freeMarketRollbackText, freeMarketPath);
                 }
@@ -8524,23 +8540,18 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
-                if (isFreeMarketRegisterCommand(msg) && !canRegisterFreeMarketByTier(data, sender)) {
+                if (marketRegistration && !canRegisterFreeMarketByTier(data, sender)) {
                     replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 거래등록은 티어 \"킹\" 이상만 가능합니다.");
                     return;
                 }
 
-                if (/^\/가방거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
-                    var bagMarketParts = msg.trim().split(/\s+/);
-                    var bagMarketIndex = parseInt(bagMarketParts[1], 10);
-                    var bagMarketCount = parseInt(bagMarketParts[2], 10);
-                    var bagMarketPrice = parseInt(bagMarketParts[3], 10);
+                if (marketRegistration && marketRegistration.command === "/가방거래등록") {
+                    var bagMarketIndex = marketRegistration.index;
+                    var bagMarketPrice = marketRegistration.price;
+                    var bagMarketCount = marketRegistration.quantity;
                     var freeMarketBagData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
                     if (!data.member[sender] || !data.member[sender].bag) {
                         replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 가방이 비어있습니다.");
-                        return;
-                    }
-                    if (!isPointShopSafeCount(bagMarketCount) || bagMarketCount < 1 || !isPointShopSafeCount(bagMarketPrice)) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
                         return;
                     }
                     if (bagMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
@@ -8569,36 +8580,22 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, bagMarketItemName, bagMarketCount, bagMarketPrice, 0, "", petSkillData));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, bagMarketItemName, bagMarketCount, bagMarketPrice, petSkillData));
                         return;
                     }
                     removeItem(data, sender, bagMarketItemName, bagMarketCount);
-                    addFreeMarketListing(freeMarketBagData, "bag", sender, bagMarketItemName, bagMarketCount, bagMarketPrice, null, 0, isFreeMarketPackage(bagMarketItemName, marketPackages, marketItemList));
+                    var bagMarketListing = addFreeMarketListing(freeMarketBagData, "bag", sender, bagMarketItemName, bagMarketCount, bagMarketPrice, null, 0, isFreeMarketPackage(bagMarketItemName, marketPackages, marketItemList));
                     saveJsonFile(data, filePath);
                     saveJsonFile(freeMarketBagData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
-                    replier.reply(
-                        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
-                        "🏪 자유시장 등록 완료\n" +
-                        "━━━━━━━━━━━━\n" +
-                        "[" + bagMarketItemName + "] " + numberWithCommas(bagMarketCount) + "개가\n" +
-                        "💎" + numberWithCommas(bagMarketPrice) + "에 등록되었습니다.\n\n" +
-                        "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
-                    );
+                    replier.reply(buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, freeMarketBagData, bagMarketListing, petSkillData));
                     return;
                 }
 
-                if (/^\/미니펫거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
-                    var miniMarketParts = msg.trim().split(/\s+/);
-                    var miniMarketIndex = parseInt(miniMarketParts[1], 10);
-                    var miniMarketCount = parseInt(miniMarketParts[2], 10);
-                    var miniMarketPrice = parseInt(miniMarketParts[3], 10);
+                if (marketRegistration && marketRegistration.command === "/미니펫거래등록") {
+                    var miniMarketIndex = marketRegistration.index;
+                    var miniMarketPrice = marketRegistration.price;
                     var freeMarketMiniData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    if (!isPointShopSafeCount(miniMarketCount) || miniMarketCount < 1 || !isPointShopSafeCount(miniMarketPrice)) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
-                        return;
-                    }
                     if (miniMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var miniMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var miniMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketMiniData, sender);
@@ -8612,13 +8609,8 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
                     var miniMarketBag = petData[sender].miniPetBag;
-                    var miniMarketTarget = null;
-                    for (var mp = 0; mp < miniMarketBag.length; mp++) {
-                        if (miniMarketBag[mp].sortIndex === miniMarketIndex) {
-                            miniMarketTarget = miniMarketBag[mp];
-                            break;
-                        }
-                    }
+                    var miniMarketPosition = miniMarketBag.findIndex(function (pet) { return pet.sortIndex === miniMarketIndex; });
+                    var miniMarketTarget = miniMarketBag[miniMarketPosition];
                     if (!miniMarketTarget) {
                         replier.reply("❌ 유효하지 않은 미니펫가방 번호입니다.");
                         return;
@@ -8627,60 +8619,26 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         replier.reply("❌ 장착 중이거나 귀속된 미니펫은 자유시장에 등록할 수 없습니다.");
                         return;
                     }
-                    var miniMarketPicked = [];
-                    var miniMarketPickedIndexes = [];
-                    for (var mi = miniMarketBag.length - 1; mi >= 0; mi--) {
-                        var miniMarketPet = miniMarketBag[mi];
-                        if (isSameFreeMarketMiniPet(miniMarketPet, miniMarketTarget) && !miniMarketPet.isEquipped && !miniMarketPet.equipped && !miniMarketPet.locked && !miniMarketPet.bind) {
-                            miniMarketPicked.push(cloneFreeMarketObject(miniMarketPet));
-                            miniMarketPickedIndexes.push(mi);
-                            if (miniMarketPicked.length >= miniMarketCount) break;
-                        }
-                    }
-                    if (miniMarketPicked.length < miniMarketCount) {
-                        refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-                        replier.reply("❌ 등록 가능한 동일 미니펫 수량이 부족합니다.");
-                        return;
-                    }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketMiniPetDetail(miniMarketTarget), miniMarketCount, miniMarketPrice, 0, "※ 강화/매력 수치가 같은 미니펫만 함께 등록됩니다.", petSkillData));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketMiniPetDetail(miniMarketTarget), 1, miniMarketPrice, petSkillData));
                         return;
                     }
-                    miniMarketPickedIndexes.sort(function (a, b) {
-                        return b - a;
-                    });
-                    for (var mx = 0; mx < miniMarketPickedIndexes.length; mx++) {
-                        miniMarketBag.splice(miniMarketPickedIndexes[mx], 1);
-                    }
+                    var miniMarketPet = cloneFreeMarketObject(miniMarketBag.splice(miniMarketPosition, 1)[0]);
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-                    addFreeMarketListing(freeMarketMiniData, "miniPet", sender, getFreeMarketMiniPetDisplayName(miniMarketTarget), miniMarketCount, miniMarketPrice, { pets: miniMarketPicked }, 0);
+                    var miniMarketListing = addFreeMarketListing(freeMarketMiniData, "miniPet", sender, getFreeMarketMiniPetDisplayName(miniMarketTarget), 1, miniMarketPrice, { pets: [miniMarketPet] }, 0);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(freeMarketMiniData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
-                    replier.reply(
-                        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
-                        "🏪 자유시장 등록 완료\n" +
-                        "━━━━━━━━━━━━\n" +
-                        "[" + formatFreeMarketMiniPetDetail(miniMarketTarget) + "] " + numberWithCommas(miniMarketCount) + "개가\n" +
-                        "💎" + numberWithCommas(miniMarketPrice) + "에 등록되었습니다.\n\n" +
-                        "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
-                    );
+                    replier.reply(buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, freeMarketMiniData, miniMarketListing, petSkillData));
                     return;
                 }
 
-                if (/^\/가구거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
-                    var furnitureMarketParts = msg.trim().split(/\s+/);
-                    var furnitureMarketIndex = parseInt(furnitureMarketParts[1], 10);
-                    var furnitureMarketCount = parseInt(furnitureMarketParts[2], 10);
-                    var furnitureMarketPrice = parseInt(furnitureMarketParts[3], 10);
+                if (marketRegistration && marketRegistration.command === "/가구거래등록") {
+                    var furnitureMarketIndex = marketRegistration.index;
+                    var furnitureMarketPrice = marketRegistration.price;
                     var freeMarketFurnitureData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    if (!isPointShopSafeCount(furnitureMarketCount) || furnitureMarketCount < 1 || !isPointShopSafeCount(furnitureMarketPrice)) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
-                        return;
-                    }
                     if (furnitureMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var furnitureMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var furnitureMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketFurnitureData, sender);
@@ -8697,61 +8655,28 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                         return;
                     }
                     var furnitureMarketTarget = furnitureMarketBag[furnitureMarketIndex - 1];
-                    var furnitureMarketPicked = [];
-                    var furnitureMarketPickedIndexes = [];
-                    for (var fi = furnitureMarketBag.length - 1; fi >= 0; fi--) {
-                        if (isSameFreeMarketFurniture(furnitureMarketBag[fi], furnitureMarketTarget)) {
-                            var furnitureClone = cloneFreeMarketObject(furnitureMarketBag[fi]);
-                            if (furnitureClone.display !== undefined) delete furnitureClone.display;
-                            furnitureMarketPicked.push(furnitureClone);
-                            furnitureMarketPickedIndexes.push(fi);
-                            if (furnitureMarketPicked.length >= furnitureMarketCount) break;
-                        }
-                    }
-                    if (furnitureMarketPicked.length < furnitureMarketCount) {
-                        sortFurnitureList(furnitureMarketBag);
-                        replier.reply("❌ 등록 가능한 동일 가구 수량이 부족합니다.");
-                        return;
-                    }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, 0, "", petSkillData));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketFurnitureDetail(furnitureMarketTarget), 1, furnitureMarketPrice, petSkillData));
                         return;
                     }
-                    furnitureMarketPickedIndexes.sort(function (a, b) {
-                        return b - a;
-                    });
-                    for (var fx = 0; fx < furnitureMarketPickedIndexes.length; fx++) {
-                        furnitureMarketBag.splice(furnitureMarketPickedIndexes[fx], 1);
-                    }
+                    var furnitureMarketItem = cloneFreeMarketObject(furnitureMarketBag.splice(furnitureMarketIndex - 1, 1)[0]);
+                    delete furnitureMarketItem.display;
                     sortFurnitureList(furnitureMarketBag);
-                    addFreeMarketListing(freeMarketFurnitureData, "furniture", sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, { furnitures: furnitureMarketPicked }, 0);
+                    var furnitureMarketListing = addFreeMarketListing(freeMarketFurnitureData, "furniture", sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), 1, furnitureMarketPrice, { furnitures: [furnitureMarketItem] }, 0);
                     saveJsonFile(data, filePath);
                     saveJsonFile(furnitureHomeData, homeDataFile, false, furnitureHomeDataRollbackText);
                     saveJsonFile(freeMarketFurnitureData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
-                    replier.reply(
-                        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
-                        "🏪 자유시장 등록 완료\n" +
-                        "━━━━━━━━━━━━\n" +
-                        "[" + getFreeMarketFurnitureDisplayName(furnitureMarketTarget) + "] " + numberWithCommas(furnitureMarketCount) + "개가\n" +
-                        "💎" + numberWithCommas(furnitureMarketPrice) + "에 등록되었습니다.\n\n" +
-                        "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
-                    );
+                    replier.reply(buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, freeMarketFurnitureData, furnitureMarketListing, petSkillData));
                     return;
                 }
 
-                if (/^\/스킬거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
-                    var skillMarketParts = msg.trim().split(/\s+/);
-                    var skillMarketIndex = parseInt(skillMarketParts[1], 10);
-                    var skillMarketCount = parseInt(skillMarketParts[2], 10);
-                    var skillMarketPrice = parseInt(skillMarketParts[3], 10);
+                if (marketRegistration && marketRegistration.command === "/스킬거래등록") {
+                    var skillMarketIndex = marketRegistration.index;
+                    var skillMarketPrice = marketRegistration.price;
+                    var skillMarketCount = marketRegistration.quantity;
                     var freeMarketSkillData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
-                    if (!isPointShopSafeCount(skillMarketCount) || skillMarketCount < 1 || !isPointShopSafeCount(skillMarketPrice)) {
-                        replier.reply("❌ 수량은 1 이상, 묶음 가격은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다.");
-                        return;
-                    }
                     if (skillMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var skillMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
                     var skillMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketSkillData, sender);
@@ -8776,29 +8701,21 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     }
                     if (!isFreeMarketConfirmed) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
-                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, 0, "", petSkillData));
+                        replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatFreeMarketSkillName(skillMarketName), skillMarketCount, skillMarketPrice, petSkillData));
                         return;
                     }
                     removePetSkillFromBag(petSkillData, sender, skillMarketName, skillMarketCount);
-                    addFreeMarketListing(freeMarketSkillData, "skill", sender, normalizePetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, null, 0);
+                    var skillMarketListing = addFreeMarketListing(freeMarketSkillData, "skill", sender, normalizePetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, null, 0);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     saveJsonFile(freeMarketSkillData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
-                    replier.reply(
-                        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
-                        "🏪 자유시장 등록 완료\n" +
-                        "━━━━━━━━━━━━\n" +
-                        "[" + formatPetSkillName(skillMarketName) + "] " + numberWithCommas(skillMarketCount) + "개가\n" +
-                        "💎" + numberWithCommas(skillMarketPrice) + "에 등록되었습니다.\n\n" +
-                        "※ 등록비 무료\n" +
-                        buildFreeMarketTradeFeeNotice(data, sender, petSkillData)
-                    );
+                    replier.reply(buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, freeMarketSkillData, skillMarketListing, petSkillData));
                     return;
                 }
 
-                if (/^\/펜던트거래등록\s+\d+\s+\d+$/.test(msg)) {
-                    var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg, isFreeMarketConfirmed, marketV2);
+                if (marketRegistration && marketRegistration.command === "/펜던트거래등록") {
+                    var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, marketRegistration, isFreeMarketConfirmed, marketV2);
                     if (pendantMarketResultEarly.pending) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
                         replier.reply(pendantMarketResultEarly.message);
@@ -8814,23 +8731,19 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
                     return;
                 }
 
-                if (/^\/보석거래등록\s+\d+\s+\d+$/.test(msg)) {
-                    var gemMarketParts = msg.split(/\s+/), gemMarketIndex = Number(gemMarketParts[1]), gemMarketPrice = Number(gemMarketParts[2]), gemMarketStore = ctx.marketGemState;
+                if (marketRegistration && marketRegistration.command === "/보석거래등록") {
+                    var gemMarketIndex = marketRegistration.index, gemMarketPrice = marketRegistration.price, gemMarketStore = ctx.marketGemState;
                     var gemMarketBag = gemMarketStore ? getAdventureGemBag(gemMarketStore) : [], gemMarketGem = gemMarketBag[gemMarketIndex - 1];
                     if (!gemMarketGem) { replyAdventureGemBlocks(replier, buildAdventureGemError({ error: "number" }, { action: "/보석장착" }, data, sender, gemMarketStore || createAdventureGemState(""), checkRank(data, petData, guildData, sender))); return; }
                     if (!isPointShopSafeCount(gemMarketPrice) || gemMarketPrice < GLOBAL_CONFIG.freeMarket.minPrice) { replier.reply(buildFreeMarketMinPriceMessage(false)); return; }
                     var gemMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender), gemMarketActive = countFreeMarketActiveListingsBySeller(marketV2, sender);
                     if (gemMarketActive >= gemMarketLimit) { replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + gemMarketActive + "/" + gemMarketLimit + "건\n요청: +1건"); return; }
-                    if (!isFreeMarketConfirmed) { setFreeMarketConfirmState(sender, "register", msg, 0); replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatAdventureGem(gemMarketGem), 1, gemMarketPrice, 0, "", petSkillData)); return; }
+                    if (!isFreeMarketConfirmed) { setFreeMarketConfirmState(sender, "register", msg, 0); replier.reply(buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatAdventureGem(gemMarketGem), 1, gemMarketPrice, petSkillData)); return; }
                     gemMarketStore.gems = gemMarketStore.gems.filter(function (row) { return row.id !== gemMarketGem.id; });
-                    addFreeMarketListing(marketV2, "gem", sender, gemMarketGem.kind === "ruby" ? "루비❤️" : gemMarketGem.kind === "sapphire" ? "사파이어🩵" : "에메랄드💚", 1, gemMarketPrice, { gems: [cloneFreeMarketObject(gemMarketGem)] }, 0, false);
+                    var gemMarketListing = addFreeMarketListing(marketV2, "gem", sender, gemMarketGem.kind === "ruby" ? "루비❤️" : gemMarketGem.kind === "sapphire" ? "사파이어🩵" : "에메랄드💚", 1, gemMarketPrice, { gems: [cloneFreeMarketObject(gemMarketGem)] }, 0, false);
                     saveJsonFile(gemMarketStore, ctx.marketGemPath); saveJsonFile(marketV2, freeMarketPath);
                     clearFreeMarketConfirmState(sender);
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatAdventureGem(gemMarketGem) + "] 1개가\n💎" + numberWithCommas(gemMarketPrice) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender, petSkillData)); return;
-                }
-
-                if (isFreeMarketRegisterCommand(msg)) {
-                    replier.reply(buildFreeMarketRegisterUsageMessage());
+                    replier.reply(buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, marketV2, gemMarketListing, petSkillData));
                     return;
                 }
 
@@ -51730,9 +51643,10 @@ function buildFreeMarketMinPriceMessage(editing) {
     return (editing ? "❌ 가격수정 실패" : "❌ 자유시장 등록 실패") + "\n\n💎 최소 등록가는 " + minimum + "다이아입니다.\n📦 묶음 전체 가격을 " + minimum + "다이아 이상으로 입력해주세요.";
 }
 // 판매자의 현재 회원권 기준 예상 수수료와 실수령액을 안내하는 함수
-function buildFreeMarketExpectedSettlement(data, seller, price, petSkillData) {
+function buildFreeMarketExpectedSettlement(data, seller, price, petSkillData, confirmation) {
     var rate = getFreeMarketTradeFeeRate(data, seller, petSkillData), fee = calculateFreeMarketTradeFee(price, rate);
-    return "💰 예상 수수료: 💎" + numberWithCommas(fee) + "개 (" + formatTransferFeeRate(rate * 100) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개";
+    var percent = formatTransferFeeRate(rate * 100);
+    return "💰 예상 수수료: " + (confirmation ? "" : "💎") + numberWithCommas(fee) + "개 (" + (confirmation ? Number(percent) : percent) + "%)\n💎 예상 실수령: " + numberWithCommas(price - fee) + "개";
 }
 
 // 한국 시각 00:01을 경계로 다이아상점 운영일 번호를 계산하는 함수
@@ -52144,13 +52058,13 @@ function advanceFreeMarketPurchaseReset(market, now) {
 }
 
 // 남은 리셋의 가장 빠른 날짜를 표시하며 날짜 경과만으로 잠금을 해제하지 않는다.
-function formatFreeMarketPurchaseDay(market, listing, now) {
+function formatFreeMarketPurchaseDay(market, listing, now, ending) {
     var days = market.purchaseResetDays || [], today = getFreeMarketDay(now);
     var completed = days.filter(function (day) { return day > listing.purchaseWaitDay; }).length;
     var first = today > listing.purchaseWaitDay ? today : shiftFreeMarketDay(listing.purchaseWaitDay, 1);
     if (days.indexOf(first) >= 0) first = shiftFreeMarketDay(first, 1);
     var date = shiftFreeMarketDay(first, Math.max(0, GLOBAL_CONFIG.freeMarket.purchaseWaitResets - completed - 1)).split("-");
-    return "📅 " + Number(date[1]) + "월 " + Number(date[2]) + "일부터 구매 가능";
+    return "📅 " + Number(date[1]) + "월 " + Number(date[2]) + "일부터 " + (ending || "구매 가능");
 }
 
 // 현재 공개번호나 잠겨 있는 매물의 판매번호·이전 구매번호를 찾는다.
@@ -52418,12 +52332,15 @@ function buildFreeMarketHomeMessage(data, petData, guildData, market, user, petS
     if (own) rows = rows.filter(function (row) { return row.seller === user; });
     var selling = [], waiting = [];
     for (var i = 0; i < rows.length; i++) (getFreeMarketPurchaseNo(rows[i]) ? selling : waiting).push(rows[i]);
-    var output = ["[" + checkRank(data, petData, guildData, user) + "] 님\n", "🏪 " + (own ? "내 판매" : "호월 자유시장") + " 💎", divider,
-        buildFreeMarketFeeStatus(data, user, petSkillData, false, true).replace(/\n$/, ""), divider];
-    var searchHelp = "🔎 상품 찾기·검색 방법: /자유시장검색";
-    if (own) output.push("✏️ /자유시장가격수정 [판매번호] [판매금액]", "❌ /자유시장취소 [판매번호]", "🏪 /자유시장 또는 ㅈㅈ", searchHelp);
-    else output.push("🛒 /자유시장구매 번호", searchHelp, "📦 /내판매상품");
-    output.push("🤑 /내판매기록", "📖 /자유시장판매가이드", "🤝 /자유시장거래현황 또는 ㅅㅅ", divider);
+    var output = ["[" + checkRank(data, petData, guildData, user) + "] 님\n"];
+    if (own) {
+        output.push("🏪 내 판매 상품목록 💎", divider, "📌 아래 [판매번호]로 가격수정·취소하세요.",
+            "✏️ /자유시장가격수정 [판매번호] [판매금액]", "❌ /자유시장취소 [판매번호]", divider);
+    } else {
+        output.push("🏪 호월 자유시장 💎", divider, buildFreeMarketFeeStatus(data, user, petSkillData, false, true, true).replace(/\n$/, ""),
+            divider, "🛒 /자유시장구매 번호", "🔎 검색: /자유시장검색", "📦 /내판매상품", "🤑 /내판매기록",
+            "📖 /자유시장판매가이드", "🤝 /자유시장거래현황 또는 ㅅㅅ", divider);
+    }
     function blocks(list) {
         return list.map(function (row) { return formatFreeMarketListingBlock(market, row, own, now); }).join("\n\n");
     }
@@ -52447,16 +52364,21 @@ function buildFreeMarketHomeMessage(data, petData, guildData, market, user, petS
             output.push("━━━━" + category[1] + " 최저가" + category[2] + "━━━━━", best.length ? blocks(best) : "구매 가능한 상품이 없습니다.",
                 "", "🔎 " + category[1] + " 전체보기: /자유시장검색 " + category[1], "");
         }
-        if (waiting.length) output.push(divider, "🔒 구매 대기 · 최저가 " + config.mainPriceLimit + "건", "", blocks(waiting.sort(compareFreeMarketMainPrice).slice(0, config.mainPriceLimit)));
+        if (waiting.length) output.push(divider, "🔒 구매 대기 · 최신 등록순", "", blocks(waiting));
     }
     return output.join("\n").trim();
 }
 
 // 기존 검색 결과의 분류와 출력 순서를 그대로 사용하면서 공개 매물을 표시한다.
 function buildFreeMarketV2List(data, petData, guildData, market, user, rows, title, searchQuery, petSkillData) {
-    var out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, user, petSkillData, false, true) + "━━━━━━━━━━━━\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
-    out = "[" + checkRank(data, petData, guildData, user) + "] 님\n\n" + out;
-    if (!rows.length) out += searchQuery !== undefined ? "검색 결과가 없습니다.\n" + searchQuery : "📭 판매 중인 물품이 없습니다.";
+    var out;
+    if (searchQuery !== undefined) {
+        out = "🔎 자유시장 검색: " + searchQuery + "\n━━━━━━━━━━━━\n📦 검색 결과: " + rows.length + "건\n🛒 /자유시장구매 [구매번호]\n【📦 검색 결과 보기】" + allsee + "\n";
+    } else {
+        out = "🏪 " + title + " 💎\n━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, user, petSkillData, false, true) + "━━━━━━━━━━━━\n🛒 /자유시장구매 번호\n🔎 /자유시장검색\n📦 /내판매상품\n🤑 /내판매기록\n📖 /자유시장판매가이드\n🤝 /자유시장거래현황 또는 ㅅㅅ\n━━━━━━━━━━━━\n🧳 판매 중: " + rows.length + "건\n【🏪 자유시장 물품 보기】" + allsee + "\n";
+    }
+    out = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + (searchQuery === undefined ? "\n" : "") + out;
+    if (!rows.length) out += searchQuery === undefined ? "📭 판매 중인 물품이 없습니다." : "검색 결과가 없습니다.";
     var previousCategory = null, now = Date.now();
     for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
@@ -52472,21 +52394,21 @@ function buildFreeMarketV2List(data, petData, guildData, market, user, rows, tit
 function buildFreeMarketV2Guide(data, user, petSkillData) {
     return [
         "📦 자유시장 판매가이드",
-        "- 판매 등록 방법 상세 확인",
-        "━━━━━━━━━━━━" + allsee,
+        "- 판매 등록 방법 상세 확인" + allsee,
+        "━━━━━━━━━━━━",
         "💰 판매 등록 명령어",
         "",
         "🎒 가방 아이템 등록",
         "/가방거래등록 [가방번호] [갯수] [판매금액]",
         "",
         "🐹 미니펫 등록",
-        "/미니펫거래등록 [미니펫가방번호] [갯수] [판매금액]",
+        "/미니펫거래등록 [미니펫가방번호] [판매금액]",
         "",
         "🏡 가구 등록",
-        "/가구거래등록 [가구가방번호] [갯수] [판매금액]",
+        "/가구거래등록 [가구가방번호] [판매금액]",
         "",
         "📙 스킬북 등록",
-        "/스킬거래등록 [스킬가방번호] [갯수] [판매금액]",
+        "/스킬거래등록 [스킬가방번호] [판매금액]",
         "",
         "💎 펜던트 등록",
         "/펜던트거래등록 [펜던트가방번호] [판매금액]",
@@ -52503,8 +52425,8 @@ function buildFreeMarketV2Guide(data, user, petSkillData) {
         "📦 /내판매상품",
         "- 내가 등록한 판매 물품을 확인합니다.",
         "",
-        "✏️ /자유시장가격수정 [자유시장번호] [판매금액]",
-        "- 내가 등록한 물품의 판매금액을 변경합니다.",
+        "✏️ /자유시장가격수정 [판매번호] [판매금액]",
+        "  • /내판매상품에서 판매번호를 확인한 뒤 가격을 수정합니다.",
         "",
         "❌ /자유시장취소 [자유시장번호]",
         "- 본인이 등록한 판매 물품을 취소합니다.",
@@ -52521,6 +52443,8 @@ function buildFreeMarketV2Guide(data, user, petSkillData) {
         "💎 킹 이상 · 다이아 전용 · 등록비 무료",
         buildFreeMarketFeeStatus(data, user, petSkillData, false, false).trim(),
         "",
+        "🎒 가방 아이템만 갯수를 입력합니다.",
+        "📦 미니펫·가구·스킬북·펜던트·보석은 1개씩 등록합니다.",
         "💎 판매금액은 등록 수량 전체의 다이아 금액입니다.",
         "💎 최소 등록가",
         "└ 묶음 전체 가격 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상",
@@ -52676,6 +52600,19 @@ function isFreeMarketRegisterCommand(msg) {
     return /^\/(가방거래등록|미니펫거래등록|가구거래등록|스킬거래등록|펜던트거래등록|보석거래등록)(\s|$)/.test(msg);
 }
 
+// 등록과 확인을 같은 번호·수량·가격 문법으로 검증한다.
+function parseFreeMarketRegistration(message) {
+    if (!isFreeMarketRegisterCommand(message) || /[\r\n]/.test(message)) return null;
+    var tokens = message.split(/[ \t]+/), command = tokens.shift();
+    var hasQuantity = command === "/가방거래등록";
+    if (tokens.length !== (hasQuantity ? 3 : 2) || tokens.some(function (token) { return !/^\d+$/.test(token); })) return null;
+    var index = Number(tokens[0]), quantity = hasQuantity ? Number(tokens[1]) : 1;
+    var price = Number(tokens[hasQuantity ? 2 : 1]);
+    if (!isPointShopSafeCount(index) || index < 1 || !isPointShopSafeCount(quantity) || quantity < 1 || !isPointShopSafeCount(price)) return null;
+    return { command: command, index: index, quantity: quantity, price: price };
+}
+
+
 function canRegisterFreeMarketByTier(data, user) {
     var tier = data && data.member && data.member[user] && data.member[user].rank ? data.member[user].rank.tier : "";
     return isTierKing(tier);
@@ -52697,14 +52634,16 @@ function getFreeMarketTradeFeeRate(data, seller, petSkillData) {
 }
 
 // 조회자의 회원 구분과 현재 판매 수수료를 기획서 형식으로 표시하는 함수
-function buildFreeMarketFeeStatus(data, user, petSkillData, history, balance) {
+function buildFreeMarketFeeStatus(data, user, petSkillData, history, balance, shortSkillNotice) {
     var member = hasFreeMarketMemberTicket(data, user);
     var baseRate = member ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
     var rate = getFreeMarketTradeFeeRate(data, user, petSkillData);
     var text = "🏷️ 회원 구분: " + (member ? "자유시장 회원" : "일반 회원") + "\n";
     if (balance) text += "💎 보유 다이아: " + numberWithCommas(data.member[user].diamond || 0) + "개\n";
     text += "💰 " + (history ? "현재 내" : "내") + " 판매 수수료: " + Number(formatTransferFeeRate(rate * 100)) + "%\n";
-    if (hasPetSkill(petSkillData, user, "수수료 시져시져")) text += "📙 수수료 시져시져 적용 · " + Number(formatTransferFeeRate(baseRate * 100)) + "% → " + Number(formatTransferFeeRate(rate * 100)) + "%\n";
+    if (hasPetSkill(petSkillData, user, "수수료 시져시져")) {
+        text += "📙 수수료 시져시져 적용" + (shortSkillNotice ? "" : " · " + Number(formatTransferFeeRate(baseRate * 100)) + "% → " + Number(formatTransferFeeRate(rate * 100)) + "%") + "\n";
+    }
     return text;
 }
 
@@ -52738,18 +52677,46 @@ function normalizeFreeMarketMemberTicketName(itemName) {
     return normalized === GLOBAL_CONFIG.freeMarket.memberTicketItemName ? GLOBAL_CONFIG.freeMarket.memberTicketItemName : normalized;
 }
 
+// 올바르지 않은 등록 입력을 수량 규칙과 여섯 명령의 예시로 안내한다.
 function buildFreeMarketRegisterUsageMessage() {
-    return (
-        "❌ 자유시장 등록 양식이 올바르지 않습니다.\n\n" +
-        "사용 예시:\n" +
-        "/가방거래등록 1 100 5000000\n\n" +
-        "양식:\n" +
-        "/가방거래등록 [가방번호] [수량] [판매금액]\n" +
-        "/미니펫거래등록 [미니펫가방번호] [수량] [판매금액]\n" +
-        "/가구거래등록 [가구가방번호] [수량] [판매금액]\n" +
-        "/스킬거래등록 [스킬가방번호] [수량] [판매금액]\n" +
-        "/펜던트거래등록 [펜던트가방번호] [판매금액]"
-    );
+    return [
+        "❌ 자유시장 등록 양식이 올바르지 않습니다.",
+        "━━━━━━━━━━━━",
+        "💰 판매 등록 명령어 안내" + allsee,
+        "",
+        "🎒 가방 아이템 등록",
+        "/가방거래등록 [가방번호] [갯수] [판매금액]",
+        "예시: /가방거래등록 1 10 100",
+        "",
+        "🐹 미니펫 등록",
+        "/미니펫거래등록 [미니펫가방번호] [판매금액]",
+        "예시: /미니펫거래등록 1 50",
+        "",
+        "🏡 가구 등록",
+        "/가구거래등록 [가구가방번호] [판매금액]",
+        "예시: /가구거래등록 1 50",
+        "",
+        "📙 스킬북 등록",
+        "/스킬거래등록 [스킬가방번호] [판매금액]",
+        "예시: /스킬거래등록 1 50",
+        "",
+        "💎 펜던트 등록",
+        "/펜던트거래등록 [펜던트가방번호] [판매금액]",
+        "예시: /펜던트거래등록 1 50",
+        "",
+        "🪽 보석 등록",
+        "/보석거래등록 [보석가방번호] [판매금액]",
+        "예시: /보석거래등록 1 50",
+        "",
+        "━━━━━━━━━━━━",
+        "📌 입력 전 확인해주세요",
+        "",
+        "🎒 가방 아이템만 갯수를 입력합니다.",
+        "📦 미니펫·가구·스킬북·펜던트·보석은 1개씩 등록하며, 갯수를 입력하지 않습니다.",
+        "💎 판매금액은 다이아 기준입니다.",
+        "",
+        "📖 자세한 안내: /자유시장판매가이드"
+    ].join("\n");
 }
 
 
@@ -52800,13 +52767,11 @@ function formatFreeMarketDisplayTime(timeText, timeMs) {
     return match[1] + "/" + match[2] + " " + match[3] + ":" + match[4];
 }
 
-function getFreeMarketItemText(listing) {
+// 매물 구분별 실제 옵션을 조회·등록 완료 화면에 공통으로 사용한다.
+function getFreeMarketListingItemName(listing) {
     if (!listing) return "";
     var itemName = listing.itemName;
-    if (listing.type === "skill") {
-        var skill = getPetSkillData(itemName);
-        itemName = formatPetSkillName(itemName) + (skill ? "[" + skill.grade + "]" : "");
-    }
+    if (listing.type === "skill") itemName = formatFreeMarketSkillName(itemName);
     if (listing.type === "gem") itemName = formatAdventureGem(listing.payload.gems[0]);
     if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
         itemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
@@ -52817,7 +52782,18 @@ function getFreeMarketItemText(listing) {
     if (listing.type === "pendant" && listing.payload && listing.payload.pendants && listing.payload.pendants.length > 0) {
         itemName = formatPendantDisplay(listing.payload.pendants[0]);
     }
-    return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개" + formatFreeMarketUnitPriceText(listing);
+    return itemName;
+}
+
+function getFreeMarketItemText(listing) {
+    if (!listing) return "";
+    return getFreeMarketListingItemName(listing) + "x" + numberWithCommas(listing.quantity || 0) + "개" + formatFreeMarketUnitPriceText(listing);
+}
+
+// 등록 확인에도 현재 펫스킬 정의의 등급을 붙인다.
+function formatFreeMarketSkillName(itemName) {
+    var skill = getPetSkillData(itemName);
+    return formatPetSkillName(itemName) + (skill ? "[" + skill.grade + "]" : "");
 }
 
 function buildFreeMarketListMessage(data, petData, guildData, freeMarketData, petSkillData, user) {
@@ -52858,7 +52834,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData,
     });
     if (seller !== undefined) logs = logs.slice(0, GLOBAL_CONFIG.freeMarket.mySalesHistoryLimit);
     var out = "[" + checkRank(data, petData, guildData, viewer) + "] 님\n\n" + (seller === undefined ? "🤝 호월 자유시장 거래현황 🤝\n" : "📜 내 판매기록\n");
-    out += "━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, viewer, petSkillData, true, false) + "━━━━━━━━━━━━\n";
+    out += "━━━━━━━━━━━━\n" + buildFreeMarketFeeStatus(data, viewer, petSkillData, true, false, seller === undefined) + "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋 [아이템×갯수] [금액] [판매] 🤝 [구매]\n";
     out += "※ 완료된 거래에는 거래 당시 수수료가 적용됩니다.\n";
@@ -52955,24 +52931,6 @@ function addFreeMarketListing(freeMarketData, type, seller, itemName, quantity, 
 
 function cloneFreeMarketObject(obj) {
     return JSON.parse(JSON.stringify(obj));
-}
-
-function isSameFreeMarketMiniPet(a, b) {
-    return !!(
-        a &&
-        b &&
-        a.name === b.name &&
-        (a.emoji || "") === (b.emoji || "") &&
-        (a.grade || "") === (b.grade || "") &&
-        getFreeMarketMiniPetNumber(a, "upgrade") === getFreeMarketMiniPetNumber(b, "upgrade") &&
-        getFreeMarketMiniPetNumber(a, "battleExp") === getFreeMarketMiniPetNumber(b, "battleExp") &&
-        getFreeMarketMiniPetNumber(a, "castleExp") === getFreeMarketMiniPetNumber(b, "castleExp") &&
-        getFreeMarketMiniPetNumber(a, "raidExp") === getFreeMarketMiniPetNumber(b, "raidExp")
-    );
-}
-
-function isSameFreeMarketFurniture(a, b) {
-    return !!(a && b && a.name === b.name && (a.emoji || "") === (b.emoji || "") && String(a.grade || "") === String(b.grade || "") && Number(a.exp || 0) === Number(b.exp || 0));
 }
 
 function getFreeMarketMiniPetDisplayName(pet) {
@@ -53148,19 +53106,45 @@ function clearFreeMarketConfirmState(sender) {
     if (userState[sender] && userState[sender].freeMarket) delete userState[sender].freeMarket;
 }
 
-function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, unusedRegistrationFee, extraLine, petSkillData) {
-    var msg = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
-    msg += "🏪 자유시장 등록 확인서\n";
-    msg += "━━━━━━━━━━━━\n";
-    msg += "물품: [" + itemName + "] x" + numberWithCommas(quantity) + "개\n";
-    msg += "묶음 판매금액: 💎" + numberWithCommas(price) + "\n";
-    msg += "등록비: 무료\n";
-    msg += buildFreeMarketExpectedSettlement(data, sender, price, petSkillData) + "\n";
-    if (extraLine) msg += extraLine + "\n";
-    msg += "\등록✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
-    msg += "━━━━━━━━━━━━\n";
-    msg += "※ [자유시장거래/자유시장거래취소]\n명령어를 입력해주세요.";
-    return msg;
+function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, petSkillData) {
+    return [
+        "[" + checkRank(data, petData, guildData, sender) + "] 님",
+        "🏪 자유시장 등록 확인", "━━━━━━━━━━━━", formatFreeMarketRegisterItem(itemName, quantity), "━━━━━━━━━━━━",
+        "💎 판매금액: " + numberWithCommas(price) + "개",
+        buildFreeMarketExpectedSettlement(data, sender, price, petSkillData, true), "━━━━━━━━━━━━",
+        "✅ 등록: 자유시장거래", "❌ 취소: 자유시장거래취소"
+    ].join("\n");
+}
+
+// 여러 줄 상품명은 첫 줄에 수량을 붙이고 옵션 줄을 보존한다.
+function formatFreeMarketRegisterItem(itemName, quantity) {
+    var lines = itemName.split("\n");
+    lines[0] += " ×" + numberWithCommas(quantity) + "개";
+    return lines.join("\n");
+}
+
+// 저장된 매물의 실제 가격과 구매 대기 날짜를 등록 완료 화면에 표시한다.
+function buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, market, listing, petSkillData) {
+    var rate = getFreeMarketTradeFeeRate(data, sender, petSkillData);
+    return [
+        "[" + checkRank(data, petData, guildData, sender) + "] 님",
+        "🏪 자유시장 등록 완료", "━━━━━━━━━━━━", formatFreeMarketRegisterItem(getFreeMarketListingItemName(listing), listing.quantity),
+        "💎 판매금액: " + numberWithCommas(listing.price) + "개",
+        "💰 판매 수수료: " + Number(formatTransferFeeRate(rate * 100)) + "%",
+        "└ " + formatFreeMarketPurchaseDay(market, listing, listing.createdAtMs, "판매 시작"),
+        "━━━━━━━━━━━━", "✏️ 가격수정 안내: /내판매상품"
+    ].join("\n");
+}
+
+// 가격 변경 직후 같은 대기 날짜 계산과 정산 공식을 표시한다.
+function buildFreeMarketPriceEditMessage(data, sender, market, listing, petSkillData, now) {
+    return [
+        "✏️ 자유시장 가격 수정 완료", "━━━━━━━━━━━━", "📦 판매번호: " + listing.id,
+        "💎 변경 판매금액: " + numberWithCommas(listing.price) + "개", "",
+        "가격이 수정되어 구매 대기가 다시 시작됩니다.",
+        "└ " + formatFreeMarketPurchaseDay(market, listing, now, "판매가 시작됩니다."),
+        "━━━━━━━━━━━━", buildFreeMarketExpectedSettlement(data, sender, listing.price, petSkillData)
+    ].join("\n");
 }
 
 function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, listing) {
@@ -63141,13 +63125,9 @@ function buildTextLengthCleanupMessage(miniResult, furnitureResult, pendantResul
 
 
 // 펜던트 자유시장 등록 처리
-function registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg, isConfirmed, freeMarketData) {
+function registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, registration, isConfirmed, freeMarketData) {
     if (!canRegisterFreeMarketByTier(data, sender)) return { ok: false, message: "❌ [" + checkRank(data, petData, guildData, sender) + "]님 거래등록은 티어 \"킹\" 이상만 가능합니다." };
-    var m = msg.match(/^\/펜던트거래등록\s+(\d+)\s+(\d+)$/);
-    if (!m) return { ok: false, message: "사용법: /펜던트거래등록 [펜던트가방번호] [판매금액]" };
-    var index = parseInt(m[1], 10);
-    var price = parseInt(m[2], 10);
-    if (!isPointShopSafeCount(price)) return { ok: false, message: "판매금액은 " + GLOBAL_CONFIG.freeMarket.minPrice + "다이아 이상의 안전한 정수여야 합니다." };
+    var index = registration.index, price = registration.price;
     if (price < GLOBAL_CONFIG.freeMarket.minPrice) return { ok: false, message: buildFreeMarketMinPriceMessage(false) };
     var activeCount = countFreeMarketActiveListingsBySeller(freeMarketData, sender);
     var limit = getFreeMarketRegisterLimit(data, petSkillData, sender);
@@ -63159,12 +63139,12 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
         return {
             ok: true,
             pending: true,
-            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 0, "", petSkillData)
+            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, petSkillData)
         };
     }
     var pendant = bag.splice(index - 1, 1)[0];
-    addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, 0);
-    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n💎" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록비 무료\n" + buildFreeMarketTradeFeeNotice(data, sender, petSkillData) };
+    var listing = addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, 0);
+    return { ok: true, freeMarketData: freeMarketData, message: buildFreeMarketRegisterCompleteMessage(data, petData, guildData, sender, freeMarketData, listing, petSkillData) };
 }
 
 // 관리자 펜던트 지급 처리

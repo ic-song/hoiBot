@@ -6524,10 +6524,11 @@ Status: VERIFIED
 ## Related Commands
 
 - `/가방거래등록 [가방번호] [갯수] [판매금액]`
-- `/미니펫거래등록 [미니펫가방번호] [갯수] [판매금액]`
-- `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
-- `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
+- `/미니펫거래등록 [미니펫가방번호] [판매금액]`
+- `/가구거래등록 [가구가방번호] [판매금액]`
+- `/스킬거래등록 [스킬가방번호] [판매금액]`
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]`
+- `/보석거래등록 [보석가방번호] [판매금액]`
 - `자유시장거래`
 - `자유시장거래취소`
 - `/자유시장구매 [번호]`
@@ -6542,11 +6543,11 @@ Status: VERIFIED
 ## AI Notes
 
 - Free-market storage is isolated in `freeMarket.json`; item ownership still mutates the original owner/buyer storage files
-- Active listing numbers are display-order numbers from recent-first `/자유시장`; purchase confirmation stores the immutable listing id to avoid buying a shifted listing
+- 판매 관리는 판매번호를, 공개 구매는 대기 해제 시 발급한 구매번호를 사용한다. 구매 확정은 같은 매물과 구매번호를 다시 확인한다.
 - Registration and purchase commands show a confirmation UI first; `자유시장거래` re-runs validation before mutation, and `자유시장거래취소` clears the pending request
-- Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
+- 미니펫과 가구는 지정 가방 번호의 개체 한 개를 보관한다. 스킬북·펜던트·보석도 한 개만 등록하며 가방 아이템은 입력 수량을 사용한다.
 - Completed logs keep only sold trades, newest first, capped at 100 entries
-- Registration fees consume `🥕당근이세요?` immediately; cancel/force-cancel refunds the stored `carrotFee` only when the seller currently holds `자유시장회원권🏪`
+- 신규 등록은 무료이며 등록 완료 화면은 기존 판매 수수료율과 실제 판매 시작일을 표시한다.
 - Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 20%, and sellers holding `자유시장회원권🏪` use 10%
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends the logged member fee rate only when `memberFeeApplied: true`; old 5%/7% rows keep their recorded rate.
@@ -6556,9 +6557,9 @@ Status: VERIFIED
 - Free-market registration requires tier `킹` or higher; purchase re-checks that both buyer and seller are currently tier `킹` or higher before points or items move.
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
-- `/펜던트거래등록 [펜던트가방번호] [판매금액]` is handled before the common invalid registration usage guard so it does not require a quantity argument.
+- 여섯 등록 명령은 `parseFreeMarketRegistration`에서 인수 개수와 안전 정수를 공통 확인하며, 가방 아이템만 수량을 받는다.
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]` now follows the same confirmation flow as other free-market registrations: confirmation message first, `자유시장거래` to register, `자유시장거래취소` to cancel.
-- Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, `/스킬거래등록`, and malformed `/펜던트거래등록` input replies with the registration usage guide
+- Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, `/스킬거래등록`, `/펜던트거래등록`, and `/보석거래등록` input replies with the registration usage guide and ALLSEE
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists
 
 # /탐
@@ -9084,7 +9085,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `addFreeMarketListing`과 실제 가격 변경은 새 구매 대기를 시작한다. 기존 활성 매물은 종전 번호와 구매 가능 상태를 유지한다.
+- `addFreeMarketListing`과 실제 가격 변경은 새 구매 대기를 시작한다. 기존 활성 매물은 가격수정 전까지 종전 번호와 구매 가능 상태를 유지한다.
 - `/리셋` 완료 시 `advanceFreeMarketPurchaseReset`이 등록·수정일 뒤 두 번째 한국 날짜를 확인한다. 리셋 일자와 새 공개 구매번호는 `freeMarket.json`에 함께 저장된다.
 - `/자유시장구매`는 현재 공개번호로 요청하고 확정 시에도 대기 상태와 같은 번호를 검사한다. 가격수정·취소는 계속 판매번호를 사용한다.
-- 메인은 카테고리별 개당 최저가 3건과 구매 대기 최저가 3건을 보여 준다. 검색은 기존 필터와 전체 결과를 사용한다.
+- 메인은 구매 가능 상품의 카테고리별 개당 최저가 3건과 구매 대기 전체를 최신 등록순으로 표시한다. 검색은 기존 필터와 전체 결과를 사용한다.
