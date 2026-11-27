@@ -4236,7 +4236,13 @@ function calculatePendantItemInfoForInfo(pendant) {
 	var promotionLevel = Math.max(0, parseInt(pendant.promotionLevel || 0, 10) || 0);
 	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade) + promotionLevel * GLOBAL_CONFIG.pendant.promotionCharmPerLevel;
 	var raid = Math.floor(charm / 2);
-	return { battleExp: 0, raidExp: raid, castleExp: charm - raid };
+	var castle = charm - raid;
+	var gems = pendant.emeralds || [];
+	for (var i = 0; i < gems.length; i++) {
+		castle += gems[i].castle;
+		raid += gems[i].raid;
+	}
+	return { battleExp: 0, raidExp: raid, castleExp: castle };
 }
 
 // 정령 보상 수량과 영구 매력을 안전한 음이 아닌 정수로 검증하는 함수
