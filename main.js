@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.902"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.903"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var diamondLiveOwnedCache = {}; // 환경별 검증 회원 원문에 대응하는 실시간 재화 합계
@@ -7427,7 +7427,7 @@ function processResponse(room, msg, sender, isGroupChat, replier, imageDB, packa
             if (msg === "/펫스킬확률") { replier.reply(buildPetSkillProbabilityMessage()); return; }
             var educationGem = getAdventureGemRequest(msg);
             if (educationGem && ["bag", "info", "guide"].indexOf(educationGem.kind) !== -1) { runAdventureGemEntry(data, petData, guildData, sender, educationGem, request, replier); return; }
-            if (/^\/펜던트정보\s+\d+$/.test(msg)) { replier.reply(buildPendantInfoMessage(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10))); return; }
+            if (/^\/펜던트정보\s+\d+$/.test(msg)) { replyPendantInfo(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10), replier); return; }
             if (/^\/(?:펜던트가이드|가구가이드)(?:\s|$)/.test(msg)) { replier.reply(buildEquipmentGuideMessage(msg)); return; }
             if (msg === "/티어") { replier.reply(buildCurrentTierMessage(data, petData, guildData, petSkillData, sender)); return; }
         }
@@ -21509,7 +21509,7 @@ replier.reply(
                         replier.reply("예) /펜던트정보 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요.");
                         return;
                     }
-                    replier.reply(buildPendantInfoMessage(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10)));
+                    replyPendantInfo(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10), replier);
                     return;
                 }
                 if (msg === "/펜던트승급" || /^\/펜던트승급\s+.+$/.test(msg)) {
@@ -62173,13 +62173,18 @@ function summarizePendantEmeralds(pendant) {
 }
 
 // 고정 슬롯번호로 열린 칸, 빈 칸과 다음 강화 경계를 표시한다.
-function buildPendantGemSlotDetail(pendant, heading, showNextRequirement) {
+function buildPendantGemSlotDetail(pendant, heading, showNextRequirement, emptyCount) {
     var gems = getPendantEmeralds(pendant), slots = getPendantGemSlots(pendant.upgrade);
     var bySlot = {}, rows = [heading + " [" + gems.length + "/" + slots + "]"];
     var next = (slots + 1) * 5; // 다음 슬롯이 열리는 강화 단계
+    if (emptyCount !== undefined) rows.push("📭 남은 장착 공간: " + emptyCount + "칸");
     if (showNextRequirement && next <= GLOBAL_CONFIG.pendant.upgrade.maxLevel) rows.push("🔒 다음 슬롯: +" + next + "강 · " + (next - (Number(pendant.upgrade) || 0)) + "강 남음");
     for (var i = 0; i < gems.length; i++) bySlot[gems[i].slot] = gems[i];
-    for (var slot = 1; slot <= slots; slot++) rows.push("\n" + formatAdventureGemSlot(slot) + " " + (bySlot[slot] ? formatAdventureGem(bySlot[slot]) : "🔓 빈 슬롯"));
+    for (var slot = 1; slot <= slots; slot++) {
+        var label = formatAdventureGemSlot(slot), gem = bySlot[slot];
+        rows.push("\n" + (gem ? emptyCount === undefined ? label + " " + formatAdventureGem(gem) :
+            formatAdventureGemInfoRow(label, gem) : label + " 🔓 빈 슬롯"));
+    }
     if (next <= GLOBAL_CONFIG.pendant.upgrade.maxLevel) rows.push("\n" + formatAdventureGemSlot(slots + 1) + " 🔒 +" + next + "강 달성 시 개방");
     return rows.join("\n");
 }
@@ -62655,14 +62660,49 @@ function runPendantPromotionFromState(sender, data, petData, guildData) {
 }
 
 // 펜던트 정보 메시지 생성
-function buildPendantInfoMessage(data, petData, guildData, user, index) {
-    var info = getPendantByIndex(petData, user, index);
-    if (!info.pendant) return "[" + checkRank(data, petData, guildData, user) + "] 님\n해당 번호의 펜던트가 존재하지 않습니다.";
-    return buildPendantInfoDetailMessage("펜던트 정보:", info.pendant);
+function replyPendantInfo(data, petData, guildData, user, index, replier) {
+    var pendant = getPendantByIndex(petData, user, index).pendant;
+    if (!pendant) {
+        replier.reply("[" + checkRank(data, petData, guildData, user) + "] 님\n해당 번호의 펜던트가 존재하지 않습니다.");
+        return;
+    }
+    var slots = getPendantGemSlots(pendant.upgrade), occupied = {}, empty = []; // 실제 장착된 슬롯과 남은 고정 번호
+    var gems = getPendantEmeralds(pendant);
+    for (var i = 0; i < gems.length; i++) occupied[gems[i].slot] = true;
+    for (var slot = 1; slot <= slots; slot++) if (!occupied[slot]) empty.push(slot);
+
+    var blocks = [buildPendantInfoDetailMessage("펜던트 정보:", pendant, empty.length)], candidates = [];
+    if (empty.length) {
+        var member = data.member[user], owner = getAdventureGemAccountId(data, user);
+        var path = getAdventureGemReadPath(owner, member && member.adventureGemInitialized);
+        var store = path ? requireAdventureGemState(loadJsonFile(path), owner) : createAdventureGemState(owner);
+        var bag = getAdventureGemBag(store);
+        for (var j = 0; j < bag.length; j++) {
+            if (bag[j].kind === "emerald") candidates.push({ number: j + 1, gem: bag[j] });
+        }
+        blocks.push("\n━━━━━━━━━━━━");
+        if (!candidates.length) blocks.push("장착 가능한 에메랄드가 없어요.");
+        else {
+            blocks.push("🎒 장착 가능한 에메랄드\n※ 아래 번호는 보석가방 번호예요.");
+            for (var k = 0; k < candidates.length; k++) {
+                blocks.push("\n" + formatAdventureGemInfoRow("[" + candidates[k].number + "]", candidates[k].gem));
+            }
+            var first = candidates[0].number;
+            blocks.push("\n━━━━━━━━━━━━\n🔓 빈 슬롯 장착 예시\n가방 " + first + "번 에메랄드를 장착하려면");
+            for (var e = 0; e < empty.length; e++) {
+                blocks.push("👉 " + empty[e] + "번 슬롯: /펜던트보석장착 " + index + " " + empty[e] + " " + first);
+            }
+        }
+    } else if (slots) blocks.push("\n빈 슬롯이 없어요.");
+
+    var target = index === 0 ? "※ 현재 장착 펜던트는 0번입니다." : "※ 조회한 펜던트는 펜던트가방 " + index + "번입니다.";
+    if (candidates.length) target = "※ 순서: 펜던트번호 → 슬롯번호 → 보석가방번호\n" + target;
+    blocks.push("\n" + target + "\n🎒 보유 보석 확인: /보석가방\n📖 슬롯·장착 안내: /펜던트가이드 10");
+    replyAdventureGemBlocks(replier, blocks);
 }
 
 // 펜던트 상세 정보 출력 문자열 생성
-function buildPendantInfoDetailMessage(title, pendant) {
+function buildPendantInfoDetailMessage(title, pendant, emptyCount) {
     var stats = calculatePendantStats(pendant);
     var next = parseInt(pendant.upgrade || 0, 10) + 1;
     var nextInfo = PENDANT_UPGRADE_TABLE[next];
@@ -62701,10 +62741,10 @@ function buildPendantInfoDetailMessage(title, pendant) {
             out += "다음 승급 단계가 안전한 계산 범위를 초과했습니다.";
         }
     }
-    out += "\n━━━━━━━━━━━━\n" + buildPendantGemSlotDetail(pendant, "💚 에메랄드 슬롯", true);
+    out += "\n━━━━━━━━━━━━\n" + buildPendantGemSlotDetail(pendant, "💚 에메랄드 슬롯", true, emptyCount);
     out += "\n\n보석 캐슬매력⚔️: +" + numberWithCommas(stats.gemCastle) + "💞\n보석 레이드매력👾: +" + numberWithCommas(stats.gemRaid) + "💞";
     out += "\n※ 보석 종합매력은 위 두 수치의 합계예요.\n각 매력은 보석에 표시된 수치대로 적용돼요.\n펜던트에 박힌 보석은 교체하지 않는 한 소멸하지 않아요.";
-    out += "\n\n장착: /펜던트보석장착 [펜던트번호] [슬롯번호] [보석가방번호]\n※ 현재 장착 펜던트는 0번입니다.\n📖 슬롯·장착 안내: /펜던트가이드 10";
+    if (emptyCount === undefined) out += "\n\n장착: /펜던트보석장착 [펜던트번호] [슬롯번호] [보석가방번호]\n※ 현재 장착 펜던트는 0번입니다.\n📖 슬롯·장착 안내: /펜던트가이드 10";
     return out;
 }
 
@@ -72327,6 +72367,11 @@ function buildAdventureGemBagBlocks(data, user, store, nickname) {
     return blocks;
 }
 
+// 정보 목록 한 항목을 이름과 들여쓴 매력 줄이 함께 전송되는 묶음으로 만든다.
+function formatAdventureGemInfoRow(label, gem) {
+    return label + " " + formatAdventureGem(gem).replace(/\n└/g, "\n     └");
+}
+
 // 장착 보석은 강함순으로 표시하면서 실제 고정 슬롯번호와 모든 빈칸을 유지하는 함수
 function buildAdventureGemInfoBlocks(data, user, store, nickname) {
     var slots = getAdventureGemSlots(data, user, store), summary = summarizeAdventureGems(store), bag = getAdventureGemBag(store), occupied = {}, equipped = [];
@@ -72338,14 +72383,14 @@ function buildAdventureGemInfoBlocks(data, user, store, nickname) {
         GLOBAL_CONFIG.adventureGem.slotItemName.replace("(/보석슬롯오픈 숫자)", "") + ": +" + slots.extra + "칸\n🧩 총 장착 가능 공간: " + slots.total + "칸\n📭 남은 장착 공간: " + Math.max(0, slots.total - summary.count) + "칸\n🔒 다음 슬롯: Lv." + nextLevel + " · " + (nextLevel - slots.level) + "레벨 남음\n━━━━━━━━━━━━━\n";
     if (special) header += special + "\n";
     header += "⚔️ 캐슬 +" + formatAdventureGemCharm(summary.castle) + " · 👾 레이드 +" + formatAdventureGemCharm(summary.raid) + "\n\n📋 보석 슬롯 상세정보" + allsee;
-    var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [슬롯번호] [보석가방번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요."];
-    for (var e = 0; e < equipped.length; e++) blocks.push(formatAdventureGemSlot(equipped[e].slot) + " " + formatAdventureGem(equipped[e]).replace(/\n└/g, "\n     └"));
+    var blocks = [header, "━━━━━━━━━━━━━\n※ 보석 장착: /보석장착 [슬롯번호] [보석가방번호]\n※ 슬롯 확장: /보석슬롯오픈 숫자\n※ 보석 가방: /보석가방\n※ 보석 안내: /보석가이드\n━━━━━━ ✦ ━━━━━━\n🪽 장착 보석 · 매력 높은 순\n※ 아래 번호는 고정 슬롯번호예요.\n━━━━━━━━━━━━━"];
+    for (var e = 0; e < equipped.length; e++) blocks.push((e ? "\n" : "") + formatAdventureGemInfoRow(formatAdventureGemSlot(equipped[e].slot), equipped[e]));
     var emptyHeading = false;
     if (slots.total > GLOBAL_CONFIG.adventureGem.slotMessageBatch && summary.count < slots.total) blocks.push("\n━━━━━━💛 빈 슬롯 목록━━━━━━", { slotRows: "empty", from: 1, to: slots.total, occupied: occupied });
     else for (var slot = 1; slot <= slots.total; slot++) if (!occupied[slot]) { if (!emptyHeading) { blocks.push("\n━━━━━━💛 빈 슬롯 목록━━━━━━"); emptyHeading = true; } blocks.push(formatAdventureGemSlot(slot) + " 🔓 빈 슬롯"); }
     var full = summary.count >= slots.total;
     blocks.push("\n🎒 " + (full ? "교체" : "장착") + " 가능한 보석 목록\n※ 아래 번호는 보석가방 번호예요.\n━━━━━━━━━━━━━");
-    for (var b = 0; b < bag.length; b++) blocks.push("[" + (b + 1) + "] " + formatAdventureGem(bag[b]));
+    for (var b = 0; b < bag.length; b++) blocks.push((b ? "\n" : "") + formatAdventureGemInfoRow("[" + (b + 1) + "]", bag[b]));
     blocks.push("━━━━━━━━━━━━━");
     if (full && slots.total) blocks.push("⚠️ 기존 보석은 소멸하며 복구할 수 없어요.");
     if (bag.length && slots.total && !full) {
@@ -72652,16 +72697,26 @@ function buildAdventureGemPublicationRows(data, store, receipts, extras) {
     return rows;
 }
 
+// 보석 미사용 계정과 저장 원본이 유실된 계정을 동일한 기준으로 구분하는 함수
+function getAdventureGemReadPath(owner, initialized) {
+    var path = owner ? resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(owner, false)) : null;
+    if (path && new java.io.File(path).exists()) return path;
+    if (initialized || path && (new java.io.File(path + ".rollback").exists() ||
+        new java.io.File(getManagedJsonBackupPath(path)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(path)).exists())) {
+        throw new Error("보석 계정 원본 누락");
+    }
+    return null;
+}
+
 // 기존 공통 제한을 통과한 명령에서 해당 계정의 원본만 읽고 변경 결과를 원자 게시하는 진입 함수
 function runAdventureGemEntry(data, petData, guildData, user, action, request, replier) {
     var member = data.member && data.member[user];
     if (!member) return;
-    var config = GLOBAL_CONFIG.adventureGem, owner = getAdventureGemAccountId(data, user), store = createAdventureGemState(owner), accountPath = owner ? resolveActiveDataPath(DATA_ROOT_PATH + getAdventureGemFileName(owner, false)) : null;
+    var config = GLOBAL_CONFIG.adventureGem, owner = getAdventureGemAccountId(data, user);
     var replyKey = getAdventureGemSessionKey(owner, user); getCurrentContext().adventureGemReplyKey = replyKey;
     setAdventureGemReplyToken(replyKey, null);
-    if (accountPath && new java.io.File(accountPath).exists()) store = requireAdventureGemState(loadJsonFile(accountPath), owner);
-    else if (member.adventureGemInitialized) throw new Error("보석 계정 원본 누락");
-    else if (accountPath && (new java.io.File(accountPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(accountPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(accountPath)).exists())) throw new Error("보석 계정 원본 누락");
+    var accountPath = getAdventureGemReadPath(owner, member.adventureGemInitialized);
+    var store = accountPath ? requireAdventureGemState(loadJsonFile(accountPath), owner) : createAdventureGemState(owner);
     var nickname = checkRank(data, petData, guildData, user), key = getAdventureGemSessionKey(owner, user), pending = userState[key], now = Date.now();
     var expired = pending && now > pending.expiresAt;
     if (expired) { delete userState[key]; pending = null; }
